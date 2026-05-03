@@ -1,0 +1,10 @@
+.gocache/
+bin/
+*.exe
+*.out
+*.test
+*.log
+*.tmp
+*.swp
+.DS_Store
+

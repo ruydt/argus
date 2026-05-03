@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:#0c0c0c; --header:#1e1e1e; --text:#cccccc; --dim:#666;
+            --accent:#47ff9c; --agent:#47ff9c;
+            --delete:#ff5f56; --create:#47ff9c; --edit:#3fa5ff; --bash:#f5a623;
+            --border:#333;
+        }
+        *{box-sizing:border-box;}
+        body{margin:0;font-family:'JetBrains Mono',monospace;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+        header{background:var(--header);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:.8rem;color:var(--dim);}
+        .badge{background:rgba(71,255,156,.12);color:var(--accent);border:1px solid rgba(71,255,156,.3);padding:2px 10px;border-radius:20px;font-size:.7rem;}
+        .toolbar{padding:10px 16px;background:#111;border-bottom:1px solid var(--border);display:flex;gap:20px;align-items:center;}
+        .tg{display:flex;align-items:center;gap:8px;}
+        .tl{font-size:.7rem;text-transform:uppercase;color:var(--dim);}
+        select,input{background:#000;border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:.8rem;padding:4px 8px;outline:none;}
+        input{flex:1;min-width:200px;}
+        .main{flex:1;display:grid;grid-template-columns:1fr;min-height:0;}
+        .panel{display:flex;flex-direction:column;min-height:0;}
+        .ph{padding:10px 16px;background:#111;border-bottom:1px solid var(--border);font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);}
+        .pb{flex:1;overflow-y:auto;padding:12px;}
+        .session{border:1px solid rgba(255,255,255,.06);border-radius:8px;margin-bottom:12px;overflow:hidden;background:rgba(255,255,255,.015)}
+        .session-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer}
+        .session-id{font-size:.8rem;color:var(--accent);font-weight:bold;word-break:break-all}
+        .session-meta{font-size:.68rem;color:var(--dim);text-align:right;white-space:nowrap}
+        .session-body{padding:6px 10px}
+        .session.collapsed .session-body{display:none}
+        .session.collapsed .session-head{border-bottom:none}
+        .chev{color:var(--dim);font-size:.7rem;margin-left:10px}
+        .event{display:flex;gap:12px;padding:8px 0;font-size:.82rem;line-height:1.4;border-bottom:1px solid rgba(255,255,255,.03);align-items:flex-start;}
+        .event:hover{background:rgba(255,255,255,.02);}
+        .et{color:var(--dim);flex-shrink:0;width:75px;padding-top:2px;}
+        .ea{font-weight:bold;flex-shrink:0;width:60px;padding-top:2px;}
+        .ep{flex:1;word-break:break-all;color:#e2e8f0;font-size:0.85rem;}
+        .es{color:var(--dim);font-size:.7rem;flex-shrink:0;}
+        .hook{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:.66rem;font-weight:600;margin-top:1px;margin-right:4px;border:1px solid transparent;flex-shrink:0;}
+        .hook-SessionStart{color:#7ee7ff;border-color:rgba(126,231,255,.35);background:rgba(126,231,255,.08)}
+        .hook-PreToolUse{color:#cfa7ff;border-color:rgba(207,167,255,.35);background:rgba(207,167,255,.08)}
+        .hook-PermissionRequest{color:#ffcc7e;border-color:rgba(255,204,126,.35);background:rgba(255,204,126,.08)}
+        .hook-PostToolUse{color:#7effa5;border-color:rgba(126,255,165,.35);background:rgba(126,255,165,.08)}
+        .hook-UserPromptSubmit{color:#ff8e8e;border-color:rgba(255,142,142,.35);background:rgba(255,142,142,.08)}
+        .hook-Stop{color:#9d9d9d;border-color:rgba(157,157,157,.35);background:rgba(157,157,157,.08)}
+        .meta{margin-top:6px;font-size:.68rem;color:#888;display:flex;flex-wrap:wrap;gap:6px}
+        .meta span{white-space:nowrap;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px;}
+        .meta strong{color:#aaa;font-weight:600;}
+        .eblock{margin-top:8px;font-size:0.75rem;color:#ccc;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;}
+        .eblock strong{color:#aaa;font-size:0.7rem;text-transform:uppercase;}
+        .eblock pre{margin:4px 0 0 0;white-space:pre-wrap;word-wrap:break-word;font-size:0.75rem;color:#a0a0a0;max-height:300px;overflow-y:auto;font-family:inherit;}
+        .CREATE{color:var(--create)}.EDIT{color:var(--edit)}.DELETE{color:var(--delete)}.BASH{color:var(--bash)}
+        mark{background:rgba(71,255,156,.3);color:#fff;}
+        footer{padding:6px 16px;background:var(--header);border-top:1px solid var(--border);font-size:.7rem;color:var(--dim);display:flex;gap:24px;}
+        .stat span{color:var(--text);}
+        ::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-thumb{background:#333;}
+    </style>
+</head>
+<body>
+    <header>
+        <span>agent-monitor</span>
+        <span class="badge">● HOOK MODE — exact attribution</span>
+        <span id="sync-time">--:--:--</span>
+    </header>
+    <div class="toolbar">
+        <div class="tg"><span class="tl">Action</span>
+            <select id="fa"><option value="all">ALL</option><option value="CREATE">CREATE</option><option value="EDIT">EDIT</option><option value="DELETE">DELETE</option><option value="BASH">BASH</option></select>
+        </div>
+        <div class="tg" style="flex:1"><span class="tl">Search</span><input id="search" placeholder="Filter by path or session ID..."></div>
+        <div class="tg"><span class="tl">Sort</span>
+            <select id="so"><option value="newest">NEWEST</option><option value="oldest">OLDEST</option></select>
+        </div>
+    </div>
+    <div class="main">
+        <div class="panel" style="border-right:none">
+            <div class="ph">Session Events</div>
+            <div class="pb" id="events"></div>
+        </div>
+    </div>
+
+    <script>
+        const eEl=document.getElementById('events');
+        const sEl=document.getElementById('sync-time');
+
+        const faEl=document.getElementById('fa'),soEl=document.getElementById('so'),srEl=document.getElementById('search');
+        let raw=[];
+        const hl=(t,q)=>q?t.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark>$1</mark>'):t;
+        const esc=t=>!t?'':String(t).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+        const shortId=v=>v?v.substring(0,8):'unknown';
+        const groupKey=e=>e.session||e.transcript_path||'ungrouped';
+        function render(){
+            const scrollMap = new Map();
+            eEl.querySelectorAll('pre[data-key]').forEach(pre => {
+                if(pre.scrollTop > 0) scrollMap.set(pre.dataset.key, pre.scrollTop);
+            });
+            const hasSessions = eEl.querySelector('.session') !== null;
+            const openedSessions = new Set();
+            if (hasSessions) {
+                eEl.querySelectorAll('.session:not(.collapsed)').forEach(el => openedSessions.add(el.dataset.session));
+            }
+            const af=faEl.value,so=soEl.value,q=srEl.value.trim();
+            let evs=raw.filter(e=>(af==='all'||e.action===af)&&(!q||e.path.toLowerCase().includes(q.toLowerCase())||(e.command||'').toLowerCase().includes(q.toLowerCase())||(e.session||'').includes(q)||(e.transcript_path||'').toLowerCase().includes(q.toLowerCase())||(e.hook_event_name||'').toLowerCase().includes(q.toLowerCase())));
+            evs.sort((a,b)=>so==='newest'?new Date(b.time)-new Date(a.time):new Date(a.time)-new Date(b.time));
+            const groups=new Map();
+            for(const e of evs){
+                const k=groupKey(e);
+                if(!groups.has(k)) groups.set(k,[]);
+                groups.get(k).push(e);
+            }
+            const ordered=[...groups.entries()];
+            eEl.innerHTML=ordered.map(([k,list])=>{
+                const sorted=list.slice().sort((a,b)=>so==='newest'?new Date(b.time)-new Date(a.time):new Date(a.time)-new Date(b.time));
+                const primary=sorted[0]||{};
+                const sessionLabel=primary.session||'unknown session';
+                const transcriptLabel=primary.transcript_path||'no transcript';
+                const counts=sorted.reduce((acc,e)=>(acc[e.action]=(acc[e.action]||0)+1,acc),{});
+                const countLine=Object.entries(counts).map(([a,n])=>a+': '+n).join(' · ');
+                const isCollapsed = (hasSessions && openedSessions.has(sessionLabel)) ? '' : ' collapsed';
+                const chevIcon = isCollapsed ? '▶' : '▼';
+                return '<div class="session'+isCollapsed+'" data-session="'+esc(sessionLabel)+'">'+
+                    '<div class="session-head">'+
+                        '<div class="session-id">'+hl(sessionLabel,q)+'<span class="chev">'+chevIcon+'</span></div>'+
+                        '<div class="session-meta">'+hl(transcriptLabel,q)+'<br>'+countLine+'</div>'+
+                    '</div>'+
+                    '<div class="session-body">'+sorted.map(e=>{
+                        const t=new Date(e.time).toLocaleTimeString([],{hour12:false});
+                        const hook=esc(e.hook_event_name||'Event');
+                        const meta=[
+                            e.hook_event_name?('<strong>hook</strong> '+esc(e.hook_event_name)):null,
+                            e.session?('<strong>session</strong> '+shortId(e.session)):null,
+                            e.transcript_path?('<strong>transcript</strong> '+esc(e.transcript_path)):null,
+                            e.turn_id?('<strong>turn</strong> '+shortId(e.turn_id)):null,
+                            e.tool_use_id?('<strong>tool</strong> '+shortId(e.tool_use_id)):null,
+                            e.model?('<strong>model</strong> '+esc(e.model)):null,
+                            e.source?('<strong>source</strong> '+esc(e.source)):null,
+                            e.cwd?('<strong>cwd</strong> '+esc(e.cwd)):null,
+                        ].filter(Boolean).map(x=>'<span>'+x+'</span>').join('');
+                        const blocks=[
+                            e.description?('<div class="eblock"><strong>description</strong><pre data-key="'+e.time+'-desc">'+esc(e.description)+'</pre></div>'):null,
+                            e.command?('<div class="eblock"><strong>command</strong><pre data-key="'+e.time+'-cmd">'+esc(e.command)+'</pre></div>'):null,
+                            e.prompt?('<div class="eblock"><strong>prompt</strong><pre data-key="'+e.time+'-prompt">'+esc(e.prompt)+'</pre></div>'):null
+                        ].filter(Boolean).join('');
+                        return '<div class="event"><span class="et">'+t+'</span><span class="hook hook-'+hook+'">'+hook+'</span><span class="ea '+esc(e.action)+'">'+esc(e.action)+'</span><div style="flex:1; min-width:0;"><div class="ep">'+hl(esc(e.path),q)+'</div>'+(meta?'<div class="meta">'+meta+'</div>':'')+blocks+'</div></div>';
+                    }).join('')+'</div>'+
+                '</div>';
+            }).join('')||'<div style="color:var(--dim);padding:8px 0">No hook events yet. Configure agents to POST to /api/hook.</div>';
+            eEl.querySelectorAll('.session-head').forEach(head=>{
+                head.addEventListener('click',()=>{
+                    const block=head.parentElement;
+                    block.classList.toggle('collapsed');
+                    const chev=block.querySelector('.chev');
+                    if(chev) chev.textContent=block.classList.contains('collapsed')?'▶':'▼';
+                });
+            });
+            eEl.querySelectorAll('pre[data-key]').forEach(pre => {
+                if(scrollMap.has(pre.dataset.key)) pre.scrollTop = scrollMap.get(pre.dataset.key);
+            });
+        }
+        async function refresh(){
+            try{
+                const eR=await fetch('/api/events');
+                const ed=await eR.json();
+                raw=ed.events||[];
+                render();
+                const now = new Date().toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                if(sEl) sEl.textContent=now;
+            }catch(e){}
+        }
+        [faEl,soEl].forEach(el=>el.addEventListener('change',render));
+        srEl.addEventListener('input',render);
+        refresh();setInterval(refresh,1000);
+    </script>
+</body>
+</html>
