@@ -172,7 +172,7 @@ func main() {
 		w.Write([]byte(`{}`))
 	})
 
-	addr := "127.0.0.1:8765"
+	addr := "0.0.0.0:8765"
 	log.Printf("Agent Monitor ready  →  http://%s", addr)
 	log.Printf("Hook endpoint        →  POST http://%s/api/hook", addr)
 	http.ListenAndServe(addr, mux)
