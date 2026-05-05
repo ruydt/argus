@@ -41,6 +41,15 @@ type hookPayload struct {
 	FilePath string `json:"file_path"`
 }
 
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 // ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
@@ -60,7 +69,11 @@ func main() {
 			http.Error(w, "missing path", http.StatusBadRequest)
 			return
 		}
-		writeJSON(w, claudecode.ComputeUsage(path))
+		if claudecode.MatchesTranscript(path) {
+			writeJSON(w, claudecode.ComputeUsage(path))
+			return
+		}
+		writeJSON(w, codex.ComputeUsage(path))
 	})
 
 	mux.HandleFunc("/api/openai/", func(w http.ResponseWriter, r *http.Request) {
@@ -117,10 +130,10 @@ func main() {
 			}
 		}
 
-		path := p.ToolInput.FilePath
+		path := events.ResolvePath(p.CWD, p.ToolInput.FilePath)
 		cmd := p.ToolInput.Command
 		if path == "" {
-			path = p.FilePath
+			path = events.ResolvePath(p.CWD, p.FilePath)
 		}
 		if path == "" && cmd != "" && events.ToolToAction(p.ToolName) != "BASH" {
 			path = events.ExtractPathFromCommand(cmd)
@@ -137,34 +150,44 @@ func main() {
 				p.SessionID, p.Model, p.ToolName, action, displayPath)
 
 			var oldStr, newStr string
+			parsedStartLine := 0
 			if claudecode.MatchesTranscript(p.TranscriptPath) {
 				oldStr, newStr = claudecode.Diff(claudecode.DiffInput{
-					OldString: p.ToolInput.OldString,
-					NewString: p.ToolInput.NewString,
+					OldString: firstNonEmpty(p.ToolInput.OldString, p.ToolInput.OldStr),
+					NewString: firstNonEmpty(p.ToolInput.NewString, p.ToolInput.NewStr),
 				})
 			} else {
 				oldStr, newStr = codex.Diff(codex.DiffInput{
-					OldStr: p.ToolInput.OldStr,
-					NewStr: p.ToolInput.NewStr,
+					OldStr: firstNonEmpty(p.ToolInput.OldStr, p.ToolInput.OldString),
+					NewStr: firstNonEmpty(p.ToolInput.NewStr, p.ToolInput.NewString),
 				})
+				if oldStr == "" && newStr == "" && strings.Contains(strings.ToLower(p.ToolName), "apply_patch") {
+					oldStr, newStr, parsedStartLine = codex.ParseApplyPatch(cmd)
+					if parsedStartLine == 0 && oldStr != "" && path != "" {
+						parsedStartLine = events.FindStartLine(path, oldStr)
+					}
+				}
 			}
 
 			// For Edit PreToolUse the file still has old_string — find its line.
 			// For PostToolUse the file has new_string — find that instead.
 			startLine := 0
 			var ctxBefore, ctxAfter []events.CtxLine
-			if action != "BASH" && p.ToolInput.FilePath != "" {
+			if action != "BASH" && path != "" {
 				if p.HookEventName == "PreToolUse" && oldStr != "" {
-					startLine = events.FindStartLine(p.ToolInput.FilePath, oldStr)
+					startLine = events.FindStartLine(path, oldStr)
 					if startLine > 0 {
-						ctxBefore, ctxAfter = events.ComputeContext(p.ToolInput.FilePath, startLine, len(strings.Split(oldStr, "\n")), 3)
+						ctxBefore, ctxAfter = events.ComputeContext(path, startLine, len(strings.Split(oldStr, "\n")), 3)
 					}
 				} else if p.HookEventName == "PostToolUse" && newStr != "" {
-					startLine = events.FindStartLine(p.ToolInput.FilePath, newStr)
+					startLine = events.FindStartLine(path, newStr)
 					if startLine > 0 {
-						ctxBefore, ctxAfter = events.ComputeContext(p.ToolInput.FilePath, startLine, len(strings.Split(newStr, "\n")), 3)
+						ctxBefore, ctxAfter = events.ComputeContext(path, startLine, len(strings.Split(newStr, "\n")), 3)
 					}
 				}
+			}
+			if startLine == 0 && parsedStartLine > 0 {
+				startLine = parsedStartLine
 			}
 
 			// Use cached model if this payload doesn't carry one

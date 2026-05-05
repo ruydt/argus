@@ -2,6 +2,7 @@ package events
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 )
@@ -108,6 +109,7 @@ func ComputeContext(filePath string, changeStart, changeLen, ctxLines int) (befo
 }
 
 // FindStartLine returns the 1-based line number where oldStr begins in the file.
+// It performs a line-by-line comparison ignoring leading/trailing whitespace.
 func FindStartLine(filePath, oldStr string) int {
 	if filePath == "" || oldStr == "" {
 		return 0
@@ -116,11 +118,35 @@ func FindStartLine(filePath, oldStr string) int {
 	if err != nil {
 		return 0
 	}
-	idx := strings.Index(string(data), oldStr)
-	if idx < 0 {
+	fileLines := strings.Split(string(data), "\n")
+	searchLines := strings.Split(strings.TrimRight(oldStr, "\n"), "\n")
+	if len(searchLines) == 0 {
 		return 0
 	}
-	return strings.Count(string(data)[:idx], "\n") + 1
+
+	for i := 0; i <= len(fileLines)-len(searchLines); i++ {
+		match := true
+		for j := 0; j < len(searchLines); j++ {
+			if strings.TrimSpace(fileLines[i+j]) != strings.TrimSpace(searchLines[j]) {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+func ResolvePath(cwd, path string) string {
+	if path == "" {
+		return ""
+	}
+	if filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(cwd, path)
 }
 
 func ToolToAction(tool string) string {

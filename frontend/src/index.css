@@ -205,8 +205,8 @@ input {
 /* Event Styles */
 .session { border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: rgba(255, 255, 255, 0.015); }
 .session-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid rgba(255, 255, 255, 0.06); cursor: pointer; }
-.session-id { font-size: 0.8rem; color: var(--accent); font-weight: bold; word-break: break-all; }
-.session-meta { font-size: 0.68rem; color: var(--dim); text-align: right; white-space: nowrap; }
+.session-id { font-size: 0.8rem; color: var(--accent); font-weight: bold; word-break: break-all; display: inline-flex; align-items: center; gap: 8px; }
+.session-meta { font-size: 0.68rem; color: var(--dim); text-align: right; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
 .session-body { padding: 6px 10px; }
 .session.collapsed .session-body { display: none; }
 .session.collapsed .session-head { border-bottom: none; }
@@ -224,11 +224,12 @@ input {
 .hook-PostToolUse { color: #7effa5; border-color: rgba(126, 255, 165, 0.35); background: rgba(126, 255, 165, 0.08); }
 .hook-UserPromptSubmit { color: #ff8e8e; border-color: rgba(255, 142, 142, 0.35); background: rgba(255, 142, 142, 0.08); }
 .hook-Stop { color: #9d9d9d; border-color: rgba(157, 157, 157, 0.35); background: rgba(157, 157, 157, 0.08); }
+.event-model { display: inline-flex; align-items: center; margin-right: 6px; padding: 2px 8px; border-radius: 999px; font-size: 0.66rem; font-weight: 600; color: #8bc5ff; border: 1px solid rgba(139, 197, 255, 0.32); background: rgba(139, 197, 255, 0.08); vertical-align: middle; }
 .meta { margin-top: 6px; font-size: 0.68rem; color: #888; display: flex; flex-wrap: wrap; gap: 6px; }
 .meta span { white-space: nowrap; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 4px; }
 .meta strong { color: #aaa; font-weight: 600; }
 .eblock { margin-top: 8px; font-size: 0.75rem; color: #ccc; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 6px; }
-.eblock strong { color: #aaa; font-size: 0.7rem; text-transform: uppercase; }
+.eblock strong { color: #aaa; font-size: 0.7rem; text-transform: none; }
 .eblock pre { margin: 4px 0 0 0; white-space: pre-wrap; word-wrap: break-word; font-size: 0.75rem; color: #a0a0a0; max-height: 300px; overflow-y: auto; font-family: inherit; }
 .CREATE { color: var(--create); }
 .EDIT { color: var(--edit); }
@@ -256,12 +257,13 @@ mark { background: rgba(71, 255, 156, 0.3); color: #fff; }
 .usage-cache { color: #ffd97e; border-color: rgba(255,217,126,0.3); background: rgba(255,217,126,0.07); }
 .usage-cache-write { color: #ffb347; border-color: rgba(255,179,71,0.3); background: rgba(255,179,71,0.07); }
 .usage-turns { color: #888; border-color: rgba(136,136,136,0.3); background: rgba(136,136,136,0.07); }
-.agent-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid transparent; flex-shrink: 0; }
+.agent-badge { font-size: 0.66rem; font-weight: 600; padding: 2px 0; border-radius: 999px; border: 1px solid transparent; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; line-height: 1; vertical-align: middle; }
+.agent-badge svg { flex-shrink: 0; width: 12px; height: 12px; display: block; }
 .agent-codex { color: #5cceff; border-color: rgba(92, 206, 255, 0.35); background: rgba(92, 206, 255, 0.08); }
 .agent-claude { color: #e8845c; border-color: rgba(232, 132, 92, 0.35); background: rgba(232, 132, 92, 0.08); }
 
 .eblock-diff { padding: 0 !important; overflow: hidden; }
-.eblock-diff strong { display: block; padding: 6px 12px; font-size: 0.7rem; text-transform: uppercase; color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.eblock-diff strong { display: block; padding: 6px 12px; font-size: 0.7rem; text-transform: none; color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .diff-block { font-size: 0.74rem; font-family: inherit; max-height: 400px; overflow-y: auto; }
 .diff-line { display: flex; gap: 0; line-height: 1.5; }
 .diff-ln { flex-shrink: 0; width: 36px; text-align: right; padding-right: 8px; opacity: 0.4; user-select: none; font-size: 0.7rem; }
