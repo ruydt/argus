@@ -62,12 +62,16 @@ export interface OpenAIBucketResult {
 }
 
 export interface OpenAIBucket {
-  start_time_iso: string
+  start_time: number
+  end_time: number
   results?: OpenAIBucketResult[]
 }
 
 export interface OpenAIUsageResponse {
   data?: OpenAIBucket[]
+  has_more?: boolean
+  next_page?: string
+  page?: string
   error?: { message?: string }
 }
 

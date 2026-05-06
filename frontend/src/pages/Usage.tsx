@@ -21,6 +21,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { OpenAIUsageResponse, UsageDailyPoint, UsageStats } from '@/types'
 
+const USAGE_BUCKET_LIMIT = 31
+
 const TIME_RANGES = [
   { label: '24h', days: 1 },
   { label: '7d', days: 7 },
@@ -60,6 +62,84 @@ export function Usage() {
     }
   }
 
+  const readPrimaryUsageResponse = async (response: Response): Promise<OpenAIUsageResponse> => {
+    if (!response.ok) {
+      let errorMsg = `HTTP Error ${response.status}`
+      try {
+        const d = (await response.json()) as OpenAIUsageResponse
+        if (d.error?.message) errorMsg = d.error.message
+      } catch {
+        errorMsg = `Backend returned ${response.status}: Please make sure to restart your Go backend!`
+      }
+      throw new Error(errorMsg)
+    }
+
+    return (await response.json()) as OpenAIUsageResponse
+  }
+
+  const getBucketDate = (bucketStartTime: number) =>
+    new Date(bucketStartTime * 1000).toISOString().split('T')[0]
+
+  const fetchUsagePages = async (
+    start: number,
+    end: number,
+    headers: HeadersInit,
+    groupBy?: 'model' | 'api_key_id'
+  ): Promise<OpenAIUsageResponse> => {
+    let page: string | undefined
+    const data: NonNullable<OpenAIUsageResponse['data']> = []
+
+    try {
+      do {
+        const params = new URLSearchParams({
+          start_time: String(start),
+          end_time: String(end),
+          bucket_width: '1d',
+          limit: String(USAGE_BUCKET_LIMIT),
+        })
+        if (groupBy) params.set('group_by', groupBy)
+        if (page) params.set('page', page)
+
+        const response = await readUsageResponse(
+          await fetch(`/api/openai/usage/completions?${params.toString()}`, { headers })
+        )
+        data.push(...(response.data ?? []))
+        page = response.has_more ? response.next_page : undefined
+      } while (page)
+
+      return { data }
+    } catch {
+      return emptyUsageResponse
+    }
+  }
+
+  const fetchPrimaryUsagePages = async (
+    start: number,
+    end: number,
+    headers: HeadersInit
+  ): Promise<OpenAIUsageResponse> => {
+    let page: string | undefined
+    const data: NonNullable<OpenAIUsageResponse['data']> = []
+
+    do {
+      const params = new URLSearchParams({
+        start_time: String(start),
+        end_time: String(end),
+        bucket_width: '1d',
+        limit: String(USAGE_BUCKET_LIMIT),
+      })
+      if (page) params.set('page', page)
+
+      const response = await readPrimaryUsageResponse(
+        await fetch(`/api/openai/usage/completions?${params.toString()}`, { headers })
+      )
+      data.push(...(response.data ?? []))
+      page = response.has_more ? response.next_page : undefined
+    } while (page)
+
+    return { data }
+  }
+
   const makeDailyPoint = (date: string): UsageDailyPoint => ({
     date,
     tokens: 0,
@@ -83,35 +163,10 @@ export function Usage() {
       const start = end - timeRange * 24 * 60 * 60
       const headers = { Authorization: 'Bearer ' + key }
 
-      const [compRes, modRes, keyRes] = await Promise.all([
-        fetch(`/api/openai/usage/completions?start_time=${start}&end_time=${end}&bucket_width=1d`, {
-          headers,
-        }),
-        fetch(
-          `/api/openai/usage/completions?start_time=${start}&end_time=${end}&bucket_width=1d&group_by=model`,
-          { headers }
-        ),
-        fetch(
-          `/api/openai/usage/completions?start_time=${start}&end_time=${end}&bucket_width=1d&group_by=api_key_id`,
-          { headers }
-        ),
-      ])
-
-      if (!compRes.ok) {
-        let errorMsg = `HTTP Error ${compRes.status}`
-        try {
-          const d = (await compRes.json()) as OpenAIUsageResponse
-          if (d.error?.message) errorMsg = d.error.message
-        } catch {
-          errorMsg = `Backend returned ${compRes.status}: Please make sure to restart your Go backend!`
-        }
-        throw new Error(errorMsg)
-      }
-
-      const compData = (await compRes.json()) as OpenAIUsageResponse
-      const [modData, keyData] = await Promise.all([
-        readUsageResponse(modRes),
-        readUsageResponse(keyRes),
+      const [compData, modData, keyData] = await Promise.all([
+        fetchPrimaryUsagePages(start, end, headers),
+        fetchUsagePages(start, end, headers, 'model'),
+        fetchUsagePages(start, end, headers, 'api_key_id'),
       ])
 
       let totalReqs = 0
@@ -121,7 +176,7 @@ export function Usage() {
       const dailyMap = new Map<string, UsageDailyPoint>()
 
       ;(compData.data ?? []).forEach((bucket) => {
-        const date = bucket.start_time_iso.split('T')[0]
+        const date = getBucketDate(bucket.start_time)
         const requestCount =
           bucket.results?.reduce(
             (sum, result) => sum + Number(result.num_model_requests || 0),
@@ -144,7 +199,7 @@ export function Usage() {
         })
       })
       ;(modData.data ?? []).forEach((bucket) => {
-        const date = bucket.start_time_iso.split('T')[0]
+        const date = getBucketDate(bucket.start_time)
         const dayEntry = dailyMap.get(date) ?? makeDailyPoint(date)
         dailyMap.set(date, dayEntry)
 
