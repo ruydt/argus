@@ -87,10 +87,17 @@ export function Usage() {
     groupBy?: 'model' | 'api_key_id'
   ): Promise<OpenAIUsageResponse> => {
     let page: string | undefined
+    let pagesFetched = 0
+    const maxPages = Math.ceil(timeRange / USAGE_BUCKET_LIMIT) + 1
+    const seenPages = new Set<string>()
     const data: NonNullable<OpenAIUsageResponse['data']> = []
 
     try {
       do {
+        if (pagesFetched >= maxPages || (page && seenPages.has(page))) break
+        if (page) seenPages.add(page)
+        pagesFetched += 1
+
         const params = new URLSearchParams({
           start_time: String(start),
           end_time: String(end),
@@ -104,7 +111,7 @@ export function Usage() {
           await fetch(`/api/openai/usage/completions?${params.toString()}`, { headers })
         )
         data.push(...(response.data ?? []))
-        page = response.has_more ? response.next_page : undefined
+        page = response.has_more ? (response.next_page ?? undefined) : undefined
       } while (page)
 
       return { data }
@@ -119,9 +126,16 @@ export function Usage() {
     headers: HeadersInit
   ): Promise<OpenAIUsageResponse> => {
     let page: string | undefined
+    let pagesFetched = 0
+    const maxPages = Math.ceil(timeRange / USAGE_BUCKET_LIMIT) + 1
+    const seenPages = new Set<string>()
     const data: NonNullable<OpenAIUsageResponse['data']> = []
 
     do {
+      if (pagesFetched >= maxPages || (page && seenPages.has(page))) break
+      if (page) seenPages.add(page)
+      pagesFetched += 1
+
       const params = new URLSearchParams({
         start_time: String(start),
         end_time: String(end),
@@ -134,7 +148,7 @@ export function Usage() {
         await fetch(`/api/openai/usage/completions?${params.toString()}`, { headers })
       )
       data.push(...(response.data ?? []))
-      page = response.has_more ? response.next_page : undefined
+      page = response.has_more ? (response.next_page ?? undefined) : undefined
     } while (page)
 
     return { data }

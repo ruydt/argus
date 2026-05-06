@@ -70,7 +70,7 @@ export interface OpenAIBucket {
 export interface OpenAIUsageResponse {
   data?: OpenAIBucket[]
   has_more?: boolean
-  next_page?: string
+  next_page?: string | null
   page?: string
   error?: { message?: string }
 }
