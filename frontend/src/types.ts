@@ -57,8 +57,8 @@ export interface OpenAIBucketResult {
   num_model_requests?: number
   input_tokens?: number
   output_tokens?: number
-  model?: string
-  api_key_id?: string
+  model?: string | null
+  api_key_id?: string | null
 }
 
 export interface OpenAIBucket {
