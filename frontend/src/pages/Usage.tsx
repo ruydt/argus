@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { OpenAIUsageResponse, UsageDailyPoint, UsageStats } from '@/types';
 
 const TIME_RANGES = [
   { label: '24h', days: 1 },
@@ -22,27 +28,14 @@ const TIME_RANGES = [
   { label: '90d', days: 90 },
 ] as const;
 
-type Stats = {
-  reqs: number;
-  toks: number;
-  models: Record<string, number>;
-  keys: Record<string, number>;
-  daily: Array<{ date: string; tokens: number; requests: number; models: Record<string, number> }>;
-};
-
 export function Usage() {
-  const [apiKey, setApiKey] = useState('');
-  const [timeRange, setTimeRange] = useState(() =>
-    Number(localStorage.getItem('openai_usage_range')) || 7
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('openai_admin_key') ?? '');
+  const [timeRange, setTimeRange] = useState(
+    () => Number(localStorage.getItem('openai_usage_range')) || 7
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [stats, setStats] = useState<Stats | null>(null);
-
-  useEffect(() => {
-    const savedKey = localStorage.getItem('openai_admin_key');
-    if (savedKey) setApiKey(savedKey);
-  }, []);
+  const [stats, setStats] = useState<UsageStats | null>(null);
 
   useEffect(() => {
     localStorage.setItem('openai_admin_key', apiKey);
@@ -51,6 +44,28 @@ export function Usage() {
   useEffect(() => {
     localStorage.setItem('openai_usage_range', timeRange.toString());
   }, [timeRange]);
+
+  const emptyUsageResponse: OpenAIUsageResponse = { data: [] };
+
+  const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : 'Failed to load usage';
+
+  const readUsageResponse = async (response: Response): Promise<OpenAIUsageResponse> => {
+    if (!response.ok) return emptyUsageResponse;
+
+    try {
+      return (await response.json()) as OpenAIUsageResponse;
+    } catch {
+      return emptyUsageResponse;
+    }
+  };
+
+  const makeDailyPoint = (date: string): UsageDailyPoint => ({
+    date,
+    tokens: 0,
+    requests: 0,
+    models: {},
+  });
 
   const fetchUsage = async () => {
     const key = apiKey.trim();
@@ -74,60 +89,85 @@ export function Usage() {
       if (!compRes.ok) {
         let errorMsg = `HTTP Error ${compRes.status}`;
         try {
-          const d = await compRes.json();
+          const d = (await compRes.json()) as OpenAIUsageResponse;
           if (d.error?.message) errorMsg = d.error.message;
-        } catch (_) {
+        } catch {
           errorMsg = `Backend returned ${compRes.status}: Please make sure to restart your Go backend!`;
         }
         throw new Error(errorMsg);
       }
 
-      const [compData, modData, keyData] = await Promise.all([
-        compRes.json(),
-        modRes.ok ? modRes.json().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
-        keyRes.ok ? keyRes.json().catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+      const compData = (await compRes.json()) as OpenAIUsageResponse;
+      const [modData, keyData] = await Promise.all([
+        readUsageResponse(modRes),
+        readUsageResponse(keyRes),
       ]);
 
       let totalReqs = 0;
       let totalToks = 0;
       const modelsBreakdown: Record<string, number> = {};
       const keysBreakdown: Record<string, number> = {};
-      const dailyMap = new Map<string, { date: string; tokens: number; requests: number; models: Record<string, number> }>();
+      const dailyMap = new Map<string, UsageDailyPoint>();
 
-      (compData.data || []).forEach((bucket: any) => {
+      (compData.data ?? []).forEach(bucket => {
         const date = bucket.start_time_iso.split('T')[0];
-        const r = bucket.results?.reduce((sum: number, res: any) => sum + Number(res.num_model_requests || 0), 0) || 0;
-        const t = bucket.results?.reduce((sum: number, res: any) => sum + Number(res.input_tokens || 0) + Number(res.output_tokens || 0), 0) || 0;
-        totalReqs += r;
-        totalToks += t;
-        dailyMap.set(date, { date, tokens: t, requests: r, models: {} });
-      });
+        const requestCount =
+          bucket.results?.reduce(
+            (sum, result) => sum + Number(result.num_model_requests || 0),
+            0
+          ) ?? 0;
+        const tokenCount =
+          bucket.results?.reduce(
+            (sum, result) =>
+              sum + Number(result.input_tokens || 0) + Number(result.output_tokens || 0),
+            0
+          ) ?? 0;
 
-      (modData.data || []).forEach((bucket: any) => {
-        const date = bucket.start_time_iso.split('T')[0];
-        if (!dailyMap.has(date)) dailyMap.set(date, { date, tokens: 0, requests: 0, models: {} });
-        const dayEntry = dailyMap.get(date)!;
-        bucket.results?.forEach((r: any) => {
-          if (r.model) {
-            const count = Number(r.num_model_requests || 0);
-            modelsBreakdown[r.model] = (modelsBreakdown[r.model] || 0) + count;
-            dayEntry.models[r.model] = (dayEntry.models[r.model] || 0) + count;
-          }
+        totalReqs += requestCount;
+        totalToks += tokenCount;
+        dailyMap.set(date, {
+          date,
+          tokens: tokenCount,
+          requests: requestCount,
+          models: {},
         });
       });
 
-      (keyData.data || []).forEach((bucket: any) => {
-        bucket.results?.forEach((r: any) => {
-          if (r.api_key_id) {
-            keysBreakdown[r.api_key_id] = (keysBreakdown[r.api_key_id] || 0) + Number(r.input_tokens || 0) + Number(r.output_tokens || 0);
-          }
+      (modData.data ?? []).forEach(bucket => {
+        const date = bucket.start_time_iso.split('T')[0];
+        const dayEntry = dailyMap.get(date) ?? makeDailyPoint(date);
+        dailyMap.set(date, dayEntry);
+
+        bucket.results?.forEach(result => {
+          if (!result.model) return;
+
+          const count = Number(result.num_model_requests || 0);
+          modelsBreakdown[result.model] = (modelsBreakdown[result.model] || 0) + count;
+          dayEntry.models[result.model] = (dayEntry.models[result.model] || 0) + count;
+        });
+      });
+
+      (keyData.data ?? []).forEach(bucket => {
+        bucket.results?.forEach(result => {
+          if (!result.api_key_id) return;
+
+          keysBreakdown[result.api_key_id] =
+            (keysBreakdown[result.api_key_id] || 0) +
+            Number(result.input_tokens || 0) +
+            Number(result.output_tokens || 0);
         });
       });
 
       const daily = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-      setStats({ reqs: Number(totalReqs) || 0, toks: Number(totalToks) || 0, models: modelsBreakdown, keys: keysBreakdown, daily });
-    } catch (e: any) {
-      setError(e.message);
+      setStats({
+        reqs: Number(totalReqs) || 0,
+        toks: Number(totalToks) || 0,
+        models: modelsBreakdown,
+        keys: keysBreakdown,
+        daily,
+      });
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
