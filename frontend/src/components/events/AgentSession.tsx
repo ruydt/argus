@@ -117,9 +117,7 @@ export function AgentSession({
                   {e.hook_event_name === 'PreToolUse' && e.model && (
                     <span className="event-model">{e.model}</span>
                   )}
-                  {e.action !== 'BASH' &&
-                    !(e.hook_event_name === 'PreToolUse' && e.model) &&
-                    highlight(e.path || '', searchQuery)}
+                  {e.action !== 'BASH' && highlight(e.path || '', searchQuery)}
                 </div>
 
                 {(e.prompt || e.command) &&

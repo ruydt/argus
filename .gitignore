@@ -8,3 +8,20 @@ bin/
 *.swp
 .DS_Store
 
+.gitnexus
+.worktrees/
+*.db*
+
+# Local agent/project state
+.claude/
+.codex/
+.planning/
+
+# Backend local binaries
+backend/agent-monitor
+backend/server
+
+# Frontend build/cache
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
