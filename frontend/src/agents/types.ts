@@ -1,6 +1,8 @@
 import type { ComponentType } from 'react'
 import type { EventRecord, SessionUsage } from '@/types'
 
+export type { EventRecord, SessionUsage } from '@/types'
+
 export type AgentId = 'claudecode' | 'codex'
 
 export type UsageTooltipItem = {
@@ -19,5 +21,5 @@ export type AgentConfig = {
   buildUsageItems?: (
     usage: SessionUsage,
     formatTokens: (n: number) => string
-  ) => UsageTooltipItem[];
+  ) => UsageTooltipItem[]
 }
