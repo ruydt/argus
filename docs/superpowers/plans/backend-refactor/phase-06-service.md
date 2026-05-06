@@ -6,7 +6,7 @@
 
 **Repo:** `/Users/duytran/GitHub/codex-test` | **Backend:** `backend/` | **Module:** `agent-monitor` | **Go:** 1.23
 
-**Goal:** `EventService` owns: persist events, track session models, broadcast new events to SSE subscribers. Tested with a hand-written mock repo (no mockgen needed).
+**Goal:** `EventService` owns: persist events, track session models, propagate repository errors, broadcast new events to SSE subscribers. Tested with a hand-written mock repo (no mockgen needed).
 
 **Depends on:** Phase 1 (domain), Phase 4 (repository interface)
 
@@ -32,6 +32,7 @@
 package service_test
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -42,12 +43,18 @@ import (
 
 // mockRepo is a hand-written test double for repository.EventRepository.
 type mockRepo struct {
-	mu     sync.Mutex
-	events []domain.NormalizedEvent
-	models map[string]string
+	mu        sync.Mutex
+	events    []domain.NormalizedEvent
+	models    map[string]string
+	addErr    error
+	upsertErr error
+	upserts   int
 }
 
 func (m *mockRepo) Add(e domain.NormalizedEvent) error {
+	if m.addErr != nil {
+		return m.addErr
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.events = append(m.events, e)
@@ -73,11 +80,15 @@ func (m *mockRepo) SessionModel(sessionID string) (string, error) {
 }
 
 func (m *mockRepo) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string) error {
+	if m.upsertErr != nil {
+		return m.upsertErr
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.models == nil {
 		m.models = map[string]string{}
 	}
+	m.upserts++
 	if model != "" {
 		m.models[sessionID] = model
 	}
@@ -120,6 +131,48 @@ func TestAddEvent_setsTime(t *testing.T) {
 	}
 	if _, err := time.Parse(time.RFC3339, events[0].Time); err != nil {
 		t.Errorf("Time %q is not RFC3339: %v", events[0].Time, err)
+	}
+}
+
+func TestAddEvent_upsertsSessionModel(t *testing.T) {
+	repo := &mockRepo{}
+	svc := service.New(repo)
+
+	if err := svc.AddEvent(domain.NormalizedEvent{
+		Agent:          "claudecode",
+		Session:        "s1",
+		HookEventName:  "SessionStart",
+		Model:          "claude-opus-4-1",
+		Source:         "startup",
+		CWD:            "/tmp",
+		TranscriptPath: "/tmp/session.jsonl",
+	}); err != nil {
+		t.Fatalf("AddEvent: %v", err)
+	}
+
+	if repo.upserts != 1 {
+		t.Fatalf("upserts = %d, want 1", repo.upserts)
+	}
+	model, err := repo.SessionModel("s1")
+	if err != nil {
+		t.Fatalf("SessionModel: %v", err)
+	}
+	if model != "claude-opus-4-1" {
+		t.Errorf("model = %q, want claude-opus-4-1", model)
+	}
+}
+
+func TestAddEvent_returnsUpsertError(t *testing.T) {
+	repo := &mockRepo{upsertErr: errors.New("boom")}
+	svc := service.New(repo)
+
+	err := svc.AddEvent(domain.NormalizedEvent{
+		Agent:         "codex",
+		Session:       "s1",
+		HookEventName: "PreToolUse",
+	})
+	if err == nil || err.Error() != "boom" {
+		t.Fatalf("err = %v, want boom", err)
 	}
 }
 
@@ -202,7 +255,9 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		return err
 	}
 	if e.Session != "" {
-		s.repo.UpsertSession(e.Session, e.Agent, e.Model, e.Source, e.CWD, e.TranscriptPath)
+		if err := s.repo.UpsertSession(e.Session, e.Agent, e.Model, e.Source, e.CWD, e.TranscriptPath); err != nil {
+			return err
+		}
 	}
 	s.broadcast(e)
 	return nil

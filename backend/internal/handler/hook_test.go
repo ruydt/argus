@@ -67,3 +67,37 @@ func TestHookHandlerRejectsBadJSON(t *testing.T) {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
+
+func TestHookHandlerStoresEventWithoutPath(t *testing.T) {
+	svc := newTestService(t)
+	h := handler.Hook(svc)
+
+	body := []byte(`{
+		"session_id": "s2",
+		"transcript_path": "/tmp/codex-session.jsonl",
+		"hook_event_name": "SessionStart",
+		"tool_name": "SessionStart",
+		"tool_use_id": "tu2",
+		"turn_id": "t2",
+		"cwd": "/tmp"
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
+	}
+
+	events, err := svc.ListEvents(10)
+	if err != nil {
+		t.Fatalf("ListEvents: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("events len = %d, want 1", len(events))
+	}
+	if events[0].HookEventName != "SessionStart" {
+		t.Fatalf("hook_event_name = %q, want SessionStart", events[0].HookEventName)
+	}
+}

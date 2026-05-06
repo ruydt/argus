@@ -20,12 +20,74 @@
 |--------|------|
 | Create | `backend/internal/server/middleware.go` |
 | Create | `backend/internal/server/router.go` |
+| Create | `backend/internal/server/router_test.go` |
 
 ---
 
 ## Steps
 
-- [ ] **Step 1: Create `backend/internal/server/middleware.go`**
+- [ ] **Step 1: Write failing router test**
+
+```go
+// backend/internal/server/router_test.go
+package server_test
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"agent-monitor/internal/domain"
+	"agent-monitor/internal/server"
+	"agent-monitor/internal/service"
+)
+
+type noopRepo struct{}
+
+func (noopRepo) Add(domain.NormalizedEvent) error { return nil }
+func (noopRepo) List(int) ([]domain.NormalizedEvent, error) { return nil, nil }
+func (noopRepo) SessionModel(string) (string, error) { return "", nil }
+func (noopRepo) UpsertSession(string, string, string, string, string, string) error { return nil }
+
+func newTestRouter() http.Handler {
+	return server.NewRouter(service.New(noopRepo{}))
+}
+
+func TestNewRouter_optionsReturnsCORSHeaders(t *testing.T) {
+	req := httptest.NewRequest(http.MethodOptions, "/api/hook", nil)
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", rec.Code)
+	}
+	if rec.Header().Get("Access-Control-Allow-Origin") != "*" {
+		t.Fatalf("allow-origin = %q, want *", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
+func TestNewRouter_openAIRouteIsGETOnly(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/openai/models", nil)
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("status = %d, want 405", rec.Code)
+	}
+}
+```
+
+- [ ] **Step 2: Run to verify failure**
+
+```bash
+cd backend && go test ./internal/server/...
+```
+
+Expected: FAIL — `no Go files in .../server`
+
+- [ ] **Step 3: Create `backend/internal/server/middleware.go`**
 
 ```go
 package server
@@ -58,7 +120,7 @@ func cors(next http.Handler) http.Handler {
 }
 ```
 
-- [ ] **Step 2: Create `backend/internal/server/router.go`**
+- [ ] **Step 4: Create `backend/internal/server/router.go`**
 
 ```go
 package server
@@ -77,25 +139,25 @@ func NewRouter(svc *service.EventService) http.Handler {
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
 	mux.Handle("GET /api/session-usage", handler.Usage())
-	mux.Handle("/api/openai/", handler.OpenAIProxy())
+	mux.Handle("GET /api/openai/", handler.OpenAIProxy())
 
 	return cors(logging(mux))
 }
 ```
 
-- [ ] **Step 3: Verify build**
+- [ ] **Step 5: Run tests**
 
 ```bash
-cd backend && go build ./internal/server/...
+cd backend && go test ./internal/server/...
 ```
 
-Expected: no output, exit 0.
+Expected: `ok  agent-monitor/internal/server`
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add backend/internal/server/
 git commit -m "feat(server): add router with CORS and logging middleware"
 ```
 
-- [ ] **Step 5: Mark complete — update STATUS.md phase 9 to ✅**
+- [ ] **Step 7: Mark complete — update STATUS.md phase 9 to ✅**

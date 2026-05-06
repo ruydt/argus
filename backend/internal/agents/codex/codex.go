@@ -6,6 +6,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"agent-monitor/internal/domain"
+	"agent-monitor/internal/fileutil"
 )
 
 type DiffInput struct {
@@ -128,4 +131,66 @@ func ComputeUsage(transcriptPath string) SessionUsage {
 		u.Turns++
 	}
 	return u
+}
+
+func AgentName() string {
+	return "codex"
+}
+
+func Normalize(raw []byte) (domain.NormalizedEvent, error) {
+	var p domain.RawPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return domain.NormalizedEvent{}, err
+	}
+
+	path := fileutil.ResolvePath(p.CWD, firstNonEmpty(p.ToolInput.FilePath, p.FilePath))
+	cmd := p.ToolInput.Command
+	action := fileutil.ToolToAction(p.ToolName)
+
+	if path == "" && cmd != "" && action != "BASH" {
+		path = fileutil.ExtractPathFromCommand(cmd)
+	}
+
+	displayPath := path
+	if action == "BASH" && cmd != "" {
+		displayPath = "cmd: " + cmd
+	}
+
+	oldStr, newStr := Diff(DiffInput{
+		OldStr: firstNonEmpty(p.ToolInput.OldStr, p.ToolInput.OldString),
+		NewStr: firstNonEmpty(p.ToolInput.NewStr, p.ToolInput.NewString),
+	})
+	if oldStr == "" && newStr == "" && strings.Contains(strings.ToLower(p.ToolName), "apply_patch") {
+		oldStr, newStr, _ = ParseApplyPatch(cmd)
+	}
+
+	return domain.NormalizedEvent{
+		Agent:          AgentName(),
+		Session:        p.SessionID,
+		HookEventName:  p.HookEventName,
+		TurnID:         p.TurnID,
+		ToolUseID:      p.ToolUseID,
+		Tool:           p.ToolName,
+		Model:          p.Model,
+		Source:         p.Source,
+		CWD:            p.CWD,
+		TranscriptPath: p.TranscriptPath,
+		Prompt:         p.Prompt,
+		Description:    p.ToolInput.Description,
+		Action:         action,
+		Path:           displayPath,
+		Command:        cmd,
+		OldString:      oldStr,
+		NewString:      newStr,
+		RawPayload:     raw,
+	}, nil
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }

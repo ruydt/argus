@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"os"
 	"strings"
+
+	"agent-monitor/internal/domain"
+	"agent-monitor/internal/fileutil"
 )
 
 type DiffInput struct {
@@ -83,4 +86,63 @@ func ComputeUsage(transcriptPath string) SessionUsage {
 		}
 	}
 	return u
+}
+
+func AgentName() string {
+	return "claudecode"
+}
+
+func Normalize(raw []byte) (domain.NormalizedEvent, error) {
+	var p domain.RawPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return domain.NormalizedEvent{}, err
+	}
+
+	path := fileutil.ResolvePath(p.CWD, firstNonEmpty(p.ToolInput.FilePath, p.FilePath))
+	cmd := p.ToolInput.Command
+	action := fileutil.ToolToAction(p.ToolName)
+
+	if path == "" && cmd != "" && action != "BASH" {
+		path = fileutil.ExtractPathFromCommand(cmd)
+	}
+
+	displayPath := path
+	if action == "BASH" && cmd != "" {
+		displayPath = "cmd: " + cmd
+	}
+
+	oldStr, newStr := Diff(DiffInput{
+		OldString: firstNonEmpty(p.ToolInput.OldString, p.ToolInput.OldStr),
+		NewString: firstNonEmpty(p.ToolInput.NewString, p.ToolInput.NewStr, p.ToolInput.Content),
+	})
+
+	return domain.NormalizedEvent{
+		Agent:          AgentName(),
+		Session:        p.SessionID,
+		HookEventName:  p.HookEventName,
+		TurnID:         p.TurnID,
+		ToolUseID:      p.ToolUseID,
+		Tool:           p.ToolName,
+		Model:          p.Model,
+		Source:         p.Source,
+		CWD:            p.CWD,
+		TranscriptPath: p.TranscriptPath,
+		Prompt:         p.Prompt,
+		Description:    p.ToolInput.Description,
+		Action:         action,
+		Path:           displayPath,
+		Command:        cmd,
+		OldString:      oldStr,
+		NewString:      newStr,
+		RawPayload:     raw,
+	}, nil
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }

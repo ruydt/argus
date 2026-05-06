@@ -1,57 +1,51 @@
 import { useEffect, useState } from 'react'
-import type { EventRecord, EventsResponse } from '@/types'
+import type { EventRecord } from '@/types'
+
+function eventKey(e: EventRecord): string {
+  return `${e.session ?? ''}|${e.time}|${e.action}|${e.path}`
+}
 
 export function useEvents() {
   const [events, setEvents] = useState<EventRecord[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let active = true
-    let timeoutId: number | undefined
-    let controller: AbortController | null = null
+    const seen = new Set<string>()
+    const buffer: EventRecord[] = []
+    let rafId: number | undefined
 
-    const fetchEvents = async () => {
-      controller?.abort()
-      controller = new AbortController()
+    const es = new EventSource('/api/events/stream')
 
-      try {
-        const res = await fetch('/api/events', { signal: controller.signal })
-        if (!res.ok) {
-          throw new Error(`Failed to fetch events: ${res.status}`)
-        }
-
-        const data = (await res.json()) as EventsResponse
-        if (!active) {
-          return
-        }
-
-        setEvents(data.events ?? [])
-        setError(null)
-      } catch (error) {
-        if (!active || (error instanceof DOMException && error.name === 'AbortError')) {
-          return
-        }
-
-        setError('Failed to fetch events')
+    const flush = () => {
+      const batch = buffer.splice(0)
+      if (batch.length > 0) {
+        setEvents(prev => [...prev, ...batch])
       }
-
-      if (!active) {
-        return
-      }
-
-      timeoutId = window.setTimeout(() => {
-        void fetchEvents()
-      }, 1000)
     }
 
-    void fetchEvents()
+    es.onmessage = (ev) => {
+      try {
+        const e = JSON.parse(ev.data as string) as EventRecord
+        const key = eventKey(e)
+        if (seen.has(key)) return
+        seen.add(key)
+        buffer.push(e)
+        setError(null)
+
+        if (rafId !== undefined) cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(flush)
+      } catch {
+        // ignore parse errors
+      }
+    }
+
+    es.onerror = () => {
+      setError('Connection lost, reconnecting...')
+    }
 
     return () => {
-      active = false
-      controller?.abort()
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId)
-      }
+      es.close()
+      if (rafId !== undefined) cancelAnimationFrame(rafId)
     }
   }, [])
 

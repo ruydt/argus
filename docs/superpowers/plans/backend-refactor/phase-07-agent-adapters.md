@@ -18,6 +18,8 @@
 
 | Action | Path |
 |--------|------|
+| Create | `backend/internal/agents/claudecode/normalize_test.go` |
+| Create | `backend/internal/agents/codex/normalize_test.go` |
 | Modify | `backend/internal/agents/claudecode/claudecode.go` |
 | Modify | `backend/internal/agents/codex/codex.go` |
 
@@ -34,7 +36,107 @@ Both files already exist with parsing logic. You are **appending** new functions
 
 ## Steps
 
-- [ ] **Step 1: Add imports and functions to `backend/internal/agents/claudecode/claudecode.go`**
+- [ ] **Step 1: Write failing normalization tests**
+
+```go
+// backend/internal/agents/claudecode/normalize_test.go
+package claudecode_test
+
+import (
+	"testing"
+
+	"agent-monitor/internal/agents/claudecode"
+)
+
+func TestNormalize_editPayload(t *testing.T) {
+	raw := []byte(`{
+		"session_id":"s1",
+		"transcript_path":"/home/user/.claude/sessions/abc.jsonl",
+		"cwd":"/tmp",
+		"hook_event_name":"PreToolUse",
+		"model":"claude-opus-4-1",
+		"source":"startup",
+		"turn_id":"t1",
+		"tool_name":"Edit",
+		"tool_use_id":"u1",
+		"prompt":"p",
+		"tool_input":{
+			"file_path":"foo.go",
+			"description":"edit foo",
+			"old_string":"old line",
+			"new_string":"new line"
+		}
+	}`)
+
+	got, err := claudecode.Normalize(raw)
+	if err != nil {
+		t.Fatalf("Normalize: %v", err)
+	}
+	if got.Agent != "claudecode" {
+		t.Errorf("Agent = %q, want claudecode", got.Agent)
+	}
+	if got.Path != "/tmp/foo.go" {
+		t.Errorf("Path = %q, want /tmp/foo.go", got.Path)
+	}
+	if got.Action != "EDIT" {
+		t.Errorf("Action = %q, want EDIT", got.Action)
+	}
+	if got.OldString != "old line" || got.NewString != "new line" {
+		t.Errorf("diff = (%q, %q), want old/new lines", got.OldString, got.NewString)
+	}
+}
+```
+
+```go
+// backend/internal/agents/codex/normalize_test.go
+package codex_test
+
+import (
+	"testing"
+
+	"agent-monitor/internal/agents/codex"
+)
+
+func TestNormalize_applyPatchFallsBackToCommandDiff(t *testing.T) {
+	raw := []byte(`{
+		"session_id":"s2",
+		"transcript_path":"/tmp/codex-session.jsonl",
+		"cwd":"/tmp",
+		"hook_event_name":"PostToolUse",
+		"turn_id":"t2",
+		"tool_name":"apply_patch",
+		"tool_use_id":"u2",
+		"tool_input":{
+			"file_path":"foo.go",
+			"command":"*** Begin Patch\n*** Update File: foo.go\n@@ -1 +1 @@\n-old line\n+new line\n*** End Patch\n"
+		}
+	}`)
+
+	got, err := codex.Normalize(raw)
+	if err != nil {
+		t.Fatalf("Normalize: %v", err)
+	}
+	if got.Agent != "codex" {
+		t.Errorf("Agent = %q, want codex", got.Agent)
+	}
+	if got.Path != "/tmp/foo.go" {
+		t.Errorf("Path = %q, want /tmp/foo.go", got.Path)
+	}
+	if got.OldString != "old line" || got.NewString != "new line" {
+		t.Errorf("diff = (%q, %q), want old/new lines", got.OldString, got.NewString)
+	}
+}
+```
+
+- [ ] **Step 2: Run to verify failure**
+
+```bash
+cd backend && go test ./internal/agents/...
+```
+
+Expected: FAIL — `undefined: Normalize` in both agent packages.
+
+- [ ] **Step 3: Add imports and functions to `backend/internal/agents/claudecode/claudecode.go`**
 
 Add these imports to the existing import block (merge with existing):
 
@@ -111,7 +213,7 @@ func firstNonEmpty(vals ...string) string {
 }
 ```
 
-- [ ] **Step 2: Add imports and functions to `backend/internal/agents/codex/codex.go`**
+- [ ] **Step 4: Add imports and functions to `backend/internal/agents/codex/codex.go`**
 
 Add these imports to the existing import block (merge with existing):
 
@@ -157,13 +259,9 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		NewStr: firstNonEmpty(p.ToolInput.NewStr, p.ToolInput.NewString),
 	})
 
-	// apply_patch: extract diff from command body when Diff returns nothing.
+	// apply_patch carries diff in command body; handler enriches line context later.
 	if oldStr == "" && newStr == "" && strings.Contains(strings.ToLower(p.ToolName), "apply_patch") {
-		var parsedLine int
-		oldStr, newStr, parsedLine = ParseApplyPatch(cmd)
-		if parsedLine == 0 && oldStr != "" && path != "" {
-			_ = fileutil.FindStartLine(path, oldStr) // enriched by hook handler
-		}
+		oldStr, newStr, _ = ParseApplyPatch(cmd)
 	}
 
 	return domain.NormalizedEvent{
@@ -198,27 +296,19 @@ func firstNonEmpty(vals ...string) string {
 }
 ```
 
-- [ ] **Step 3: Verify build**
-
-```bash
-cd backend && go build ./internal/agents/...
-```
-
-Expected: no output, exit 0.
-
-- [ ] **Step 4: Run existing agent tests still pass**
+- [ ] **Step 5: Run tests**
 
 ```bash
 cd backend && go test ./internal/agents/...
 ```
 
-Expected: `ok` for both packages (no regressions).
+Expected: `ok` for both packages.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add backend/internal/agents/
 git commit -m "feat(agents): add Normalize() and AgentName() to claudecode and codex adapters"
 ```
 
-- [ ] **Step 6: Mark complete — update STATUS.md phase 7 to ✅**
+- [ ] **Step 7: Mark complete — update STATUS.md phase 7 to ✅**

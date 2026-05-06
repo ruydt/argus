@@ -44,12 +44,6 @@ func Hook(svc *service.EventService) http.Handler {
 			return
 		}
 
-		if e.Path == "" {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{}`))
-			return
-		}
-
 		e = enrichContext(e)
 
 		if e.Model == "" && e.Session != "" {

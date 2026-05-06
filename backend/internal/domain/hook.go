@@ -25,4 +25,5 @@ type ToolInput struct {
 	NewString   string `json:"new_string"`
 	OldStr      string `json:"old_str"`
 	NewStr      string `json:"new_str"`
+	Content     string `json:"content"`
 }
