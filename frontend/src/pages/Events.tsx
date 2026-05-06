@@ -1,11 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { agentForEvent } from '../agents';
-import { CodexSession } from '../components/events/CodexSession';
-import { ClaudeSession } from '../components/events/ClaudeSession';
+import { AgentSession } from '../components/events/AgentSession';
+import { useEvents } from '../hooks/useEvents';
 
 export function Events() {
-  const [events, setEvents] = useState<any[]>([]);
   const [actionFilter, setActionFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('newest');
@@ -17,50 +26,35 @@ export function Events() {
     useOutletContext<any>();
   const fetchedUsage = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchEvents();
-    const interval = setInterval(fetchEvents, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const { events } = useEvents();
 
-  // Auto-fetch usage for agents that expose session transcript usage.
   useEffect(() => {
     const seen = new Map<string, string>();
     events.forEach(e => {
       const agent = agentForEvent(e);
-      if (agent.supportsSessionUsage && e.transcript_path && e.session && !seen.has(e.session))
+      if (agent.supportsSessionUsage && e.transcript_path && e.session && !seen.has(e.session)) {
         seen.set(e.session, e.transcript_path);
-    });
-    seen.forEach((path, key) => fetchUsage(path, key));
-  }, [events]);
-
-  const fetchUsage = async (transcriptPath: string, sessionKey: string) => {
-    if (!transcriptPath || fetchedUsage.current.has(sessionKey)) return;
-    fetchedUsage.current.add(sessionKey);
-    try {
-      const res = await fetch(`/api/session-usage?path=${encodeURIComponent(transcriptPath)}`);
-      const data = await res.json();
-      const hasAnyUsage = Number(data?.input_tokens || 0) > 0 ||
-        Number(data?.output_tokens || 0) > 0 ||
-        Number(data?.cache_read_tokens || 0) > 0 ||
-        Number(data?.cache_creation_tokens || 0) > 0 ||
-        Number(data?.turns || 0) > 0;
-      if (!hasAnyUsage) {
-        fetchedUsage.current.delete(sessionKey);
       }
-      setSessionUsage((prev: any) => ({ ...prev, [sessionKey]: data }));
-    } catch (e) { fetchedUsage.current.delete(sessionKey); }
-  };
-
-  const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-
-  const fetchEvents = async () => {
-    try {
-      const res = await fetch('/api/events');
-      const data = await res.json();
-      setEvents(data.events || []);
-    } catch (e) { }
-  };
+    });
+    seen.forEach(async (path, key) => {
+      if (!path || fetchedUsage.current.has(key)) return;
+      fetchedUsage.current.add(key);
+      try {
+        const res = await fetch(`/api/session-usage?path=${encodeURIComponent(path)}`);
+        const data = await res.json();
+        const hasAnyUsage =
+          Number(data?.input_tokens || 0) > 0 ||
+          Number(data?.output_tokens || 0) > 0 ||
+          Number(data?.cache_read_tokens || 0) > 0 ||
+          Number(data?.cache_creation_tokens || 0) > 0 ||
+          Number(data?.turns || 0) > 0;
+        if (!hasAnyUsage) fetchedUsage.current.delete(key);
+        setSessionUsage((prev: any) => ({ ...prev, [key]: data }));
+      } catch (_) {
+        fetchedUsage.current.delete(key);
+      }
+    });
+  }, [events]);
 
   const toggleSession = (sessionId: string) => {
     setCollapsedSessions((prev: Set<string>) => {
@@ -73,6 +67,7 @@ export function Events() {
 
   const shortId = (v: string) => v ? v.substring(0, 8) : 'unknown';
   const groupKey = (e: any) => e.session || e.transcript_path || 'ungrouped';
+  const fmtTokens = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 
   const extractPatchStartLine = (text: string) => {
     if (!text) return 0;
@@ -87,7 +82,7 @@ export function Events() {
     ctxBefore: any[],
     ctxAfter: any[],
     patchText?: string,
-  ) => {
+  ): ReactNode => {
     const oldLines = oldStr ? oldStr.split('\n') : [];
     const newLines = newStr ? newStr.split('\n') : [];
     const fallbackStart = extractPatchStartLine(patchText || '');
@@ -104,25 +99,25 @@ export function Events() {
           </div>
         ))}
         {oldLines.map((line, i) => {
-          const n = oldLine;
-          oldLine++;
+          const n = oldLine++;
           return (
-          <div key={`rm-${i}`} className="diff-line diff-removed">
-            <span className="diff-ln">{n}</span>
-            <span className="diff-marker">-</span>
-            <span className="diff-content">{line}</span>
-          </div>
-        );})}
+            <div key={`rm-${i}`} className="diff-line diff-removed">
+              <span className="diff-ln">{n}</span>
+              <span className="diff-marker">-</span>
+              <span className="diff-content">{line}</span>
+            </div>
+          );
+        })}
         {newLines.map((line, i) => {
-          const n = newLine;
-          newLine++;
+          const n = newLine++;
           return (
-          <div key={`add-${i}`} className="diff-line diff-added">
-            <span className="diff-ln">{n}</span>
-            <span className="diff-marker">+</span>
-            <span className="diff-content">{line}</span>
-          </div>
-        );})}
+            <div key={`add-${i}`} className="diff-line diff-added">
+              <span className="diff-ln">{n}</span>
+              <span className="diff-marker">+</span>
+              <span className="diff-content">{line}</span>
+            </div>
+          );
+        })}
         {ctxAfter?.map((l: any) => (
           <div key={`ctx-a-${l.num}`} className="diff-line diff-ctx">
             <span className="diff-ln">{l.num}</span>
@@ -142,45 +137,29 @@ export function Events() {
     let inPatch = false;
 
     for (const line of lines) {
-      if (line.startsWith('*** Begin Patch')) {
-        inPatch = true;
-        continue;
-      }
+      if (line.startsWith('*** Begin Patch')) { inPatch = true; continue; }
       if (!inPatch) continue;
       if (line.startsWith('*** End Patch')) break;
 
       if (line.includes('@@')) {
         const m = line.match(/@@\s*-(\d+)(?:,\d+)?\s*\+(\d+)/);
-        if (m) {
-          oldLine = Number(m[1]);
-          newLine = Number(m[2]);
-        }
+        if (m) { oldLine = Number(m[1]); newLine = Number(m[2]); }
         continue;
       }
-      
       if (line.startsWith('***')) continue;
 
-      // Detect markers even if they have leading whitespace (Codex sometimes does this)
       const match = line.match(/^(\s*)([-+ ])(.*)$/);
       if (!match) continue;
       const [, indent, marker, content] = match;
 
-      if (marker === '-') {
-        out.push({ kind: 'del', num: oldLine, text: indent + content });
-        oldLine++;
-      } else if (marker === '+') {
-        out.push({ kind: 'add', num: newLine, text: indent + content });
-        newLine++;
-      } else if (marker === ' ') {
-        out.push({ kind: 'ctx', num: oldLine, text: indent + content });
-        oldLine++;
-        newLine++;
-      }
+      if (marker === '-') { out.push({ kind: 'del', num: oldLine, text: indent + content }); oldLine++; }
+      else if (marker === '+') { out.push({ kind: 'add', num: newLine, text: indent + content }); newLine++; }
+      else if (marker === ' ') { out.push({ kind: 'ctx', num: oldLine, text: indent + content }); oldLine++; newLine++; }
     }
     return out;
   };
 
-  const renderPatchDiff = (text: string, startLine: number) => {
+  const renderPatchDiff = (text: string, startLine: number): ReactNode => {
     const rows = parseApplyPatch(text, startLine);
     if (rows.length === 0) return null;
     return (
@@ -199,9 +178,9 @@ export function Events() {
     );
   };
 
-  const highlight = (text: string, query: string) => {
+  const highlight = (text: string, query: string): ReactNode => {
     if (!query) return text;
-    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^$(){}|[\\]\\\\]/g, '\\$&')})`, 'gi'));
+    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&')})`, 'gi'));
     return (
       <>
         {parts.map((part, i) =>
@@ -232,7 +211,6 @@ export function Events() {
     }
   };
 
-  // Grouping and Filtering
   const filtered = events.filter(e => {
     const eventTime = new Date(e.time).getTime();
     if (timeRange === 'custom') {
@@ -244,16 +222,15 @@ export function Events() {
       const startMs = getRangeStartMs();
       if (!Number.isNaN(startMs) && eventTime < startMs) return false;
     }
-
     if (actionFilter !== 'all' && e.action !== actionFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      if (!e.path?.toLowerCase().includes(q) &&
+      if (
+        !e.path?.toLowerCase().includes(q) &&
         !e.session?.toLowerCase().includes(q) &&
         !e.command?.toLowerCase().includes(q) &&
-        !e.prompt?.toLowerCase().includes(q)) {
-        return false;
-      }
+        !e.prompt?.toLowerCase().includes(q)
+      ) return false;
     }
     return true;
   });
@@ -267,7 +244,7 @@ export function Events() {
 
   const sessionList = Array.from(grouped.keys()).map(key => {
     const groupEvents = grouped.get(key)!;
-    const sortedEvents = groupEvents.sort((a, b) =>
+    const sortedEvents = [...groupEvents].sort((a, b) =>
       sortOrder === 'newest'
         ? new Date(b.time).getTime() - new Date(a.time).getTime()
         : new Date(a.time).getTime() - new Date(b.time).getTime()
@@ -289,56 +266,85 @@ export function Events() {
           {tooltip.text.split('\n').map((line, i) => <div key={i}>{line}</div>)}
         </div>
       )}
-      <div className="toolbar">
-        <div className="tg">
-          <span className="tl">Action</span>
-          <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}>
-            <option value="all">ALL</option>
-            <option value="EDIT">EDIT</option>
-            <option value="BASH">BASH</option>
-          </select>
+
+      <div className="flex gap-5 items-center px-4 py-[10px] bg-[#111] border-b border-[#333] flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-[0.7rem] uppercase text-[#666]">Action</span>
+          <Select value={actionFilter} onValueChange={setActionFilter}>
+            <SelectTrigger className="h-auto py-1 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] w-[100px] focus:ring-0 focus:ring-offset-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
+              <SelectGroup>
+                <SelectItem value="all">ALL</SelectItem>
+                <SelectItem value="EDIT">EDIT</SelectItem>
+                <SelectItem value="BASH">BASH</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="tg" style={{ flex: 1 }}>
-          <span className="tl">Search</span>
-          <input
+
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          <span className="text-[0.7rem] uppercase text-[#666]">Search</span>
+          <Input
+            className="h-auto py-1 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 focus-visible:ring-offset-0"
             placeholder="Filter by path, prompt, or session ID..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="tg">
-          <span className="tl">Sort</span>
-          <select value={sortOrder} onChange={e => setSortOrder(e.target.value)}>
-            <option value="newest">NEWEST</option>
-            <option value="oldest">OLDEST</option>
-          </select>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[0.7rem] uppercase text-[#666]">Sort</span>
+          <Select value={sortOrder} onValueChange={setSortOrder}>
+            <SelectTrigger className="h-auto py-1 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] w-[110px] focus:ring-0 focus:ring-offset-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
+              <SelectGroup>
+                <SelectItem value="newest">NEWEST</SelectItem>
+                <SelectItem value="oldest">OLDEST</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="tg">
-          <span className="tl">Time</span>
-          <select value={timeRange} onChange={e => setTimeRange(e.target.value)}>
-            <option value="5m">Last 5 minutes</option>
-            <option value="15m">Last 15 minutes</option>
-            <option value="1h">Last 1 hour</option>
-            <option value="6h">Last 6 hours</option>
-            <option value="24h">Last 24 hours</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="custom">Custom absolute range</option>
-          </select>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[0.7rem] uppercase text-[#666]">Time</span>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="h-auto py-1 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] w-[160px] focus:ring-0 focus:ring-offset-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
+              <SelectGroup>
+                <SelectItem value="5m">Last 5 minutes</SelectItem>
+                <SelectItem value="15m">Last 15 minutes</SelectItem>
+                <SelectItem value="1h">Last 1 hour</SelectItem>
+                <SelectItem value="6h">Last 6 hours</SelectItem>
+                <SelectItem value="24h">Last 24 hours</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="custom">Custom range</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
+
         {timeRange === 'custom' && (
           <>
-            <div className="tg">
-              <span className="tl">Start</span>
-              <input
+            <div className="flex items-center gap-2">
+              <span className="text-[0.7rem] uppercase text-[#666]">Start</span>
+              <Input
+                className="h-auto py-1 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 w-[160px]"
                 placeholder="2026-05-05 10:00:00"
                 value={customStart}
                 onChange={e => setCustomStart(e.target.value)}
               />
             </div>
-            <div className="tg">
-              <span className="tl">End</span>
-              <input
+            <div className="flex items-center gap-2">
+              <span className="text-[0.7rem] uppercase text-[#666]">End</span>
+              <Input
+                className="h-auto py-1 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 w-[160px]"
                 placeholder="2026-05-05 12:00:00"
                 value={customEnd}
                 onChange={e => setCustomEnd(e.target.value)}
@@ -347,47 +353,24 @@ export function Events() {
           </>
         )}
       </div>
-      <div className="main">
-        <div className="panel" style={{ borderRight: 'none' }}>
-          <div className="ph">Session Events</div>
-          <div className="pb">
-            {sessionList.length === 0 ? (
-              <div style={{ color: 'var(--dim)', fontStyle: 'italic', padding: '10px' }}>
-                No matching events.
-              </div>
-            ) : sessionList.map(({ key, events, lastTime }) => {
-              const e0 = events[0];
-              const isCollapsed = collapsedSessions.has(key);
-              const agent = agentForEvent(e0);
 
-              if (agent.id === 'claudecode') {
-                return (
-                  <ClaudeSession
-                    key={key}
-                    keyId={key}
-                    events={events}
-                    lastTime={lastTime}
-                    isCollapsed={isCollapsed}
-                    toggleSession={toggleSession}
-                    searchQuery={searchQuery}
-                    shortId={shortId}
-                    highlight={highlight}
-                    sessionUsage={sessionUsage}
-                    fmtTokens={fmtTokens}
-                    setTooltip={setTooltip}
-                    renderDiffLines={renderDiffLines}
-                    renderPatchDiff={renderPatchDiff}
-                    agent={agent}
-                  />
-                );
-              }
+      <div className="flex flex-col flex-1 min-h-0">
+        <div className="px-4 py-[10px] bg-[#111] border-b border-[#333] text-[0.75rem] uppercase tracking-[0.1em] text-[#666]">
+          Session Events
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          {sessionList.length === 0 ? (
+            <div className="text-[#666] italic p-[10px]">No matching events.</div>
+          ) : (
+            sessionList.map(({ key, events: sessionEvents, lastTime }) => {
+              const agent = agentForEvent(sessionEvents[0]);
               return (
-                <CodexSession
+                <AgentSession
                   key={key}
                   keyId={key}
-                  events={events}
+                  events={sessionEvents}
                   lastTime={lastTime}
-                  isCollapsed={isCollapsed}
+                  isCollapsed={collapsedSessions.has(key)}
                   toggleSession={toggleSession}
                   searchQuery={searchQuery}
                   shortId={shortId}
@@ -400,8 +383,8 @@ export function Events() {
                   agent={agent}
                 />
               );
-            })}
-          </div>
+            })
+          )}
         </div>
       </div>
     </>
