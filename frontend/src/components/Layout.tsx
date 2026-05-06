@@ -6,28 +6,28 @@ import type { LayoutOutletContext, SessionUsage } from '@/types'
 import { Sidebar } from './Sidebar'
 
 export function Layout() {
-  const [collapsed, setCollapsed] = useState(() =>
-    localStorage.getItem('sidebar_collapsed') === 'true'
-  );
-  const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(new Set());
-  const [sessionUsage, setSessionUsage] = useState<Record<string, SessionUsage>>({});
-  const [time, setTime] = useState(() => new Date().toLocaleTimeString());
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('sidebar_collapsed') === 'true'
+  )
+  const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(new Set())
+  const [sessionUsage, setSessionUsage] = useState<Record<string, SessionUsage>>({})
+  const [time, setTime] = useState(() => new Date().toLocaleTimeString())
 
   const outletContext: LayoutOutletContext = {
     collapsedSessions,
     setCollapsedSessions,
     sessionUsage,
     setSessionUsage,
-  };
+  }
 
   useEffect(() => {
-    localStorage.setItem('sidebar_collapsed', collapsed.toString());
-  }, [collapsed]);
+    localStorage.setItem('sidebar_collapsed', collapsed.toString())
+  }, [collapsed])
 
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+    const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   return (
     <div
@@ -44,7 +44,7 @@ export function Layout() {
               variant="ghost"
               size="sm"
               className="mr-3 border border-[#333] text-[#cccccc] hover:bg-white/5 hover:text-[#cccccc] px-2 py-1 h-auto"
-              onClick={() => setCollapsed(c => !c)}
+              onClick={() => setCollapsed((c) => !c)}
             >
               ☰
             </Button>
@@ -55,5 +55,5 @@ export function Layout() {
         <Outlet context={outletContext} />
       </div>
     </div>
-  );
+  )
 }

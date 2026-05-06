@@ -11,12 +11,12 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ["nonendemic-intermolar-exie.ngrok-free.dev"],
+    allowedHosts: ['nonendemic-intermolar-exie.ngrok-free.dev'],
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8765',
         changeOrigin: true,
-      }
-    }
-  }
+      },
+    },
+  },
 })

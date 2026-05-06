@@ -1,15 +1,15 @@
-import { NavLink } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { NavLink } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface SidebarProps {
-  collapsed: boolean;
+  collapsed: boolean
 }
 
 const NAV_ITEMS = [
   { to: '/', label: 'Terminal Events', end: true },
   { to: '/usage', label: 'API Usage Tracker', end: false },
-] as const;
+] as const
 
 export function Sidebar({ collapsed }: SidebarProps) {
   return (
@@ -45,5 +45,5 @@ export function Sidebar({ collapsed }: SidebarProps) {
         ))}
       </nav>
     </div>
-  );
+  )
 }

@@ -1,5 +1,5 @@
-import type { AgentConfig } from '../types';
-import { OpenAILogo } from '../logos';
+import type { AgentConfig } from '../types'
+import { OpenAILogo } from '../logos'
 
 export const codexAgent: AgentConfig = {
   id: 'codex',
@@ -19,12 +19,14 @@ export const codexAgent: AgentConfig = {
       tip: `Output tokens: ${usage.output_tokens.toLocaleString()}\nTotal model output tokens for this Codex session.`,
     },
     ...(usage.cache_read_tokens > 0
-      ? [{
-          cls: 'usage-cache',
-          label: `⚡${formatTokens(usage.cache_read_tokens)}`,
-          tip: `Cached input tokens: ${usage.cache_read_tokens.toLocaleString()}\nInput tokens served from cache.`,
-        }]
+      ? [
+          {
+            cls: 'usage-cache',
+            label: `⚡${formatTokens(usage.cache_read_tokens)}`,
+            tip: `Cached input tokens: ${usage.cache_read_tokens.toLocaleString()}\nInput tokens served from cache.`,
+          },
+        ]
       : []),
   ],
   matchesEvent: () => true,
-};
+}

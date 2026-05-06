@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { Events } from './pages/Events';
-import { Usage } from './pages/Usage';
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Layout } from './components/Layout'
+import { Events } from './pages/Events'
+import { Usage } from './pages/Usage'
 
 export default function App() {
   return (
@@ -13,5 +13,5 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
-  );
+  )
 }

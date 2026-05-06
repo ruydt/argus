@@ -18,8 +18,5 @@ export type AgentConfig = {
   Logo: ComponentType<{ size?: number }>
   supportsSessionUsage: boolean
   matchesEvent: (event: EventRecord) => boolean
-  buildUsageItems?: (
-    usage: SessionUsage,
-    formatTokens: (n: number) => string
-  ) => UsageTooltipItem[]
+  buildUsageItems?: (usage: SessionUsage, formatTokens: (n: number) => string) => UsageTooltipItem[]
 }
