@@ -1,0 +1,381 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/geist';
+
+@custom-variant dark (&:is(.dark *));
+
+/* App design tokens + shadcn dark theme tokens */
+:root {
+  /* App custom tokens */
+  --bg: #0c0c0c;
+  --header: #1e1e1e;
+  --text: #cccccc;
+  --dim: #666;
+  --brand: #47ff9c;
+  --app-border: #333;
+  --delete: #ff5f56;
+  --create: #47ff9c;
+  --edit: #3fa5ff;
+  --bash: #f5a623;
+
+  /* shadcn semantic tokens — set to dark values since app is always dark */
+  --background: #0c0c0c;
+  --foreground: #cccccc;
+  --card: #1a1a1a;
+  --card-foreground: #cccccc;
+  --popover: #1a1a1a;
+  --popover-foreground: #cccccc;
+  --primary: #cccccc;
+  --primary-foreground: #0c0c0c;
+  --secondary: #1e1e1e;
+  --secondary-foreground: #cccccc;
+  --muted: #1e1e1e;
+  --muted-foreground: #666;
+  --accent: #1e1e1e;
+  --accent-foreground: #cccccc;
+  --destructive: #ff5f56;
+  --border: #333;
+  --input: #333;
+  --ring: #555;
+  --radius: 0.5rem;
+  --chart-1: #f97316;
+  --chart-2: #818cf8;
+  --chart-3: #47ff9c;
+  --chart-4: #ffd97e;
+  --chart-5: #ff8e8e;
+  --sidebar: #0c0c0c;
+  --sidebar-foreground: #cccccc;
+  --sidebar-primary: #47ff9c;
+  --sidebar-primary-foreground: #0c0c0c;
+  --sidebar-accent: #1e1e1e;
+  --sidebar-accent-foreground: #cccccc;
+  --sidebar-border: #333;
+  --sidebar-ring: #555;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+
+  /* Expose app tokens as Tailwind utilities */
+  --color-bg: var(--bg);
+  --color-header: var(--header);
+  --color-app-text: var(--text);
+  --color-dim: var(--dim);
+  --color-brand: var(--brand);
+  --color-app-border: var(--app-border);
+  --color-delete: var(--delete);
+  --color-create: var(--create);
+  --color-edit: var(--edit);
+  --color-bash: var(--bash);
+
+  /* shadcn color utilities */
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ─── Action color classes (referenced by event rows) ─── */
+.CREATE {
+  color: var(--create);
+}
+.EDIT {
+  color: var(--edit);
+}
+.DELETE {
+  color: var(--delete);
+}
+.BASH {
+  color: var(--bash);
+}
+mark {
+  background: rgba(71, 255, 156, 0.3);
+  color: #fff;
+}
+
+/* ─── Hook event badge colors ─── */
+.hook {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  margin-top: 1px;
+  margin-right: 4px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.hook-SessionStart {
+  color: #7ee7ff;
+  border-color: rgba(126, 231, 255, 0.35);
+  background: rgba(126, 231, 255, 0.08);
+}
+.hook-PreToolUse {
+  color: #cfa7ff;
+  border-color: rgba(207, 167, 255, 0.35);
+  background: rgba(207, 167, 255, 0.08);
+}
+.hook-PermissionRequest {
+  color: #ffcc7e;
+  border-color: rgba(255, 204, 126, 0.35);
+  background: rgba(255, 204, 126, 0.08);
+}
+.hook-PostToolUse {
+  color: #7effa5;
+  border-color: rgba(126, 255, 165, 0.35);
+  background: rgba(126, 255, 165, 0.08);
+}
+.hook-UserPromptSubmit {
+  color: #ff8e8e;
+  border-color: rgba(255, 142, 142, 0.35);
+  background: rgba(255, 142, 142, 0.08);
+}
+.hook-Stop {
+  color: #9d9d9d;
+  border-color: rgba(157, 157, 157, 0.35);
+  background: rgba(157, 157, 157, 0.08);
+}
+
+/* ─── Event model badge ─── */
+.event-model {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #8bc5ff;
+  border: 1px solid rgba(139, 197, 255, 0.32);
+  background: rgba(139, 197, 255, 0.08);
+  vertical-align: middle;
+}
+
+/* ─── Agent logo badges ─── */
+.agent-badge {
+  font-size: 0.66rem;
+  font-weight: 600;
+  padding: 2px 0;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.agent-badge svg {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+.agent-codex {
+  color: #5cceff;
+  border-color: rgba(92, 206, 255, 0.35);
+  background: rgba(92, 206, 255, 0.08);
+}
+.agent-claude {
+  color: #e8845c;
+  border-color: rgba(232, 132, 92, 0.35);
+  background: rgba(232, 132, 92, 0.08);
+}
+
+/* ─── Usage token badges ─── */
+.usage-summary {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 10px;
+  align-items: center;
+}
+.usage-item {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.usage-in {
+  color: #7eb8ff;
+  border-color: rgba(126, 184, 255, 0.3);
+  background: rgba(126, 184, 255, 0.07);
+}
+.usage-out {
+  color: #c9a0ff;
+  border-color: rgba(201, 160, 255, 0.3);
+  background: rgba(201, 160, 255, 0.07);
+}
+.usage-cache {
+  color: #ffd97e;
+  border-color: rgba(255, 217, 126, 0.3);
+  background: rgba(255, 217, 126, 0.07);
+}
+.usage-cache-write {
+  color: #ffb347;
+  border-color: rgba(255, 179, 71, 0.3);
+  background: rgba(255, 179, 71, 0.07);
+}
+.usage-turns {
+  color: #888;
+  border-color: rgba(136, 136, 136, 0.3);
+  background: rgba(136, 136, 136, 0.07);
+}
+
+/* ─── Diff viewer ─── */
+.eblock-diff {
+  padding: 0 !important;
+  overflow: hidden;
+}
+.eblock-diff strong {
+  display: block;
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  text-transform: none;
+  color: #aaa;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.diff-block {
+  font-size: 0.74rem;
+  font-family: inherit;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.diff-line {
+  display: flex;
+  gap: 0;
+  line-height: 1.5;
+}
+.diff-ln {
+  flex-shrink: 0;
+  width: 36px;
+  text-align: right;
+  padding-right: 8px;
+  opacity: 0.4;
+  user-select: none;
+  font-size: 0.7rem;
+}
+.diff-marker {
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+  font-weight: bold;
+  user-select: none;
+}
+.diff-content {
+  flex: 1;
+  padding: 0 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.diff-ctx {
+  color: #666;
+}
+.diff-ctx .diff-ln {
+  opacity: 0.3;
+}
+.diff-removed {
+  background: rgba(255, 80, 80, 0.12);
+  color: #ff8080;
+}
+.diff-removed .diff-marker {
+  color: #ff5555;
+  background: rgba(255, 80, 80, 0.18);
+}
+.diff-added {
+  background: rgba(71, 255, 156, 0.08);
+  color: #7effa5;
+}
+.diff-added .diff-marker {
+  color: #47ff9c;
+  background: rgba(71, 255, 156, 0.15);
+}
+
+/* ─── Floating tooltip ─── */
+.floating-tip {
+  position: fixed;
+  background: #1a1a1a;
+  color: #ccc;
+  border: 1px solid #444;
+  padding: 7px 11px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  line-height: 1.6;
+  max-width: 260px;
+  pointer-events: none;
+  z-index: 9999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+}
