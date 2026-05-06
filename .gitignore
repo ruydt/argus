@@ -8,3 +8,5 @@ bin/
 *.swp
 .DS_Store
 
+.gitnexus
+.worktrees/
