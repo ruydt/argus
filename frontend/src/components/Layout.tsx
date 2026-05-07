@@ -39,7 +39,7 @@ export function Layout() {
     >
       <Sidebar collapsed={collapsed} />
       <div className="flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b border-border bg-background px-4 py-2.5 text-[0.75rem] text-muted-foreground">
+        <header className="flex items-center justify-between border-b border-border bg-header px-4 py-2.5 text-[0.75rem] text-muted-foreground">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -50,8 +50,8 @@ export function Layout() {
             >
               <PanelLeft className="size-4" />
             </Button>
-            <span className="text-[0.65rem] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-              Shell
+            <span className="text-[0.65rem] font-medium tracking-[0.08em] text-muted-foreground">
+              agent-monitor
             </span>
           </div>
           <span className="tabular-nums text-muted-foreground">{time}</span>
