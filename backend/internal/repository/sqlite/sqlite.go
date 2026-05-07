@@ -15,7 +15,16 @@ import (
 )
 
 //go:embed migrations/001_init.sql
-var schema string
+var schema001 string
+
+//go:embed migrations/002_add_event_fields.sql
+var schema002 string
+
+//go:embed migrations/003_tool_calls.sql
+var schema003 string
+
+//go:embed migrations/004_tool_result.sql
+var schema004 string
 
 type DB struct {
 	db *sql.DB
@@ -26,10 +35,40 @@ func New(path string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite: %w", err)
 	}
-	if _, err := db.Exec(schema); err != nil {
-		return nil, fmt.Errorf("run migrations: %w", err)
+	d := &DB{db: db}
+	if err := d.migrate(); err != nil {
+		return nil, err
 	}
-	return &DB{db: db}, nil
+	return d, nil
+}
+
+func (d *DB) migrate() error {
+	if _, err := d.db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)`); err != nil {
+		return fmt.Errorf("create migrations table: %w", err)
+	}
+	migrations := []struct {
+		version int
+		sql     string
+	}{
+		{1, schema001},
+		{2, schema002},
+		{3, schema003},
+		{4, schema004},
+	}
+	for _, m := range migrations {
+		var count int
+		_ = d.db.QueryRow(`SELECT COUNT(*) FROM schema_migrations WHERE version = ?`, m.version).Scan(&count)
+		if count > 0 {
+			continue
+		}
+		if _, err := d.db.Exec(m.sql); err != nil {
+			return fmt.Errorf("migration %d: %w", m.version, err)
+		}
+		if _, err := d.db.Exec(`INSERT INTO schema_migrations (version) VALUES (?)`, m.version); err != nil {
+			return fmt.Errorf("record migration %d: %w", m.version, err)
+		}
+	}
+	return nil
 }
 
 func (d *DB) Add(e domain.NormalizedEvent) error {
@@ -38,14 +77,28 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 			created_at, agent, session_id, hook_event_name, turn_id, tool_use_id,
 			tool_name, model, source, cwd, transcript_path,
 			action, path, command, old_string, new_string, start_line,
-			ctx_before, ctx_after, raw_payload, dedup_key
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+			ctx_before, ctx_after, raw_payload, dedup_key,
+			prompt, description, permission_mode, response,
+			error_message, error_type,
+			subagent_id, subagent_type,
+			task_id, task_title, task_description,
+			notification_type, notification_title, notification_message,
+			change_type, old_cwd, new_cwd, tool_calls_json,
+			tool_result_stdout, tool_result_stderr, duration_ms
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		e.Time, e.Agent, e.Session, e.HookEventName, e.TurnID, e.ToolUseID,
 		e.Tool, e.Model, e.Source, e.CWD, e.TranscriptPath,
 		nullStr(e.Action), nullStr(e.Path), nullStr(e.Command),
 		nullStr(e.OldString), nullStr(e.NewString), nullInt(e.StartLine),
 		jsonSlice(e.CtxBefore), jsonSlice(e.CtxAfter),
 		string(e.RawPayload), dedupKey(e),
+		nullStr(e.Prompt), nullStr(e.Description), nullStr(e.PermissionMode), nullStr(e.Response),
+		nullStr(e.ErrorMessage), nullStr(e.ErrorType),
+		nullStr(e.SubagentID), nullStr(e.SubagentType),
+		nullStr(e.TaskID), nullStr(e.TaskTitle), nullStr(e.TaskDescription),
+		nullStr(e.NotificationType), nullStr(e.NotificationTitle), nullStr(e.NotificationMessage),
+		nullStr(e.ChangeType), nullStr(e.OldCWD), nullStr(e.NewCWD), nullStr(e.ToolCallsJSON),
+		nullStr(e.ToolResultStdout), nullStr(e.ToolResultStderr), nullInt(e.DurationMS),
 	)
 	return err
 }
@@ -58,7 +111,17 @@ func (d *DB) List(limit int) ([]domain.NormalizedEvent, error) {
 		       COALESCE(cwd,''), COALESCE(transcript_path,''),
 		       COALESCE(action,''), COALESCE(path,''), COALESCE(command,''),
 		       COALESCE(old_string,''), COALESCE(new_string,''),
-		       COALESCE(start_line,0), ctx_before, ctx_after
+		       COALESCE(start_line,0), ctx_before, ctx_after,
+		       COALESCE(prompt,''), COALESCE(description,''),
+		       COALESCE(permission_mode,''), COALESCE(response,''),
+		       COALESCE(error_message,''), COALESCE(error_type,''),
+		       COALESCE(subagent_id,''), COALESCE(subagent_type,''),
+		       COALESCE(task_id,''), COALESCE(task_title,''), COALESCE(task_description,''),
+		       COALESCE(notification_type,''), COALESCE(notification_title,''), COALESCE(notification_message,''),
+		       COALESCE(change_type,''), COALESCE(old_cwd,''), COALESCE(new_cwd,''),
+		       COALESCE(tool_calls_json,''),
+		       COALESCE(tool_result_stdout,''), COALESCE(tool_result_stderr,''),
+		       COALESCE(duration_ms,0)
 		FROM hook_events
 		ORDER BY id DESC
 		LIMIT ?`, limit)
@@ -78,6 +141,14 @@ func (d *DB) List(limit int) ([]domain.NormalizedEvent, error) {
 			&e.Action, &e.Path, &e.Command,
 			&e.OldString, &e.NewString, &e.StartLine,
 			&ctxBefore, &ctxAfter,
+			&e.Prompt, &e.Description,
+			&e.PermissionMode, &e.Response,
+			&e.ErrorMessage, &e.ErrorType,
+			&e.SubagentID, &e.SubagentType,
+			&e.TaskID, &e.TaskTitle, &e.TaskDescription,
+			&e.NotificationType, &e.NotificationTitle, &e.NotificationMessage,
+			&e.ChangeType, &e.OldCWD, &e.NewCWD, &e.ToolCallsJSON,
+			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS,
 		); err != nil {
 			return nil, err
 		}

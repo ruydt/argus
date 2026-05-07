@@ -25,6 +25,27 @@ type NormalizedEvent struct {
 	CtxAfter       []CtxLine `json:"ctx_after,omitempty"`
 	Agent          string    `json:"agent,omitempty"`
 	RawPayload     []byte    `json:"-"`
+
+	// Extended fields for new hook events
+	PermissionMode      string `json:"permission_mode,omitempty"`
+	Response            string `json:"response,omitempty"`
+	ErrorMessage        string `json:"error_message,omitempty"`
+	ErrorType           string `json:"error_type,omitempty"`
+	SubagentID          string `json:"subagent_id,omitempty"`
+	SubagentType        string `json:"subagent_type,omitempty"`
+	TaskID              string `json:"task_id,omitempty"`
+	TaskTitle           string `json:"task_title,omitempty"`
+	TaskDescription     string `json:"task_description,omitempty"`
+	NotificationType    string `json:"notification_type,omitempty"`
+	NotificationTitle   string `json:"notification_title,omitempty"`
+	NotificationMessage string `json:"notification_message,omitempty"`
+	ChangeType          string `json:"change_type,omitempty"`
+	OldCWD              string `json:"old_cwd,omitempty"`
+	NewCWD              string `json:"new_cwd,omitempty"`
+	ToolCallsJSON       string `json:"tool_calls_json,omitempty"`
+	ToolResultStdout    string `json:"tool_result_stdout,omitempty"`
+	ToolResultStderr    string `json:"tool_result_stderr,omitempty"`
+	DurationMS          int    `json:"duration_ms,omitempty"`
 }
 
 type CtxLine struct {

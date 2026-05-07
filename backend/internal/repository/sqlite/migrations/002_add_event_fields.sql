@@ -1,0 +1,17 @@
+ALTER TABLE hook_events ADD COLUMN prompt TEXT;
+ALTER TABLE hook_events ADD COLUMN description TEXT;
+ALTER TABLE hook_events ADD COLUMN permission_mode TEXT;
+ALTER TABLE hook_events ADD COLUMN response TEXT;
+ALTER TABLE hook_events ADD COLUMN error_message TEXT;
+ALTER TABLE hook_events ADD COLUMN error_type TEXT;
+ALTER TABLE hook_events ADD COLUMN subagent_id TEXT;
+ALTER TABLE hook_events ADD COLUMN subagent_type TEXT;
+ALTER TABLE hook_events ADD COLUMN task_id TEXT;
+ALTER TABLE hook_events ADD COLUMN task_title TEXT;
+ALTER TABLE hook_events ADD COLUMN task_description TEXT;
+ALTER TABLE hook_events ADD COLUMN notification_type TEXT;
+ALTER TABLE hook_events ADD COLUMN notification_title TEXT;
+ALTER TABLE hook_events ADD COLUMN notification_message TEXT;
+ALTER TABLE hook_events ADD COLUMN change_type TEXT;
+ALTER TABLE hook_events ADD COLUMN old_cwd TEXT;
+ALTER TABLE hook_events ADD COLUMN new_cwd TEXT;

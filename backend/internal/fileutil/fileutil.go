@@ -19,12 +19,50 @@ func ResolvePath(cwd, path string) string {
 }
 
 func ToolToAction(tool string) string {
+	if tool == "" {
+		return ""
+	}
 	t := strings.ToLower(tool)
 	switch {
 	case strings.Contains(t, "bash") || strings.Contains(t, "shell"):
 		return "BASH"
 	default:
 		return "EDIT"
+	}
+}
+
+func HookEventAction(hookName string) string {
+	switch hookName {
+	case "SessionStart", "SessionEnd", "Setup":
+		return "SESSION"
+	case "Stop", "StopFailure":
+		return "STOP"
+	case "UserPromptSubmit", "UserPromptExpansion":
+		return "PROMPT"
+	case "SubagentStart", "SubagentStop", "TeammateIdle":
+		return "AGENT"
+	case "TaskCreated", "TaskCompleted":
+		return "TASK"
+	case "Notification":
+		return "NOTIFY"
+	case "PreCompact", "PostCompact":
+		return "COMPACT"
+	case "FileChanged":
+		return "FILE"
+	case "ConfigChange":
+		return "CONFIG"
+	case "WorktreeCreate", "WorktreeRemove":
+		return "WORKTREE"
+	case "PermissionRequest", "PermissionDenied":
+		return "PERMISSION"
+	case "CwdChanged":
+		return "CWD"
+	case "PostToolBatch":
+		return "BATCH"
+	case "InstructionsLoaded":
+		return "INSTRUCT"
+	default:
+		return ""
 	}
 }
 
