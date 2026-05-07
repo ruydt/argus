@@ -8,5 +8,7 @@ type EventRepository interface {
 	Add(e domain.NormalizedEvent) error
 	List(limit int) ([]domain.NormalizedEvent, error)
 	SessionModel(sessionID string) (string, error)
-	UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string) error
+	ListSessions() ([]domain.Session, error)
+	UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string, usage domain.SessionUsage) error
+	GetDashboardStats() (*domain.DashboardStats, error)
 }

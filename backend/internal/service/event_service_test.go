@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"errors"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -13,10 +14,12 @@ import (
 type mockRepo struct {
 	mu        sync.Mutex
 	events    []domain.NormalizedEvent
+	sessions  []domain.Session
 	models    map[string]string
 	addErr    error
 	upsertErr error
 	upserts   int
+	lastUsage domain.SessionUsage
 }
 
 func (m *mockRepo) Add(e domain.NormalizedEvent) error {
@@ -47,7 +50,18 @@ func (m *mockRepo) SessionModel(sessionID string) (string, error) {
 	return m.models[sessionID], nil
 }
 
-func (m *mockRepo) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string) error {
+func (m *mockRepo) ListSessions() ([]domain.Session, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]domain.Session{}, m.sessions...), nil
+}
+
+func (m *mockRepo) GetDashboardStats() (*domain.DashboardStats, error) {
+	return nil, nil
+}
+
+
+func (m *mockRepo) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
 		return m.upsertErr
 	}
@@ -57,6 +71,7 @@ func (m *mockRepo) UpsertSession(sessionID, agent, model, source, cwd, transcrip
 		m.models = map[string]string{}
 	}
 	m.upserts++
+	m.lastUsage = usage
 	if model != "" {
 		m.models[sessionID] = model
 	}
@@ -149,6 +164,35 @@ func TestAddEventReturnsUpsertError(t *testing.T) {
 	})
 	if err == nil || err.Error() != "boom" {
 		t.Fatalf("err = %v, want boom", err)
+	}
+}
+
+func TestListSessionsBackfillsZeroUsageFromTranscript(t *testing.T) {
+	transcript := t.TempDir() + "/session.jsonl"
+	data := `{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":120,"cached_input_tokens":40,"output_tokens":8}}}}` + "\n"
+	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
+		t.Fatalf("write transcript: %v", err)
+	}
+	repo := &mockRepo{sessions: []domain.Session{{
+		SessionID:      "s1",
+		Agent:          "codex",
+		TranscriptPath: transcript,
+	}}}
+	svc := service.New(repo)
+
+	sessions, err := svc.ListSessions()
+	if err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+
+	if got := sessions[0].Usage.InputTokens; got != 120 {
+		t.Fatalf("input tokens = %d, want 120", got)
+	}
+	if repo.upserts != 1 {
+		t.Fatalf("upserts = %d, want 1", repo.upserts)
+	}
+	if repo.lastUsage.OutputTokens != 8 || repo.lastUsage.CacheReadTokens != 40 {
+		t.Fatalf("persisted usage = %+v, want output=8 cache_read=40", repo.lastUsage)
 	}
 }
 

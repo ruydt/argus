@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"agent-monitor/internal/agents/claudecode"
+	"agent-monitor/internal/agents/codex"
 	"agent-monitor/internal/domain"
 	"agent-monitor/internal/repository"
 )
@@ -25,7 +27,13 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		return err
 	}
 	if e.Session != "" {
-		if err := s.repo.UpsertSession(e.Session, e.Agent, e.Model, e.Source, e.CWD, e.TranscriptPath); err != nil {
+		var usage domain.SessionUsage
+		if e.Agent == "claudecode" {
+			usage = claudecode.ComputeUsage(e.TranscriptPath)
+		} else {
+			usage = codex.ComputeUsage(e.TranscriptPath)
+		}
+		if err := s.repo.UpsertSession(e.Session, e.Agent, e.Model, e.Source, e.CWD, e.TranscriptPath, usage); err != nil {
 			return err
 		}
 	}
@@ -39,6 +47,54 @@ func (s *EventService) ListEvents(limit int) ([]domain.NormalizedEvent, error) {
 
 func (s *EventService) SessionModel(sessionID string) (string, error) {
 	return s.repo.SessionModel(sessionID)
+}
+
+func (s *EventService) ListSessions() ([]domain.Session, error) {
+	sessions, err := s.repo.ListSessions()
+	if err != nil {
+		return nil, err
+	}
+	for i := range sessions {
+		if hasUsage(sessions[i].Usage) || sessions[i].TranscriptPath == "" {
+			continue
+		}
+		usage := computeUsage(sessions[i].Agent, sessions[i].TranscriptPath)
+		if !hasUsage(usage) {
+			continue
+		}
+		sessions[i].Usage = usage
+		if err := s.repo.UpsertSession(
+			sessions[i].SessionID,
+			sessions[i].Agent,
+			sessions[i].Model,
+			sessions[i].Source,
+			sessions[i].CWD,
+			sessions[i].TranscriptPath,
+			usage,
+		); err != nil {
+			return nil, err
+		}
+	}
+	return sessions, nil
+}
+
+func (s *EventService) GetDashboardStats() (*domain.DashboardStats, error) {
+	return s.repo.GetDashboardStats()
+}
+
+func computeUsage(agent, transcriptPath string) domain.SessionUsage {
+	if agent == "claudecode" || claudecode.MatchesTranscript(transcriptPath) {
+		return claudecode.ComputeUsage(transcriptPath)
+	}
+	return codex.ComputeUsage(transcriptPath)
+}
+
+func hasUsage(usage domain.SessionUsage) bool {
+	return usage.InputTokens > 0 ||
+		usage.OutputTokens > 0 ||
+		usage.CacheCreationTokens > 0 ||
+		usage.CacheReadTokens > 0 ||
+		usage.Turns > 0
 }
 
 func (s *EventService) Subscribe() <-chan domain.NormalizedEvent {

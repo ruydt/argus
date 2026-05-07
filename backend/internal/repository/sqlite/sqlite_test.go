@@ -82,7 +82,7 @@ func TestAdd_dedup(t *testing.T) {
 func TestUpsertSession_and_SessionModel(t *testing.T) {
 	db := newTestDB(t)
 
-	if err := db.UpsertSession("sess1", "claudecode", "claude-opus-4-7", "startup", "/cwd", "/transcript"); err != nil {
+	if err := db.UpsertSession("sess1", "claudecode", "claude-opus-4-7", "startup", "/cwd", "/transcript", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession: %v", err)
 	}
 

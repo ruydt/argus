@@ -18,7 +18,11 @@ func (noopRepo) List(int) ([]domain.NormalizedEvent, error) { return nil, nil }
 
 func (noopRepo) SessionModel(string) (string, error) { return "", nil }
 
-func (noopRepo) UpsertSession(string, string, string, string, string, string) error {
+func (noopRepo) ListSessions() ([]domain.Session, error) { return nil, nil }
+
+func (noopRepo) GetDashboardStats() (*domain.DashboardStats, error) { return nil, nil }
+
+func (noopRepo) UpsertSession(string, string, string, string, string, string, domain.SessionUsage) error {
 	return nil
 }
 

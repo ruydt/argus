@@ -52,3 +52,51 @@ type CtxLine struct {
 	Num  int    `json:"num"`
 	Text string `json:"text"`
 }
+
+type SessionUsage struct {
+	InputTokens         int `json:"input_tokens"`
+	OutputTokens        int `json:"output_tokens"`
+	CacheCreationTokens int `json:"cache_creation_tokens"`
+	CacheReadTokens     int `json:"cache_read_tokens"`
+	Turns               int `json:"turns"`
+}
+
+type Session struct {
+	SessionID      string       `json:"session_id"`
+	Agent          string       `json:"agent"`
+	Model          string       `json:"model"`
+	Source         string       `json:"source"`
+	CWD            string       `json:"cwd"`
+	TranscriptPath string       `json:"transcript_path"`
+	StartedAt      string       `json:"started_at"`
+	LastSeenAt     string       `json:"last_seen_at"`
+	Usage          SessionUsage `json:"usage"`
+}
+
+type DashboardStats struct {
+	TotalSessions     int                    `json:"total_sessions"`
+	TotalEvents       int                    `json:"total_events"`
+	TotalInputTokens  int                    `json:"total_input_tokens"`
+	TotalOutputTokens int                    `json:"total_output_tokens"`
+	Timeline          []TimelineBucket       `json:"timeline"`
+	TopActions        []ActionCount          `json:"top_actions"`
+	AgentUsage        []AgentModelUsage      `json:"agent_usage"`
+}
+
+type TimelineBucket struct {
+	Date  string `json:"date"`
+	Count int    `json:"count"`
+}
+
+type ActionCount struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
+type AgentModelUsage struct {
+	Agent  string `json:"agent"`
+	Model  string `json:"model"`
+	Input  int    `json:"input"`
+	Output int    `json:"output"`
+}
+

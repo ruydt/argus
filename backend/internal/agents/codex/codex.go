@@ -16,13 +16,7 @@ type DiffInput struct {
 	NewStr string
 }
 
-type SessionUsage struct {
-	InputTokens         int `json:"input_tokens"`
-	OutputTokens        int `json:"output_tokens"`
-	CacheCreationTokens int `json:"cache_creation_tokens"`
-	CacheReadTokens     int `json:"cache_read_tokens"`
-	Turns               int `json:"turns"`
-}
+
 
 func MatchesTranscript(transcriptPath string) bool {
 	return !strings.Contains(transcriptPath, "/.claude/")
@@ -95,14 +89,14 @@ func atoi(s string) int {
 	return n
 }
 
-func ComputeUsage(transcriptPath string) SessionUsage {
+func ComputeUsage(transcriptPath string) domain.SessionUsage {
 	f, err := os.Open(transcriptPath)
 	if err != nil {
-		return SessionUsage{}
+		return domain.SessionUsage{}
 	}
 	defer f.Close()
 
-	var u SessionUsage
+	var u domain.SessionUsage
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 4*1024*1024), 4*1024*1024)
 	for scanner.Scan() {
