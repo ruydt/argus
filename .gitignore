@@ -11,6 +11,13 @@ bin/
 .gitnexus
 .worktrees/
 *.db*
+*.sqlite
+*.sqlite3
+
+# Env / secrets
+.env
+.env.*
+*.env
 
 # Local agent/project state
 .claude/

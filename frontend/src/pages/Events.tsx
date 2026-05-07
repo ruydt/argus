@@ -291,7 +291,12 @@ export function Events() {
         !e.path?.toLowerCase().includes(q) &&
         !e.session?.toLowerCase().includes(q) &&
         !e.command?.toLowerCase().includes(q) &&
-        !e.prompt?.toLowerCase().includes(q)
+        !e.prompt?.toLowerCase().includes(q) &&
+        !e.notification_message?.toLowerCase().includes(q) &&
+        !e.error_message?.toLowerCase().includes(q) &&
+        !e.response?.toLowerCase().includes(q) &&
+        !e.task_title?.toLowerCase().includes(q) &&
+        !e.subagent_type?.toLowerCase().includes(q)
       )
         return false
     }
@@ -364,6 +369,20 @@ export function Events() {
                 <SelectItem value="all">ALL</SelectItem>
                 <SelectItem value="EDIT">EDIT</SelectItem>
                 <SelectItem value="BASH">BASH</SelectItem>
+                <SelectItem value="SESSION">SESSION</SelectItem>
+                <SelectItem value="STOP">STOP</SelectItem>
+                <SelectItem value="PROMPT">PROMPT</SelectItem>
+                <SelectItem value="AGENT">AGENT</SelectItem>
+                <SelectItem value="TASK">TASK</SelectItem>
+                <SelectItem value="NOTIFY">NOTIFY</SelectItem>
+                <SelectItem value="COMPACT">COMPACT</SelectItem>
+                <SelectItem value="FILE">FILE</SelectItem>
+                <SelectItem value="CONFIG">CONFIG</SelectItem>
+                <SelectItem value="WORKTREE">WORKTREE</SelectItem>
+                <SelectItem value="PERMISSION">PERMISSION</SelectItem>
+                <SelectItem value="CWD">CWD</SelectItem>
+                <SelectItem value="BATCH">BATCH</SelectItem>
+                <SelectItem value="INSTRUCT">INSTRUCT</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

@@ -26,6 +26,26 @@ export interface EventRecord {
   start_line?: number
   ctx_before?: CtxLine[]
   ctx_after?: CtxLine[]
+  // new fields from expanded hook coverage
+  permission_mode?: string
+  response?: string
+  error_message?: string
+  error_type?: string
+  subagent_id?: string
+  subagent_type?: string
+  task_id?: string
+  task_title?: string
+  task_description?: string
+  notification_type?: string
+  notification_title?: string
+  notification_message?: string
+  change_type?: string
+  old_cwd?: string
+  new_cwd?: string
+  tool_calls_json?: string
+  tool_result_stdout?: string
+  tool_result_stderr?: string
+  duration_ms?: number
 }
 
 export interface SessionUsage {

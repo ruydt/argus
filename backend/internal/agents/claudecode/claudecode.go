@@ -100,7 +100,10 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 
 	path := fileutil.ResolvePath(p.CWD, firstNonEmpty(p.ToolInput.FilePath, p.FilePath))
 	cmd := p.ToolInput.Command
-	action := fileutil.ToolToAction(p.ToolName)
+	action := fileutil.HookEventAction(p.HookEventName)
+	if action == "" {
+		action = fileutil.ToolToAction(p.ToolName)
+	}
 
 	if path == "" && cmd != "" && action != "BASH" {
 		path = fileutil.ExtractPathFromCommand(cmd)
@@ -117,25 +120,89 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 	})
 
 	return domain.NormalizedEvent{
-		Agent:          AgentName(),
-		Session:        p.SessionID,
-		HookEventName:  p.HookEventName,
-		TurnID:         p.TurnID,
-		ToolUseID:      p.ToolUseID,
-		Tool:           p.ToolName,
-		Model:          p.Model,
-		Source:         p.Source,
-		CWD:            p.CWD,
-		TranscriptPath: p.TranscriptPath,
-		Prompt:         p.Prompt,
-		Description:    p.ToolInput.Description,
-		Action:         action,
-		Path:           displayPath,
-		Command:        cmd,
-		OldString:      oldStr,
-		NewString:      newStr,
-		RawPayload:     raw,
+		Agent:               AgentName(),
+		Session:             p.SessionID,
+		HookEventName:       p.HookEventName,
+		TurnID:              p.TurnID,
+		ToolUseID:           p.ToolUseID,
+		Tool:                p.ToolName,
+		Model:               p.Model,
+		Source:              p.Source,
+		CWD:                 p.CWD,
+		TranscriptPath:      p.TranscriptPath,
+		Prompt:              p.Prompt,
+		Description:         p.ToolInput.Description,
+		Action:              action,
+		Path:                displayPath,
+		Command:             cmd,
+		OldString:           oldStr,
+		NewString:           newStr,
+		RawPayload:          raw,
+		PermissionMode:      p.PermissionMode,
+		Response:            firstNonEmpty(p.Response, p.LastAssistantMessage),
+		ErrorMessage:        firstNonEmpty(p.ErrorMessage, p.Error),
+		ErrorType:           p.ErrorType,
+		SubagentID:          p.AgentID,
+		SubagentType:        p.AgentType,
+		TaskID:              p.TaskID,
+		TaskTitle:           p.TaskTitle,
+		TaskDescription:     p.TaskDescription,
+		NotificationType:    p.NotificationType,
+		NotificationTitle:   p.Title,
+		NotificationMessage: p.Message,
+		ChangeType:          p.ChangeType,
+		OldCWD:              p.OldCWD,
+		NewCWD:              p.NewCWD,
+		ToolCallsJSON:       marshalToolCalls(p.ToolCalls),
+		ToolResultStdout:    toolResultStdout(p.ToolResponse),
+		ToolResultStderr:    toolResultStderr(p.ToolResponse),
+		DurationMS:          p.DurationMS,
 	}, nil
+}
+
+func toolResultStdout(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var obj struct {
+		Stdout string `json:"stdout"`
+	}
+	if json.Unmarshal(raw, &obj) == nil && obj.Stdout != "" {
+		return truncate(obj.Stdout, 4096)
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return truncate(s, 4096)
+	}
+	return ""
+}
+
+func toolResultStderr(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var obj struct {
+		Stderr string `json:"stderr"`
+	}
+	if json.Unmarshal(raw, &obj) == nil {
+		return truncate(obj.Stderr, 1024)
+	}
+	return ""
+}
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "\n...[truncated]"
+}
+
+func marshalToolCalls(calls []domain.ToolCall) string {
+	if len(calls) == 0 {
+		return ""
+	}
+	b, _ := json.Marshal(calls)
+	return string(b)
 }
 
 func firstNonEmpty(vals ...string) string {
