@@ -1,11 +1,7 @@
-import {
-  BarChart3,
-  LayoutDashboard,
-  TerminalSquare,
-  type LucideIcon,
-} from 'lucide-react'
+import { BarChart3, LayoutDashboard, TerminalSquare, type LucideIcon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -48,6 +44,29 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const location = useLocation()
   const isNavItemActive = (to: string, end: boolean) =>
     end ? location.pathname === to : location.pathname.startsWith(to)
+  const navButtonClassName = (isActive: boolean) =>
+    cn(
+      'h-auto border text-[0.8rem] font-normal text-[#cccccc]',
+      collapsed
+        ? 'size-10 justify-center rounded-xl px-0'
+        : 'w-full justify-start rounded-lg px-3 py-[11px]',
+      isActive
+        ? 'border-[rgba(71,255,156,0.18)] bg-[rgba(71,255,156,0.1)]'
+        : 'border-transparent hover:border-[rgba(71,255,156,0.18)] hover:bg-[rgba(71,255,156,0.1)] hover:text-[#cccccc]'
+    )
+
+  const renderNavButton = ({ to, label, ariaLabel, icon: Icon, end }: NavItem) => {
+    const isActive = isNavItemActive(to, end)
+
+    return (
+      <Button asChild variant="ghost" className={navButtonClassName(isActive)}>
+        <NavLink to={to} end={end} aria-label={ariaLabel}>
+          <Icon className="size-4 shrink-0" />
+          {collapsed ? <span className="sr-only">{ariaLabel}</span> : <span>{label}</span>}
+        </NavLink>
+      </Button>
+    )
+  }
 
   return (
     <aside
@@ -63,46 +82,34 @@ export function Sidebar({ collapsed }: SidebarProps) {
         )}
       >
         {collapsed ? (
-          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-white">
-            AM
-          </span>
+          <span className="text-sm font-semibold uppercase tracking-[0.18em] text-white">AM</span>
         ) : (
           <div className="flex flex-col gap-1">
-            <span className="text-[0.68rem] uppercase tracking-[0.22em] text-[#8f8f8f]">
-              Agent
-            </span>
+            <span className="text-[0.68rem] uppercase tracking-[0.22em] text-[#8f8f8f]">Agent</span>
             <span className="text-sm font-semibold uppercase tracking-[0.12em] text-white">
               Monitor
             </span>
           </div>
         )}
       </div>
-      <nav className={cn('mt-5 flex flex-col gap-2', collapsed && 'items-center')}>
-        {NAV_ITEMS.map(({ to, label, ariaLabel, icon: Icon, end }) => {
-          const isActive = isNavItemActive(to, end)
+      <TooltipProvider delayDuration={100}>
+        <nav className={cn('mt-5 flex flex-col gap-2', collapsed && 'items-center')}>
+          {NAV_ITEMS.map((item) => {
+            const button = renderNavButton(item)
 
-          return (
-            <Button
-              key={to}
-              asChild
-              variant="ghost"
-              className={cn(
-                'h-auto border border-transparent text-[#cccccc] text-[0.8rem] font-normal',
-                collapsed
-                  ? 'size-10 justify-center rounded-xl px-0'
-                  : 'w-full justify-start rounded-lg px-3 py-[11px]',
-                'hover:bg-[rgba(71,255,156,0.1)] hover:border-[rgba(71,255,156,0.18)] hover:text-[#cccccc]',
-                isActive && 'bg-[rgba(71,255,156,0.1)] border-[rgba(71,255,156,0.18)]'
-              )}
-            >
-              <NavLink to={to} end={end} aria-label={ariaLabel}>
-                <Icon className="size-4 shrink-0" />
-                {collapsed ? <span className="sr-only">{ariaLabel}</span> : <span>{label}</span>}
-              </NavLink>
-            </Button>
-          )
-        })}
-      </nav>
+            return collapsed ? (
+              <Tooltip key={item.to}>
+                <TooltipTrigger asChild>{button}</TooltipTrigger>
+                <TooltipContent side="right" sideOffset={10}>
+                  {item.ariaLabel}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div key={item.to}>{button}</div>
+            )
+          })}
+        </nav>
+      </TooltipProvider>
     </aside>
   )
 }
