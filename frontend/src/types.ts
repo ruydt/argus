@@ -66,7 +66,6 @@ export interface LayoutOutletContext {
   collapsedSessions: Set<string>
   setCollapsedSessions: Dispatch<SetStateAction<Set<string>>>
   sessionUsage: Record<string, SessionUsage>
-  setSessionUsage: Dispatch<SetStateAction<Record<string, SessionUsage>>>
 }
 
 export interface EventsResponse {

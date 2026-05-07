@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -13,71 +14,35 @@ import {
 import { agentForEvent } from '../agents'
 import { AgentSession } from '../components/events/AgentSession'
 import { useEvents } from '../hooks/useEvents'
-import type {
-  CtxLine,
-  EventRecord,
-  LayoutOutletContext,
-  SessionGroup,
-  SessionUsage,
-  TooltipState,
-} from '@/types'
+import type { CtxLine, EventRecord, LayoutOutletContext, SessionGroup, TooltipState } from '@/types'
 
 export function Events() {
   const [actionFilter, setActionFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('newest')
-  const [timeRange, setTimeRange] = useState('15m')
-  const [customStart, setCustomStart] = useState('')
-  const [customEnd, setCustomEnd] = useState('')
+  const [timeRange, setTimeRange] = useState(
+    () => localStorage.getItem('events_time_range') ?? '15m'
+  )
+  const [customStart, setCustomStart] = useState(
+    () => localStorage.getItem('events_custom_start') ?? ''
+  )
+  const [customEnd, setCustomEnd] = useState(() => localStorage.getItem('events_custom_end') ?? '')
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
-  const { collapsedSessions, setCollapsedSessions, sessionUsage, setSessionUsage } =
+  const { collapsedSessions, setCollapsedSessions, sessionUsage } =
     useOutletContext<LayoutOutletContext>()
-  const fetchedUsage = useRef<Set<string>>(new Set())
-  const { events } = useEvents()
+  const { events, error } = useEvents()
 
   useEffect(() => {
-    const seen = new Map<string, string>()
-    events.forEach((event) => {
-      const agent = agentForEvent(event)
-      if (
-        agent.supportsSessionUsage &&
-        event.transcript_path &&
-        event.session &&
-        !seen.has(event.session)
-      ) {
-        seen.set(event.session, event.transcript_path)
-      }
-    })
+    localStorage.setItem('events_time_range', timeRange)
+  }, [timeRange])
 
-    seen.forEach(async (path, key) => {
-      if (fetchedUsage.current.has(key)) return
+  useEffect(() => {
+    localStorage.setItem('events_custom_start', customStart)
+  }, [customStart])
 
-      fetchedUsage.current.add(key)
-
-      try {
-        const res = await fetch(`/api/session-usage?path=${encodeURIComponent(path)}`)
-        if (!res.ok) {
-          throw new Error(`Failed to fetch session usage: ${res.status}`)
-        }
-
-        const data = (await res.json()) as SessionUsage
-        const hasAnyUsage =
-          Number(data.input_tokens || 0) > 0 ||
-          Number(data.output_tokens || 0) > 0 ||
-          Number(data.cache_read_tokens || 0) > 0 ||
-          Number(data.cache_creation_tokens || 0) > 0 ||
-          Number(data.turns || 0) > 0
-
-        if (!hasAnyUsage) {
-          fetchedUsage.current.delete(key)
-        }
-
-        setSessionUsage((prev) => ({ ...prev, [key]: data }))
-      } catch {
-        fetchedUsage.current.delete(key)
-      }
-    })
-  }, [events, setSessionUsage])
+  useEffect(() => {
+    localStorage.setItem('events_custom_end', customEnd)
+  }, [customEnd])
 
   const toggleSession = (sessionId: string) => {
     setCollapsedSessions((prev: Set<string>) => {
@@ -459,12 +424,18 @@ export function Events() {
       </div>
 
       <div className="flex flex-col flex-1 min-h-0">
-        <div className="px-4 py-[10px] bg-[#111] border-b border-[#333] text-[0.75rem] uppercase tracking-[0.1em] text-[#666]">
-          Session Events
+        <div className="flex items-center justify-between border-b border-[#333] bg-[#111] px-4 py-[10px] text-[0.75rem] uppercase tracking-[0.1em] text-[#666]">
+          <span>Session Events</span>
+          {error && <span className="normal-case tracking-normal text-destructive">{error}</span>}
         </div>
         <div className="flex-1 overflow-y-auto p-3">
           {sessionList.length === 0 ? (
-            <div className="text-[#666] italic p-[10px]">No matching events.</div>
+            <Empty className="min-h-[240px] border-0">
+              <EmptyHeader>
+                <EmptyTitle>No matching events</EmptyTitle>
+                <EmptyDescription>Adjust filters or wait for incoming events.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             sessionList.map(({ session, lastTime }) => {
               const agent = agentForEvent(session.events[0])

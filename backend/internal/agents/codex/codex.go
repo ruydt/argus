@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	"agent-monitor/internal/domain"
@@ -15,8 +16,6 @@ type DiffInput struct {
 	OldStr string
 	NewStr string
 }
-
-
 
 func MatchesTranscript(transcriptPath string) bool {
 	return !strings.Contains(transcriptPath, "/.claude/")
@@ -90,41 +89,106 @@ func atoi(s string) int {
 }
 
 func ComputeUsage(transcriptPath string) domain.SessionUsage {
+	return ComputeUsageBreakdown(transcriptPath).Total
+}
+
+func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
 	f, err := os.Open(transcriptPath)
 	if err != nil {
-		return domain.SessionUsage{}
+		return domain.UsageBreakdown{}
 	}
 	defer f.Close()
 
-	var u domain.SessionUsage
+	var (
+		currentModel string
+		prevTotal    usageSnapshot
+	)
+	byModel := map[string]*domain.ModelUsageBreakdown{}
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 4*1024*1024), 4*1024*1024)
 	for scanner.Scan() {
 		var entry struct {
 			Type    string `json:"type"`
 			Payload struct {
-				Type string `json:"type"`
-				Info struct {
-					Total struct {
-						InputTokens       int `json:"input_tokens"`
-						CachedInputTokens int `json:"cached_input_tokens"`
-						OutputTokens      int `json:"output_tokens"`
-					} `json:"total_token_usage"`
+				Model string `json:"model"`
+				Type  string `json:"type"`
+				Info  struct {
+					Total usageSnapshot `json:"total_token_usage"`
+					Last  usageSnapshot `json:"last_token_usage"`
 				} `json:"info"`
 			} `json:"payload"`
 		}
 		if json.Unmarshal(scanner.Bytes(), &entry) != nil {
 			continue
 		}
+		if entry.Type == "turn_context" && entry.Payload.Model != "" {
+			currentModel = entry.Payload.Model
+			continue
+		}
 		if entry.Type != "event_msg" || entry.Payload.Type != "token_count" {
 			continue
 		}
-		u.InputTokens = entry.Payload.Info.Total.InputTokens
-		u.CacheReadTokens = entry.Payload.Info.Total.CachedInputTokens
-		u.OutputTokens = entry.Payload.Info.Total.OutputTokens
-		u.Turns++
+		delta := entry.Payload.Info.Last
+		if !delta.hasUsage() && entry.Payload.Info.Total.hasUsage() {
+			delta = entry.Payload.Info.Total.minus(prevTotal)
+		}
+		if !delta.hasUsage() {
+			continue
+		}
+
+		usage := byModel[currentModel]
+		if usage == nil {
+			usage = &domain.ModelUsageBreakdown{Model: currentModel}
+			byModel[currentModel] = usage
+		}
+		usage.InputTokens += delta.InputTokens
+		usage.CacheReadTokens += delta.CachedInputTokens
+		usage.OutputTokens += delta.OutputTokens
+		usage.Turns++
+		prevTotal = entry.Payload.Info.Total
 	}
-	return u
+	return codexBreakdown(byModel)
+}
+
+type usageSnapshot struct {
+	InputTokens       int `json:"input_tokens"`
+	CachedInputTokens int `json:"cached_input_tokens"`
+	OutputTokens      int `json:"output_tokens"`
+}
+
+func (u usageSnapshot) hasUsage() bool {
+	return u.InputTokens > 0 || u.CachedInputTokens > 0 || u.OutputTokens > 0
+}
+
+func (u usageSnapshot) minus(prev usageSnapshot) usageSnapshot {
+	return usageSnapshot{
+		InputTokens:       max(u.InputTokens-prev.InputTokens, 0),
+		CachedInputTokens: max(u.CachedInputTokens-prev.CachedInputTokens, 0),
+		OutputTokens:      max(u.OutputTokens-prev.OutputTokens, 0),
+	}
+}
+
+func codexBreakdown(byModel map[string]*domain.ModelUsageBreakdown) domain.UsageBreakdown {
+	breakdown := domain.UsageBreakdown{
+		Models: make([]domain.ModelUsageBreakdown, 0, len(byModel)),
+	}
+	for _, usage := range byModel {
+		breakdown.Total.InputTokens += usage.InputTokens
+		breakdown.Total.OutputTokens += usage.OutputTokens
+		breakdown.Total.CacheReadTokens += usage.CacheReadTokens
+		breakdown.Total.CacheCreationTokens += usage.CacheCreationTokens
+		breakdown.Total.Turns += usage.Turns
+		breakdown.Models = append(breakdown.Models, *usage)
+	}
+	slices.SortFunc(breakdown.Models, func(a, b domain.ModelUsageBreakdown) int {
+		at := a.InputTokens + a.OutputTokens
+		bt := b.InputTokens + b.OutputTokens
+		if at != bt {
+			return bt - at
+		}
+		return strings.Compare(a.Model, b.Model)
+	})
+	return breakdown
 }
 
 func AgentName() string {

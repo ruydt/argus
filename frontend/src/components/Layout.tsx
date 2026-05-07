@@ -1,29 +1,57 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PanelLeft } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { LayoutOutletContext, SessionUsage } from '@/types'
+import { useSessions } from '@/hooks/useSessions'
+import type { LayoutOutletContext } from '@/types'
 import { Sidebar } from './Sidebar'
+
+const COLLAPSED_SESSIONS_STORAGE_KEY = 'events_collapsed_sessions'
+
+function loadCollapsedSessions(): Set<string> {
+  try {
+    const raw = localStorage.getItem(COLLAPSED_SESSIONS_STORAGE_KEY)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? new Set(parsed.filter((value): value is string => typeof value === 'string')) : new Set()
+  } catch {
+    return new Set()
+  }
+}
 
 export function Layout() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar_collapsed') === 'true'
   )
-  const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(new Set())
-  const [sessionUsage, setSessionUsage] = useState<Record<string, SessionUsage>>({})
+  const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(loadCollapsedSessions)
   const [time, setTime] = useState(() => new Date().toLocaleTimeString())
+  const { sessions } = useSessions()
+  const sessionUsage = useMemo(
+    () =>
+      sessions.reduce<Record<string, (typeof sessions)[number]['usage']>>((acc, session) => {
+        acc[session.session_id] = session.usage
+        return acc
+      }, {}),
+    [sessions]
+  )
 
   const outletContext: LayoutOutletContext = {
     collapsedSessions,
     setCollapsedSessions,
     sessionUsage,
-    setSessionUsage,
   }
 
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', collapsed.toString())
   }, [collapsed])
+
+  useEffect(() => {
+    localStorage.setItem(
+      COLLAPSED_SESSIONS_STORAGE_KEY,
+      JSON.stringify(Array.from(collapsedSessions))
+    )
+  }, [collapsedSessions])
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000)

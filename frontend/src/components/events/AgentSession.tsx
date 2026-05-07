@@ -1,8 +1,7 @@
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
-import ReactMarkdown from 'react-markdown'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { cn } from '@/lib/utils'
+import { cn, displayModel } from '@/lib/utils'
 import type { AgentConfig } from '../../agents/types'
 import type { CtxLine, SessionUsage, SessionGroup, TooltipState } from '@/types'
 
@@ -115,8 +114,8 @@ export function AgentSession({
                   {e.hook_event_name && (
                     <span className={`hook hook-${e.hook_event_name}`}>{e.hook_event_name}</span>
                   )}
-                  {e.hook_event_name === 'PreToolUse' && e.model && (
-                    <span className="event-model">{e.model}</span>
+                  {(e.hook_event_name === 'PreToolUse' || e.hook_event_name === 'PostToolUse') && (
+                    <span className="event-model">{displayModel(e.model)}</span>
                   )}
                   {e.action !== 'BASH' && highlight(e.path || '', searchQuery)}
                 </div>
@@ -132,9 +131,9 @@ export function AgentSession({
                         {e.prompt ? 'Prompt' : e.command ? 'Command' : e.path ? 'File' : 'Shell'}
                       </strong>
                       {e.prompt ? (
-                        <div className="stop-md mt-2 max-h-[300px] overflow-y-auto">
-                          <ReactMarkdown>{e.prompt}</ReactMarkdown>
-                        </div>
+                        <pre className="mt-1 mb-0 max-h-[300px] overflow-y-auto whitespace-pre-wrap break-words font-[inherit] text-[0.75rem] text-[#a0a0a0]">
+                          {e.prompt}
+                        </pre>
                       ) : (
                         <pre className="mt-1 mb-0 whitespace-pre-wrap break-words text-[0.75rem] text-[#a0a0a0] max-h-[300px] overflow-y-auto font-[inherit]">
                           {highlight(e.command || '', searchQuery)}
@@ -171,9 +170,9 @@ export function AgentSession({
                 {e.action === 'STOP' && e.response && (
                   <div className="mt-2 bg-black/30 border border-white/[0.05] px-3 py-2 rounded-[6px]">
                     <strong className="text-[#aaa] text-[0.7rem]">Response</strong>
-                    <div className="stop-md mt-2 max-h-[400px] overflow-y-auto">
-                      <ReactMarkdown>{e.response}</ReactMarkdown>
-                    </div>
+                    <pre className="mt-1 mb-0 max-h-[400px] overflow-y-auto whitespace-pre-wrap break-words font-[inherit] text-[0.75rem] text-[#a0a0a0]">
+                      {e.response}
+                    </pre>
                   </div>
                 )}
 
@@ -245,26 +244,32 @@ export function AgentSession({
                   </div>
                 )}
 
-                {e.action === 'BATCH' && e.tool_calls_json && (() => {
-                  try {
-                    const calls: Array<{ tool_name: string; tool_input: { file_path?: string; command?: string } }> =
-                      JSON.parse(e.tool_calls_json)
-                    return (
-                      <div className="mt-2 flex flex-col gap-[3px]">
-                        {calls.map((c, ci) => (
-                          <div key={ci} className="flex gap-2 text-[0.72rem] text-[#888]">
-                            <span className="text-[#aaa] font-bold shrink-0">[{c.tool_name}]</span>
-                            <span className="break-all text-[#777]">
-                              {c.tool_input?.file_path || c.tool_input?.command || ''}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  } catch {
-                    return null
-                  }
-                })()}
+                {e.action === 'BATCH' &&
+                  e.tool_calls_json &&
+                  (() => {
+                    try {
+                      const calls: Array<{
+                        tool_name: string
+                        tool_input: { file_path?: string; command?: string }
+                      }> = JSON.parse(e.tool_calls_json)
+                      return (
+                        <div className="mt-2 flex flex-col gap-[3px]">
+                          {calls.map((c, ci) => (
+                            <div key={ci} className="flex gap-2 text-[0.72rem] text-[#888]">
+                              <span className="text-[#aaa] font-bold shrink-0">
+                                [{c.tool_name}]
+                              </span>
+                              <span className="break-all text-[#777]">
+                                {c.tool_input?.file_path || c.tool_input?.command || ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    } catch {
+                      return null
+                    }
+                  })()}
 
                 <div className="mt-[6px] text-[0.68rem] text-[#888] flex flex-wrap gap-[6px]">
                   {e.tool && (

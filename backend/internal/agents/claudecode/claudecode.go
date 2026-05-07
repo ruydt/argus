@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
+	"slices"
 	"strings"
 
 	"agent-monitor/internal/domain"
@@ -14,8 +15,6 @@ type DiffInput struct {
 	OldString string
 	NewString string
 }
-
-
 
 func MatchesTranscript(transcriptPath string) bool {
 	return strings.Contains(transcriptPath, "/.claude/")
@@ -51,18 +50,23 @@ func ModelFromTranscript(transcriptPath string) string {
 }
 
 func ComputeUsage(transcriptPath string) domain.SessionUsage {
+	return ComputeUsageBreakdown(transcriptPath).Total
+}
+
+func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
 	f, err := os.Open(transcriptPath)
 	if err != nil {
-		return domain.SessionUsage{}
+		return domain.UsageBreakdown{}
 	}
 	defer f.Close()
-	var u domain.SessionUsage
+	byModel := map[string]*domain.ModelUsageBreakdown{}
 	scanner := bufio.NewScanner(f)
 	scanner.Buffer(make([]byte, 4*1024*1024), 4*1024*1024)
 	for scanner.Scan() {
 		var entry struct {
 			Type    string `json:"type"`
 			Message struct {
+				Model string `json:"model"`
 				Usage struct {
 					InputTokens         int `json:"input_tokens"`
 					OutputTokens        int `json:"output_tokens"`
@@ -72,14 +76,38 @@ func ComputeUsage(transcriptPath string) domain.SessionUsage {
 			} `json:"message"`
 		}
 		if json.Unmarshal(scanner.Bytes(), &entry) == nil && entry.Type == "assistant" {
-			u.InputTokens += entry.Message.Usage.InputTokens
-			u.OutputTokens += entry.Message.Usage.OutputTokens
-			u.CacheCreationTokens += entry.Message.Usage.CacheCreationTokens
-			u.CacheReadTokens += entry.Message.Usage.CacheReadTokens
-			u.Turns++
+			usage := byModel[entry.Message.Model]
+			if usage == nil {
+				usage = &domain.ModelUsageBreakdown{Model: entry.Message.Model}
+				byModel[entry.Message.Model] = usage
+			}
+			usage.InputTokens += entry.Message.Usage.InputTokens
+			usage.OutputTokens += entry.Message.Usage.OutputTokens
+			usage.CacheCreationTokens += entry.Message.Usage.CacheCreationTokens
+			usage.CacheReadTokens += entry.Message.Usage.CacheReadTokens
+			usage.Turns++
 		}
 	}
-	return u
+	breakdown := domain.UsageBreakdown{
+		Models: make([]domain.ModelUsageBreakdown, 0, len(byModel)),
+	}
+	for _, usage := range byModel {
+		breakdown.Total.InputTokens += usage.InputTokens
+		breakdown.Total.OutputTokens += usage.OutputTokens
+		breakdown.Total.CacheCreationTokens += usage.CacheCreationTokens
+		breakdown.Total.CacheReadTokens += usage.CacheReadTokens
+		breakdown.Total.Turns += usage.Turns
+		breakdown.Models = append(breakdown.Models, *usage)
+	}
+	slices.SortFunc(breakdown.Models, func(a, b domain.ModelUsageBreakdown) int {
+		at := a.InputTokens + a.OutputTokens
+		bt := b.InputTokens + b.OutputTokens
+		if at != bt {
+			return bt - at
+		}
+		return strings.Compare(a.Model, b.Model)
+	})
+	return breakdown
 }
 
 func AgentName() string {

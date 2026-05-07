@@ -61,7 +61,6 @@ func (m *mockRepo) GetDashboardStats(since string) (*domain.DashboardStats, erro
 	return nil, nil
 }
 
-
 func (m *mockRepo) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
 		return m.upsertErr
@@ -231,6 +230,52 @@ func TestGetDashboardStatsBackfillsZeroUsageFromTranscript(t *testing.T) {
 	}
 	if stats.AgentUsage[0].Agent != "codex" || stats.AgentUsage[0].Input != 120 || stats.AgentUsage[0].Output != 8 {
 		t.Fatalf("agent usage = %+v, want codex input=120 output=8", stats.AgentUsage[0])
+	}
+}
+
+func TestGetDashboardStatsReturnsSessionUsageBreakdown(t *testing.T) {
+	transcript := t.TempDir() + "/codex-switch-session.jsonl"
+	data := "" +
+		`{"type":"turn_context","payload":{"model":"gpt-5.5"}}` + "\n" +
+		`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":10,"cached_input_tokens":4,"output_tokens":2}}}}` + "\n" +
+		`{"type":"turn_context","payload":{"model":"gpt-5.4"}}` + "\n" +
+		`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":25,"cached_input_tokens":10,"output_tokens":5}}}}` + "\n"
+	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
+		t.Fatalf("write transcript: %v", err)
+	}
+
+	repo, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+	if err := repo.UpsertSession(
+		"s1", "codex", "gpt-5.4", "startup", "/tmp", transcript, domain.SessionUsage{},
+	); err != nil {
+		t.Fatalf("UpsertSession: %v", err)
+	}
+
+	svc := service.New(repo)
+	stats, err := svc.GetDashboardStats("")
+	if err != nil {
+		t.Fatalf("GetDashboardStats: %v", err)
+	}
+
+	if len(stats.SessionUsage) != 1 {
+		t.Fatalf("session usage len = %d, want 1", len(stats.SessionUsage))
+	}
+	sessionUsage := stats.SessionUsage[0]
+	if sessionUsage.SessionID != "s1" || sessionUsage.Agent != "codex" || sessionUsage.Provider != "openai" {
+		t.Fatalf("session usage = %+v, want session_id=s1 agent=codex provider=openai", sessionUsage)
+	}
+	if sessionUsage.Input != 25 || sessionUsage.Output != 5 {
+		t.Fatalf("session usage totals = %+v, want input=25 output=5", sessionUsage)
+	}
+	if len(sessionUsage.Models) != 2 {
+		t.Fatalf("session usage models len = %d, want 2", len(sessionUsage.Models))
+	}
+
+	if len(stats.AgentUsage) != 2 {
+		t.Fatalf("agent usage len = %d, want 2", len(stats.AgentUsage))
 	}
 }
 

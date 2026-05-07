@@ -11,7 +11,10 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['nonendemic-intermolar-exie.ngrok-free.dev'],
+    allowedHosts: [
+      'nonendemic-intermolar-exie.ngrok-free.dev',
+      'gregarious-karlie-unmicrobial.ngrok-free.dev',
+    ],
     proxy: {
       '/api/events/stream': {
         target: 'http://127.0.0.1:8765',

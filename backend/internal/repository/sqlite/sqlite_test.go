@@ -79,6 +79,34 @@ func TestAdd_dedup(t *testing.T) {
 	}
 }
 
+func TestAdd_emptyModelStaysEmpty(t *testing.T) {
+	db := newTestDB(t)
+
+	e := domain.NormalizedEvent{
+		Time:          time.Now().Format(time.RFC3339),
+		Agent:         "codex",
+		Session:       "sess1",
+		HookEventName: "PreToolUse",
+		TurnID:        "turn1",
+		ToolUseID:     "tool1",
+		Action:        "BASH",
+		Path:          "cmd: true",
+		RawPayload:    []byte(`{}`),
+	}
+
+	if err := db.Add(e); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	events, err := db.List(10)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if events[0].Model != "" {
+		t.Errorf("model = %q, want empty", events[0].Model)
+	}
+}
+
 func TestUpsertSession_and_SessionModel(t *testing.T) {
 	db := newTestDB(t)
 
@@ -92,6 +120,41 @@ func TestUpsertSession_and_SessionModel(t *testing.T) {
 	}
 	if model != "claude-opus-4-7" {
 		t.Errorf("model = %q, want claude-opus-4-7", model)
+	}
+}
+
+func TestUpsertSession_emptyModelStaysEmpty(t *testing.T) {
+	db := newTestDB(t)
+
+	if err := db.UpsertSession("sess1", "codex", "", "startup", "/cwd", "/transcript", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession: %v", err)
+	}
+
+	model, err := db.SessionModel("sess1")
+	if err != nil {
+		t.Fatalf("SessionModel: %v", err)
+	}
+	if model != "" {
+		t.Errorf("model = %q, want empty", model)
+	}
+}
+
+func TestUpsertSession_emptyModelDoesNotOverwriteRealModel(t *testing.T) {
+	db := newTestDB(t)
+
+	if err := db.UpsertSession("sess1", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", domain.SessionUsage{}); err != nil {
+		t.Fatalf("first UpsertSession: %v", err)
+	}
+	if err := db.UpsertSession("sess1", "codex", "", "hook", "/cwd", "/transcript", domain.SessionUsage{}); err != nil {
+		t.Fatalf("second UpsertSession: %v", err)
+	}
+
+	model, err := db.SessionModel("sess1")
+	if err != nil {
+		t.Fatalf("SessionModel: %v", err)
+	}
+	if model != "gpt-5.4" {
+		t.Errorf("model = %q, want gpt-5.4", model)
 	}
 }
 

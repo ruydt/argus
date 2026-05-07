@@ -234,9 +234,10 @@ func (d *DB) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath 
 
 func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 	stats := &domain.DashboardStats{
-		Timeline:   []domain.TimelineBucket{},
-		TopActions: []domain.ActionCount{},
-		AgentUsage: []domain.AgentModelUsage{},
+		Timeline:     []domain.TimelineBucket{},
+		TopActions:   []domain.ActionCount{},
+		AgentUsage:   []domain.AgentModelUsage{},
+		SessionUsage: []domain.DashboardSessionUsage{},
 	}
 
 	// Build WHERE clauses based on 'since'
@@ -313,7 +314,6 @@ func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 
 	return stats, nil
 }
-
 
 func dedupKey(e domain.NormalizedEvent) string {
 	h := sha256.Sum256([]byte(

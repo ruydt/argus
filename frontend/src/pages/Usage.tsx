@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -19,6 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import type { OpenAIUsageResponse, UsageDailyPoint, UsageStats } from '@/types'
 
 const USAGE_BUCKET_LIMIT = 31
@@ -288,27 +297,39 @@ export function Usage() {
         </Button>
       </div>
 
-      {error && <p className="text-[#ff5f56] mb-5 text-[0.8rem]">{error}</p>}
+      {error && (
+        <Alert variant="destructive" className="mb-5">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {stats && (
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-2 gap-px bg-[#333] rounded-lg overflow-hidden border border-[#333]">
-            <div className="bg-[#0c0c0c] p-5">
-              <div className="text-[#666] text-[0.75rem] uppercase mb-2">
-                Total Tokens (Last {selectedLabel})
-              </div>
-              <div className="text-[1.5rem] font-bold text-white">
-                {stats.toks.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-[#0c0c0c] p-5">
-              <div className="text-[#666] text-[0.75rem] uppercase mb-2">
-                Total Requests (Last {selectedLabel})
-              </div>
-              <div className="text-[1.5rem] font-bold text-white">
-                {stats.reqs.toLocaleString()}
-              </div>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="bg-[#0c0c0c] border-[#333]">
+              <CardHeader>
+                <CardTitle className="text-[#666] text-[0.75rem] uppercase font-normal">
+                  Total Tokens (Last {selectedLabel})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-[1.5rem] font-bold text-white">
+                  {stats.toks.toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#0c0c0c] border-[#333]">
+              <CardHeader>
+                <CardTitle className="text-[#666] text-[0.75rem] uppercase font-normal">
+                  Total Requests (Last {selectedLabel})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-[1.5rem] font-bold text-white">
+                  {stats.reqs.toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
@@ -403,59 +424,79 @@ export function Usage() {
 
           <div className="grid grid-cols-2 gap-6">
             {Object.keys(stats.models).length > 0 && (
-              <div>
-                <h3 className="text-[#666] text-[0.8rem] uppercase mb-3">Total Model Usage</h3>
-                <div className="bg-[#0c0c0c] border border-[#333] rounded-lg overflow-hidden">
-                  {Object.entries(stats.models)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([model, count], idx, arr) => (
-                      <div
-                        key={model}
-                        className="relative px-4 py-3 overflow-hidden"
-                        style={{ borderBottom: idx === arr.length - 1 ? 'none' : '1px solid #333' }}
-                      >
-                        <div
-                          className="absolute inset-y-0 left-0 bg-[rgba(129,140,248,0.05)]"
-                          style={{ width: `${(count / maxModelReqs) * 100}%` }}
-                        />
-                        <div className="relative flex justify-between">
-                          <span className="text-white">{model}</span>
-                          <span className="text-[#666] font-mono">
-                            {count.toLocaleString()} reqs
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
+              <Card className="overflow-hidden bg-[#0c0c0c] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-[#666] text-[0.8rem] uppercase font-normal">
+                    Total Model Usage
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="px-4">Model</TableHead>
+                        <TableHead className="px-4 text-right">Requests</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(stats.models)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([model, count]) => (
+                          <TableRow key={model}>
+                            <TableCell className="relative overflow-hidden px-4">
+                              <div
+                                className="absolute inset-y-0 left-0 bg-[rgba(129,140,248,0.05)]"
+                                style={{ width: `${(count / maxModelReqs) * 100}%` }}
+                              />
+                              <span className="relative text-white">{model}</span>
+                            </TableCell>
+                            <TableCell className="px-4 text-right font-mono text-muted-foreground">
+                              {count.toLocaleString()} reqs
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
 
             {Object.keys(stats.keys).length > 0 && (
-              <div>
-                <h3 className="text-[#666] text-[0.8rem] uppercase mb-3">Total Key Usage</h3>
-                <div className="bg-[#0c0c0c] border border-[#333] rounded-lg overflow-hidden">
-                  {Object.entries(stats.keys)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([keyId, tokens], idx, arr) => (
-                      <div
-                        key={keyId}
-                        className="relative px-4 py-3 overflow-hidden"
-                        style={{ borderBottom: idx === arr.length - 1 ? 'none' : '1px solid #333' }}
-                      >
-                        <div
-                          className="absolute inset-y-0 left-0 bg-[rgba(249,115,22,0.05)]"
-                          style={{ width: `${(tokens / maxKeyToks) * 100}%` }}
-                        />
-                        <div className="relative flex justify-between">
-                          <span className="text-white text-[0.75rem]">{keyId}</span>
-                          <span className="text-[#666] font-mono">
-                            {tokens.toLocaleString()} toks
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
+              <Card className="overflow-hidden bg-[#0c0c0c] border-[#333]">
+                <CardHeader>
+                  <CardTitle className="text-[#666] text-[0.8rem] uppercase font-normal">
+                    Total Key Usage
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="px-4">Key</TableHead>
+                        <TableHead className="px-4 text-right">Tokens</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.entries(stats.keys)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([keyId, tokens]) => (
+                          <TableRow key={keyId}>
+                            <TableCell className="relative overflow-hidden px-4 text-[0.75rem]">
+                              <div
+                                className="absolute inset-y-0 left-0 bg-[rgba(249,115,22,0.05)]"
+                                style={{ width: `${(tokens / maxKeyToks) * 100}%` }}
+                              />
+                              <span className="relative text-white">{keyId}</span>
+                            </TableCell>
+                            <TableCell className="px-4 text-right font-mono text-muted-foreground">
+                              {tokens.toLocaleString()} toks
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>
