@@ -212,11 +212,11 @@ func toolResultStderr(raw json.RawMessage) string {
 	return ""
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
 		return s
 	}
-	return s[:max] + "\n...[truncated]"
+	return s[:limit] + "\n...[truncated]"
 }
 
 func marshalToolCalls(calls []domain.ToolCall) string {

@@ -1,4 +1,4 @@
-import type { AgentModelUsage, DashboardStats, TimelineBucket } from '@/hooks/useDashboardStats'
+import type { AgentModelUsage, DashboardStats, TimelineBucket } from './hooks/useDashboardStats'
 import { displayModel, displayProviderModel } from '@/lib/utils'
 
 export const DASHBOARD_TIME_RANGES = [
@@ -56,7 +56,9 @@ export function toTokenChartData(stats: DashboardStats | null) {
     model: displayModel(usage.model),
     input: usage.input,
     output: usage.output,
-    total: usage.input + usage.output,
+    cache_creation: usage.cache_creation,
+    cache_read: usage.cache_read,
+    total: usage.input + usage.output + usage.cache_creation + usage.cache_read,
   }))
 }
 

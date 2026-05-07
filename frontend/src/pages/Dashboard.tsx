@@ -8,7 +8,7 @@ import { DashboardSkeleton } from '@/features/dashboard/DashboardSkeleton'
 import { SummaryStats } from '@/features/dashboard/SummaryStats'
 import { TokenUsagePanel } from '@/features/dashboard/TokenUsagePanel'
 import { DASHBOARD_TIME_RANGES, apiRange } from '@/features/dashboard/dashboard-utils'
-import { useDashboardStats } from '@/hooks/useDashboardStats'
+import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats'
 import { cn } from '@/lib/utils'
 
 export function Dashboard() {

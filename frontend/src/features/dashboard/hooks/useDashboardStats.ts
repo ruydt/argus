@@ -16,6 +16,8 @@ export interface AgentModelUsage {
   model: string
   input: number
   output: number
+  cache_creation: number
+  cache_read: number
 }
 
 export interface DashboardSessionModelUsage {
@@ -62,6 +64,8 @@ export function normalizeDashboardStats(raw: Partial<DashboardStats>): Dashboard
         model: usage.model || '',
         input: Number(usage.input || 0),
         output: Number(usage.output || 0),
+        cache_creation: Number(usage.cache_creation || 0),
+        cache_read: Number(usage.cache_read || 0),
       }))
     : []
 

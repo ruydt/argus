@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { Layout } from './components/Layout'
+import { Layout } from './app/Layout'
 import { Dashboard } from './pages/Dashboard'
-import { Events } from './pages/Events'
-import { Usage } from './pages/Usage'
+import { EventsPage as Events } from './features/events/EventsPage'
+import { UsagePage as Usage } from './features/usage/UsagePage'
 
 export default function App() {
   return (

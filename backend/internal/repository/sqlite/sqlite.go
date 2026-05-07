@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"log"
 	"slices"
 	"time"
 
@@ -156,8 +157,8 @@ func (d *DB) List(limit int) ([]domain.NormalizedEvent, error) {
 		); err != nil {
 			return nil, err
 		}
-		json.Unmarshal([]byte(ctxBefore), &e.CtxBefore)
-		json.Unmarshal([]byte(ctxAfter), &e.CtxAfter)
+		_ = json.Unmarshal([]byte(ctxBefore), &e.CtxBefore)
+		_ = json.Unmarshal([]byte(ctxAfter), &e.CtxAfter)
 		events = append(events, e)
 	}
 	if err := rows.Err(); err != nil {
@@ -260,14 +261,13 @@ func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 	stats.TotalOutputTokens = int(out.Int64)
 
 	// Timeline
-	rows, err := d.db.Query(`
+	if rows, err := d.db.Query(`
 		SELECT strftime('%Y-%m-%d %H:00', created_at) as bucket, COUNT(*) 
 		FROM hook_events 
 		WHERE created_at IS NOT NULL`+eventWhere+`
 		GROUP BY bucket 
 		ORDER BY bucket ASC
-	`, args...)
-	if err == nil {
+	`, args...); err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var b domain.TimelineBucket
@@ -275,18 +275,20 @@ func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 				stats.Timeline = append(stats.Timeline, b)
 			}
 		}
+		_ = rows.Err()
+	} else if err != nil {
+		log.Printf("dashboard: timeline query: %v", err)
 	}
 
 	// Top Actions
-	rows, err = d.db.Query(`
+	if rows, err := d.db.Query(`
 		SELECT action, COUNT(*) as count 
 		FROM hook_events 
 		WHERE action IS NOT NULL AND action != ''`+eventWhere+`
 		GROUP BY action 
 		ORDER BY count DESC 
 		LIMIT 10
-	`, args...)
-	if err == nil {
+	`, args...); err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var a domain.ActionCount
@@ -294,15 +296,17 @@ func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 				stats.TopActions = append(stats.TopActions, a)
 			}
 		}
+		_ = rows.Err()
+	} else if err != nil {
+		log.Printf("dashboard: top actions query: %v", err)
 	}
 
 	// Agent Usage
-	rows, err = d.db.Query(`
+	if rows, err := d.db.Query(`
 		SELECT agent, model, SUM(input_tokens), SUM(output_tokens) 
 		FROM sessions`+sessionWhere+`
 		GROUP BY agent, model
-	`, args...)
-	if err == nil {
+	`, args...); err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var u domain.AgentModelUsage
@@ -310,6 +314,9 @@ func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 				stats.AgentUsage = append(stats.AgentUsage, u)
 			}
 		}
+		_ = rows.Err()
+	} else if err != nil {
+		log.Printf("dashboard: agent usage query: %v", err)
 	}
 
 	return stats, nil

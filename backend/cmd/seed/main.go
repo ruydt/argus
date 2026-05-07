@@ -17,7 +17,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open db: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("failed to close db: %v", err)
+		}
+	}()
 
 	agents := []string{"claudecode", "codex", "cline"}
 	models := []string{"claude-3-5-sonnet-20241022", "gpt-4o", "claude-3-opus-20240229"}
@@ -34,7 +38,7 @@ func main() {
 		source := sources[rand.Intn(len(sources))]
 		cwd := fmt.Sprintf("/home/user/project-%d", rand.Intn(10))
 		transcriptPath := fmt.Sprintf("%s/transcript-%s.jsonl", cwd, sessionID)
-		
+
 		startedAt := now.Add(time.Duration(-rand.Intn(48)) * time.Hour)
 		lastSeenAt := startedAt.Add(time.Duration(rand.Intn(60)) * time.Minute)
 
@@ -62,10 +66,10 @@ func main() {
 			eventTime := startedAt.Add(time.Duration(j) * time.Minute)
 			hookName := hooks[rand.Intn(len(hooks))]
 			action := actions[rand.Intn(len(actions))]
-			
+
 			turnID := fmt.Sprintf("turn-%d", j/2)
 			toolUseID := fmt.Sprintf("tool-%d", j)
-			
+
 			dedupKey := fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s|%s|%s|%s|%s", sessionID, turnID, toolUseID, hookName, eventTime.Format(time.RFC3339)))))
 
 			_, err = db.Exec(`

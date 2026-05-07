@@ -184,7 +184,7 @@ func TestList_respectsLimit(t *testing.T) {
 			Path:          "/tmp/f.go",
 			RawPayload:    []byte(`{}`),
 		}
-		db.Add(e)
+		_ = db.Add(e)
 	}
 
 	events, _ := db.List(3)

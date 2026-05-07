@@ -8,8 +8,12 @@ import (
 )
 
 func TestLoad_defaults(t *testing.T) {
-	os.Unsetenv("ADDR")
-	os.Unsetenv("DB_PATH")
+	if err := os.Unsetenv("ADDR"); err != nil {
+		t.Fatalf("Unsetenv ADDR: %v", err)
+	}
+	if err := os.Unsetenv("DB_PATH"); err != nil {
+		t.Fatalf("Unsetenv DB_PATH: %v", err)
+	}
 	cfg := config.Load()
 	if cfg.Addr != "127.0.0.1:8765" {
 		t.Errorf("Addr = %q, want 127.0.0.1:8765", cfg.Addr)

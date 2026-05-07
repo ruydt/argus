@@ -20,7 +20,7 @@ func (noopRepo) SessionModel(string) (string, error) { return "", nil }
 
 func (noopRepo) ListSessions() ([]domain.Session, error) { return nil, nil }
 
-func (noopRepo) GetDashboardStats(since string) (*domain.DashboardStats, error) { return nil, nil }
+func (noopRepo) GetDashboardStats(string) (*domain.DashboardStats, error) { return nil, nil }
 
 func (noopRepo) UpsertSession(string, string, string, string, string, string, domain.SessionUsage) error {
 	return nil

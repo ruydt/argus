@@ -28,10 +28,10 @@ func Diff(input DiffInput) (oldStr, newStr string) {
 var hunkHeader = regexp.MustCompile(`^@@\s*-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?`)
 
 // ParseApplyPatch extracts one unified-diff hunk from an apply_patch command body.
-// It returns old/new text blocks and the old-file start line from the hunk header.
-func ParseApplyPatch(command string) (oldStr, newStr string, startLine int) {
+// It returns the target file path, old/new text blocks, and the old-file start line.
+func ParseApplyPatch(command string) (filePath, oldStr, newStr string, startLine int) {
 	if !strings.Contains(command, "*** Begin Patch") {
-		return "", "", 0
+		return "", "", "", 0
 	}
 
 	lines := strings.Split(command, "\n")
@@ -41,6 +41,11 @@ func ParseApplyPatch(command string) (oldStr, newStr string, startLine int) {
 	for _, line := range lines {
 		trimmed := strings.TrimLeft(line, " \t")
 		if !inHunk {
+			// File path line: "*** path/to/file.go" (between Begin Patch and @@)
+			if strings.HasPrefix(trimmed, "*** ") && !strings.HasPrefix(trimmed, "*** Begin Patch") && !strings.HasPrefix(trimmed, "*** End Patch") {
+				filePath = strings.TrimPrefix(trimmed, "*** ")
+				continue
+			}
 			if m := hunkHeader.FindStringSubmatch(trimmed); m != nil {
 				startLine = atoi(m[1])
 				inHunk = true
@@ -71,9 +76,9 @@ func ParseApplyPatch(command string) (oldStr, newStr string, startLine int) {
 	}
 
 	if len(oldLines) == 0 && len(newLines) == 0 {
-		return "", "", 0
+		return "", "", "", 0
 	}
-	return strings.Join(oldLines, "\n"), strings.Join(newLines, "\n"), startLine
+	return filePath, strings.Join(oldLines, "\n"), strings.Join(newLines, "\n"), startLine
 }
 
 func atoi(s string) int {
@@ -221,8 +226,15 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		OldStr: firstNonEmpty(p.ToolInput.OldStr, p.ToolInput.OldString),
 		NewStr: firstNonEmpty(p.ToolInput.NewStr, p.ToolInput.NewString),
 	})
-	if oldStr == "" && newStr == "" && strings.Contains(strings.ToLower(p.ToolName), "apply_patch") {
-		oldStr, newStr, _ = ParseApplyPatch(cmd)
+	if strings.Contains(strings.ToLower(p.ToolName), "apply_patch") {
+		patchPath, patchOld, patchNew, _ := ParseApplyPatch(cmd)
+		if oldStr == "" && newStr == "" {
+			oldStr, newStr = patchOld, patchNew
+		}
+		if path == "" && patchPath != "" {
+			path = fileutil.ResolvePath(p.CWD, patchPath)
+			displayPath = path
+		}
 	}
 
 	return domain.NormalizedEvent{
@@ -296,11 +308,11 @@ func toolResultStderr(raw json.RawMessage) string {
 	return ""
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
+func truncate(s string, limit int) string {
+	if len(s) <= limit {
 		return s
 	}
-	return s[:max] + "\n...[truncated]"
+	return s[:limit] + "\n...[truncated]"
 }
 
 func marshalToolCalls(calls []domain.ToolCall) string {

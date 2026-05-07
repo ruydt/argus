@@ -6,7 +6,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart'
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
+import { DashboardEmpty } from '@/components/shared/DashboardEmpty'
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { DashboardStats } from '@/hooks/useDashboardStats'
+import type { DashboardStats } from './hooks/useDashboardStats'
 import { toTimelineData } from './dashboard-utils'
 
 type ActivityPanelProps = {
@@ -110,16 +110,5 @@ export function ActivityPanel({ stats }: ActivityPanelProps) {
         </CardContent>
       </Card>
     </div>
-  )
-}
-
-function DashboardEmpty({ title, description }: { title: string; description: string }) {
-  return (
-    <Empty className="h-full border-0">
-      <EmptyHeader>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   )
 }

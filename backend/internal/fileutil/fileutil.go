@@ -26,8 +26,18 @@ func ToolToAction(tool string) string {
 	switch {
 	case strings.Contains(t, "bash") || strings.Contains(t, "shell"):
 		return "BASH"
-	default:
+	case strings.Contains(t, "read") || strings.Contains(t, "grep") ||
+		strings.Contains(t, "glob") || strings.Contains(t, "search") ||
+		strings.Contains(t, "list") || t == "ls" || strings.Contains(t, "view") ||
+		strings.Contains(t, "cat"):
+		return "READ"
+	case strings.Contains(t, "edit") || strings.Contains(t, "write") ||
+		strings.Contains(t, "create") || strings.Contains(t, "replace") ||
+		strings.Contains(t, "patch") || strings.Contains(t, "insert") ||
+		strings.Contains(t, "delete") || strings.Contains(t, "remove"):
 		return "EDIT"
+	default:
+		return "TOOL"
 	}
 }
 
@@ -69,8 +79,11 @@ func HookEventAction(hookName string) string {
 func ExtractPathFromCommand(cmd string) string {
 	for _, tok := range strings.Fields(cmd) {
 		tok = strings.Trim(tok, `"'`)
-		if (strings.HasPrefix(tok, "/") || strings.HasPrefix(tok, "./")) &&
-			strings.Contains(tok, ".") {
+		if !strings.HasPrefix(tok, "/") && !strings.HasPrefix(tok, "./") {
+			continue
+		}
+		// Accept if it looks like a file (has extension) or has multiple segments.
+		if strings.Contains(tok, ".") || strings.Count(tok, "/") >= 2 {
 			return tok
 		}
 	}

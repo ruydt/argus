@@ -57,11 +57,11 @@ func (m *mockRepo) ListSessions() ([]domain.Session, error) {
 	return append([]domain.Session{}, m.sessions...), nil
 }
 
-func (m *mockRepo) GetDashboardStats(since string) (*domain.DashboardStats, error) {
+func (m *mockRepo) GetDashboardStats(_ string) (*domain.DashboardStats, error) {
 	return nil, nil
 }
 
-func (m *mockRepo) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string, usage domain.SessionUsage) error {
+func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _ string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
 		return m.upsertErr
 	}

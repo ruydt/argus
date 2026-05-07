@@ -4,18 +4,24 @@
 
 ## Features
 
-- **Unified Monitoring**: Track both Claude Code and Codex sessions side-by-side.
-- **Diff Visualization**: Render code changes directly in the event stream (supporting both Claude and Codex diff formats).
-- **Token Analytics**: Real-time token usage tooltips for Claude Code sessions (input, output, and cache efficiency).
-- **Advanced Usage Dashboard**: Dedicated administrative view for tracking aggregated OpenAI organization usage, costs, and model breakdowns.
-- **State Persistence**: Remembers your sidebar state, API keys, and time-range filters.
+- **Unified Monitoring**: Track Claude Code and Codex sessions side-by-side.
+- **Diff Visualization**: Render code changes directly in the event stream.
+- **Token Analytics**: Real-time token usage tooltips (input, output, and cache efficiency).
+- **Usage Dashboard**: Administrative view for tracking aggregated OpenAI usage, costs, and model breakdowns.
+- **State Persistence**: Remembers sidebar state, API keys, and time-range filters.
 
 ## Prerequisites
 
-Before running the monitor, ensure your agent configurations are set to forward hook events. You can configure these **globally** in your home directory (for all projects) or **locally** within a specific project's `.codex/` or `.claude/` folder.
+- **Go**: 1.25.0+
+- **Node.js**: 18.x+
+- **golangci-lint**: v2.x (for development)
+
+## Agent Configuration
+
+Ensure your agent configurations are set to forward hook events. You can configure these globally in your home directory or locally within a project's `.codex/` or `.claude/` folder.
 
 ### 1. Codex Configuration (`~/.codex/config.toml`)
-Enable hooks in your global or local config:
+Enable hooks in your config:
 ```toml
 [features]
 codex_hooks = true
@@ -28,9 +34,76 @@ Configure your agents to POST to `http://127.0.0.1:8765/api/hook`.
 ```json
 {
   "hooks": {
-    "SessionStart": [{ "matcher": ".*", "hooks": [{ "type": "command", "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-" }] }],
-    "PreToolUse": [{ "matcher": ".*", "hooks": [{ "type": "command", "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-" }] }],
-    "PostToolUse": [{ "matcher": ".*", "hooks": [{ "type": "command", "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-" }] }]
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -46,20 +119,34 @@ Configure your agents to POST to `http://127.0.0.1:8765/api/hook`.
 }
 ```
 
-## Getting Started
+## Getting Started & Development
 
-1. **Start the Backend** (Go):
-   ```bash
-   cd backend
-   go run main.go
-   ```
+**1. Backend (Go)**
+```bash
+cd backend
+go run main.go
 
-2. **Start the Frontend** (React/Vite):
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+# Development commands:
+# go test ./...
+# go vet ./...
+# golangci-lint run ./...
+```
 
-3. **View the Dashboard**:
-   Open [http://localhost:5173](http://localhost:5173) in your browser.
+If your shell or sandbox blocks writes to `~/.cache`, run backend checks with workspace-local caches instead:
+```bash
+cd backend
+mkdir -p .cache/go-build .cache/golangci-lint
+GOCACHE="$PWD/.cache/go-build" go test ./...
+GOCACHE="$PWD/.cache/go-build" go vet ./...
+GOCACHE="$PWD/.cache/go-build" GOLANGCI_LINT_CACHE="$PWD/.cache/golangci-lint" golangci-lint run ./...
+```
+
+**2. Frontend (React/Vite)**
+```bash
+cd frontend
+pnpm install
+pnpm run dev
+```
+
+**3. Dashboard**
+Open [http://localhost:5173](http://localhost:5173) in your browser.

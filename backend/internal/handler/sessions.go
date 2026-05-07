@@ -9,7 +9,7 @@ import (
 )
 
 func Sessions(svc *service.EventService) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		sessions, err := svc.ListSessions()
 		if err != nil {

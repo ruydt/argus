@@ -34,3 +34,5 @@ frontend/dist/
 frontend/.vite/
 
 .superpowers/
+
+.cache

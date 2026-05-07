@@ -17,7 +17,7 @@ func OpenAIProxy() http.Handler {
 		path := strings.TrimPrefix(r.URL.Path, "/api/openai/")
 		targetURL := "https://api.openai.com/v1/organization/" + path
 
-		req, err := http.NewRequest(r.Method, targetURL+"?"+r.URL.RawQuery, r.Body)
+		req, err := http.NewRequestWithContext(r.Context(), r.Method, targetURL+"?"+r.URL.RawQuery, r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -30,7 +30,9 @@ func OpenAIProxy() http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)

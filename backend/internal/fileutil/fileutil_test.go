@@ -35,6 +35,17 @@ func TestToolToAction(t *testing.T) {
 		{"shell_exec", "BASH"},
 		{"Edit", "EDIT"},
 		{"str_replace_editor", "EDIT"},
+		{"apply_patch", "EDIT"},
+		{"Write", "EDIT"},
+		{"create_file", "EDIT"},
+		{"Read", "READ"},
+		{"Grep", "READ"},
+		{"LS", "READ"},
+		{"list_directory", "READ"},
+		{"Glob", "READ"},
+		{"view_file", "READ"},
+		{"mcp_tool", "TOOL"},
+		{"", ""},
 	}
 	for _, c := range cases {
 		if got := fileutil.ToolToAction(c.tool); got != c.want {
@@ -44,9 +55,16 @@ func TestToolToAction(t *testing.T) {
 }
 
 func TestFindStartLine(t *testing.T) {
-	f, _ := os.CreateTemp(t.TempDir(), "*.go")
-	f.WriteString("package main\n\nfunc hello() {}\n")
-	f.Close()
+	f, err := os.CreateTemp(t.TempDir(), "*.go")
+	if err != nil {
+		t.Fatalf("CreateTemp: %v", err)
+	}
+	if _, err := f.WriteString("package main\n\nfunc hello() {}\n"); err != nil {
+		t.Fatalf("WriteString: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
 
 	line := fileutil.FindStartLine(f.Name(), "func hello() {}")
 	if line != 3 {
@@ -67,10 +85,19 @@ func TestExtractPathFromCommand_noPath(t *testing.T) {
 	}
 }
 
+func TestExtractPathFromCommand_directory(t *testing.T) {
+	got := fileutil.ExtractPathFromCommand("mkdir -p /home/user/project")
+	if got != "/home/user/project" {
+		t.Errorf("got %q, want /home/user/project", got)
+	}
+}
+
 func TestComputeContext(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "f.go")
-	os.WriteFile(path, []byte("a\nb\nc\nd\ne\n"), 0600)
+	if err := os.WriteFile(path, []byte("a\nb\nc\nd\ne\n"), 0o600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
 
 	before, after := fileutil.ComputeContext(path, 3, 1, 1)
 	if len(before) != 1 || before[0].Text != "b" {
