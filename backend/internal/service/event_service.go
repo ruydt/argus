@@ -54,6 +54,24 @@ func (s *EventService) ListSessions() ([]domain.Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := s.backfillSessionUsage(sessions); err != nil {
+		return nil, err
+	}
+	return sessions, nil
+}
+
+func (s *EventService) GetDashboardStats(since string) (*domain.DashboardStats, error) {
+	sessions, err := s.repo.ListSessions()
+	if err != nil {
+		return nil, err
+	}
+	if err := s.backfillSessionUsage(sessions); err != nil {
+		return nil, err
+	}
+	return s.repo.GetDashboardStats(since)
+}
+
+func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
 	for i := range sessions {
 		if hasUsage(sessions[i].Usage) || sessions[i].TranscriptPath == "" {
 			continue
@@ -72,14 +90,10 @@ func (s *EventService) ListSessions() ([]domain.Session, error) {
 			sessions[i].TranscriptPath,
 			usage,
 		); err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return sessions, nil
-}
-
-func (s *EventService) GetDashboardStats() (*domain.DashboardStats, error) {
-	return s.repo.GetDashboardStats()
+	return nil
 }
 
 func computeUsage(agent, transcriptPath string) domain.SessionUsage {

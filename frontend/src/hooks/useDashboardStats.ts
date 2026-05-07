@@ -27,7 +27,7 @@ export interface DashboardStats {
   agent_usage: AgentModelUsage[]
 }
 
-export function useDashboardStats() {
+export function useDashboardStats(range_: string = '') {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -35,7 +35,8 @@ export function useDashboardStats() {
     let mounted = true
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/dashboard/stats')
+        const params = range_ ? `?range=${range_}` : ''
+        const res = await fetch(`/api/dashboard/stats${params}`)
         if (res.ok) {
           const data = await res.json()
           if (mounted) {
@@ -48,13 +49,14 @@ export function useDashboardStats() {
       }
     }
 
+    setLoading(true)
     fetchStats()
     const interval = setInterval(fetchStats, 5000)
     return () => {
       mounted = false
       clearInterval(interval)
     }
-  }, [])
+  }, [range_])
 
   return { stats, loading }
 }

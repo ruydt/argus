@@ -232,19 +232,29 @@ func (d *DB) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath 
 	return err
 }
 
-func (d *DB) GetDashboardStats() (*domain.DashboardStats, error) {
+func (d *DB) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 	stats := &domain.DashboardStats{
 		Timeline:   []domain.TimelineBucket{},
 		TopActions: []domain.ActionCount{},
 		AgentUsage: []domain.AgentModelUsage{},
 	}
 
+	// Build WHERE clauses based on 'since'
+	eventWhere := ""
+	sessionWhere := ""
+	var args []any
+	if since != "" {
+		eventWhere = " AND created_at >= ?"
+		sessionWhere = " WHERE started_at >= ?"
+		args = append(args, since)
+	}
+
 	// Basic Counts
-	_ = d.db.QueryRow(`SELECT COUNT(*) FROM sessions`).Scan(&stats.TotalSessions)
-	_ = d.db.QueryRow(`SELECT COUNT(*) FROM hook_events`).Scan(&stats.TotalEvents)
-	
+	_ = d.db.QueryRow("SELECT COUNT(*) FROM sessions"+sessionWhere, args...).Scan(&stats.TotalSessions)
+	_ = d.db.QueryRow("SELECT COUNT(*) FROM hook_events WHERE 1=1"+eventWhere, args...).Scan(&stats.TotalEvents)
+
 	var in, out sql.NullInt64
-	_ = d.db.QueryRow(`SELECT SUM(input_tokens), SUM(output_tokens) FROM sessions`).Scan(&in, &out)
+	_ = d.db.QueryRow("SELECT SUM(input_tokens), SUM(output_tokens) FROM sessions"+sessionWhere, args...).Scan(&in, &out)
 	stats.TotalInputTokens = int(in.Int64)
 	stats.TotalOutputTokens = int(out.Int64)
 
@@ -252,10 +262,10 @@ func (d *DB) GetDashboardStats() (*domain.DashboardStats, error) {
 	rows, err := d.db.Query(`
 		SELECT strftime('%Y-%m-%d %H:00', created_at) as bucket, COUNT(*) 
 		FROM hook_events 
-		WHERE created_at IS NOT NULL
+		WHERE created_at IS NOT NULL`+eventWhere+`
 		GROUP BY bucket 
 		ORDER BY bucket ASC
-	`)
+	`, args...)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -270,11 +280,11 @@ func (d *DB) GetDashboardStats() (*domain.DashboardStats, error) {
 	rows, err = d.db.Query(`
 		SELECT action, COUNT(*) as count 
 		FROM hook_events 
-		WHERE action IS NOT NULL AND action != ''
+		WHERE action IS NOT NULL AND action != ''`+eventWhere+`
 		GROUP BY action 
 		ORDER BY count DESC 
 		LIMIT 10
-	`)
+	`, args...)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -288,9 +298,9 @@ func (d *DB) GetDashboardStats() (*domain.DashboardStats, error) {
 	// Agent Usage
 	rows, err = d.db.Query(`
 		SELECT agent, model, SUM(input_tokens), SUM(output_tokens) 
-		FROM sessions 
+		FROM sessions`+sessionWhere+`
 		GROUP BY agent, model
-	`)
+	`, args...)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {

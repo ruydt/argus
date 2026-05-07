@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"agent-monitor/internal/domain"
+	"agent-monitor/internal/repository/sqlite"
 	"agent-monitor/internal/service"
 )
 
@@ -56,7 +57,7 @@ func (m *mockRepo) ListSessions() ([]domain.Session, error) {
 	return append([]domain.Session{}, m.sessions...), nil
 }
 
-func (m *mockRepo) GetDashboardStats() (*domain.DashboardStats, error) {
+func (m *mockRepo) GetDashboardStats(since string) (*domain.DashboardStats, error) {
 	return nil, nil
 }
 
@@ -193,6 +194,43 @@ func TestListSessionsBackfillsZeroUsageFromTranscript(t *testing.T) {
 	}
 	if repo.lastUsage.OutputTokens != 8 || repo.lastUsage.CacheReadTokens != 40 {
 		t.Fatalf("persisted usage = %+v, want output=8 cache_read=40", repo.lastUsage)
+	}
+}
+
+func TestGetDashboardStatsBackfillsZeroUsageFromTranscript(t *testing.T) {
+	transcript := t.TempDir() + "/codex-session.jsonl"
+	data := `{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":120,"cached_input_tokens":40,"output_tokens":8}}}}` + "\n"
+	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
+		t.Fatalf("write transcript: %v", err)
+	}
+
+	repo, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+	if err := repo.UpsertSession(
+		"s1", "codex", "gpt-5.4", "startup", "/tmp", transcript, domain.SessionUsage{},
+	); err != nil {
+		t.Fatalf("UpsertSession: %v", err)
+	}
+
+	svc := service.New(repo)
+	stats, err := svc.GetDashboardStats("")
+	if err != nil {
+		t.Fatalf("GetDashboardStats: %v", err)
+	}
+
+	if stats.TotalInputTokens != 120 {
+		t.Fatalf("total input tokens = %d, want 120", stats.TotalInputTokens)
+	}
+	if stats.TotalOutputTokens != 8 {
+		t.Fatalf("total output tokens = %d, want 8", stats.TotalOutputTokens)
+	}
+	if len(stats.AgentUsage) != 1 {
+		t.Fatalf("agent usage len = %d, want 1", len(stats.AgentUsage))
+	}
+	if stats.AgentUsage[0].Agent != "codex" || stats.AgentUsage[0].Input != 120 || stats.AgentUsage[0].Output != 8 {
+		t.Fatalf("agent usage = %+v, want codex input=120 output=8", stats.AgentUsage[0])
 	}
 }
 
