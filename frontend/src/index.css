@@ -152,4 +152,11 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .shell-motion,
+  .shell-fade {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
 

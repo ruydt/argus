@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { PanelLeft } from 'lucide-react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSessions } from '@/hooks/useSessions'
@@ -8,6 +8,8 @@ import type { LayoutOutletContext } from '@/types'
 import { Sidebar } from './Sidebar'
 
 const COLLAPSED_SESSIONS_STORAGE_KEY = 'events_collapsed_sessions'
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 function loadCollapsedSessions(): Set<string> {
   try {
@@ -24,9 +26,16 @@ export function Layout() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar_collapsed') === 'true'
   )
+  const [mobileDrawerLocationKey, setMobileDrawerLocationKey] = useState<string | null>(null)
   const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(loadCollapsedSessions)
   const [time, setTime] = useState(() => new Date().toLocaleTimeString())
+  const location = useLocation()
+  const mobileToggleRef = useRef<HTMLButtonElement | null>(null)
+  const mobileSidebarRef = useRef<HTMLElement | null>(null)
+  const shellContentRef = useRef<HTMLDivElement | null>(null)
+  const lastFocusedElementRef = useRef<HTMLElement | null>(null)
   const { sessions } = useSessions()
+  const mobileOpen = mobileDrawerLocationKey === location.key
   const sessionUsage = useMemo(
     () =>
       sessions.reduce<Record<string, (typeof sessions)[number]['usage']>>((acc, session) => {
@@ -58,21 +67,130 @@ export function Layout() {
     return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    const shellContent = shellContentRef.current
+    if (!shellContent) return
+
+    if (mobileOpen) {
+      const fallbackToggle = mobileToggleRef.current
+      shellContent.setAttribute('inert', '')
+      lastFocusedElementRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
+
+      const focusFrame = requestAnimationFrame(() => {
+        const focusableElements = Array.from(
+          mobileSidebarRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []
+        )
+        focusableElements[0]?.focus()
+      })
+
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          setMobileDrawerLocationKey(null)
+          return
+        }
+
+        if (event.key !== 'Tab') {
+          return
+        }
+
+        const sidebar = mobileSidebarRef.current
+        if (!sidebar) return
+
+        const focusableElements = Array.from(sidebar.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        if (focusableElements.length === 0) {
+          event.preventDefault()
+          sidebar.focus()
+          return
+        }
+
+        const firstFocusable = focusableElements[0]
+        const lastFocusable = focusableElements[focusableElements.length - 1]
+        const activeElement = document.activeElement
+
+        if (event.shiftKey) {
+          if (activeElement === firstFocusable || !sidebar.contains(activeElement)) {
+            event.preventDefault()
+            lastFocusable.focus()
+          }
+
+          return
+        }
+
+        if (activeElement === lastFocusable || !sidebar.contains(activeElement)) {
+          event.preventDefault()
+          firstFocusable.focus()
+        }
+      }
+
+      document.addEventListener('keydown', handleKeyDown)
+
+      return () => {
+        cancelAnimationFrame(focusFrame)
+        document.removeEventListener('keydown', handleKeyDown)
+        shellContent.removeAttribute('inert')
+
+        const focusTarget = lastFocusedElementRef.current
+        if (focusTarget && document.contains(focusTarget)) {
+          focusTarget.focus()
+          return
+        }
+
+        fallbackToggle?.focus()
+      }
+    }
+
+    shellContent.removeAttribute('inert')
+  }, [mobileOpen])
+
   return (
     <div
       className={cn(
-        'grid h-screen transition-[grid-template-columns] duration-300',
-        collapsed ? 'grid-cols-[72px_minmax(0,1fr)]' : 'grid-cols-[264px_minmax(0,1fr)]'
+        'relative h-screen overflow-hidden bg-background md:grid md:transition-[grid-template-columns] md:duration-300 shell-motion',
+        collapsed ? 'md:grid-cols-[72px_minmax(0,1fr)]' : 'md:grid-cols-[264px_minmax(0,1fr)]'
       )}
     >
-      <Sidebar collapsed={collapsed} />
-      <div className="flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b border-border bg-header px-4 py-2.5 text-[0.75rem] text-muted-foreground">
-          <div className="flex items-center gap-2">
+      <Sidebar collapsed={collapsed} mode="desktop" className="hidden md:flex" />
+
+      <div
+        className={cn(
+          'fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 md:hidden shell-fade',
+          mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        )}
+        onClick={() => setMobileDrawerLocationKey(null)}
+      />
+
+      <Sidebar
+        collapsed={false}
+        mode="mobile"
+        open={mobileOpen}
+        onNavigate={() => setMobileDrawerLocationKey(null)}
+        containerRef={mobileSidebarRef}
+        className="fixed inset-y-0 left-0 z-50 flex w-[264px] max-w-[calc(100vw-2rem)] md:hidden"
+      />
+
+      <div
+        ref={shellContentRef}
+        aria-hidden={mobileOpen ? true : undefined}
+        className="relative z-0 flex min-h-0 flex-col overflow-hidden"
+      >
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-header px-3 py-2.5 text-[0.75rem] text-muted-foreground sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <Button
+              ref={mobileToggleRef}
+              variant="outline"
+              size="icon-lg"
+              className="md:hidden"
+              onClick={() => setMobileDrawerLocationKey(location.key)}
+              aria-label="Open sidebar"
+            >
+              <PanelLeft className="size-4" />
+            </Button>
             <Button
               variant="outline"
               size="icon-lg"
-              className="text-muted-foreground hover:text-foreground"
+              className="hidden md:inline-flex"
               onClick={() => setCollapsed((c) => !c)}
               aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >

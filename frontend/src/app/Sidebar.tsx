@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, type RefObject } from 'react'
 import { BarChart3, LayoutDashboard, TerminalSquare, type LucideIcon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -7,6 +7,11 @@ import { cn } from '@/lib/utils'
 
 interface SidebarProps {
   collapsed: boolean
+  mode?: 'desktop' | 'mobile'
+  open?: boolean
+  onNavigate?: () => void
+  className?: string
+  containerRef?: RefObject<HTMLElement | null>
 }
 
 interface NavItem {
@@ -41,8 +46,17 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
-export function Sidebar({ collapsed }: SidebarProps) {
+export function Sidebar({
+  collapsed,
+  mode = 'desktop',
+  open = false,
+  onNavigate,
+  className,
+  containerRef,
+}: SidebarProps) {
   const location = useLocation()
+  const showCollapsedTooltips = mode === 'desktop' && collapsed
+  const isMobile = mode === 'mobile'
   const isNavItemActive = (to: string, end: boolean) =>
     end ? location.pathname === to : location.pathname.startsWith(to)
   const navButtonClassName = (isActive: boolean) =>
@@ -61,7 +75,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
 
     return (
       <Button asChild variant="ghost" className={navButtonClassName(isActive)}>
-        <NavLink to={to} end={end} aria-label={ariaLabel}>
+        <NavLink to={to} end={end} aria-label={ariaLabel} onClick={() => onNavigate?.()}>
           <Icon className="size-4 shrink-0" />
           {collapsed ? <span className="sr-only">{ariaLabel}</span> : <span>{label}</span>}
         </NavLink>
@@ -69,12 +83,37 @@ export function Sidebar({ collapsed }: SidebarProps) {
     )
   }
 
+  useEffect(() => {
+    const container = containerRef?.current
+    if (!container || !isMobile) return
+
+    if (open) {
+      container.removeAttribute('inert')
+      return
+    }
+
+    container.setAttribute('inert', '')
+    return () => container.removeAttribute('inert')
+  }, [containerRef, isMobile, open])
+
   return (
     <aside
+      ref={containerRef}
       className={cn(
-        'flex h-full shrink-0 flex-col overflow-hidden border-r border-[#333] bg-[#0c0c0c] transition-all duration-300',
-        collapsed ? 'px-2 py-4' : 'px-4 py-5'
+        'flex h-full shrink-0 flex-col overflow-hidden border-r border-[#333] bg-[#0c0c0c] transition-all duration-300 shell-motion',
+        collapsed ? 'px-2 py-4' : 'px-4 py-5',
+        isMobile && [
+          'shadow-2xl transition-transform duration-300',
+          open ? 'translate-x-0' : '-translate-x-full',
+          open ? 'pointer-events-auto' : 'pointer-events-none',
+        ],
+        className
       )}
+      aria-hidden={isMobile ? !open : undefined}
+      aria-label={isMobile ? 'Primary navigation' : undefined}
+      aria-modal={isMobile ? true : undefined}
+      role={isMobile ? 'dialog' : undefined}
+      tabIndex={isMobile ? -1 : undefined}
     >
       <div
         className={cn(
@@ -94,11 +133,11 @@ export function Sidebar({ collapsed }: SidebarProps) {
         )}
       </div>
       <TooltipProvider delayDuration={100}>
-        <nav className={cn('mt-5 flex flex-col gap-2', collapsed && 'items-center')}>
+        <nav className={cn('mt-5 flex flex-col gap-2', showCollapsedTooltips && 'items-center')}>
           {NAV_ITEMS.map((item) => {
             const button = renderNavButton(item)
 
-            return collapsed ? (
+            return showCollapsedTooltips ? (
               <Tooltip key={item.to}>
                 <TooltipTrigger asChild>{button}</TooltipTrigger>
                 <TooltipContent side="right" sideOffset={10}>
