@@ -1,4 +1,12 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { UsageStats } from '@/types/usage'
 
@@ -9,12 +17,12 @@ type UsageChartsProps = {
 export function UsageCharts({ stats }: UsageChartsProps) {
   return (
     <div className="grid gap-6">
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle>Total Tokens ({stats.toks.toLocaleString()})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[250px] w-full">
+        <CardContent className="px-3 sm:px-6">
+          <div className="h-[250px] min-w-0 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.daily} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                 <defs>
@@ -24,10 +32,16 @@ export function UsageCharts({ stats }: UsageChartsProps) {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
-                <XAxis dataKey="date" stroke="#666" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#666"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis
                   stroke="#666"
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) =>
@@ -42,7 +56,11 @@ export function UsageCharts({ stats }: UsageChartsProps) {
                   cursor={false}
                   isAnimationActive={false}
                   animationDuration={0}
-                  contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: 8 }}
+                  contentStyle={{
+                    backgroundColor: '#111',
+                    border: '1px solid #333',
+                    borderRadius: 8,
+                  }}
                   itemStyle={{ color: '#fff' }}
                   labelStyle={{ color: '#888', marginBottom: 4 }}
                 />
@@ -59,12 +77,12 @@ export function UsageCharts({ stats }: UsageChartsProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle>Total Requests ({stats.reqs.toLocaleString()})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[250px] w-full">
+        <CardContent className="px-3 sm:px-6">
+          <div className="h-[250px] min-w-0 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.daily} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                 <defs>
@@ -74,13 +92,23 @@ export function UsageCharts({ stats }: UsageChartsProps) {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
-                <XAxis dataKey="date" stroke="#666" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#666" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#666"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
                 <Tooltip
                   cursor={false}
                   isAnimationActive={false}
                   animationDuration={0}
-                  contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: 8 }}
+                  contentStyle={{
+                    backgroundColor: '#111',
+                    border: '1px solid #333',
+                    borderRadius: 8,
+                  }}
                   itemStyle={{ color: '#fff' }}
                   labelStyle={{ color: '#888', marginBottom: 4 }}
                 />

@@ -19,11 +19,11 @@ export function UsageTables({ stats }: UsageTablesProps) {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle>Model Breakdown</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -45,11 +45,11 @@ export function UsageTables({ stats }: UsageTablesProps) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle>API Key Breakdown</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

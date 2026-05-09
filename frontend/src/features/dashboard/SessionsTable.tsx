@@ -39,7 +39,7 @@ export function SessionsTable({ stats }: SessionsTableProps) {
       <CardHeader>
         <CardTitle className="text-sm font-medium text-muted-foreground">Sessions</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="overflow-x-auto p-0">
         {stats.session_usage.length > 0 ? (
           <Table>
             <TableHeader>

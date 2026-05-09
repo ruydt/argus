@@ -8,8 +8,7 @@ import type { LayoutOutletContext } from '@/types'
 import { Sidebar } from './Sidebar'
 
 const COLLAPSED_SESSIONS_STORAGE_KEY = 'events_collapsed_sessions'
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 const MOBILE_SIDEBAR_ID = 'mobile-sidebar'
 const DESKTOP_MEDIA_QUERY = '(min-width: 768px)'
 
@@ -18,7 +17,9 @@ function loadCollapsedSessions(): Set<string> {
     const raw = localStorage.getItem(COLLAPSED_SESSIONS_STORAGE_KEY)
     if (!raw) return new Set()
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? new Set(parsed.filter((value): value is string => typeof value === 'string')) : new Set()
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((value): value is string => typeof value === 'string'))
+      : new Set()
   } catch {
     return new Set()
   }
@@ -117,7 +118,9 @@ export function Layout() {
         const sidebar = mobileSidebarRef.current
         if (!sidebar) return
 
-        const focusableElements = Array.from(sidebar.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        const focusableElements = Array.from(
+          sidebar.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+        )
         if (focusableElements.length === 0) {
           event.preventDefault()
           sidebar.focus()
@@ -166,11 +169,16 @@ export function Layout() {
   return (
     <div
       className={cn(
-        'relative h-screen overflow-hidden bg-background md:grid md:transition-[grid-template-columns] md:duration-300 shell-motion',
+        'relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background md:grid md:h-screen md:transition-[grid-template-columns] md:duration-300 shell-motion',
         collapsed ? 'md:grid-cols-[72px_minmax(0,1fr)]' : 'md:grid-cols-[264px_minmax(0,1fr)]'
       )}
     >
-      <Sidebar collapsed={collapsed} mode="desktop" className="hidden md:flex" />
+      <Sidebar
+        collapsed={collapsed}
+        mode="desktop"
+        onToggleCollapse={() => setCollapsed((current) => !current)}
+        className="hidden md:flex"
+      />
 
       <div
         className={cn(
@@ -194,7 +202,7 @@ export function Layout() {
       <div
         ref={shellContentRef}
         aria-hidden={mobileOpen ? true : undefined}
-        className="relative z-0 flex min-h-0 flex-col overflow-hidden"
+        className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-header px-3 py-2.5 text-[0.75rem] text-muted-foreground sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
@@ -207,15 +215,6 @@ export function Layout() {
               aria-label="Open sidebar"
               aria-controls={MOBILE_SIDEBAR_ID}
               aria-expanded={mobileOpen}
-            >
-              <PanelLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon-lg"
-              className="hidden md:inline-flex"
-              onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <PanelLeft className="size-4" />
             </Button>

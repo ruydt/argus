@@ -20,9 +20,7 @@ export function highlight(text: string, query: string): ReactNode {
     'span',
     null,
     ...parts.map((part, i) =>
-      part.toLowerCase() === query.toLowerCase()
-        ? createElement('mark', { key: i }, part)
-        : part
+      part.toLowerCase() === query.toLowerCase() ? createElement('mark', { key: i }, part) : part
     )
   )
 }

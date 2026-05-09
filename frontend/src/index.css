@@ -74,12 +74,18 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'JetBrains Mono', monospace;
   background: var(--bg);
   color: var(--text);
-  height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -152,11 +158,56 @@ body {
   }
 }
 
+.sidebar-label-motion {
+  overflow: hidden;
+  min-width: 0;
+  transform-origin: left center;
+  transition-property: opacity, transform, max-width, margin-inline-start;
+  transition-duration: 140ms, 220ms, 220ms, 220ms;
+  transition-timing-function:
+    ease, cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1),
+    cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, max-width, margin-inline-start;
+}
+
+.sidebar-label-nav {
+  --sidebar-label-gap: 0.625rem;
+  --sidebar-label-max-width: 11rem;
+  white-space: nowrap;
+}
+
+.sidebar-label-toggle {
+  --sidebar-label-gap: 0.75rem;
+  --sidebar-label-max-width: 9rem;
+}
+
+.sidebar-label-open {
+  opacity: 1;
+  transform: translateX(0);
+  max-width: var(--sidebar-label-max-width);
+  margin-inline-start: var(--sidebar-label-gap);
+  transition-delay: 110ms;
+}
+
+.sidebar-label-closed {
+  opacity: 0;
+  transform: translateX(-0.35rem);
+  max-width: 0;
+  margin-inline-start: 0;
+  transition-delay: 0ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shell-motion,
-  .shell-fade {
+  .shell-fade,
+  .sidebar-label-motion {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
-}
 
+  .sidebar-label-open,
+  .sidebar-label-closed {
+    transform: none !important;
+    transition-delay: 0ms !important;
+  }
+}

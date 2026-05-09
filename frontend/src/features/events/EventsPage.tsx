@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useOutletContext } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ export function EventsPage() {
   } = useEventFilters(events)
 
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   const toggleSession = (id: string) => {
     setCollapsedSessions((prev) => {
@@ -42,7 +44,24 @@ export function EventsPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#0c0c0c]">
+      <div className="border-b border-[#333] bg-[#111] px-4 py-2 sm:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-between border-[#333] bg-black text-[#cccccc] hover:bg-white/[0.03] hover:text-[#cccccc]"
+          onClick={() => setMobileFiltersOpen((open) => !open)}
+          aria-expanded={mobileFiltersOpen}
+          aria-controls="event-filters"
+        >
+          <span className="inline-flex items-center gap-2">
+            <SlidersHorizontal className="size-3.5" />
+            Filters
+          </span>
+          <span>{mobileFiltersOpen ? 'Hide' : 'Show'}</span>
+        </Button>
+      </div>
       <EventFilters
+        id="event-filters"
         actionFilter={actionFilter}
         setActionFilter={setActionFilter}
         searchQuery={searchQuery}
@@ -55,6 +74,7 @@ export function EventsPage() {
         setCustomStart={setCustomStart}
         customEnd={customEnd}
         setCustomEnd={setCustomEnd}
+        className={mobileFiltersOpen ? 'sm:flex' : 'hidden sm:flex'}
       />
 
       <div className="relative min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">

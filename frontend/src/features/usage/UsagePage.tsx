@@ -34,22 +34,19 @@ export function UsagePage() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-6 py-6">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
         <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-[22px] font-semibold text-foreground">OpenAI Usage</h1>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Input
               type="password"
               placeholder="OpenAI Admin API Key..."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className="w-[280px]"
+              className="w-full sm:w-[280px]"
             />
-            <Select
-              value={timeRange.toString()}
-              onValueChange={(val) => setTimeRange(Number(val))}
-            >
-              <SelectTrigger className="w-[120px]">
+            <Select value={timeRange.toString()} onValueChange={(val) => setTimeRange(Number(val))}>
+              <SelectTrigger className="w-full sm:w-[120px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -62,7 +59,12 @@ export function UsagePage() {
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <Button onClick={fetchUsage} disabled={loading} variant="secondary">
+            <Button
+              onClick={fetchUsage}
+              disabled={loading}
+              variant="secondary"
+              className="w-full sm:w-auto"
+            >
               {loading ? 'Loading...' : 'Fetch'}
             </Button>
           </div>

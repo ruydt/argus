@@ -77,9 +77,9 @@ export function useEventFilters(events: EventRecord[]) {
       } else {
         if (rangeStartMs !== null && eventTime < rangeStartMs) return false
       }
-      
+
       if (actionFilter !== 'all' && e.action !== actionFilter) return false
-      
+
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
         if (

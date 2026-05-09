@@ -34,14 +34,14 @@ export function ActivityPanel({ stats }: ActivityPanelProps) {
 
   return (
     <div className="grid gap-4">
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Events over time
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
+        <CardContent className="px-3 sm:px-6">
+          <div className="h-[300px] min-w-0 w-full">
             {timelineData.length > 0 ? (
               <ChartContainer config={activityChartConfig} className="h-full w-full">
                 <AreaChart data={timelineData}>
@@ -52,8 +52,8 @@ export function ActivityPanel({ stats }: ActivityPanelProps) {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="localLabel" fontSize={11} axisLine={false} tickLine={false} />
-                  <YAxis fontSize={11} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="localLabel" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Area
                     type="monotone"
@@ -75,7 +75,7 @@ export function ActivityPanel({ stats }: ActivityPanelProps) {
         <CardHeader>
           <CardTitle className="text-sm font-medium text-muted-foreground">Top actions</CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="overflow-x-auto p-0">
           <Table>
             <TableHeader>
               <TableRow>

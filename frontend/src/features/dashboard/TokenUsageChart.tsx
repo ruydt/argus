@@ -33,19 +33,23 @@ export function TokenUsageChart({ stats }: TokenUsageChartProps) {
   const chartData = toTokenChartData(stats)
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle className="text-sm font-medium text-muted-foreground">Tokens by Model</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
+      <CardContent className="px-3 sm:px-6">
+        <div className="h-[300px] min-w-0 w-full">
           {chartData.length > 0 ? (
             <ChartContainer config={tokensChartConfig} className="h-full w-full">
-              <BarChart data={chartData} margin={{ top: 20, right: 0, left: 0, bottom: 20 }} barSize={60}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 20, right: 0, left: 0, bottom: 20 }}
+                barSize={60}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="model"
-                  fontSize={11}
+                  fontSize={10}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(val) => {
@@ -54,7 +58,7 @@ export function TokenUsageChart({ stats }: TokenUsageChartProps) {
                   }}
                 />
                 <YAxis
-                  fontSize={11}
+                  fontSize={10}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(value) => {
@@ -63,12 +67,27 @@ export function TokenUsageChart({ stats }: TokenUsageChartProps) {
                     return value
                   }}
                 />
-                <ChartTooltip cursor={false} isAnimationActive={false} animationDuration={0} content={<TooltipContent />} />
+                <ChartTooltip
+                  cursor={false}
+                  isAnimationActive={false}
+                  animationDuration={0}
+                  content={<TooltipContent />}
+                />
                 <Legend content={<LegendContent />} verticalAlign="top" />
-                <Bar dataKey="cache_read" stackId="a" fill="var(--color-cache_read)" radius={[0, 0, 4, 4]} />
+                <Bar
+                  dataKey="cache_read"
+                  stackId="a"
+                  fill="var(--color-cache_read)"
+                  radius={[0, 0, 4, 4]}
+                />
                 <Bar dataKey="input" stackId="a" fill="var(--color-input)" />
                 <Bar dataKey="cache_creation" stackId="a" fill="var(--color-cache_creation)" />
-                <Bar dataKey="output" stackId="a" fill="var(--color-output)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="output"
+                  stackId="a"
+                  fill="var(--color-output)"
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ChartContainer>
           ) : (
@@ -112,7 +131,15 @@ function TooltipContent({ active, payload, label }: TooltipContentProps) {
   )
 }
 
-function TooltipRow({ label, value, color }: { label: string; value: string | number; color: string }) {
+function TooltipRow({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: string | number
+  color: string
+}) {
   return (
     <div className="flex items-center justify-between gap-4 text-sm">
       <span className="flex items-center gap-2 text-muted-foreground">
@@ -131,7 +158,7 @@ type LegendContentProps = {
 function LegendContent({ payload }: LegendContentProps) {
   if (!payload?.length) return null
   return (
-    <div className="mb-4 flex flex-wrap justify-center gap-4 text-sm">
+    <div className="mb-4 flex flex-wrap justify-center gap-3 text-xs sm:text-sm">
       {payload.map((entry) => (
         <div key={entry.value} className="flex items-center gap-2">
           <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />

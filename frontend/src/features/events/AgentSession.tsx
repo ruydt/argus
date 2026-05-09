@@ -53,19 +53,23 @@ export function AgentSession({
       <CollapsibleTrigger asChild>
         <div
           className={cn(
-            'flex justify-between gap-3 items-center px-3 py-[10px] cursor-pointer',
+            'flex flex-col items-start justify-between gap-3 px-3 py-[10px] cursor-pointer sm:flex-row sm:items-center',
             'bg-white/[0.03] border-b border-white/[0.06]',
             isCollapsed && 'border-b-0'
           )}
         >
-          <div className="text-[0.8rem] text-[#47ff9c] font-bold break-all inline-flex items-center gap-2">
+          <div className="inline-flex min-w-0 items-center gap-2 text-[0.8rem] font-bold text-[#47ff9c]">
             <span className={cn('agent-badge', `agent-${agent.badgeClass}`)}>
               <Logo size={12} />
             </span>
-            {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
-            <span className="text-[#666] text-[0.7rem] ml-[10px]">{isCollapsed ? '▼' : '▲'}</span>
+            <span className="min-w-0 break-words sm:break-all">
+              {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
+            </span>
+            <span className="ml-[10px] shrink-0 text-[0.7rem] text-[#666]">
+              {isCollapsed ? '▼' : '▲'}
+            </span>
           </div>
-          <div className="text-[0.68rem] text-[#666] text-right whitespace-nowrap inline-flex items-center gap-2">
+          <div className="inline-flex w-full flex-wrap items-center gap-2 text-[0.68rem] text-[#666] sm:w-auto sm:justify-end sm:text-right">
             {sessionUsage[sessionId] &&
               agent.buildUsageItems &&
               (() => {

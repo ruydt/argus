@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -21,6 +22,8 @@ type EventFiltersProps = {
   setCustomStart: (v: string) => void
   customEnd: string
   setCustomEnd: (v: string) => void
+  id?: string
+  className?: string
 }
 
 export function EventFilters({
@@ -36,9 +39,17 @@ export function EventFilters({
   setCustomStart,
   customEnd,
   setCustomEnd,
+  id,
+  className,
 }: EventFiltersProps) {
   return (
-    <div className="flex flex-col gap-3 border-b border-[#333] bg-[#111] px-4 py-[10px] sm:flex-row sm:flex-wrap sm:items-center sm:gap-5">
+    <div
+      id={id}
+      className={cn(
+        'flex flex-col gap-3 border-b border-[#333] bg-[#111] px-4 py-[10px] sm:flex-row sm:flex-wrap sm:items-center sm:gap-5',
+        className
+      )}
+    >
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <span className="text-[0.7rem] uppercase text-[#666]">Action</span>
         <Select value={actionFilter} onValueChange={setActionFilter}>

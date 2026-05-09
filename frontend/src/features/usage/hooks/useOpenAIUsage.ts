@@ -160,10 +160,14 @@ export function useOpenAIUsage() {
       ;(compData.data ?? []).forEach((bucket) => {
         const date = getBucketDate(bucket.start_time)
         const requestCount =
-          bucket.results?.reduce((sum, result) => sum + Number(result.num_model_requests || 0), 0) ?? 0
+          bucket.results?.reduce(
+            (sum, result) => sum + Number(result.num_model_requests || 0),
+            0
+          ) ?? 0
         const tokenCount =
           bucket.results?.reduce(
-            (sum, result) => sum + Number(result.input_tokens || 0) + Number(result.output_tokens || 0),
+            (sum, result) =>
+              sum + Number(result.input_tokens || 0) + Number(result.output_tokens || 0),
             0
           ) ?? 0
 
@@ -176,7 +180,6 @@ export function useOpenAIUsage() {
           models: {},
         })
       })
-
       ;(modData.data ?? []).forEach((bucket) => {
         const date = getBucketDate(bucket.start_time)
         const dayEntry = dailyMap.get(date) ?? makeDailyPoint(date)
@@ -189,7 +192,6 @@ export function useOpenAIUsage() {
           dayEntry.models[result.model] = (dayEntry.models[result.model] || 0) + count
         })
       })
-
       ;(keyData.data ?? []).forEach((bucket) => {
         bucket.results?.forEach((result) => {
           if (!result.api_key_id) return
