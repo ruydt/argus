@@ -91,7 +91,7 @@ export function Sidebar({
   const desktopToggleButtonClassName = cn(
     'h-9 gap-0 border border-transparent text-[0.8rem] font-normal text-[#666] shadow-none transition-colors duration-200 hover:bg-white/[0.06] hover:text-[#aaa]',
     collapsed
-      ? 'size-9 self-center justify-center rounded-lg px-0'
+      ? 'size-9 justify-center rounded-lg px-0'
       : 'size-9 justify-center rounded-lg px-0'
   )
 
@@ -135,8 +135,8 @@ export function Sidebar({
       id={id}
       ref={containerRef}
       className={cn(
-        'sidebar-root flex h-full shrink-0 flex-col overflow-hidden transition-all duration-300 shell-motion',
-        collapsed ? 'px-2 py-3' : 'px-3 py-3',
+        'sidebar-root flex h-full shrink-0 flex-col overflow-hidden transition-all duration-[280ms] ease-[cubic-bezier(0.22,1,0.36,1)] shell-motion',
+        'px-2 py-3',
         isMobile && [
           'shadow-2xl transition-transform duration-300',
           open ? 'translate-x-0' : '-translate-x-full',
@@ -178,7 +178,7 @@ export function Sidebar({
         <div
           className={cn(
             'mb-1 flex h-9 w-full items-center',
-            collapsed ? 'justify-center px-0' : 'justify-between px-1'
+            collapsed ? 'justify-center px-0' : 'justify-between pl-[6px] pr-[4px]'
           )}
         >
           {/* Logo + name — hidden when collapsed */}
@@ -212,7 +212,7 @@ export function Sidebar({
       )}
 
       <TooltipProvider delayDuration={100}>
-        <nav className={cn('mt-1 flex flex-col gap-0.5', showCollapsedTooltips && 'items-center')}>
+        <nav className={cn('mt-1 flex flex-col gap-0.5')}>
           {NAV_ITEMS.map((item) => {
             const button = renderNavButton(item)
 
