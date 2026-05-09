@@ -10,15 +10,15 @@
 /* App design tokens + shadcn dark theme tokens */
 :root {
   /* App custom tokens */
-  --bg: #0c0c0c;
-  --header: #1e1e1e;
+  --bg: #111111;
+  --header: #111111;
   --text: #cccccc;
   --dim: #666;
-  --brand: #47ff9c;
-  --app-border: #333;
+  --brand: #a78bfa;
+  --app-border: #222;
   --delete: #ff5f56;
-  --create: #47ff9c;
-  --edit: #3fa5ff;
+  --create: #a78bfa;
+  --edit: #60a5fa;
   --bash: #f5a623;
   --stop: #ff6b9d;
   --prompt: #c084fc;
@@ -26,7 +26,7 @@
   --session: #64748b;
   --agent: #fb923c;
   --task: #facc15;
-  --notify: #4ade80;
+  --notify: #60a5fa;
   --permission: #f87171;
   --file: #a78bfa;
   --config: #94a3b8;
@@ -36,37 +36,37 @@
   --instruct: #818cf8;
 
   /* shadcn semantic tokens — set to dark values since app is always dark */
-  --background: #0c0c0c;
+  --background: #111111;
   --foreground: #cccccc;
-  --card: #1a1a1a;
+  --card: #191919;
   --card-foreground: #cccccc;
-  --popover: #1a1a1a;
+  --popover: #1c1c1c;
   --popover-foreground: #cccccc;
   --primary: #cccccc;
-  --primary-foreground: #0c0c0c;
-  --secondary: #1e1e1e;
+  --primary-foreground: #111111;
+  --secondary: #1c1c1c;
   --secondary-foreground: #cccccc;
-  --muted: #1e1e1e;
+  --muted: #1c1c1c;
   --muted-foreground: #666;
-  --accent: #1e1e1e;
+  --accent: #1c1c1c;
   --accent-foreground: #cccccc;
   --destructive: #ff5f56;
-  --border: #333;
-  --input: #333;
+  --border: #222;
+  --input: #2a2a2a;
   --ring: #555;
   --radius: 0.5rem;
   --chart-1: #f97316;
   --chart-2: #818cf8;
-  --chart-3: #47ff9c;
+  --chart-3: #a78bfa;
   --chart-4: #ffd97e;
   --chart-5: #ff8e8e;
-  --sidebar: #0c0c0c;
+  --sidebar: #111111;
   --sidebar-foreground: #cccccc;
-  --sidebar-primary: #47ff9c;
-  --sidebar-primary-foreground: #0c0c0c;
-  --sidebar-accent: #1e1e1e;
+  --sidebar-primary: #a78bfa;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #1c1c1c;
   --sidebar-accent-foreground: #cccccc;
-  --sidebar-border: #333;
+  --sidebar-border: #1e1e1e;
   --sidebar-ring: #555;
 }
 
@@ -163,7 +163,7 @@ body {
   min-width: 0;
   transform-origin: left center;
   transition-property: opacity, transform, max-width, margin-inline-start;
-  transition-duration: 140ms, 220ms, 220ms, 220ms;
+  transition-duration: 120ms, 240ms, 240ms, 240ms;
   transition-timing-function:
     ease, cubic-bezier(0.22, 1, 0.36, 1), cubic-bezier(0.22, 1, 0.36, 1),
     cubic-bezier(0.22, 1, 0.36, 1);
@@ -171,9 +171,10 @@ body {
 }
 
 .sidebar-label-nav {
-  --sidebar-label-gap: 0.625rem;
-  --sidebar-label-max-width: 11rem;
+  --sidebar-label-gap: 0.6rem;
+  --sidebar-label-max-width: 10rem;
   white-space: nowrap;
+  font-size: 0.8rem;
 }
 
 .sidebar-label-toggle {
@@ -186,15 +187,33 @@ body {
   transform: translateX(0);
   max-width: var(--sidebar-label-max-width);
   margin-inline-start: var(--sidebar-label-gap);
-  transition-delay: 110ms;
+  transition-delay: 90ms;
 }
 
 .sidebar-label-closed {
   opacity: 0;
-  transform: translateX(-0.35rem);
+  transform: translateX(-0.25rem);
   max-width: 0;
   margin-inline-start: 0;
   transition-delay: 0ms;
+}
+
+/* ─── Sidebar root ─── */
+.sidebar-root {
+  background: #111111;
+  border-right: 1px solid #1e1e1e;
+}
+
+/* ─── Sidebar nav item active indicator ─── */
+.sidebar-nav-active .sidebar-nav-icon {
+  color: #a78bfa;
+}
+
+/* ─── Sidebar bottom divider ─── */
+.sidebar-bottom-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #1e1e1e 30%, #1e1e1e 70%, transparent);
+  margin: 0 4px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -169,8 +169,8 @@ export function Layout() {
   return (
     <div
       className={cn(
-        'relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background md:grid md:h-screen md:transition-[grid-template-columns] md:duration-300 shell-motion',
-        collapsed ? 'md:grid-cols-[72px_minmax(0,1fr)]' : 'md:grid-cols-[264px_minmax(0,1fr)]'
+        'relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background md:grid md:h-screen md:transition-[grid-template-columns] md:duration-[280ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] shell-motion',
+        collapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[240px_minmax(0,1fr)]'
       )}
     >
       <Sidebar
@@ -196,7 +196,7 @@ export function Layout() {
         onNavigate={() => setMobileDrawerLocationKey(null)}
         onClose={() => setMobileDrawerLocationKey(null)}
         containerRef={mobileSidebarRef}
-        className="fixed inset-y-0 left-0 z-50 flex w-[264px] max-w-[calc(100vw-2rem)] md:hidden"
+        className="fixed inset-y-0 left-0 z-50 flex w-[240px] max-w-[calc(100vw-2rem)] md:hidden"
       />
 
       <div
@@ -204,13 +204,13 @@ export function Layout() {
         aria-hidden={mobileOpen ? true : undefined}
         className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-header px-3 py-2.5 text-[0.75rem] text-muted-foreground sm:px-4">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[#222] bg-[#0c0c0c] px-3 py-2 text-[0.75rem] text-muted-foreground sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <Button
               ref={mobileToggleRef}
-              variant="outline"
+              variant="ghost"
               size="icon-lg"
-              className="md:hidden"
+              className="md:hidden text-[#666] hover:text-[#ccc] hover:bg-white/[0.05]"
               onClick={() => setMobileDrawerLocationKey(location.key)}
               aria-label="Open sidebar"
               aria-controls={MOBILE_SIDEBAR_ID}
@@ -218,11 +218,11 @@ export function Layout() {
             >
               <PanelLeft className="size-4" />
             </Button>
-            <span className="text-[0.65rem] font-medium tracking-[0.08em] text-muted-foreground">
+            <span className="hidden text-[0.65rem] font-medium tracking-[0.08em] text-[#555] md:inline">
               agent-monitor
             </span>
           </div>
-          <span className="tabular-nums text-muted-foreground">{time}</span>
+          <span className="tabular-nums text-[#555]">{time}</span>
         </header>
         <Outlet context={outletContext} />
       </div>

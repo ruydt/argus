@@ -55,7 +55,7 @@
 }
 
 mark {
-  background: rgba(71, 255, 156, 0.3);
+  background: rgba(139, 92, 246, 0.25);
   color: #fff;
 }
 
@@ -253,12 +253,12 @@ mark {
   background: rgba(255, 80, 80, 0.18);
 }
 .diff-added {
-  background: rgba(71, 255, 156, 0.08);
-  color: #7effa5;
+  background: rgba(139, 92, 246, 0.08);
+  color: #c4b5fd;
 }
 .diff-added .diff-marker {
-  color: #47ff9c;
-  background: rgba(71, 255, 156, 0.15);
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.15);
 }
 
 /* ─── Floating tooltip ─── */
