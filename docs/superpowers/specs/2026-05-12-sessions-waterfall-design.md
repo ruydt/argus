@@ -17,20 +17,27 @@ Three-panel layout inside the existing `Layout` shell:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│ Top bar: session dropdown | live dot | time range │
+│ Top bar: 2 active | live dot | time range         │
 ├───────────────────┬──────────────────────────────┤
 │  Left tree (260px)│  Right Gantt (flex-1)         │
-│                   │  time axis + grid lines        │
-│  root session     │  ████████████████████ 8m 22s  │
-│  ↳ Explore        │    ████ 1m 45s                │
-│  ↳ gsd-planner    │        ████████ 2m 48s        │
-│  ↳ gsd-executor ● │                  ██████● run  │
+│                   │  [0:00──────────────── 8m 22s]│
+│  ▼ terminal-1   ● │  ████████████████████ 8m 22s  │
+│    ↳ Explore      │    ████ 1m 45s                │
+│    ↳ gsd-planner  │        ████████ 2m 48s        │
+│    ↳ gsd-exec ●   │                  ██████● run  │
+│                   │  [0:00──────────── 3m 10s]    │
+│  ▼ terminal-2   ● │  ████████████ 3m 10s          │
+│    ↳ Explore      │    ████████ 2m 00s            │
+│                   │                               │
+│  ▶ terminal-3     │  (collapsed)                  │
 ├───────────────────┴──────────────────────────────┤
 │  Bottom detail panel (~100px)                     │
-│  Selected node: name · status · agent_id · events │
+│  Selected node: name · status · agent_id · CWD   │
 │                                    [view events →] │
 └──────────────────────────────────────────────────┘
 ```
+
+Multiple concurrent root sessions (e.g. multiple terminals) are shown simultaneously — each as a collapsible section. The Gantt uses a **per-root time axis**: bars for each root's children are offset relative to that root's own `started_at`, so parallel sessions don't interfere with each other's scale.
 
 Design tokens: `--bg: #111111`, `--brand: #a78bfa`, `--app-border: #222`, JetBrains Mono font. Match existing page styling exactly.
 
@@ -126,12 +133,12 @@ Export from `types/index.ts`.
 
 ### SessionsPage
 
-State: `selectedRoot: SessionTreeNode | null`, `selectedNode: SessionTreeNode | null`, `timeRange: string` (default: 7 days ago ISO string), `expandedSessions: Set<string>`.
+State: `selectedNode: SessionTreeNode | null`, `timeRange: string` (default: 7 days ago ISO string), `expandedSessions: Set<string>` (root sessions expanded by default).
 
-The page displays ONE root session at a time. `selectedRoot` is set from the session dropdown and defaults to the most recent root session. `SessionTree` and `SessionGantt` receive the flattened subtree of `selectedRoot` only.
+All root sessions within the time range are displayed simultaneously — one collapsible section per root. No session dropdown.
 
 Top bar:
-- Session dropdown — lists all root nodes from `useSessionTree` by `session_id` (truncated) + agent + relative time; selecting an entry sets `selectedRoot`
+- Active session count badge (e.g. "2 active") — count of root sessions with `last_seen_at` within last 10s
 - Live dot (green, pulsing) when SSE connected
 - Time range `<select>`: Last 24h / Last 7 days / Last 30 days / All time → updates `timeRange`
 
@@ -154,16 +161,18 @@ Renders flat list of rows in tree order (depth-first). Each row:
 
 ### SessionGantt
 
-Props: `nodes` (same flattened list as tree), `selectedNode`, `totalDurationMs` (computed from root session span).
+Props: `nodes` (same flattened list as tree, all roots + their children), `selectedNode`.
 
-Time axis: renders 5 evenly spaced labels (0:00 → total). Grid: 4 vertical lines at 25% intervals (`background: #1a1a1a`).
+Each root session gets its own mini time axis row (renders inline above the root's bar). The time axis spans `0:00 → root.totalDuration` with 5 labels. Grid: 4 vertical lines at 25% intervals within that root's section.
 
 Each bar row (height synced with tree row):
-- `started_at` offset relative to root session `started_at`
-- Width = `duration / totalDuration * 100%`
-- Running bars: right edge = `(now - started_at) / totalDuration * 100%`, updated every second via `setInterval` in a `useEffect`; `totalDurationMs` for a still-running root session also updates each second (axis re-renders accordingly)
-- Colors: parent root → `#7c3aed` (violet), `Explore` / general tools → `#1d4ed8` (blue), custom agents → `var(--brand)`, running → `#16a34a` (green)
+- Root row bar: always `width: 100%` of the Gantt column
+- Child row bars: `left = (child.started_at - root.started_at) / root.totalDuration * 100%`, `width = child.duration / root.totalDuration * 100%`
+- `root.totalDuration` = `last_seen_at - started_at` for completed sessions; `now - started_at` for running sessions (updated every second via `setInterval` in a `useEffect`)
+- Running child bars: right edge advances each second same way
+- Colors: root row → `linear-gradient(#581c87, #7c3aed)`, `Explore`/general → `#1d4ed8`, custom agents → `var(--brand)`, running → `#16a34a`
 - Label inside bar: duration string; omit if bar too narrow (< 60px)
+- Collapsed root: Gantt renders only the root bar row (no children shown)
 
 ### SessionDetail
 
