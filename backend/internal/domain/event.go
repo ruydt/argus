@@ -74,15 +74,23 @@ type Session struct {
 	Usage          SessionUsage `json:"usage"`
 }
 
+type SessionTreeNode struct {
+	Session  Session           `json:"session"`
+	AgentID  string            `json:"agent_id,omitempty"`
+	Children []SessionTreeNode `json:"children"`
+}
+
 type DashboardStats struct {
-	TotalSessions     int                     `json:"total_sessions"`
-	TotalEvents       int                     `json:"total_events"`
-	TotalInputTokens  int                     `json:"total_input_tokens"`
-	TotalOutputTokens int                     `json:"total_output_tokens"`
-	Timeline          []TimelineBucket        `json:"timeline"`
-	TopActions        []ActionCount           `json:"top_actions"`
-	AgentUsage        []AgentModelUsage       `json:"agent_usage"`
-	SessionUsage      []DashboardSessionUsage `json:"session_usage"`
+	TotalSessions       int                     `json:"total_sessions"`
+	TotalEvents         int                     `json:"total_events"`
+	TotalInputTokens    int                     `json:"total_input_tokens"`
+	TotalOutputTokens   int                     `json:"total_output_tokens"`
+	TimelineGranularity string                  `json:"timeline_granularity"`
+	Timeline            []TimelineBucket        `json:"timeline"`
+	TimelineByAgent     []AgentTimelineBucket   `json:"timeline_by_agent"`
+	TopActions          []ActionCount           `json:"top_actions"`
+	AgentUsage          []AgentModelUsage       `json:"agent_usage"`
+	SessionUsage        []DashboardSessionUsage `json:"session_usage"`
 }
 
 type TimelineBucket struct {
@@ -93,6 +101,12 @@ type TimelineBucket struct {
 type ActionCount struct {
 	Name  string `json:"name"`
 	Value int    `json:"value"`
+}
+
+type AgentTimelineBucket struct {
+	Date  string `json:"date"`
+	Agent string `json:"agent"`
+	Count int    `json:"count"`
 }
 
 type AgentModelUsage struct {

@@ -61,6 +61,10 @@ func (m *mockRepo) GetDashboardStats(_, _ string) (*domain.DashboardStats, error
 	return nil, nil
 }
 
+func (m *mockRepo) GetSessionTree(_ string) ([]domain.SessionTreeNode, error) {
+	return nil, nil
+}
+
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _ string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
 		return m.upsertErr

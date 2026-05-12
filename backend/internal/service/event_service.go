@@ -76,10 +76,12 @@ func (s *EventService) GetDashboardStats(since, until string) (*domain.Dashboard
 	}
 	if stats == nil {
 		stats = &domain.DashboardStats{
-			Timeline:     []domain.TimelineBucket{},
-			TopActions:   []domain.ActionCount{},
-			AgentUsage:   []domain.AgentModelUsage{},
-			SessionUsage: []domain.DashboardSessionUsage{},
+			TimelineGranularity: "day",
+			Timeline:            []domain.TimelineBucket{},
+			TimelineByAgent:     []domain.AgentTimelineBucket{},
+			TopActions:          []domain.ActionCount{},
+			AgentUsage:          []domain.AgentModelUsage{},
+			SessionUsage:        []domain.DashboardSessionUsage{},
 		}
 	}
 	enrichDashboardStats(stats, sessions, since, until)
@@ -280,4 +282,8 @@ func (s *EventService) broadcast(e domain.NormalizedEvent) {
 		}
 		return true
 	})
+}
+
+func (s *EventService) GetSessionTree(since string) ([]domain.SessionTreeNode, error) {
+	return s.repo.GetSessionTree(since)
 }

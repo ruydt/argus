@@ -22,6 +22,8 @@ func (noopRepo) ListSessions() ([]domain.Session, error) { return nil, nil }
 
 func (noopRepo) GetDashboardStats(string, string) (*domain.DashboardStats, error) { return nil, nil }
 
+func (noopRepo) GetSessionTree(string) ([]domain.SessionTreeNode, error) { return nil, nil }
+
 func (noopRepo) UpsertSession(string, string, string, string, string, string, domain.SessionUsage) error {
 	return nil
 }

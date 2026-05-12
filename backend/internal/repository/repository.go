@@ -11,4 +11,5 @@ type EventRepository interface {
 	ListSessions() ([]domain.Session, error)
 	UpsertSession(sessionID, agent, model, source, cwd, transcriptPath string, usage domain.SessionUsage) error
 	GetDashboardStats(since, until string) (*domain.DashboardStats, error)
+	GetSessionTree(since string) ([]domain.SessionTreeNode, error)
 }

@@ -224,12 +224,170 @@ func TestGetDashboardStats_filtersEventsAcrossTimezoneOffsets(t *testing.T) {
 	if err := db.Add(e); err != nil {
 		t.Fatalf("Add: %v", err)
 	}
+	if err := db.Add(domain.NormalizedEvent{
+		Time:          "2026-05-09T23:51:00+07:00",
+		Agent:         "claudecode",
+		Session:       "sess2",
+		HookEventName: "PreToolUse",
+		TurnID:        "turn2",
+		ToolUseID:     "tool2",
+		Action:        "EDIT",
+		RawPayload:    []byte(`{}`),
+	}); err != nil {
+		t.Fatalf("Add second event: %v", err)
+	}
 
 	stats, err := db.GetDashboardStats("2026-04-25T17:00:00.000Z", "2026-05-09T16:59:59.999Z")
 	if err != nil {
 		t.Fatalf("GetDashboardStats: %v", err)
 	}
-	if stats.TotalEvents != 1 {
-		t.Fatalf("TotalEvents = %d, want 1", stats.TotalEvents)
+	if stats.TotalEvents != 2 {
+		t.Fatalf("TotalEvents = %d, want 2", stats.TotalEvents)
+	}
+	if len(stats.TimelineByAgent) != 2 {
+		t.Fatalf("len(TimelineByAgent) = %d, want 2", len(stats.TimelineByAgent))
+	}
+
+	agentCounts := map[string]int{}
+	for _, row := range stats.TimelineByAgent {
+		agentCounts[row.Agent] += row.Count
+	}
+	if agentCounts["codex"] != 1 {
+		t.Fatalf("codex count = %d, want 1", agentCounts["codex"])
+	}
+	if agentCounts["claudecode"] != 1 {
+		t.Fatalf("claudecode count = %d, want 1", agentCounts["claudecode"])
+	}
+}
+
+func addEvent(t *testing.T, db *sqlite.DB, e domain.NormalizedEvent) {
+	t.Helper()
+	e.RawPayload = []byte(`{}`)
+	if err := db.Add(e); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+}
+
+func addSession(t *testing.T, db *sqlite.DB, sessionID, agent string) {
+	t.Helper()
+	if err := db.UpsertSession(sessionID, agent, "", "", "/tmp", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession: %v", err)
+	}
+}
+
+func TestGetSessionTree_noSubagents(t *testing.T) {
+	db := newTestDB(t)
+	addSession(t, db, "root1", "claudecode")
+
+	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
+	tree, err := db.GetSessionTree(since)
+	if err != nil {
+		t.Fatalf("GetSessionTree: %v", err)
+	}
+	if len(tree) != 1 {
+		t.Fatalf("got %d roots, want 1", len(tree))
+	}
+	if tree[0].Session.SessionID != "root1" {
+		t.Errorf("root session = %q, want root1", tree[0].Session.SessionID)
+	}
+	if len(tree[0].Children) != 0 {
+		t.Errorf("children = %d, want 0", len(tree[0].Children))
+	}
+}
+
+func TestGetSessionTree_withSubagents(t *testing.T) {
+	db := newTestDB(t)
+	addSession(t, db, "parent", "claudecode")
+	addSession(t, db, "child1", "claudecode")
+	addSession(t, db, "child2", "claudecode")
+
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "parent", HookEventName: "SubagentStart",
+		TurnID: "t1", ToolUseID: "u1", SubagentID: "agent-aaa",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "parent", HookEventName: "SubagentStart",
+		TurnID: "t2", ToolUseID: "u2", SubagentID: "agent-bbb",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "child1", HookEventName: "PreToolUse",
+		TurnID: "t3", ToolUseID: "u3", SubagentID: "agent-aaa",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "child2", HookEventName: "PreToolUse",
+		TurnID: "t4", ToolUseID: "u4", SubagentID: "agent-bbb",
+	})
+
+	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
+	tree, err := db.GetSessionTree(since)
+	if err != nil {
+		t.Fatalf("GetSessionTree: %v", err)
+	}
+	if len(tree) != 1 {
+		t.Fatalf("got %d roots, want 1", len(tree))
+	}
+	if len(tree[0].Children) != 2 {
+		t.Errorf("children = %d, want 2", len(tree[0].Children))
+	}
+}
+
+func TestGetSessionTree_sinceFilter(t *testing.T) {
+	db := newTestDB(t)
+	addSession(t, db, "old-session", "claudecode")
+
+	since := time.Now().Add(time.Hour).Format(time.RFC3339)
+	tree, err := db.GetSessionTree(since)
+	if err != nil {
+		t.Fatalf("GetSessionTree: %v", err)
+	}
+	if len(tree) != 0 {
+		t.Errorf("got %d roots, want 0", len(tree))
+	}
+}
+
+func TestGetSessionTree_nested(t *testing.T) {
+	db := newTestDB(t)
+	addSession(t, db, "root", "claudecode")
+	addSession(t, db, "child", "claudecode")
+	addSession(t, db, "grandchild", "claudecode")
+
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "root", HookEventName: "SubagentStart",
+		TurnID: "t1", ToolUseID: "u1", SubagentID: "agent-child",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "child", HookEventName: "SubagentStart",
+		TurnID: "t2", ToolUseID: "u2", SubagentID: "agent-gc",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "child", HookEventName: "PreToolUse",
+		TurnID: "t3", ToolUseID: "u3", SubagentID: "agent-child",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
+		Session: "grandchild", HookEventName: "PreToolUse",
+		TurnID: "t4", ToolUseID: "u4", SubagentID: "agent-gc",
+	})
+
+	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
+	tree, err := db.GetSessionTree(since)
+	if err != nil {
+		t.Fatalf("GetSessionTree: %v", err)
+	}
+	if len(tree) != 1 {
+		t.Fatalf("roots = %d, want 1", len(tree))
+	}
+	if len(tree[0].Children) != 1 {
+		t.Fatalf("children = %d, want 1", len(tree[0].Children))
+	}
+	if len(tree[0].Children[0].Children) != 1 {
+		t.Fatalf("grandchildren = %d, want 1", len(tree[0].Children[0].Children))
 	}
 }

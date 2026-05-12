@@ -107,8 +107,8 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 		nullStr(e.SubagentID), nullStr(e.SubagentType),
 		nullStr(e.TaskID), nullStr(e.TaskTitle), nullStr(e.TaskDescription),
 		nullStr(e.NotificationType), nullStr(e.NotificationTitle), nullStr(e.NotificationMessage),
-			nullStr(e.ChangeType), nullStr(e.OldCWD), nullStr(e.NewCWD), nullStr(e.ToolCallsJSON),
-			nullStr(e.ToolResultStdout), nullStr(e.ToolResultStderr), nullInt(e.DurationMS), nullStr(e.Trigger),
+		nullStr(e.ChangeType), nullStr(e.OldCWD), nullStr(e.NewCWD), nullStr(e.ToolCallsJSON),
+		nullStr(e.ToolResultStdout), nullStr(e.ToolResultStderr), nullInt(e.DurationMS), nullStr(e.Trigger),
 	)
 	return err
 }
@@ -239,11 +239,14 @@ func (d *DB) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath 
 }
 
 func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, error) {
+	bucketFormat, bucketGranularity := timelineBucketFormat(since, until)
 	stats := &domain.DashboardStats{
-		Timeline:     []domain.TimelineBucket{},
-		TopActions:   []domain.ActionCount{},
-		AgentUsage:   []domain.AgentModelUsage{},
-		SessionUsage: []domain.DashboardSessionUsage{},
+		TimelineGranularity: bucketGranularity,
+		Timeline:            []domain.TimelineBucket{},
+		TimelineByAgent:     []domain.AgentTimelineBucket{},
+		TopActions:          []domain.ActionCount{},
+		AgentUsage:          []domain.AgentModelUsage{},
+		SessionUsage:        []domain.DashboardSessionUsage{},
 	}
 
 	var eventClauses []string
@@ -283,13 +286,13 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 	stats.TotalOutputTokens = int(out.Int64)
 
 	// Timeline
-	if rows, err := d.db.Query(`
-		SELECT strftime('%Y-%m-%d %H:00', created_at) as bucket, COUNT(*) 
+	if rows, err := d.db.Query(fmt.Sprintf(`
+		SELECT strftime('%s', created_at) as bucket, COUNT(*) 
 		FROM hook_events 
 		WHERE created_at IS NOT NULL`+buildAndClause(eventClauses)+`
 		GROUP BY bucket 
 		ORDER BY bucket ASC
-	`, eventArgs...); err == nil {
+	`, bucketFormat), eventArgs...); err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var b domain.TimelineBucket
@@ -300,6 +303,26 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 		_ = rows.Err()
 	} else if err != nil {
 		log.Printf("dashboard: timeline query: %v", err)
+	}
+
+	// Timeline By Agent
+	if rows, err := d.db.Query(fmt.Sprintf(`
+		SELECT strftime('%s', created_at) as bucket, COALESCE(NULLIF(agent, ''), 'unknown') as agent_name, COUNT(*) 
+		FROM hook_events 
+		WHERE created_at IS NOT NULL`+buildAndClause(eventClauses)+`
+		GROUP BY bucket, agent_name
+		ORDER BY bucket ASC, agent_name ASC
+	`, bucketFormat), eventArgs...); err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var b domain.AgentTimelineBucket
+			if err := rows.Scan(&b.Date, &b.Agent, &b.Count); err == nil {
+				stats.TimelineByAgent = append(stats.TimelineByAgent, b)
+			}
+		}
+		_ = rows.Err()
+	} else if err != nil {
+		log.Printf("dashboard: timeline by agent query: %v", err)
 	}
 
 	// Top Actions
@@ -351,6 +374,36 @@ func buildAndClause(clauses []string) string {
 	return " AND " + strings.Join(clauses, " AND ")
 }
 
+func timelineBucketFormat(since, until string) (format string, granularity string) {
+	const (
+		hourly = "%Y-%m-%d %H:00"
+		daily  = "%Y-%m-%d 00:00"
+	)
+
+	if since == "" {
+		return daily, "day"
+	}
+
+	start, err := time.Parse(time.RFC3339, since)
+	if err != nil {
+		return hourly, "hour"
+	}
+
+	end := time.Now().UTC()
+	if until != "" {
+		parsedEnd, endErr := time.Parse(time.RFC3339, until)
+		if endErr != nil {
+			return hourly, "hour"
+		}
+		end = parsedEnd
+	}
+
+	if end.Sub(start) <= 48*time.Hour {
+		return hourly, "hour"
+	}
+	return daily, "day"
+}
+
 func dedupKey(e domain.NormalizedEvent) string {
 	h := sha256.Sum256([]byte(
 		e.Session + "|" + e.TurnID + "|" + e.ToolUseID + "|" + e.HookEventName + "|" + e.Time,
@@ -378,4 +431,131 @@ func jsonSlice[T any](v []T) string {
 	}
 	b, _ := json.Marshal(v)
 	return string(b)
+}
+
+func (d *DB) GetSessionTree(since string) ([]domain.SessionTreeNode, error) {
+	// 1. Load sessions since cutoff
+	sessRows, err := d.db.Query(`
+		SELECT session_id, agent, COALESCE(model,''), COALESCE(source,''), COALESCE(cwd,''),
+		       COALESCE(transcript_path,''), started_at, last_seen_at,
+		       COALESCE(input_tokens,0), COALESCE(output_tokens,0),
+		       COALESCE(cache_creation_tokens,0), COALESCE(cache_read_tokens,0), COALESCE(turns,0)
+		FROM sessions
+		WHERE datetime(started_at) >= datetime(?)
+		ORDER BY started_at ASC`, since)
+	if err != nil {
+		return nil, err
+	}
+	defer sessRows.Close()
+
+	sessionMap := map[string]domain.Session{}
+	for sessRows.Next() {
+		var s domain.Session
+		if err := sessRows.Scan(
+			&s.SessionID, &s.Agent, &s.Model, &s.Source, &s.CWD,
+			&s.TranscriptPath, &s.StartedAt, &s.LastSeenAt,
+			&s.Usage.InputTokens, &s.Usage.OutputTokens,
+			&s.Usage.CacheCreationTokens, &s.Usage.CacheReadTokens, &s.Usage.Turns,
+		); err != nil {
+			return nil, err
+		}
+		sessionMap[s.SessionID] = s
+	}
+	if err := sessRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 2. Parent session → agent_ids (from SubagentStart events)
+	spawnRows, err := d.db.Query(`
+		SELECT DISTINCT session_id, subagent_id
+		FROM hook_events
+		WHERE hook_event_name = 'SubagentStart' AND subagent_id != ''`)
+	if err != nil {
+		return nil, err
+	}
+	defer spawnRows.Close()
+
+	parentToAgents := map[string][]string{}
+	for spawnRows.Next() {
+		var parentID, agentID string
+		if err := spawnRows.Scan(&parentID, &agentID); err != nil {
+			return nil, err
+		}
+		parentToAgents[parentID] = append(parentToAgents[parentID], agentID)
+	}
+	if err := spawnRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 3. agent_id → child session_id (events fired by subagent carry subagent_id)
+	childRows, err := d.db.Query(`
+		SELECT DISTINCT session_id, subagent_id
+		FROM hook_events
+		WHERE subagent_id != '' AND hook_event_name != 'SubagentStart'`)
+	if err != nil {
+		return nil, err
+	}
+	defer childRows.Close()
+
+	agentToSession := map[string]string{}
+	for childRows.Next() {
+		var sessID, agentID string
+		if err := childRows.Scan(&sessID, &agentID); err != nil {
+			return nil, err
+		}
+		agentToSession[agentID] = sessID
+	}
+	if err := childRows.Err(); err != nil {
+		return nil, err
+	}
+
+	// 4. Build parent → []SessionTreeNode map; track which sessions are children
+	childSessionIDs := map[string]bool{}
+	parentToChildren := map[string][]domain.SessionTreeNode{}
+	for parentID, agentIDs := range parentToAgents {
+		for _, agentID := range agentIDs {
+			childSessID := agentToSession[agentID]
+			if childSessID != "" {
+				childSessionIDs[childSessID] = true
+			}
+			parentToChildren[parentID] = append(parentToChildren[parentID], domain.SessionTreeNode{
+				Session: sessionMap[childSessID],
+				AgentID: agentID,
+			})
+		}
+	}
+
+	// 5. Recursively build tree nodes
+	var buildNode func(sessID string) domain.SessionTreeNode
+	buildNode = func(sessID string) domain.SessionTreeNode {
+		node := domain.SessionTreeNode{Session: sessionMap[sessID]}
+		for _, child := range parentToChildren[sessID] {
+			if child.Session.SessionID != "" {
+				node.Children = append(node.Children, buildNode(child.Session.SessionID))
+			} else {
+				node.Children = append(node.Children, child)
+			}
+		}
+		if node.Children == nil {
+			node.Children = []domain.SessionTreeNode{}
+		}
+		return node
+	}
+
+	// 6. Collect roots (sessions not appearing as children), sorted by started_at
+	sorted := make([]domain.Session, 0, len(sessionMap))
+	for _, s := range sessionMap {
+		sorted = append(sorted, s)
+	}
+	slices.SortFunc(sorted, func(a, b domain.Session) int {
+		return strings.Compare(a.StartedAt, b.StartedAt)
+	})
+
+	var roots []domain.SessionTreeNode
+	for _, s := range sorted {
+		if !childSessionIDs[s.SessionID] {
+			roots = append(roots, buildNode(s.SessionID))
+		}
+	}
+	return roots, nil
 }
