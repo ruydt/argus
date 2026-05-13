@@ -28,7 +28,7 @@ export function TraceBlock({ node, expanded, selected, onSelect, onToggleExpand,
     ? 'linear-gradient(90deg, #581c87, #7c3aed)'
     : 'linear-gradient(90deg, #1e3a8a, #2563eb)'
 
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((pct) => formatTimeAxis(pct * rootDuration))
+  const ticks = rootDuration > 0 ? [0, 0.25, 0.5, 0.75, 1].map((pct) => formatTimeAxis(pct * rootDuration)) : []
 
   return (
     <div style={{ borderBottom: '2px solid #111' }}>
@@ -113,7 +113,7 @@ export function TraceBlock({ node, expanded, selected, onSelect, onToggleExpand,
                 background: rootBarBg,
                 borderRadius: 3,
                 opacity: rootRunning ? 0.95 : 0.75,
-                boxShadow: rootRunning && isCC ? '0 0 8px #7c3aed40' : undefined,
+                boxShadow: rootRunning ? '0 0 8px #7c3aed40' : undefined,
               }}
             />
           </div>
@@ -121,18 +121,18 @@ export function TraceBlock({ node, expanded, selected, onSelect, onToggleExpand,
       </div>
 
       {/* Child rows */}
-      {expanded && node.children.map((child) => {
+      {expanded && node.children.map((child, idx) => {
         const childSelected = selected?.session.session_id === child.session.session_id
         const childRunning = isRunning(child.session, now)
         const childDuration = sessionDurationMs(child.session, now)
-        const childStart = new Date(child.session.started_at).getTime() - new Date(session.started_at).getTime()
-        const leftPct = rootDuration > 0 ? Math.max(0, (childStart / rootDuration) * 100) : 0
-        const widthPct = rootDuration > 0 ? Math.min(100 - leftPct, (childDuration / rootDuration) * 100) : 0
+        const childStartMs = new Date(child.session.started_at).getTime() - new Date(session.started_at).getTime()
+        const leftPct = rootDuration > 0 && Number.isFinite(childStartMs) ? Math.max(0, (childStartMs / rootDuration) * 100) : 0
+        const widthPct = rootDuration > 0 && Number.isFinite(childStartMs) ? Math.min(100 - leftPct, (childDuration / rootDuration) * 100) : 0
         const subId = child.agent_id?.slice(0, 10) ?? child.session.session_id.slice(0, 10)
 
         return (
           <div
-            key={child.session.session_id || child.agent_id}
+            key={child.session.session_id || child.agent_id || String(idx)}
             data-testid="trace-child-row"
             style={{
               display: 'flex',
