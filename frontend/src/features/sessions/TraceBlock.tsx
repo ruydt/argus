@@ -1,4 +1,6 @@
 import type { SessionTreeNode } from '@/types/sessions'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { formatDuration, formatTimeAxis, isRunning, sessionDurationMs, shortenCwd } from './utils'
 
 interface TraceBlockProps {
@@ -50,23 +52,25 @@ export function TraceBlock({ node, expanded, selected, onSelect, onToggleExpand,
           padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 6,
         }}>
           {hasChildren ? (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-xs"
               aria-label={expanded ? 'collapse' : 'expand'}
               onClick={(e) => { e.stopPropagation(); onToggleExpand(session.session_id) }}
-              style={{ color: '#555', fontSize: 9, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0, width: 10, fontFamily: 'inherit' }}
+              className="size-[10px] shrink-0 rounded-none p-0 text-[9px] text-[#555] hover:bg-transparent hover:text-[#888]"
             >
               {expanded ? '▼' : '▶'}
-            </button>
+            </Button>
           ) : (
             <span style={{ color: '#333', fontSize: 9, width: 10, flexShrink: 0 }}>—</span>
           )}
-          <span style={{
-            fontSize: 8, padding: '1px 5px', borderRadius: 3, flexShrink: 0,
-            fontFamily: '"SF Mono", "Fira Code", monospace', fontWeight: 600,
-            color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`,
-          }}>
+          <Badge
+            variant="outline"
+            className="h-auto shrink-0 rounded-[3px] px-[5px] py-[1px] font-mono text-[8px] font-semibold"
+            style={{ color: badge.color, background: badge.bg, borderColor: badge.border }}
+          >
             {badge.label}
-          </span>
+          </Badge>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 10, color: rootSelected ? '#c4b5fd' : '#ccc',
@@ -151,13 +155,13 @@ export function TraceBlock({ node, expanded, selected, onSelect, onToggleExpand,
             }}>
               <div style={{ position: 'absolute', left: 18, top: 0, bottom: 0, width: 1, background: '#252525' }} />
               <div style={{ position: 'absolute', left: 18, top: '50%', width: 6, height: 1, background: '#252525' }} />
-              <span style={{
-                fontSize: 7, padding: '1px 4px', borderRadius: 2, flexShrink: 0,
-                fontFamily: '"SF Mono", "Fira Code", monospace', fontWeight: 600,
-                color: '#86efac', background: '#1a2a1a', border: '1px solid #2a3a2a',
-              }}>
+              <Badge
+                variant="outline"
+                className="h-auto shrink-0 rounded-[2px] px-[4px] py-[1px] font-mono text-[7px] font-semibold"
+                style={{ color: '#86efac', background: '#1a2a1a', borderColor: '#2a3a2a' }}
+              >
                 sub
-              </span>
+              </Badge>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   fontSize: 9, color: childSelected ? '#c4b5fd' : '#888',

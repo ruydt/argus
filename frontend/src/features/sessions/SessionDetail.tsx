@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import type { SessionTreeNode } from '@/types/sessions'
 import { formatDuration, isRunning, sessionDurationMs } from './utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   node: SessionTreeNode | null
@@ -38,24 +40,28 @@ export function SessionDetail({ node, now }: Props) {
         <span style={{ color: '#c4b5fd', fontSize: 10, fontWeight: 500 }}>
           {session.session_id.slice(0, 16)}
         </span>
-        <span style={{
-          fontSize: 8,
-          color: running ? '#4ade80' : '#555',
-          background: running ? '#0a1a0a' : '#1a1a1a',
-          border: `1px solid ${running ? '#166534' : '#333'}`,
-          padding: '1px 5px',
-          borderRadius: 3,
-        }}>
+        <Badge
+          variant="outline"
+          className="h-auto rounded-[3px] px-[5px] py-[1px] text-[8px]"
+          style={{
+            color: running ? '#4ade80' : '#555',
+            background: running ? '#0a1a0a' : '#1a1a1a',
+            borderColor: running ? '#166534' : '#333',
+          }}
+        >
           {running ? '● running' : '✓ done'}
-        </span>
+        </Badge>
         <div style={{ flex: 1 }} />
-        <button
+        <Button
+          variant="outline"
+          size="xs"
           aria-label="view events"
           onClick={() => navigate(`/?session=${session.session_id}`)}
-          style={{ fontSize: 9, color: 'var(--brand)', background: 'transparent', border: '1px solid #3d2c6b', padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit' }}
+          className="text-[9px]"
+          style={{ color: 'var(--brand)', borderColor: '#3d2c6b' }}
         >
           view events →
-        </button>
+        </Button>
       </div>
 
       <div style={{ display: 'flex', gap: 20, overflow: 'hidden' }}>

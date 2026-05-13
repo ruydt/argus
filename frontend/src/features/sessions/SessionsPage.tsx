@@ -4,6 +4,9 @@ import { TraceBlock } from './TraceBlock'
 import { SessionDetail } from './SessionDetail'
 import type { SessionTreeNode } from '@/types/sessions'
 import { isRunning } from './utils'
+import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type TimeRangeOption = '24h' | '7d' | '30d' | 'all'
 
@@ -57,9 +60,13 @@ export function SessionsPage() {
       <div style={{ background: '#111', borderBottom: '1px solid var(--app-border)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <span style={{ fontSize: 10, color: '#ccc', fontWeight: 500 }}>Sessions</span>
         {activeCount > 0 && (
-          <span style={{ fontSize: 9, color: '#4ade80', background: '#0a1a0a', border: '1px solid #166534', padding: '1px 6px', borderRadius: 3 }}>
+          <Badge
+            variant="outline"
+            className="h-auto rounded-[3px] px-[6px] py-[1px] text-[9px]"
+            style={{ color: '#4ade80', background: '#0a1a0a', borderColor: '#166534' }}
+          >
             {activeCount} active
-          </span>
+          </Badge>
         )}
         {sseConnected && (
           <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: '#4ade80' }}>
@@ -68,19 +75,23 @@ export function SessionsPage() {
           </span>
         )}
         <div style={{ flex: 1 }} />
-        <select
-          value={timeRangeOpt}
-          onChange={(e) => setTimeRangeOpt(e.target.value as TimeRangeOption)}
-          style={{ background: '#191919', border: '1px solid var(--app-border)', color: '#666', fontSize: 10, padding: '3px 8px', borderRadius: 4, fontFamily: 'inherit' }}
-        >
-          <option value="24h">Last 24h</option>
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="all">All time</option>
-        </select>
+        <Select value={timeRangeOpt} onValueChange={(v) => setTimeRangeOpt(v as TimeRangeOption)}>
+          <SelectTrigger
+            size="sm"
+            className="h-auto border-[var(--app-border)] bg-[#191919] px-2 py-[3px] text-[10px] text-[#666] hover:bg-[#222]"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="24h">Last 24h</SelectItem>
+            <SelectItem value="7d">Last 7 days</SelectItem>
+            <SelectItem value="30d">Last 30 days</SelectItem>
+            <SelectItem value="all">All time</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      <ScrollArea style={{ flex: 1, minHeight: 0 }}>
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#444', fontSize: 12 }}>
             Loading…
@@ -102,7 +113,7 @@ export function SessionsPage() {
             />
           ))
         )}
-      </div>
+      </ScrollArea>
 
       <SessionDetail node={selectedNode} now={now} />
     </div>
