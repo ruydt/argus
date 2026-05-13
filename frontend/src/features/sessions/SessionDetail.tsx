@@ -15,11 +15,20 @@ export function SessionDetail({ node, now }: Props) {
   const running = isRunning(session, now)
   const duration = sessionDurationMs(session, now)
 
+  const runningChildren = node.children.filter((c) => isRunning(c.session, now)).length
   const fields: { label: string; value: string }[] = [
     { label: 'Agent', value: session.agent || '—' },
     { label: 'Model', value: session.model || '—' },
     { label: 'Duration', value: running ? `${formatDuration(duration)} (running)` : formatDuration(duration) },
     { label: 'CWD', value: session.cwd || '—' },
+    ...(node.children.length > 0
+      ? [{
+          label: 'Subagents',
+          value: runningChildren > 0
+            ? `${node.children.length} total, ${runningChildren} running`
+            : String(node.children.length),
+        }]
+      : []),
     ...(agent_id ? [{ label: 'Agent ID', value: agent_id }] : []),
   ]
 
