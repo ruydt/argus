@@ -61,9 +61,19 @@ export function formatDuration(ms: number): string {
 
 export function formatTimeAxis(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
+  if (totalSeconds < 60) return `${totalSeconds}s`
   const m = Math.floor(totalSeconds / 60)
+  const h = Math.floor(m / 60)
+  if (h > 0) {
+    const rem = m % 60
+    return rem === 0 ? `${h}h` : `${h}h ${rem}m`
+  }
   const s = totalSeconds % 60
-  return `${m}:${String(s).padStart(2, '0')}`
+  return s === 0 ? `${m}m` : `${m}m ${s}s`
+}
+
+export function shortenCwd(cwd: string): string {
+  return cwd.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~')
 }
 
 export function agentColor(agent: string): string {

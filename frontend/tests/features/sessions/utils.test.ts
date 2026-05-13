@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Session } from '@/types/sessions'
-import { isRunning, sessionDurationMs } from '@/features/sessions/utils'
+import { formatTimeAxis, isRunning, sessionDurationMs, shortenCwd } from '@/features/sessions/utils'
 
 const NOW = new Date('2026-05-13T12:00:00Z').getTime()
 
@@ -68,5 +68,50 @@ describe('sessions utils', () => {
       NOW
     )
     expect(ms).toBe(30 * 60 * 1000)
+  })
+})
+
+describe('formatTimeAxis', () => {
+  it('shows seconds for sub-minute durations', () => {
+    expect(formatTimeAxis(0)).toBe('0s')
+    expect(formatTimeAxis(30_000)).toBe('30s')
+    expect(formatTimeAxis(59_000)).toBe('59s')
+  })
+
+  it('shows minutes for sub-hour durations', () => {
+    expect(formatTimeAxis(60_000)).toBe('1m')
+    expect(formatTimeAxis(90_000)).toBe('1m 30s')
+    expect(formatTimeAxis(3_540_000)).toBe('59m')
+  })
+
+  it('shows hours for long durations', () => {
+    expect(formatTimeAxis(3_600_000)).toBe('1h')
+    expect(formatTimeAxis(5_400_000)).toBe('1h 30m')
+    expect(formatTimeAxis(14_256_000)).toBe('3h 57m')
+  })
+
+  it('does NOT produce colon-separated output like 236:36', () => {
+    const ms = (236 * 60 + 36) * 1_000
+    expect(formatTimeAxis(ms)).not.toMatch(/^\d+:\d+$/)
+    expect(formatTimeAxis(ms)).toBe('3h 56m')
+  })
+})
+
+describe('shortenCwd', () => {
+  it('replaces macOS home prefix with ~', () => {
+    expect(shortenCwd('/Users/duytran/projects/hooker')).toBe('~/projects/hooker')
+  })
+
+  it('replaces Linux home prefix with ~', () => {
+    expect(shortenCwd('/home/ubuntu/projects')).toBe('~/projects')
+  })
+
+  it('leaves non-home paths unchanged', () => {
+    expect(shortenCwd('/tmp/work')).toBe('/tmp/work')
+    expect(shortenCwd('/var/app')).toBe('/var/app')
+  })
+
+  it('handles empty string', () => {
+    expect(shortenCwd('')).toBe('')
   })
 })
