@@ -8,6 +8,7 @@ import (
 
 	"hooker/internal/agents/claudecode"
 	"hooker/internal/agents/codex"
+	"hooker/internal/agents/geminicli"
 	"hooker/internal/domain"
 	"hooker/internal/repository"
 )
@@ -32,6 +33,8 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		var usage domain.SessionUsage
 		if e.Agent == "claudecode" {
 			usage = claudecode.ComputeUsage(e.TranscriptPath)
+		} else if e.Agent == "geminicli" {
+			usage = geminicli.ComputeUsage(e.TranscriptPath)
 		} else {
 			usage = codex.ComputeUsage(e.TranscriptPath)
 		}
@@ -132,6 +135,9 @@ func computeUsage(agent, transcriptPath string) domain.SessionUsage {
 func computeUsageBreakdown(agent, transcriptPath string) domain.UsageBreakdown {
 	if agent == "claudecode" || claudecode.MatchesTranscript(transcriptPath) {
 		return claudecode.ComputeUsageBreakdown(transcriptPath)
+	}
+	if agent == "geminicli" || geminicli.MatchesTranscript(transcriptPath) {
+		return geminicli.ComputeUsageBreakdown(transcriptPath)
 	}
 	return codex.ComputeUsageBreakdown(transcriptPath)
 }
@@ -267,6 +273,8 @@ func providerForAgent(agent string) string {
 		return "openai"
 	case "claudecode":
 		return "anthropic"
+	case "geminicli":
+		return "google"
 	default:
 		return agent
 	}

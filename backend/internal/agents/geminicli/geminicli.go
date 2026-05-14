@@ -82,6 +82,11 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
+// ModelFromTranscript is a stub for Gemini CLI transcripts.
+func ModelFromTranscript(transcriptPath string) string {
+	return ""
+}
+
 func ComputeUsage(transcriptPath string) domain.SessionUsage {
 	return domain.SessionUsage{}
 }

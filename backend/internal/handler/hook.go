@@ -9,6 +9,7 @@ import (
 
 	"hooker/internal/agents/claudecode"
 	"hooker/internal/agents/codex"
+	"hooker/internal/agents/geminicli"
 	"hooker/internal/domain"
 	"hooker/internal/fileutil"
 	"hooker/internal/service"
@@ -36,6 +37,8 @@ func Hook(svc *service.EventService) http.Handler {
 		var e domain.NormalizedEvent
 		if claudecode.MatchesTranscript(meta.TranscriptPath) {
 			e, err = claudecode.Normalize(raw)
+		} else if geminicli.MatchesTranscript(meta.TranscriptPath) {
+			e, err = geminicli.Normalize(raw)
 		} else {
 			e, err = codex.Normalize(raw)
 		}
@@ -51,8 +54,12 @@ func Hook(svc *service.EventService) http.Handler {
 				e.Model = model
 			}
 		}
-		if e.Model == "" && e.TranscriptPath != "" && claudecode.MatchesTranscript(e.TranscriptPath) {
-			e.Model = claudecode.ModelFromTranscript(e.TranscriptPath)
+		if e.Model == "" && e.TranscriptPath != "" {
+			if claudecode.MatchesTranscript(e.TranscriptPath) {
+				e.Model = claudecode.ModelFromTranscript(e.TranscriptPath)
+			} else if geminicli.MatchesTranscript(e.TranscriptPath) {
+				e.Model = geminicli.ModelFromTranscript(e.TranscriptPath)
+			}
 		}
 
 		log.Printf("[hook] agent=%s session=%s tool=%s action=%s path=%s", e.Agent, e.Session, e.Tool, e.Action, e.Path)
