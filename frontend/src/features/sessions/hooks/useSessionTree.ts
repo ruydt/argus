@@ -36,7 +36,9 @@ export function useSessionTree(since: string) {
         if (shouldRefreshTree(e)) {
           fetchTree()
         }
-      } catch { /* ignore parse errors */ }
+      } catch {
+        /* ignore parse errors */
+      }
     }
     return () => es.close()
   }, [fetchTree])

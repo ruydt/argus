@@ -18,21 +18,33 @@ beforeEach(() => {
   localStorageMock.getItem.mockReturnValue(null)
 })
 
-const makeWrapper = (search = '') =>
+const makeWrapper =
+  (search = '') =>
   ({ children }: { children: React.ReactNode }) =>
     createElement(MemoryRouter, { initialEntries: [`/${search}`] }, children)
 
 describe('useEventFilters — sessionFilter', () => {
   it('filters events to matching session when ?session param set', () => {
     const events: EventRecord[] = [
-      { time: new Date().toISOString(), action: 'EDIT', path: '/a', session: 'target-session', agent: 'claudecode' },
-      { time: new Date().toISOString(), action: 'EDIT', path: '/b', session: 'other-session', agent: 'claudecode' },
+      {
+        time: new Date().toISOString(),
+        action: 'EDIT',
+        path: '/a',
+        session: 'target-session',
+        agent: 'claudecode',
+      },
+      {
+        time: new Date().toISOString(),
+        action: 'EDIT',
+        path: '/b',
+        session: 'other-session',
+        agent: 'claudecode',
+      },
     ]
 
-    const { result } = renderHook(
-      () => useEventFilters(events, '', vi.fn()),
-      { wrapper: makeWrapper('?session=target-session') }
-    )
+    const { result } = renderHook(() => useEventFilters(events, '', vi.fn()), {
+      wrapper: makeWrapper('?session=target-session'),
+    })
 
     expect(result.current.filteredEvents).toHaveLength(1)
     expect(result.current.filteredEvents[0].session).toBe('target-session')
@@ -40,14 +52,25 @@ describe('useEventFilters — sessionFilter', () => {
 
   it('shows all events when no ?session param', () => {
     const events: EventRecord[] = [
-      { time: new Date().toISOString(), action: 'EDIT', path: '/a', session: 'sess-1', agent: 'claudecode' },
-      { time: new Date().toISOString(), action: 'EDIT', path: '/b', session: 'sess-2', agent: 'claudecode' },
+      {
+        time: new Date().toISOString(),
+        action: 'EDIT',
+        path: '/a',
+        session: 'sess-1',
+        agent: 'claudecode',
+      },
+      {
+        time: new Date().toISOString(),
+        action: 'EDIT',
+        path: '/b',
+        session: 'sess-2',
+        agent: 'claudecode',
+      },
     ]
 
-    const { result } = renderHook(
-      () => useEventFilters(events, '', vi.fn()),
-      { wrapper: makeWrapper() }
-    )
+    const { result } = renderHook(() => useEventFilters(events, '', vi.fn()), {
+      wrapper: makeWrapper(),
+    })
 
     expect(result.current.filteredEvents).toHaveLength(2)
   })

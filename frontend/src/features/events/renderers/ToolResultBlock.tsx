@@ -9,7 +9,12 @@ type ToolResultBlockProps = {
   searchQuery?: string
 }
 
-export function ToolResultBlock({ stdout, stderr, durationMs, searchQuery = '' }: ToolResultBlockProps) {
+export function ToolResultBlock({
+  stdout,
+  stderr,
+  durationMs,
+  searchQuery = '',
+}: ToolResultBlockProps) {
   if (!stdout && !stderr) return null
 
   return (

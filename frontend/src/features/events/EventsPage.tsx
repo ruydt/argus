@@ -11,13 +11,8 @@ import type { LayoutOutletContext, TooltipState } from '@/types'
 
 export function EventsPage() {
   const { events, refreshing, error, reload } = useEvents()
-  const {
-    collapsedSessions,
-    setCollapsedSessions,
-    sessionUsage,
-    searchQuery,
-    setSearchQuery,
-  } = useOutletContext<LayoutOutletContext>()
+  const { collapsedSessions, setCollapsedSessions, sessionUsage, searchQuery, setSearchQuery } =
+    useOutletContext<LayoutOutletContext>()
 
   const {
     actionFilter,

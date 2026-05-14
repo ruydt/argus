@@ -83,15 +83,29 @@ export function EventRow({ event: e, searchQuery }: EventRowProps) {
           )}
 
           {/* Action-specific renderers */}
-          {e.action === 'STOP' && <StopBlock response={e.response || ''} searchQuery={searchQuery} />}
+          {e.action === 'STOP' && (
+            <StopBlock response={e.response || ''} searchQuery={searchQuery} />
+          )}
           {(e.error_message || e.error_type) && (
-            <ErrorBlock errorMessage={e.error_message} errorType={e.error_type} searchQuery={searchQuery} />
+            <ErrorBlock
+              errorMessage={e.error_message}
+              errorType={e.error_type}
+              searchQuery={searchQuery}
+            />
           )}
           {e.action === 'TASK' && (
-            <TaskBlock title={e.task_title} description={e.task_description} searchQuery={searchQuery} />
+            <TaskBlock
+              title={e.task_title}
+              description={e.task_description}
+              searchQuery={searchQuery}
+            />
           )}
           {e.action === 'NOTIFY' && (
-            <NotifyBlock title={e.notification_title} message={e.notification_message} searchQuery={searchQuery} />
+            <NotifyBlock
+              title={e.notification_title}
+              message={e.notification_message}
+              searchQuery={searchQuery}
+            />
           )}
           {e.action === 'CWD' && <CwdBlock oldCwd={e.old_cwd} newCwd={e.new_cwd} />}
 

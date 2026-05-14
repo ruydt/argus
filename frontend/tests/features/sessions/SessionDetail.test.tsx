@@ -20,7 +20,13 @@ const makeNode = (id: string): SessionTreeNode => ({
     transcript_path: '',
     started_at: new Date(Date.now() - 300_000).toISOString(),
     last_seen_at: new Date().toISOString(),
-    usage: { input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0, cache_read_tokens: 0, turns: 0 },
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_tokens: 0,
+      cache_read_tokens: 0,
+      turns: 0,
+    },
   },
   agent_id: 'agent-abc',
   children: [],
@@ -29,14 +35,18 @@ const makeNode = (id: string): SessionTreeNode => ({
 describe('SessionDetail', () => {
   it('renders nothing when node is null', () => {
     const { container } = render(
-      <MemoryRouter><SessionDetail node={null} now={Date.now()} /></MemoryRouter>
+      <MemoryRouter>
+        <SessionDetail node={null} now={Date.now()} />
+      </MemoryRouter>
     )
     expect(container.firstChild).toBeNull()
   })
 
   it('shows session info', () => {
     render(
-      <MemoryRouter><SessionDetail node={makeNode('sess-123')} now={Date.now()} /></MemoryRouter>
+      <MemoryRouter>
+        <SessionDetail node={makeNode('sess-123')} now={Date.now()} />
+      </MemoryRouter>
     )
     expect(screen.getByText(/claudecode/)).toBeInTheDocument()
     expect(screen.getByText(/\/Users\/duy\/project/)).toBeInTheDocument()
@@ -44,7 +54,9 @@ describe('SessionDetail', () => {
 
   it('navigates to events page on button click', () => {
     render(
-      <MemoryRouter><SessionDetail node={makeNode('sess-xyz')} now={Date.now()} /></MemoryRouter>
+      <MemoryRouter>
+        <SessionDetail node={makeNode('sess-xyz')} now={Date.now()} />
+      </MemoryRouter>
     )
     fireEvent.click(screen.getByRole('button', { name: /view events/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/?session=sess-xyz')
@@ -61,7 +73,13 @@ describe('SessionDetail', () => {
         transcript_path: '',
         started_at: new Date(Date.now() - 30_000).toISOString(),
         last_seen_at: new Date(Date.now() - 15_000).toISOString(),
-        usage: { input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0, cache_read_tokens: 0, turns: 0 },
+        usage: {
+          input_tokens: 0,
+          output_tokens: 0,
+          cache_creation_tokens: 0,
+          cache_read_tokens: 0,
+          turns: 0,
+        },
       },
       children: [],
     }
@@ -75,12 +93,20 @@ describe('SessionDetail', () => {
         transcript_path: '',
         started_at: new Date(Date.now() - 60_000).toISOString(),
         last_seen_at: new Date(Date.now() - 500).toISOString(),
-        usage: { input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0, cache_read_tokens: 0, turns: 0 },
+        usage: {
+          input_tokens: 0,
+          output_tokens: 0,
+          cache_creation_tokens: 0,
+          cache_read_tokens: 0,
+          turns: 0,
+        },
       },
       children: [child],
     }
     render(
-      <MemoryRouter><SessionDetail node={parent} now={Date.now()} /></MemoryRouter>
+      <MemoryRouter>
+        <SessionDetail node={parent} now={Date.now()} />
+      </MemoryRouter>
     )
     expect(screen.getByText(/Subagents/i)).toBeInTheDocument()
     expect(screen.getByText(/^1$/)).toBeInTheDocument()

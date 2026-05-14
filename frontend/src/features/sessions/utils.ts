@@ -49,4 +49,3 @@ export function formatTimeAxis(ms: number): string {
 export function shortenCwd(cwd: string): string {
   return cwd.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~')
 }
-

@@ -16,7 +16,9 @@ export function ErrorBlock({ errorMessage, errorType, searchQuery = '' }: ErrorB
         Error{errorType ? `: ${errorType}` : ''}
       </strong>
       {errorMessage && (
-        <pre className="mt-1 mb-0 whitespace-pre-wrap text-[0.73rem]">{highlight(errorMessage, searchQuery) as ReactNode}</pre>
+        <pre className="mt-1 mb-0 whitespace-pre-wrap text-[0.73rem]">
+          {highlight(errorMessage, searchQuery) as ReactNode}
+        </pre>
       )}
     </div>
   )

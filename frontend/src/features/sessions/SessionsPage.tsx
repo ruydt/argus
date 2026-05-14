@@ -6,17 +6,27 @@ import type { SessionTreeNode } from '@/types/sessions'
 import { isRunning } from './utils'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type TimeRangeOption = '24h' | '7d' | '30d' | 'all'
 
 function sinceFromOption(opt: TimeRangeOption): string {
   const now = new Date()
   switch (opt) {
-    case '24h': return new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
-    case '7d': return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    case '30d': return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    case 'all': return '2000-01-01T00:00:00Z'
+    case '24h':
+      return new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+    case '7d':
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    case '30d':
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    case 'all':
+      return '2000-01-01T00:00:00Z'
   }
 }
 
@@ -56,8 +66,26 @@ export function SessionsPage() {
   const activeCount = countActiveSessions(nodes, now)
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, background: '#0c0c0c' }}>
-      <div style={{ background: '#111', borderBottom: '1px solid var(--app-border)', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        background: '#0c0c0c',
+      }}
+    >
+      <div
+        style={{
+          background: '#111',
+          borderBottom: '1px solid var(--app-border)',
+          padding: '8px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          flexShrink: 0,
+        }}
+      >
         <span style={{ fontSize: 10, color: '#ccc', fontWeight: 500 }}>Sessions</span>
         {activeCount > 0 && (
           <Badge
@@ -69,8 +97,18 @@ export function SessionsPage() {
           </Badge>
         )}
         {sseConnected && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: '#4ade80' }}>
-            <span style={{ width: 5, height: 5, background: '#4ade80', borderRadius: '50%', display: 'inline-block' }} />
+          <span
+            style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: '#4ade80' }}
+          >
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                background: '#4ade80',
+                borderRadius: '50%',
+                display: 'inline-block',
+              }}
+            />
             live
           </span>
         )}
@@ -93,11 +131,29 @@ export function SessionsPage() {
 
       <ScrollArea style={{ flex: 1, minHeight: 0 }}>
         {loading ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#444', fontSize: 12 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#444',
+              fontSize: 12,
+            }}
+          >
             Loading…
           </div>
         ) : nodes.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#444', fontSize: 12 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#444',
+              fontSize: 12,
+            }}
+          >
             No sessions found. Start a Claude Code or Codex session.
           </div>
         ) : (

@@ -40,9 +40,7 @@ describe('useSessionTree', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('since=')
-    )
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('since='))
     expect(result.current.nodes).toHaveLength(1)
   })
 

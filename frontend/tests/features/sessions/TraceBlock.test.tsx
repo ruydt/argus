@@ -19,7 +19,13 @@ const makeNode = (
     transcript_path: '',
     started_at: t(opts.startOffset ?? 0),
     last_seen_at: t(opts.endOffset ?? 60_000),
-    usage: { input_tokens: 0, output_tokens: 0, cache_creation_tokens: 0, cache_read_tokens: 0, turns: 0 },
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_tokens: 0,
+      cache_read_tokens: 0,
+      turns: 0,
+    },
   },
   children,
 })

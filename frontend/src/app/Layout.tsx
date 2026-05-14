@@ -242,8 +242,7 @@ export function Layout() {
 
           <div className="row-start-1 col-start-2 flex min-w-0 items-center justify-end md:row-auto md:col-auto">
             <span className="tabular-nums text-[#444] shrink-0 font-medium text-right">
-              {now.toLocaleDateString()}{' '}
-              {now.toLocaleTimeString()}
+              {now.toLocaleDateString()} {now.toLocaleTimeString()}
             </span>
           </div>
         </header>

@@ -1,7 +1,4 @@
-import type {
-  AgentModelUsage,
-  DashboardStats,
-} from './hooks/useDashboardStats'
+import type { AgentModelUsage, DashboardStats } from './hooks/useDashboardStats'
 import { displayModel, displayProviderModel } from '@/lib/utils'
 import { AGENTS } from '@/agents'
 
@@ -125,12 +122,10 @@ export function toTimelineByAgentChartData(stats: DashboardStats | null, query: 
   for (const bucket of stats.timeline_by_agent) {
     const key = bucket.agent || 'unknown'
     series.add(key)
-    const row =
-      byDate.get(bucket.date) ??
-      {
-        date: bucket.date,
-        localLabel: formatTimelineLabel(bucket.date, stats.timeline_granularity),
-      }
+    const row = byDate.get(bucket.date) ?? {
+      date: bucket.date,
+      localLabel: formatTimelineLabel(bucket.date, stats.timeline_granularity),
+    }
     row[key] = Number(bucket.count || 0)
     byDate.set(bucket.date, row)
   }
@@ -216,7 +211,9 @@ function toBucketKey(date: Date, granularity: DashboardStats['timeline_granulari
 }
 
 function agentLabel(agent: string) {
-  return AGENTS.find((item) => item.id === agent)?.label || (agent === 'unknown' ? 'Unknown' : agent)
+  return (
+    AGENTS.find((item) => item.id === agent)?.label || (agent === 'unknown' ? 'Unknown' : agent)
+  )
 }
 
 export type TokenChartDatum = ReturnType<typeof toTokenChartData>[number]

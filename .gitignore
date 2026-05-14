@@ -33,8 +33,7 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
-.superpowers/
+# AI agents
+docs/superpowers/
 
 .cache
-
-docs/

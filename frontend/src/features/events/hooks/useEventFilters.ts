@@ -121,7 +121,17 @@ export function useEventFilters(
       }
       return true
     })
-  }, [events, actionFilter, agentFilter, searchQuery, timeRange, customStart, customEnd, rangeStartMs, sessionFilter])
+  }, [
+    events,
+    actionFilter,
+    agentFilter,
+    searchQuery,
+    timeRange,
+    customStart,
+    customEnd,
+    rangeStartMs,
+    sessionFilter,
+  ])
 
   return {
     actionFilter,
