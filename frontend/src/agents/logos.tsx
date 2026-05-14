@@ -13,3 +13,11 @@ export function OpenAILogo({ size = 14 }: { size?: number }) {
     </svg>
   )
 }
+
+export function GeminiLogo({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-label="Gemini">
+        <path d="M12 24c-1.325 0-2.4-.675-2.4-1.5 0-.825 1.075-1.5 2.4-1.5s2.4.675 2.4 1.5c0 .825-1.075 1.5-2.4 1.5zM12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 22C6.486 22 2 17.514 2 12S6.486 2 12 2s10 4.486 10 10-4.486 10-10 10zm-1-17h2v2h-2zm0 4h2v8h-2z"/>
+    </svg>
+  )
+}
