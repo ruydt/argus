@@ -7,7 +7,10 @@ export const geminiCliAgent: AgentConfig = {
   badgeClass: 'gemini',
   Logo: GeminiLogo,
   supportsSessionUsage: true,
-  matchesEvent: (event) => Boolean(event.transcript_path?.includes('/.gemini/')),
+  matchesEvent: (event) =>
+    event.agent === 'geminicli' ||
+    event.source === 'gemini' ||
+    Boolean(event.transcript_path?.includes('/.gemini/')),
   buildUsageItems: (usage, formatTokens) => [
     {
       cls: 'usage-in',

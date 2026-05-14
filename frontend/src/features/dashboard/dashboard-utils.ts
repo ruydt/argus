@@ -28,16 +28,13 @@ export const MODEL_COLORS: Record<string, string> = {
   'claude-4-6-sonnet': 'var(--chart-1)',
   'claude-4-7-opus': 'var(--chart-1)',
   'claude-4-5-haiku': 'var(--chart-1)',
+  'gemini-2.0-flash': 'var(--chart-5)',
+  'gemini-2.0-pro-exp': 'var(--chart-5)',
+  'gemini-3-flash-preview': 'var(--chart-5)',
 }
 
 export function apiRange(value: string) {
   return value === 'all' ? '' : value
-}
-
-export function formatTokenCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-  return n.toString()
 }
 
 export function getModelColor(model: string, idx: number) {

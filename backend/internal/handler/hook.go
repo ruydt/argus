@@ -35,11 +35,12 @@ func Hook(svc *service.EventService) http.Handler {
 		}
 
 		var e domain.NormalizedEvent
-		if claudecode.MatchesTranscript(meta.TranscriptPath) {
+		switch {
+		case claudecode.MatchesTranscript(meta.TranscriptPath):
 			e, err = claudecode.Normalize(raw)
-		} else if geminicli.MatchesTranscript(meta.TranscriptPath) {
+		case geminicli.MatchesTranscript(meta.TranscriptPath) || meta.Source == "gemini":
 			e, err = geminicli.Normalize(raw)
-		} else {
+		default:
 			e, err = codex.Normalize(raw)
 		}
 		if err != nil {
@@ -80,15 +81,17 @@ func enrichContext(e domain.NormalizedEvent) domain.NormalizedEvent {
 	}
 
 	searchStr := ""
-	if e.HookEventName == "PreToolUse" && e.OldString != "" {
+	switch {
+	case e.HookEventName == "PreToolUse" && e.OldString != "":
 		searchStr = e.OldString
-	} else if e.HookEventName == "PostToolUse" && e.NewString != "" {
+	case e.HookEventName == "PostToolUse" && e.NewString != "":
 		searchStr = e.NewString
-	} else if e.Action == "EDIT" {
+	case e.Action == "EDIT":
 		// General EDIT action fallback
-		if e.OldString != "" {
+		switch {
+		case e.OldString != "":
 			searchStr = e.OldString
-		} else if e.NewString != "" {
+		case e.NewString != "":
 			searchStr = e.NewString
 		}
 	}

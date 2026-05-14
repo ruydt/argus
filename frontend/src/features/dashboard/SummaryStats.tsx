@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { DashboardStats } from './hooks/useDashboardStats'
-import { formatTokenCount } from './dashboard-utils'
+import { formatTokenCount } from '@/lib/format'
 
 type SummaryStatsProps = {
   stats: DashboardStats

@@ -31,11 +31,12 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 	}
 	if e.Session != "" {
 		var usage domain.SessionUsage
-		if e.Agent == "claudecode" {
+		switch e.Agent {
+		case "claudecode":
 			usage = claudecode.ComputeUsage(e.TranscriptPath)
-		} else if e.Agent == "geminicli" {
+		case "geminicli":
 			usage = geminicli.ComputeUsage(e.TranscriptPath)
-		} else {
+		default:
 			usage = codex.ComputeUsage(e.TranscriptPath)
 		}
 		if err := s.repo.UpsertSession(

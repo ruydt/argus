@@ -1,12 +1,67 @@
 package fileutil
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"hooker/internal/domain"
 )
+
+func FirstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func Truncate(s string, limit int) string {
+	if len(s) <= limit {
+		return s
+	}
+	return s[:limit] + "\n...[truncated]"
+}
+
+func MarshalToolCalls(calls []domain.ToolCall) string {
+	if len(calls) == 0 {
+		return ""
+	}
+	b, _ := json.Marshal(calls)
+	return string(b)
+}
+
+func ToolResultStdout(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var obj struct {
+		Stdout string `json:"stdout"`
+	}
+	if json.Unmarshal(raw, &obj) == nil && obj.Stdout != "" {
+		return Truncate(obj.Stdout, 4096)
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return Truncate(s, 4096)
+	}
+	return ""
+}
+
+func ToolResultStderr(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var obj struct {
+		Stderr string `json:"stderr"`
+	}
+	if json.Unmarshal(raw, &obj) == nil {
+		return Truncate(obj.Stderr, 1024)
+	}
+	return ""
+}
 
 func ResolvePath(cwd, path string) string {
 	if path == "" {
@@ -49,8 +104,10 @@ func HookEventAction(hookName string) string {
 		return "STOP"
 	case "UserPromptSubmit", "UserPromptExpansion":
 		return "PROMPT"
-	case "SubagentStart", "SubagentStop", "TeammateIdle":
+	case "SubagentStart", "SubagentStop", "TeammateIdle", "BeforeAgent", "AfterAgent":
 		return "AGENT"
+	case "BeforeModel", "AfterModel":
+		return "MODEL"
 	case "TaskCreated", "TaskCompleted":
 		return "TASK"
 	case "Notification":

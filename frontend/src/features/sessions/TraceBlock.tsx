@@ -22,12 +22,19 @@ export function TraceBlock({ node, expanded, selected, onSelect, onToggleExpand,
   const hasChildren = node.children.length > 0
 
   const isCC = session.agent === 'claudecode'
-  const badge = isCC
-    ? { label: 'CC', color: '#a78bfa', bg: '#2d1f5a', border: '#3d2c6b' }
-    : { label: 'CX', color: '#60a5fa', bg: '#0a1f3a', border: '#1d3a5a' }
+  const isGC = session.agent === 'geminicli'
+  
+  let badge = { label: 'CX', color: '#60a5fa', bg: '#0a1f3a', border: '#1d3a5a' }
+  if (isCC) {
+    badge = { label: 'CC', color: '#a78bfa', bg: '#2d1f5a', border: '#3d2c6b' }
+  } else if (isGC) {
+    badge = { label: 'GC', color: '#34d399', bg: '#064e3b', border: '#065f46' }
+  }
 
   const rootBarBg = isCC
     ? 'linear-gradient(90deg, #581c87, #7c3aed)'
+    : isGC
+    ? 'linear-gradient(90deg, #065f46, #10b981)'
     : 'linear-gradient(90deg, #1e3a8a, #2563eb)'
 
   const ticks = rootDuration > 0 ? [0, 0.25, 0.5, 0.75, 1].map((pct) => formatTimeAxis(pct * rootDuration)) : []

@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { PaginationBar } from '@/components/shared/PaginationBar'
 import { cn } from '@/lib/utils'
-import { fmtTokens, highlight, shortId } from '@/lib/format'
+import { formatTokenCount, highlight, shortId } from '@/lib/format'
 import { agentForEvent } from '@/agents'
 import type { SessionGroup, SessionUsage, TooltipState } from '@/types/events'
 import { EventRow } from './EventRow'
@@ -76,7 +76,7 @@ export function AgentSession({
                 const u = sessionUsage[sessionId]
                 return (
                   <span className="usage-summary">
-                    {agent.buildUsageItems(u, fmtTokens).map(({ cls, label, tip }) => (
+                    {agent.buildUsageItems(u, formatTokenCount).map(({ cls, label, tip }) => (
                       <span
                         key={cls}
                         className={`usage-item ${cls}`}

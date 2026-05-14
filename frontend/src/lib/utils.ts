@@ -15,6 +15,8 @@ export function displayProvider(provider?: string | null) {
       return 'OpenAI'
     case 'anthropic':
       return 'Anthropic'
+    case 'google':
+      return 'Google'
     default:
       return provider ?? ''
   }

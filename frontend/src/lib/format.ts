@@ -6,9 +6,11 @@ export function shortId(value: string): string {
   return value ? value.substring(0, 8) : 'unknown'
 }
 
-/** Format token count with k suffix */
-export function fmtTokens(value: number): string {
-  return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value)
+/** Format token count with K/M suffixes */
+export function formatTokenCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toString()
 }
 
 /** Highlight matching text in a string */

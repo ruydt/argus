@@ -120,7 +120,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		return domain.NormalizedEvent{}, err
 	}
 
-	path := fileutil.ResolvePath(p.CWD, firstNonEmpty(p.ToolInput.FilePath, p.FilePath))
+	path := fileutil.ResolvePath(p.CWD, fileutil.FirstNonEmpty(p.ToolInput.FilePath, p.FilePath))
 	cmd := p.ToolInput.Command
 	action := fileutil.HookEventAction(p.HookEventName)
 	if action == "" {
@@ -137,10 +137,8 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		displayPath = "cmd: " + cmd
 	}
 
-	oldStr, newStr := Diff(DiffInput{
-		OldString: firstNonEmpty(p.ToolInput.OldString, p.ToolInput.OldStr),
-		NewString: firstNonEmpty(p.ToolInput.NewString, p.ToolInput.NewStr, p.ToolInput.Content),
-	})
+	oldStr := fileutil.FirstNonEmpty(p.ToolInput.OldString, p.ToolInput.OldStr)
+	newStr := fileutil.FirstNonEmpty(p.ToolInput.NewString, p.ToolInput.NewStr, p.ToolInput.Content)
 
 	return domain.NormalizedEvent{
 		Agent:               AgentName(),
@@ -162,8 +160,8 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		NewString:           newStr,
 		RawPayload:          raw,
 		PermissionMode:      p.PermissionMode,
-		Response:            firstNonEmpty(p.Response, p.LastAssistantMessage),
-		ErrorMessage:        firstNonEmpty(p.ErrorMessage, p.Error),
+		Response:            fileutil.FirstNonEmpty(p.Response, p.LastAssistantMessage),
+		ErrorMessage:        fileutil.FirstNonEmpty(p.ErrorMessage, p.Error),
 		ErrorType:           p.ErrorType,
 		SubagentID:          p.AgentID,
 		SubagentType:        p.AgentType,
@@ -176,64 +174,10 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		ChangeType:          p.ChangeType,
 		OldCWD:              p.OldCWD,
 		NewCWD:              p.NewCWD,
-		ToolCallsJSON:       marshalToolCalls(p.ToolCalls),
-		ToolResultStdout:    toolResultStdout(p.ToolResponse),
-		ToolResultStderr:    toolResultStderr(p.ToolResponse),
+		ToolCallsJSON:       fileutil.MarshalToolCalls(p.ToolCalls),
+		ToolResultStdout:    fileutil.ToolResultStdout(p.ToolResponse),
+		ToolResultStderr:    fileutil.ToolResultStderr(p.ToolResponse),
 		DurationMS:          p.DurationMS,
 		Trigger:             p.Trigger,
 	}, nil
-}
-
-func toolResultStdout(raw json.RawMessage) string {
-	if len(raw) == 0 {
-		return ""
-	}
-	var obj struct {
-		Stdout string `json:"stdout"`
-	}
-	if json.Unmarshal(raw, &obj) == nil && obj.Stdout != "" {
-		return truncate(obj.Stdout, 4096)
-	}
-	var s string
-	if json.Unmarshal(raw, &s) == nil {
-		return truncate(s, 4096)
-	}
-	return ""
-}
-
-func toolResultStderr(raw json.RawMessage) string {
-	if len(raw) == 0 {
-		return ""
-	}
-	var obj struct {
-		Stderr string `json:"stderr"`
-	}
-	if json.Unmarshal(raw, &obj) == nil {
-		return truncate(obj.Stderr, 1024)
-	}
-	return ""
-}
-
-func truncate(s string, limit int) string {
-	if len(s) <= limit {
-		return s
-	}
-	return s[:limit] + "\n...[truncated]"
-}
-
-func marshalToolCalls(calls []domain.ToolCall) string {
-	if len(calls) == 0 {
-		return ""
-	}
-	b, _ := json.Marshal(calls)
-	return string(b)
-}
-
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }

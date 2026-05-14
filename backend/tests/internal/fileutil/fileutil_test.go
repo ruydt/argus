@@ -113,6 +113,27 @@ func TestExtractPathFromCommand_relativePath(t *testing.T) {
 	}
 }
 
+func TestHookEventAction(t *testing.T) {
+	cases := []struct {
+		hook string
+		want string
+	}{
+		{"SessionStart", "SESSION"},
+		{"SubagentStart", "AGENT"},
+		{"BeforeAgent", "AGENT"},
+		{"AfterAgent", "AGENT"},
+		{"BeforeModel", "MODEL"},
+		{"AfterModel", "MODEL"},
+		{"TaskCreated", "TASK"},
+		{"Unknown", ""},
+	}
+	for _, c := range cases {
+		if got := fileutil.HookEventAction(c.hook); got != c.want {
+			t.Errorf("HookEventAction(%q) = %q, want %q", c.hook, got, c.want)
+		}
+	}
+}
+
 func TestComputeContext(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "f.go")
