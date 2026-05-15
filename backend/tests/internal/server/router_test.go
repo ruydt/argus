@@ -20,13 +20,25 @@ func (noopRepo) ListBySession(string, int) ([]domain.NormalizedEvent, error) { r
 
 func (noopRepo) SessionModel(string) (string, error) { return "", nil }
 
+func (noopRepo) ListProjects() ([]domain.Project, error) { return nil, nil }
+
 func (noopRepo) ListSessions() ([]domain.Session, error) { return nil, nil }
+
+func (noopRepo) ListSessionsByCWD(string, string) ([]domain.Session, error) { return nil, nil }
 
 func (noopRepo) GetDashboardStats(string, string) (*domain.DashboardStats, error) { return nil, nil }
 
 func (noopRepo) GetSessionTree(string) ([]domain.SessionTreeNode, error) { return nil, nil }
 
-func (noopRepo) GetTraces() ([]domain.NormalizedEvent, error) { return nil, nil }
+func (noopRepo) GetTraces(string, string) ([]domain.NormalizedEvent, error) { return nil, nil }
+
+func (noopRepo) ListSessionsByCWDPage(string, string, int, int) ([]domain.Session, int, error) {
+	return nil, 0, nil
+}
+
+func (noopRepo) GetTracesPage(string, string, int, int) ([]domain.NormalizedEvent, int, error) {
+	return nil, 0, nil
+}
 
 func (noopRepo) UpsertSession(string, string, string, string, string, string, string, string, domain.SessionUsage) error {
 	return nil

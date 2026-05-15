@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './app/Layout'
 
 const Dashboard = lazy(() =>
@@ -11,8 +11,14 @@ const Events = lazy(() =>
 const Usage = lazy(() =>
   import('./features/usage/UsagePage').then((module) => ({ default: module.UsagePage }))
 )
-const Sessions = lazy(() =>
-  import('./features/sessions/SessionsPage').then((m) => ({ default: m.SessionsPage }))
+const ProjectsPage = lazy(() =>
+  import('./features/projects/ProjectsPage').then((m) => ({ default: m.ProjectsPage }))
+)
+const SessionList = lazy(() =>
+  import('./features/sessions/SessionListPage').then((m) => ({ default: m.SessionListPage }))
+)
+const TraceView = lazy(() =>
+  import('./features/sessions/TraceViewPage').then((m) => ({ default: m.TraceViewPage }))
 )
 
 export default function App() {
@@ -45,10 +51,27 @@ export default function App() {
             }
           />
           <Route
-            path="sessions"
+            path="projects"
             element={
               <Suspense fallback={null}>
-                <Sessions />
+                <ProjectsPage />
+              </Suspense>
+            }
+          />
+          <Route path="sessions" element={<Navigate to="/projects" replace />} />
+          <Route
+            path="sessions/:encodedCwd"
+            element={
+              <Suspense fallback={null}>
+                <SessionList />
+              </Suspense>
+            }
+          />
+          <Route
+            path="sessions/:encodedCwd/:sessionId"
+            element={
+              <Suspense fallback={null}>
+                <TraceView />
               </Suspense>
             }
           />

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -118,14 +119,14 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 }
 
 func (d *DB) List(limit int) ([]domain.NormalizedEvent, error) {
-	return d.listWithWhere("", nil, limit)
+	return d.listWithWhere("", nil, limit, 0)
 }
 
 func (d *DB) ListBySession(sessionID string, limit int) ([]domain.NormalizedEvent, error) {
-	return d.listWithWhere("WHERE session_id = ?", []any{sessionID}, limit)
+	return d.listWithWhere("WHERE session_id = ?", []any{sessionID}, limit, 0)
 }
 
-func (d *DB) listWithWhere(where string, args []any, limit int) ([]domain.NormalizedEvent, error) {
+func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domain.NormalizedEvent, error) {
 	query := `
 		SELECT created_at, agent, session_id, hook_event_name,
 		       COALESCE(turn_id,''), COALESCE(tool_use_id,''),
@@ -153,8 +154,8 @@ func (d *DB) listWithWhere(where string, args []any, limit int) ([]domain.Normal
 
 	queryArgs := append([]any{}, args...)
 	if limit > 0 {
-		query += "LIMIT ?"
-		queryArgs = append(queryArgs, limit)
+		query += "LIMIT ? OFFSET ?"
+		queryArgs = append(queryArgs, limit, offset)
 	}
 
 	rows, err := d.db.Query(query, queryArgs...)
@@ -207,14 +208,73 @@ func (d *DB) SessionModel(sessionID string) (string, error) {
 	return model, err
 }
 
-func (d *DB) ListSessions() ([]domain.Session, error) {
+func (d *DB) ListProjects() ([]domain.Project, error) {
 	rows, err := d.db.Query(`
+		SELECT
+			COALESCE(cwd, '') AS cwd,
+			COUNT(session_id) AS session_count,
+			MAX(last_seen_at) AS last_activity,
+			SUM(
+				COALESCE(input_tokens,0) +
+				COALESCE(output_tokens,0) +
+				COALESCE(cache_creation_tokens,0) +
+				COALESCE(cache_read_tokens,0)
+			) AS total_tokens,
+			GROUP_CONCAT(DISTINCT agent) AS agents,
+			SUM(CASE WHEN (ended_at IS NULL OR ended_at = '') THEN 1 ELSE 0 END) AS live_count
+		FROM sessions
+		GROUP BY cwd
+		ORDER BY last_activity DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var projects []domain.Project
+	for rows.Next() {
+		var p domain.Project
+		var agents string
+		if err := rows.Scan(&p.CWD, &p.SessionCount, &p.LastActivity, &p.TotalTokens, &agents, &p.LiveCount); err != nil {
+			return nil, err
+		}
+		p.Name = projectName(p.CWD)
+		p.Agents = splitAgents(agents)
+		projects = append(projects, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
+func (d *DB) ListSessions() ([]domain.Session, error) {
+	return d.listSessionsWhere("", nil)
+}
+
+func (d *DB) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
+	clauses := []string{"cwd = ?"}
+	args := []any{cwd}
+	if since != "" {
+		clauses = append(clauses, "datetime(last_seen_at) >= datetime(?)")
+		args = append(args, since)
+	}
+	return d.listSessionsWhere("WHERE "+strings.Join(clauses, " AND "), args)
+}
+
+func (d *DB) listSessionsWhere(where string, args []any) ([]domain.Session, error) {
+	query := `
 		SELECT session_id, agent, COALESCE(model,''), COALESCE(source,''), COALESCE(cwd,''), 
 		       COALESCE(transcript_path,''), started_at, last_seen_at, COALESCE(ended_at,''),
 		       COALESCE(input_tokens,0), COALESCE(output_tokens,0), COALESCE(cache_creation_tokens,0), 
 		       COALESCE(cache_read_tokens,0), COALESCE(turns,0)
 		FROM sessions
-		ORDER BY last_seen_at DESC`)
+	`
+	if where != "" {
+		query += where + "\n"
+	}
+	query += "ORDER BY datetime(started_at) DESC, datetime(last_seen_at) DESC"
+
+	rows, err := d.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -239,10 +299,137 @@ func (d *DB) ListSessions() ([]domain.Session, error) {
 	return sessions, nil
 }
 
+func (d *DB) listSessionsWherePaged(where string, args []any, limit, offset int) ([]domain.Session, error) {
+	query := `
+		SELECT session_id, agent, COALESCE(model,''), COALESCE(source,''), COALESCE(cwd,''),
+		       COALESCE(transcript_path,''), started_at, last_seen_at, COALESCE(ended_at,''),
+		       COALESCE(input_tokens,0), COALESCE(output_tokens,0), COALESCE(cache_creation_tokens,0),
+		       COALESCE(cache_read_tokens,0), COALESCE(turns,0)
+		FROM sessions
+	`
+	if where != "" {
+		query += where + "\n"
+	}
+	query += "ORDER BY datetime(started_at) DESC, datetime(last_seen_at) DESC LIMIT ? OFFSET ?"
+	queryArgs := append(append([]any{}, args...), limit, offset)
+
+	rows, err := d.db.Query(query, queryArgs...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sessions []domain.Session
+	for rows.Next() {
+		var s domain.Session
+		if err := rows.Scan(
+			&s.SessionID, &s.Agent, &s.Model, &s.Source, &s.CWD,
+			&s.TranscriptPath, &s.StartedAt, &s.LastSeenAt, &s.EndedAt,
+			&s.Usage.InputTokens, &s.Usage.OutputTokens, &s.Usage.CacheCreationTokens,
+			&s.Usage.CacheReadTokens, &s.Usage.Turns,
+		); err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return sessions, nil
+}
+
+func (d *DB) ListSessionsByCWDPage(cwd, since string, page, size int) ([]domain.Session, int, error) {
+	clauses := []string{"cwd = ?"}
+	args := []any{cwd}
+	if since != "" {
+		clauses = append(clauses, "datetime(last_seen_at) >= datetime(?)")
+		args = append(args, since)
+	}
+	where := "WHERE " + strings.Join(clauses, " AND ")
+
+	var total int
+	if err := d.db.QueryRow("SELECT COUNT(*) FROM sessions "+where, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * size
+	sessions, err := d.listSessionsWherePaged(where, args, size, offset)
+	return sessions, total, err
+}
+
+func (d *DB) GetTracesPage(sessionID, since string, page, size int) ([]domain.NormalizedEvent, int, error) {
+	var clauses []string
+	var args []any
+	if sessionID != "" {
+		clauses = append(clauses, "session_id = ?")
+		args = append(args, sessionID)
+	}
+	if since != "" {
+		clauses = append(clauses, "datetime(created_at) >= datetime(?)")
+		args = append(args, since)
+	}
+	where := ""
+	if len(clauses) > 0 {
+		where = "WHERE " + strings.Join(clauses, " AND ")
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*) FROM hook_events"
+	if where != "" {
+		countQuery += " " + where
+	}
+	if err := d.db.QueryRow(countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * size
+	events, err := d.listWithWhere(where, args, size, offset)
+	return events, total, err
+}
+
+func projectName(cwd string) string {
+	if cwd == "" {
+		return "unknown"
+	}
+	name := filepath.Base(cwd)
+	if name == "." || name == string(filepath.Separator) {
+		return cwd
+	}
+	return name
+}
+
+func splitAgents(raw string) []string {
+	if raw == "" {
+		return []string{}
+	}
+	parts := strings.Split(raw, ",")
+	agents := make([]string, 0, len(parts))
+	for _, part := range parts {
+		agent := strings.TrimSpace(part)
+		if agent != "" {
+			agents = append(agents, agent)
+		}
+	}
+	return agents
+}
+
+func normalizeToUTC(s string) string {
+	if s == "" {
+		return s
+	}
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t.UTC().Format(time.RFC3339)
+	}
+	return s
+}
+
 func (d *DB) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath, eventTime, endedAt string, usage domain.SessionUsage) error {
 	if eventTime == "" {
-		eventTime = time.Now().Format(time.RFC3339)
+		eventTime = time.Now().UTC().Format(time.RFC3339)
+	} else {
+		eventTime = normalizeToUTC(eventTime)
 	}
+	endedAt = normalizeToUTC(endedAt)
 	_, err := d.db.Exec(`
 		INSERT INTO sessions (
 			session_id, agent, model, source, cwd, transcript_path, started_at, last_seen_at, ended_at,
@@ -687,64 +874,21 @@ func (d *DB) GetSessionTree(since string) ([]domain.SessionTreeNode, error) {
 	return roots, nil
 }
 
-func (d *DB) GetTraces() ([]domain.NormalizedEvent, error) {
-	rows, err := d.db.Query(`
-		SELECT created_at, agent, session_id, hook_event_name,
-		       COALESCE(turn_id,''), COALESCE(tool_use_id,''),
-		       COALESCE(tool_name,''), COALESCE(model,''), COALESCE(source,''),
-		       COALESCE(cwd,''), COALESCE(transcript_path,''),
-		       COALESCE(action,''), COALESCE(path,''), COALESCE(command,''),
-		       COALESCE(old_string,''), COALESCE(new_string,''),
-		       COALESCE(start_line,0), ctx_before, ctx_after,
-		       COALESCE(prompt,''), COALESCE(description,''),
-		       COALESCE(permission_mode,''), COALESCE(response,''),
-		       COALESCE(error_message,''), COALESCE(error_type,''),
-		       COALESCE(subagent_id,''), COALESCE(subagent_type,''),
-		       COALESCE(task_id,''), COALESCE(task_title,''), COALESCE(task_description,''),
-		       COALESCE(notification_type,''), COALESCE(notification_title,''), COALESCE(notification_message,''),
-		       COALESCE(change_type,''), COALESCE(old_cwd,''), COALESCE(new_cwd,''),
-		       COALESCE(tool_calls_json,''),
-		       COALESCE(tool_result_stdout,''), COALESCE(tool_result_stderr,''),
-		       COALESCE(duration_ms,0), COALESCE(trigger,'')
-		FROM hook_events
-		WHERE subagent_id IS NOT NULL
-		  AND subagent_type IS NOT NULL
-		  AND COALESCE(subagent_id, '') != ''
-		  AND COALESCE(subagent_type, '') != ''
-		ORDER BY id DESC`)
-	if err != nil {
-		return nil, err
+func (d *DB) GetTraces(sessionID, since string) ([]domain.NormalizedEvent, error) {
+	var clauses []string
+	var args []any
+	if sessionID != "" {
+		clauses = append(clauses, "session_id = ?")
+		args = append(args, sessionID)
 	}
-	defer rows.Close()
+	if since != "" {
+		clauses = append(clauses, "datetime(created_at) >= datetime(?)")
+		args = append(args, since)
+	}
 
-	var events []domain.NormalizedEvent
-	for rows.Next() {
-		var e domain.NormalizedEvent
-		var ctxBefore, ctxAfter string
-		if err := rows.Scan(
-			&e.Time, &e.Agent, &e.Session, &e.HookEventName,
-			&e.TurnID, &e.ToolUseID, &e.Tool, &e.Model, &e.Source,
-			&e.CWD, &e.TranscriptPath,
-			&e.Action, &e.Path, &e.Command,
-			&e.OldString, &e.NewString, &e.StartLine,
-			&ctxBefore, &ctxAfter,
-			&e.Prompt, &e.Description,
-			&e.PermissionMode, &e.Response,
-			&e.ErrorMessage, &e.ErrorType,
-			&e.SubagentID, &e.SubagentType,
-			&e.TaskID, &e.TaskTitle, &e.TaskDescription,
-			&e.NotificationType, &e.NotificationTitle, &e.NotificationMessage,
-			&e.ChangeType, &e.OldCWD, &e.NewCWD, &e.ToolCallsJSON,
-			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS, &e.Trigger,
-		); err != nil {
-			return nil, err
-		}
-		_ = json.Unmarshal([]byte(ctxBefore), &e.CtxBefore)
-		_ = json.Unmarshal([]byte(ctxAfter), &e.CtxAfter)
-		events = append(events, e)
+	where := ""
+	if len(clauses) > 0 {
+		where = "WHERE " + strings.Join(clauses, " AND ")
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return events, nil
+	return d.listWithWhere(where, args, 0, 0)
 }

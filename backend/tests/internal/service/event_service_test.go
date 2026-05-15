@@ -67,10 +67,32 @@ func (m *mockRepo) SessionModel(sessionID string) (string, error) {
 	return m.models[sessionID], nil
 }
 
+func (m *mockRepo) ListProjects() ([]domain.Project, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return nil, nil
+}
+
 func (m *mockRepo) ListSessions() ([]domain.Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return append([]domain.Session{}, m.sessions...), nil
+}
+
+func (m *mockRepo) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var filtered []domain.Session
+	for _, session := range m.sessions {
+		if session.CWD != cwd {
+			continue
+		}
+		if since != "" && session.LastSeenAt < since {
+			continue
+		}
+		filtered = append(filtered, session)
+	}
+	return filtered, nil
 }
 
 func (m *mockRepo) GetDashboardStats(_, _ string) (*domain.DashboardStats, error) {
@@ -81,7 +103,29 @@ func (m *mockRepo) GetSessionTree(_ string) ([]domain.SessionTreeNode, error) {
 	return nil, nil
 }
 
-func (m *mockRepo) GetTraces() ([]domain.NormalizedEvent, error) { return nil, nil }
+func (m *mockRepo) GetTraces(sessionID, since string) ([]domain.NormalizedEvent, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var filtered []domain.NormalizedEvent
+	for _, event := range m.events {
+		if sessionID != "" && event.Session != sessionID {
+			continue
+		}
+		if since != "" && event.Time < since {
+			continue
+		}
+		filtered = append(filtered, event)
+	}
+	return filtered, nil
+}
+
+func (m *mockRepo) ListSessionsByCWDPage(cwd, since string, page, size int) ([]domain.Session, int, error) {
+	return nil, 0, nil
+}
+
+func (m *mockRepo) GetTracesPage(sessionID, since string, page, size int) ([]domain.NormalizedEvent, int, error) {
+	return nil, 0, nil
+}
 
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
@@ -359,6 +403,49 @@ func TestGetDashboardStatsReturnsSessionUsageBreakdown(t *testing.T) {
 
 	if len(stats.AgentUsage) != 2 {
 		t.Fatalf("agent usage len = %d, want 2", len(stats.AgentUsage))
+	}
+}
+
+func TestGetDashboardStatsIncludesOffsetSessionInsideUTCRange(t *testing.T) {
+	repo, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+	usage := domain.SessionUsage{
+		InputTokens:     100,
+		OutputTokens:    10,
+		CacheReadTokens: 50,
+		Turns:           1,
+	}
+	if err := repo.UpsertSession(
+		"codex-offset",
+		"codex",
+		"gpt-5.5",
+		"startup",
+		"/tmp",
+		"",
+		"2026-05-14T21:00:34+07:00", // 2026-05-14T14:00:34Z
+		"",
+		usage,
+	); err != nil {
+		t.Fatalf("UpsertSession: %v", err)
+	}
+
+	svc := service.New(repo)
+	stats, err := svc.GetDashboardStats("2026-05-14T00:00:00Z", "2026-05-14T16:59:59Z")
+	if err != nil {
+		t.Fatalf("GetDashboardStats: %v", err)
+	}
+
+	if len(stats.AgentUsage) != 1 {
+		t.Fatalf("agent usage len = %d, want 1", len(stats.AgentUsage))
+	}
+	got := stats.AgentUsage[0]
+	if got.Agent != "codex" || got.Model != "gpt-5.5" || got.Input != 100 || got.Output != 10 || got.CacheRead != 50 {
+		t.Fatalf("agent usage = %+v, want codex gpt-5.5 tokens", got)
+	}
+	if len(stats.SessionUsage) != 1 || stats.SessionUsage[0].SessionID != "codex-offset" {
+		t.Fatalf("session usage = %+v, want codex-offset", stats.SessionUsage)
 	}
 }
 

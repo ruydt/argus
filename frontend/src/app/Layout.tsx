@@ -69,7 +69,9 @@ export function Layout() {
   }
 
   useEffect(() => {
-    if (!location.pathname.startsWith('/events')) setSearchQuery('')
+    if (!location.pathname.startsWith('/events')) {
+      queueMicrotask(() => setSearchQuery(''))
+    }
   }, [location.pathname])
 
   useEffect(() => {
@@ -185,7 +187,9 @@ export function Layout() {
     <div
       className={cn(
         'relative flex h-dvh min-h-0 flex-col overflow-hidden bg-background md:grid md:h-screen md:transition-[grid-template-columns] md:duration-[280ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] shell-motion',
-        sidebarCollapsed ? 'md:grid-cols-[56px_minmax(0,1fr)]' : 'md:grid-cols-[240px_minmax(0,1fr)]'
+        sidebarCollapsed
+          ? 'md:grid-cols-[56px_minmax(0,1fr)]'
+          : 'md:grid-cols-[240px_minmax(0,1fr)]'
       )}
     >
       <Sidebar

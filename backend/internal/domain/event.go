@@ -75,6 +75,16 @@ type Session struct {
 	Usage          SessionUsage `json:"usage"`
 }
 
+type Project struct {
+	CWD          string   `json:"cwd"`
+	Name         string   `json:"name"`
+	SessionCount int      `json:"session_count"`
+	LastActivity string   `json:"last_activity"`
+	TotalTokens  int      `json:"total_tokens"`
+	Agents       []string `json:"agents"`
+	LiveCount    int      `json:"live_count"`
+}
+
 type SessionTreeNode struct {
 	Session  Session           `json:"session"`
 	AgentID  string            `json:"agent_id,omitempty"`
@@ -82,18 +92,18 @@ type SessionTreeNode struct {
 }
 
 type DashboardStats struct {
-	TotalSessions       int                     `json:"total_sessions"`
-	TotalEvents         int                     `json:"total_events"`
-	TotalInputTokens    int                     `json:"total_input_tokens"`
-	TotalOutputTokens   int                     `json:"total_output_tokens"`
-	TimelineGranularity string                  `json:"timeline_granularity"`
-	Timeline            []TimelineBucket        `json:"timeline"`
-	TimelineByAgent     []AgentTimelineBucket   `json:"timeline_by_agent"`
+	TotalSessions        int                        `json:"total_sessions"`
+	TotalEvents          int                        `json:"total_events"`
+	TotalInputTokens     int                        `json:"total_input_tokens"`
+	TotalOutputTokens    int                        `json:"total_output_tokens"`
+	TimelineGranularity  string                     `json:"timeline_granularity"`
+	Timeline             []TimelineBucket           `json:"timeline"`
+	TimelineByAgent      []AgentTimelineBucket      `json:"timeline_by_agent"`
 	TokenTimeline        []TokenTimelineBucket      `json:"token_timeline"`
 	TokenTimelineByAgent []TokenTimelineAgentBucket `json:"token_timeline_by_agent"`
-	TopActions          []ActionCount           `json:"top_actions"`
-	AgentUsage          []AgentModelUsage       `json:"agent_usage"`
-	SessionUsage        []DashboardSessionUsage `json:"session_usage"`
+	TopActions           []ActionCount              `json:"top_actions"`
+	AgentUsage           []AgentModelUsage          `json:"agent_usage"`
+	SessionUsage         []DashboardSessionUsage    `json:"session_usage"`
 }
 
 type TokenTimelineBucket struct {

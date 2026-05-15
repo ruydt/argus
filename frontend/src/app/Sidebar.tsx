@@ -49,9 +49,9 @@ const NAV_ITEMS: NavItem[] = [
     end: true,
   },
   {
-    to: '/sessions',
-    label: 'Sessions',
-    ariaLabel: 'Sessions Waterfall',
+    to: '/projects',
+    label: 'Projects',
+    ariaLabel: 'Projects',
     icon: GitFork,
     end: false,
   },

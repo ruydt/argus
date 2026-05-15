@@ -240,8 +240,10 @@ func TestUpsertSession_lastSeenAtUsesChronologicalComparison(t *testing.T) {
 	if len(sessions) != 1 {
 		t.Fatalf("sessions len = %d, want 1", len(sessions))
 	}
-	if sessions[0].LastSeenAt != second {
-		t.Fatalf("last_seen_at = %q, want %q", sessions[0].LastSeenAt, second)
+	// second is "2026-05-10T03:01:00-07:00" = 10:01:00Z; stored normalized to UTC
+	wantLastSeen := "2026-05-10T10:01:00Z"
+	if sessions[0].LastSeenAt != wantLastSeen {
+		t.Fatalf("last_seen_at = %q, want %q", sessions[0].LastSeenAt, wantLastSeen)
 	}
 }
 
@@ -310,6 +312,115 @@ func TestUpsertSession_staleStopAfterResumeDoesNotResurrectEndedAt(t *testing.T)
 	}
 	if sessions[0].LastSeenAt != resume {
 		t.Fatalf("last_seen_at = %q, want %q", sessions[0].LastSeenAt, resume)
+	}
+}
+
+func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
+	db := newTestDB(t)
+
+	if err := db.UpsertSession("sess-old", "codex", "gpt-5.4", "", "/work/hooker", "", "2026-05-14T10:00:00Z", "2026-05-14T10:05:00Z", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession old: %v", err)
+	}
+	if err := db.UpsertSession("sess-live", "claudecode", "claude-opus-4-7", "", "/work/hooker", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession live: %v", err)
+	}
+	if err := db.UpsertSession("sess-other", "geminicli", "gemini-3", "", "/work/other", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession other: %v", err)
+	}
+
+	projects, err := db.ListProjects()
+	if err != nil {
+		t.Fatalf("ListProjects: %v", err)
+	}
+
+	if len(projects) != 2 {
+		t.Fatalf("projects len = %d, want 2", len(projects))
+	}
+	if projects[0].CWD != "/work/hooker" {
+		t.Fatalf("first cwd = %q, want /work/hooker", projects[0].CWD)
+	}
+	if projects[0].Name != "hooker" {
+		t.Fatalf("name = %q, want hooker", projects[0].Name)
+	}
+	if projects[0].SessionCount != 2 {
+		t.Fatalf("session_count = %d, want 2", projects[0].SessionCount)
+	}
+	if projects[0].LiveCount != 1 {
+		t.Fatalf("live_count = %d, want 1", projects[0].LiveCount)
+	}
+	if projects[0].LastActivity != "2026-05-14T11:00:00Z" {
+		t.Fatalf("last_activity = %q, want latest session time", projects[0].LastActivity)
+	}
+	gotAgents := map[string]bool{}
+	for _, agent := range projects[0].Agents {
+		gotAgents[agent] = true
+	}
+	if !gotAgents["codex"] || !gotAgents["claudecode"] {
+		t.Fatalf("agents = %+v, want codex and claudecode", projects[0].Agents)
+	}
+}
+
+func TestListSessionsByCWDFiltersAndAppliesSince(t *testing.T) {
+	db := newTestDB(t)
+
+	if err := db.UpsertSession("old", "codex", "", "", "/work/hooker", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession old: %v", err)
+	}
+	if err := db.UpsertSession("new", "codex", "", "", "/work/hooker", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession new: %v", err)
+	}
+	if err := db.UpsertSession("other", "codex", "", "", "/work/other", "", "2026-05-14T12:00:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("UpsertSession other: %v", err)
+	}
+
+	sessions, err := db.ListSessionsByCWD("/work/hooker", "2026-05-14T10:00:00Z")
+	if err != nil {
+		t.Fatalf("ListSessionsByCWD: %v", err)
+	}
+
+	if len(sessions) != 1 {
+		t.Fatalf("sessions len = %d, want 1", len(sessions))
+	}
+	if sessions[0].SessionID != "new" {
+		t.Fatalf("session_id = %q, want new", sessions[0].SessionID)
+	}
+}
+
+func TestGetTracesFiltersBySessionAndSince(t *testing.T) {
+	db := newTestDB(t)
+
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:          "2026-05-14T09:00:00Z",
+		Agent:         "codex",
+		Session:       "target",
+		HookEventName: "PreToolUse",
+		Tool:          "Read",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:          "2026-05-14T11:00:00Z",
+		Agent:         "codex",
+		Session:       "target",
+		HookEventName: "PostToolUse",
+		Tool:          "Read",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:          "2026-05-14T12:00:00Z",
+		Agent:         "codex",
+		Session:       "other",
+		HookEventName: "PostToolUse",
+		Tool:          "Bash",
+	})
+
+	traces, err := db.GetTraces("target", "2026-05-14T10:00:00Z")
+	if err != nil {
+		t.Fatalf("GetTraces: %v", err)
+	}
+
+	if len(traces) != 1 {
+		t.Fatalf("traces len = %d, want 1", len(traces))
+	}
+	if traces[0].Session != "target" || traces[0].HookEventName != "PostToolUse" {
+		t.Fatalf("trace = %+v, want target PostToolUse", traces[0])
 	}
 }
 

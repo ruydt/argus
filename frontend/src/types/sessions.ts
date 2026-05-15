@@ -19,6 +19,16 @@ export interface Session {
   usage: SessionUsageType
 }
 
+export interface Project {
+  cwd: string
+  name: string
+  session_count: number
+  last_activity: string
+  total_tokens: number
+  agents: string[]
+  live_count: number
+}
+
 export interface SessionTreeNode {
   session: Session
   agent_id?: string

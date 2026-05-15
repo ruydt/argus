@@ -14,7 +14,7 @@ export function useEvents() {
   const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
-    setEvents([])
+    queueMicrotask(() => setEvents([]))
   }, [sessionFilter])
 
   const mergeEvents = useCallback((incoming: EventRecord[]) => {
