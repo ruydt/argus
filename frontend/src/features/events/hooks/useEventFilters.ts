@@ -6,10 +6,11 @@ import type { EventRecord } from '@/types/events'
 export function useEventFilters(
   events: EventRecord[],
   searchQuery: string,
-  setSearchQuery: Dispatch<SetStateAction<string>>
+  setSearchQuery: Dispatch<SetStateAction<string>>,
+  sessionFilterOverride = ''
 ) {
   const [searchParams] = useSearchParams()
-  const sessionFilter = searchParams.get('session') ?? ''
+  const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
 
   const [actionFilter, setActionFilter] = useState('all')
   const [agentFilter, setAgentFilter] = useState('all')

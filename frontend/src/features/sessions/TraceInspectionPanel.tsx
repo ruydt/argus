@@ -1,12 +1,17 @@
 import { useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-
-import { Copy, Check } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ArrowRight, Check, Copy, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { buildEventKey } from '@/features/events/eventKey'
 import type { TraceSpan } from './hooks/useTraces'
 
 interface Props {
   span: TraceSpan | null
+  onClose?: () => void
 }
 
 function JsonBlock({ title, data }: { title: string; data: unknown }) {
@@ -22,34 +27,38 @@ function JsonBlock({ title, data }: { title: string; data: unknown }) {
   }
 
   return (
-    <div className="flex flex-col mb-6 min-w-0">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-[12px] font-medium text-[#ccc]">{title}</h4>
-        <div className="flex gap-1">
+    <Card size="sm" className="mb-6 w-full min-w-0 max-w-full border-white/10 bg-black/30 shadow-sm">
+      <CardHeader className="border-b border-white/10">
+        <CardTitle className="text-[12px] font-medium text-white/80">{title}</CardTitle>
+        <CardAction>
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-[10px] text-[#888] hover:text-[#ccc]"
+            className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground"
             onClick={handleCopy}
           >
-            {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+            {copied ? <Check data-icon="inline-start" /> : <Copy data-icon="inline-start" />}
             Copy
           </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="w-full min-w-0 overflow-hidden p-0">
+        <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
+          <pre
+            className="w-max p-4 font-mono text-[12px] leading-relaxed text-blue-100/80"
+            style={{ fontFamily: '"Fira Code", "JetBrains Mono", monospace' }}
+          >
+            {content}
+          </pre>
         </div>
-      </div>
-      <div className="bg-black/60 border border-white/10 shadow-inner rounded-xl p-4 overflow-x-auto min-w-0">
-        <pre
-          className="text-[12px] text-blue-100/80 leading-relaxed font-mono"
-          style={{ fontFamily: '"Fira Code", "JetBrains Mono", monospace' }}
-        >
-          {content}
-        </pre>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
-export function TraceInspectionPanel({ span }: Props) {
+export function TraceInspectionPanel({ span, onClose }: Props) {
+  const navigate = useNavigate()
+
   if (!span) {
     return (
       <div className="flex items-center justify-center h-full text-[#555] text-xs">
@@ -58,45 +67,82 @@ export function TraceInspectionPanel({ span }: Props) {
     )
   }
 
+  const canSeeEvent = Boolean(span.event.session)
+
+  const handleSeeEvent = () => {
+    if (!span.event.session) return
+
+    const params = new URLSearchParams({
+      session: span.event.session,
+      event: buildEventKey(span.event),
+    })
+    navigate({ pathname: '/', search: params.toString() })
+  }
+
   return (
-    <div className="flex flex-col h-full min-w-0">
-      <div className="px-5 pt-5 pb-3 border-b border-white/10 bg-black/20 shrink-0 min-w-0">
-        <h3 className="text-[15px] font-bold text-white mb-1 flex min-w-0 items-center gap-3">
-          <span className="bg-white/10 border border-white/10 px-2 py-0.5 rounded-md text-white/80 text-[10px] tracking-widest uppercase shadow-sm">
-            {span.type}
-          </span>
-          <span className="min-w-0 truncate">{span.name}</span>
-        </h3>
+    <div className="flex w-full flex-col h-full overflow-hidden">
+      <div className="flex w-full min-w-0 overflow-hidden items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-5 py-3 shrink-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden">
+          <Badge variant="outline" className="shrink-0 text-[10px]">{span.type}</Badge>
+          <span className="min-w-0 truncate text-[14px] font-semibold text-white">{span.name}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={handleSeeEvent}
+            disabled={!canSeeEvent}
+          >
+            <ArrowRight data-icon="inline-end" />
+            See Event
+          </Button>
+          {onClose && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              aria-label="Close details"
+              onClick={onClose}
+            >
+              <X />
+            </Button>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="run" className="flex flex-col flex-1 min-h-0">
         <div className="px-5 border-b border-white/10 bg-black/20">
-          <TabsList className="bg-transparent h-11 p-0 gap-6">
+          <TabsList variant="line" className="h-11 gap-6 p-0">
             <TabsTrigger
               value="run"
-              className="px-1 h-11 rounded-none border-0 border-b-2 border-x-transparent border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:border-t-transparent data-[state=active]:border-b-blue-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-white/50 data-[state=active]:text-white text-[13px] font-medium transition-colors focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+              className="h-11 px-1 text-[13px] font-medium text-white/50 data-active:text-white"
             >
               Run
             </TabsTrigger>
             <TabsTrigger
               value="metadata"
-              className="px-1 h-11 rounded-none border-0 border-b-2 border-x-transparent border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:border-t-transparent data-[state=active]:border-b-blue-500 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-white/50 data-[state=active]:text-white text-[13px] font-medium transition-colors focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+              className="h-11 px-1 text-[13px] font-medium text-white/50 data-active:text-white"
             >
               Metadata
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-5 min-w-0">
-            <TabsContent value="run" className="m-0 focus-visible:outline-none min-w-0">
-              <div className="mb-8 flex min-w-0 flex-wrap items-start gap-4 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px] text-white/60 shadow-sm">
-                <div className="flex min-w-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden w-full [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
+          <div className="w-full overflow-x-hidden p-5">
+            <TabsContent value="run" className="m-0 focus-visible:outline-none">
+              <div className="mb-8 grid w-full overflow-hidden gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-[12px] text-white/60 shadow-sm">
+                <div className="flex w-full flex-col overflow-hidden">
                   <span className="text-[10px] uppercase tracking-wider text-white/40">Run ID</span>
-                  <span className="mt-0.5 break-all font-mono text-white/90">{span.id}</span>
+                  <div className="mt-0.5 w-full overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
+                    <span className="block w-max break-all font-mono text-white/90">{span.id}</span>
+                  </div>
                 </div>
-                <div className="h-8 w-px shrink-0 bg-white/10" />
-                <div className="flex shrink-0 flex-col">
+                <Separator orientation="horizontal" className="w-full" />
+                <div className="flex w-full flex-col">
                   <span className="text-[10px] uppercase tracking-wider text-white/40">
                     Duration
                   </span>

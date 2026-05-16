@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { EventRecord, EventsResponse } from '@/types'
+import { buildEventKey } from '../eventKey'
 
-function eventKey(e: EventRecord): string {
-  return `${e.session ?? ''}|${e.time}|${e.action}|${e.path}`
-}
-
-export function useEvents() {
+export function useEvents(sessionFilterOverride = '') {
   const [searchParams] = useSearchParams()
-  const sessionFilter = searchParams.get('session') ?? ''
+  const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
   const [events, setEvents] = useState<EventRecord[]>([])
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -19,10 +16,10 @@ export function useEvents() {
 
   const mergeEvents = useCallback((incoming: EventRecord[]) => {
     setEvents((prev) => {
-      const seen = new Set(prev.map(eventKey))
+      const seen = new Set(prev.map(buildEventKey))
       const next = [...prev]
       incoming.forEach((event) => {
-        const key = eventKey(event)
+        const key = buildEventKey(event)
         if (seen.has(key)) return
         seen.add(key)
         next.push(event)
@@ -50,6 +47,11 @@ export function useEvents() {
   }, [mergeEvents, sessionFilter])
 
   useEffect(() => {
+    if (!sessionFilter) return
+    queueMicrotask(() => void reload())
+  }, [reload, sessionFilter])
+
+  useEffect(() => {
     const seen = new Set<string>()
     const buffer: EventRecord[] = []
     let rafId: number | undefined
@@ -69,7 +71,7 @@ export function useEvents() {
     es.onmessage = (ev) => {
       try {
         const e = JSON.parse(ev.data as string) as EventRecord
-        const key = eventKey(e)
+        const key = buildEventKey(e)
         if (seen.has(key)) return
         seen.add(key)
         buffer.push(e)

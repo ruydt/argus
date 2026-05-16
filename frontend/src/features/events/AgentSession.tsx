@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { PaginationBar } from '@/components/shared/PaginationBar'
@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { formatTokenCount, highlight, shortId } from '@/lib/format'
 import { agentForEvent } from '@/agents'
 import type { SessionGroup, SessionUsage, TooltipState } from '@/types/events'
+import { buildEventKey } from './eventKey'
 import { EventRow } from './EventRow'
 
 const DEFAULT_PAGE_SIZE = 50
@@ -18,6 +19,10 @@ type AgentSessionProps = {
   searchQuery: string
   sessionUsage: Record<string, SessionUsage>
   setTooltip: Dispatch<SetStateAction<TooltipState | null>>
+  targetSessionId: string | null
+  targetEventKey: string | null
+  highlightedEventKey: string | null
+  onTargetVisible: () => void
 }
 
 export function AgentSession({
@@ -28,6 +33,10 @@ export function AgentSession({
   searchQuery,
   sessionUsage,
   setTooltip,
+  targetSessionId,
+  targetEventKey,
+  highlightedEventKey,
+  onTargetVisible,
 }: AgentSessionProps) {
   const { sessionId, transcriptPath, events } = session
   const firstEvent = events[0]
@@ -43,6 +52,19 @@ export function AgentSession({
   const pageEnd = Math.min(pageStart + pageSize, events.length)
   const visibleEvents = events.slice(pageStart, pageEnd)
   const needsPagination = events.length > pageSize
+  const targetEventIndex =
+    targetEventKey && targetSessionId === sessionId
+      ? events.findIndex((event) => buildEventKey(event) === targetEventKey)
+      : -1
+
+  useEffect(() => {
+    if (targetEventIndex < 0) return
+
+    const targetPage = Math.floor(targetEventIndex / pageSize)
+    if (clampedPage !== targetPage) {
+      queueMicrotask(() => setPage(targetPage))
+    }
+  }, [clampedPage, pageSize, targetEventIndex])
 
   return (
     <Collapsible
@@ -116,7 +138,14 @@ export function AgentSession({
         )}
         <div className="px-[10px] py-[6px]">
           {visibleEvents.map((e, i) => (
-            <EventRow key={i} event={e} searchQuery={searchQuery} />
+            <EventRow
+              key={i}
+              event={e}
+              searchQuery={searchQuery}
+              highlighted={highlightedEventKey === buildEventKey(e)}
+              isPendingTarget={targetEventKey === buildEventKey(e)}
+              onTargetVisible={onTargetVisible}
+            />
           ))}
         </div>
         {needsPagination && (

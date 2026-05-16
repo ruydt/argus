@@ -315,6 +315,79 @@ func TestUpsertSession_staleStopAfterResumeDoesNotResurrectEndedAt(t *testing.T)
 	}
 }
 
+func TestListSessions_sortsByStartedAtDesc(t *testing.T) {
+	db := newTestDB(t)
+
+	if err := db.UpsertSession(
+		"sess-ended-older",
+		"codex",
+		"gpt-5.4",
+		"startup",
+		"/cwd",
+		"/transcript",
+		"2026-05-10T10:00:00Z",
+		"2026-05-10T10:10:00Z",
+		domain.SessionUsage{},
+	); err != nil {
+		t.Fatalf("UpsertSession sess-ended-older: %v", err)
+	}
+	if err := db.UpsertSession(
+		"sess-running",
+		"codex",
+		"gpt-5.4",
+		"startup",
+		"/cwd",
+		"/transcript",
+		"2026-05-10T09:00:00Z",
+		"",
+		domain.SessionUsage{},
+	); err != nil {
+		t.Fatalf("UpsertSession sess-running: %v", err)
+	}
+	if err := db.UpsertSession(
+		"sess-ended-newer",
+		"codex",
+		"gpt-5.4",
+		"startup",
+		"/cwd",
+		"/transcript",
+		"2026-05-10T08:00:00Z",
+		"2026-05-10T10:20:00Z",
+		domain.SessionUsage{},
+	); err != nil {
+		t.Fatalf("UpsertSession sess-ended-newer: %v", err)
+	}
+	if err := db.UpsertSession(
+		"sess-running",
+		"codex",
+		"gpt-5.4",
+		"hook",
+		"/cwd",
+		"/transcript",
+		"2026-05-10T10:30:00Z",
+		"",
+		domain.SessionUsage{},
+	); err != nil {
+		t.Fatalf("UpsertSession sess-running second event: %v", err)
+	}
+
+	sessions, err := db.ListSessions()
+	if err != nil {
+		t.Fatalf("ListSessions: %v", err)
+	}
+	if len(sessions) != 3 {
+		t.Fatalf("sessions len = %d, want 3", len(sessions))
+	}
+
+	got := []string{sessions[0].SessionID, sessions[1].SessionID, sessions[2].SessionID}
+	want := []string{"sess-ended-older", "sess-running", "sess-ended-newer"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("sessions[%d] = %q, want %q; full order=%v", i, got[i], want[i], got)
+		}
+	}
+}
+
 func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
 	db := newTestDB(t)
 

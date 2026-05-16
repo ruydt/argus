@@ -1,12 +1,9 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react'
-import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from 'react-resizable-panels'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { PanelImperativeHandle } from 'react-resizable-panels'
 import { Link, useParams } from 'react-router-dom'
-import {
-  Minus,
-  PanelLeft,
-  Plus,
-} from 'lucide-react'
+import { Minus, PanelLeft, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import type { Session } from '@/types/sessions'
 import { EventTimeline } from './EventTimeline'
 import { TraceInspectionPanel } from './TraceInspectionPanel'
@@ -39,9 +36,11 @@ export function TraceViewPage() {
   const [zoom, setZoom] = useState(1)
   const [selectedSpan, setSelectedSpan] = useState<TraceSpan | null>(null)
   const [panelOpen, setPanelOpen] = useState(true)
+  const inspectionPanelRef = useRef<PanelImperativeHandle>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(initialIsMobile)
   const [viewportWidth, setViewportWidth] = useState(0)
+  const isNarrowLayout = isMobile
 
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 768px)')
@@ -106,13 +105,12 @@ export function TraceViewPage() {
   const totalDuration = Math.max(maxTime - minTime, 1000)
   const baseTimelineWidth = Math.max(Math.round(viewportWidth), 1)
   const timelineWidth = Math.max(Math.round(baseTimelineWidth * zoom), baseTimelineWidth)
-
-  const extendedTimelineWidth = timelineWidth + 400
-  const extendedTotalDuration = totalDuration * (extendedTimelineWidth / timelineWidth)
+  const timelineLabelGutterWidth = 400
+  const contentWidth = timelineWidth + timelineLabelGutterWidth
 
   const { ticks } = useMemo(
-    () => buildTimelineTicks(extendedTotalDuration, extendedTimelineWidth),
-    [extendedTimelineWidth, extendedTotalDuration]
+    () => buildTimelineTicks(totalDuration, timelineWidth),
+    [timelineWidth, totalDuration]
   )
 
   const setZoomLevel = (nextZoom: number) => {
@@ -131,7 +129,25 @@ export function TraceViewPage() {
     setZoomLevel(zoomLevels[nextIndex])
   }
 
-  const openPanel = () => setPanelOpen(true)
+  const openPanel = useCallback(() => {
+    setPanelOpen(true)
+    inspectionPanelRef.current?.expand()
+  }, [])
+
+  const closePanel = useCallback(() => {
+    setPanelOpen(false)
+    inspectionPanelRef.current?.collapse()
+  }, [])
+
+  const handleSelectSpan = useCallback((span: TraceSpan) => {
+    setSelectedSpan(span)
+    if (isNarrowLayout) {
+      setPanelOpen(true)
+    } else {
+      setPanelOpen(true)
+      inspectionPanelRef.current?.expand()
+    }
+  }, [isNarrowLayout])
 
   return (
     <div className="flex h-full flex-col bg-[#0a0a0a] text-white">
@@ -156,14 +172,6 @@ export function TraceViewPage() {
           </span>
           <span className="text-white/20">•</span>
           <span>
-            Ended {session?.ended_at 
-              ? new Date(session.ended_at).toLocaleString() 
-              : session?.last_seen_at 
-                ? new Date(session.last_seen_at).toLocaleString() 
-                : '-'}
-          </span>
-          <span className="text-white/20">•</span>
-          <span>
             Duration{' '}
             {session
               ? formatDuration(sessionDurationMs(session, new Date(session.last_seen_at).getTime()))
@@ -172,9 +180,9 @@ export function TraceViewPage() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <PanelGroup orientation={isMobile ? 'vertical' : 'horizontal'}>
-          <Panel
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <ResizablePanelGroup orientation={isMobile ? 'vertical' : 'horizontal'}>
+          <ResizablePanel
             defaultSize={isMobile || !panelOpen ? 100 : 68}
             minSize={30}
             className="relative flex min-w-0 flex-col bg-[#0a0a0a]"
@@ -199,12 +207,7 @@ export function TraceViewPage() {
                   >
                     <Minus />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setZoomLevel(1)}
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={() => setZoomLevel(1)}>
                     Fit
                   </Button>
                   <Button
@@ -218,24 +221,26 @@ export function TraceViewPage() {
                   >
                     <Plus />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() => setPanelOpen((open) => !open)}
-                    aria-label={panelOpen ? 'Hide panel' : 'Show panel'}
-                    title={panelOpen ? 'Hide panel' : 'Show panel'}
-                  >
-                    <PanelLeft className={panelOpen ? '' : 'rotate-180'} />
-                  </Button>
+                  {!isNarrowLayout && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => (panelOpen ? closePanel() : openPanel())}
+                      aria-label={panelOpen ? 'Hide panel' : 'Show panel'}
+                      title={panelOpen ? 'Hide panel' : 'Show panel'}
+                    >
+                      <PanelLeft className={panelOpen ? '' : 'rotate-180'} />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
 
             <div ref={containerRef} className="relative flex-1 overflow-auto">
-              <div className="flex min-w-full flex-col" style={{ width: `${extendedTimelineWidth}px` }}>
+              <div className="flex min-w-full flex-col" style={{ width: `${contentWidth}px` }}>
                 <div className="sticky top-0 z-30 flex h-10 w-full border-b border-white/10 bg-[#0b0c10]/95 backdrop-blur-sm">
-                  <div className="relative mx-5 h-full" style={{ width: `${extendedTimelineWidth}px` }}>
+                  <div className="relative mx-5 h-full" style={{ width: `${contentWidth}px` }}>
                     {ticks.map((tick, index) => (
                       <div
                         key={`${tick.timeMs}-${index}`}
@@ -272,11 +277,11 @@ export function TraceViewPage() {
                         span={trace}
                         depth={0}
                         selected={selectedSpan}
-                        onSelect={setSelectedSpan}
+                        onSelect={handleSelectSpan}
                         onOpenPanel={openPanel}
                         globalStart={minTime}
-                        globalDuration={extendedTotalDuration}
-                        timelineWidth={extendedTimelineWidth}
+                        globalDuration={totalDuration}
+                        timelineWidth={timelineWidth}
                       />
                     ))}
                   </div>
@@ -284,33 +289,52 @@ export function TraceViewPage() {
                   <EventTimeline
                     events={events}
                     selected={selectedSpan}
-                    onSelect={setSelectedSpan}
+                    onSelect={handleSelectSpan}
                     onOpenPanel={openPanel}
                     globalStart={minTime}
-                    globalDuration={extendedTotalDuration}
-                    timelineWidth={extendedTimelineWidth}
+                    globalDuration={totalDuration}
+                    timelineWidth={timelineWidth}
                   />
                 )}
               </div>
             </div>
-          </Panel>
+          </ResizablePanel>
 
-          {panelOpen && (
+          {!isNarrowLayout && (
             <>
-              <PanelResizeHandle className="relative z-20 flex w-1 cursor-row-resize items-center justify-center bg-white/5 transition-colors hover:bg-blue-500/50 active:bg-blue-500 md:w-1.5 md:cursor-col-resize">
-                <div className="h-0.5 w-8 rounded-full bg-white/20 md:h-8 md:w-0.5" />
-              </PanelResizeHandle>
-
-              <Panel
-                defaultSize={isMobile ? 50 : 32}
+              <ResizableHandle
+                withHandle
+                className={`relative z-20 w-1 cursor-col-resize bg-white/5 transition-colors hover:bg-blue-500/50 active:bg-blue-500 md:w-1.5 ${panelOpen ? '' : 'pointer-events-none opacity-0'}`}
+              />
+              <ResizablePanel
+                ref={inspectionPanelRef}
+                defaultSize={32}
                 minSize={24}
-                className="z-10 flex min-w-0 flex-col border-t border-white/10 bg-[#111216] shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.5)] md:border-l md:border-t-0"
+                collapsible
+                collapsedSize={0}
+                onCollapse={() => setPanelOpen(false)}
+                onExpand={() => setPanelOpen(true)}
+                className="z-10 flex min-w-0 flex-col border-l border-white/10 bg-[#111216] shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.5)]"
               >
                 <TraceInspectionPanel span={selectedSpan} />
-              </Panel>
+              </ResizablePanel>
             </>
           )}
-        </PanelGroup>
+        </ResizablePanelGroup>
+
+        {isNarrowLayout && panelOpen && selectedSpan && (
+          <>
+            <button
+              type="button"
+              aria-label="Dismiss details overlay"
+              className="absolute inset-0 z-40 bg-black/60"
+              onClick={closePanel}
+            />
+            <aside className="absolute inset-y-0 right-0 z-50 flex w-[min(92vw,44rem)] min-w-0 flex-col border-l border-white/10 bg-[#111216] shadow-[-12px_0_40px_rgba(0,0,0,0.45)]">
+              <TraceInspectionPanel span={selectedSpan} onClose={closePanel} />
+            </aside>
+          </>
+        )}
       </div>
     </div>
   )

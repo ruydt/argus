@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { cn, displayModel } from '@/lib/utils'
 import { highlight } from '@/lib/format'
@@ -17,15 +18,40 @@ import { EventBadges } from './EventBadges'
 type EventRowProps = {
   event: EventRecord
   searchQuery: string
+  highlighted?: boolean
+  isPendingTarget?: boolean
+  onTargetVisible?: () => void
 }
 
-export function EventRow({ event: e, searchQuery }: EventRowProps) {
+export function EventRow({
+  event: e,
+  searchQuery,
+  highlighted = false,
+  isPendingTarget = false,
+  onTargetVisible,
+}: EventRowProps) {
   const isPatchCommand =
     (e.action === 'EDIT' && String(e.prompt).includes('*** Begin Patch')) ||
     String(e.command).includes('*** Begin Patch')
+  const rowRef = useRef<HTMLDivElement>(null)
+  const targetHandledRef = useRef(false)
+
+  useEffect(() => {
+    if (!isPendingTarget || !rowRef.current || targetHandledRef.current) return
+
+    rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    targetHandledRef.current = true
+    onTargetVisible?.()
+  }, [isPendingTarget, onTargetVisible])
 
   return (
-    <div className="border-b border-white/[0.03] py-2 text-[0.82rem] leading-[1.4] hover:bg-white/[0.02]">
+    <div
+      ref={rowRef}
+      className={cn(
+        'border-b border-white/[0.03] py-2 text-[0.82rem] leading-[1.4] hover:bg-white/[0.02]',
+        highlighted ? 'rounded-md bg-sky-500/8 ring-1 ring-sky-400/35' : ''
+      )}
+    >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
         <div className="flex items-center gap-3 pt-[2px] text-[#666] sm:block sm:w-[75px] sm:shrink-0">
           <span>{new Date(e.time).toLocaleTimeString([], { hour12: false })}</span>

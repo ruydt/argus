@@ -30,6 +30,13 @@ vi.mock('react-router-dom', async () => {
 beforeEach(() => {
   vi.clearAllMocks()
   searchParams = new URLSearchParams()
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ events: [] }),
+    })
+  )
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
     cb(0)
     return 1
@@ -70,5 +77,18 @@ describe('useEvents', () => {
     rerender()
     await waitFor(() => expect(latestES.url).toBe('/api/events/stream?session=new'))
     await waitFor(() => expect(result.current.events).toHaveLength(0))
+  })
+
+  it('fetches historical session events when session override provided', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ events: [] }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderHook(() => useEvents('sess-override'))
+
+    await waitFor(() => expect(latestES.url).toBe('/api/events/stream?session=sess-override'))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/events?session=sess-override'))
   })
 })

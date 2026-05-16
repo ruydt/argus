@@ -83,15 +83,16 @@ export function SessionListPage() {
           <>
             <div className="overflow-hidden rounded-lg border border-white/10">
               <table className="w-full border-collapse text-sm">
-                <thead className="bg-white/[0.04] text-left text-[11px] uppercase tracking-wider text-white/45">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Session</th>
-                    <th className="px-4 py-3 font-medium">Agent</th>
-                    <th className="px-4 py-3 font-medium">Duration</th>
-                    <th className="px-4 py-3 font-medium">Tokens</th>
-                    <th className="px-4 py-3 font-medium">Started</th>
-                  </tr>
-                </thead>
+	                <thead className="bg-white/[0.04] text-left text-[11px] uppercase tracking-wider text-white/45">
+	                  <tr>
+	                    <th className="px-4 py-3 font-medium">Session</th>
+	                    <th className="px-4 py-3 font-medium">Agent</th>
+	                    <th className="px-4 py-3 font-medium">Duration</th>
+	                    <th className="px-4 py-3 font-medium">Tokens</th>
+	                    <th className="px-4 py-3 font-medium">Started</th>
+	                    <th className="px-4 py-3 font-medium">Ended</th>
+	                  </tr>
+	                </thead>
                 <tbody>
                   {sessions.map(session => {
                     return (
@@ -127,15 +128,18 @@ export function SessionListPage() {
                             sessionDurationMs(session, new Date(session.last_seen_at).getTime()),
                           )}
                         </td>
-                        <td className="px-4 py-3 text-white/70">
-                          {totalTokens(session).toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3 text-white/55">
-                          {new Date(session.started_at).toLocaleString()}
-                        </td>
-                      </tr>
-                    )
-                  })}
+	                        <td className="px-4 py-3 text-white/70">
+	                          {totalTokens(session).toLocaleString()}
+	                        </td>
+	                        <td className="px-4 py-3 text-white/55">
+	                          {new Date(session.started_at).toLocaleString()}
+	                        </td>
+	                        <td className="px-4 py-3 text-white/55">
+	                          {session.ended_at ? new Date(session.ended_at).toLocaleString() : 'Running'}
+	                        </td>
+	                      </tr>
+	                    )
+	                  })}
                 </tbody>
               </table>
             </div>

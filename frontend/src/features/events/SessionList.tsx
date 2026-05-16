@@ -12,6 +12,10 @@ type SessionListProps = {
   toggleSession: (id: string) => void
   sessionUsage: Record<string, SessionUsage>
   setTooltip: Dispatch<SetStateAction<TooltipState | null>>
+  targetSessionId: string | null
+  targetEventKey: string | null
+  highlightedEventKey: string | null
+  onTargetVisible: () => void
 }
 
 export function SessionList({
@@ -22,6 +26,10 @@ export function SessionList({
   toggleSession,
   sessionUsage,
   setTooltip,
+  targetSessionId,
+  targetEventKey,
+  highlightedEventKey,
+  onTargetVisible,
 }: SessionListProps) {
   const sessionList = useMemo(() => {
     const grouped = new Map<string, SessionGroup>()
@@ -94,6 +102,10 @@ export function SessionList({
           searchQuery={searchQuery}
           sessionUsage={sessionUsage}
           setTooltip={setTooltip}
+          targetSessionId={targetSessionId}
+          targetEventKey={targetEventKey}
+          highlightedEventKey={highlightedEventKey}
+          onTargetVisible={onTargetVisible}
         />
       ))}
     </>

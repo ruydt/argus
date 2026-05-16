@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { useEvents } from './hooks/useEvents'
@@ -9,10 +9,19 @@ import { EventFilters } from './EventFilters'
 import { SessionList } from './SessionList'
 import type { LayoutOutletContext, TooltipState } from '@/types'
 
+type PendingEventLink = {
+  sessionId: string
+  eventKey: string
+}
+
 export function EventsPage() {
-  const { events, refreshing, error, reload } = useEvents()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [pendingEventLink, setPendingEventLink] = useState<PendingEventLink | null>(null)
+  const [highlightedEventKey, setHighlightedEventKey] = useState<string | null>(null)
   const { collapsedSessions, setCollapsedSessions, sessionUsage, searchQuery, setSearchQuery } =
     useOutletContext<LayoutOutletContext>()
+  const sessionFilterOverride = pendingEventLink?.sessionId ?? ''
+  const { events, refreshing, error, reload } = useEvents(sessionFilterOverride)
 
   const {
     actionFilter,
@@ -29,10 +38,38 @@ export function EventsPage() {
     customEnd,
     setCustomEnd,
     filteredEvents,
-  } = useEventFilters(events, searchQuery, setSearchQuery)
+  } = useEventFilters(events, searchQuery, setSearchQuery, sessionFilterOverride)
 
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+
+  useEffect(() => {
+    const sessionId = searchParams.get('session') ?? ''
+    const eventKey = searchParams.get('event') ?? ''
+    if (!sessionId || !eventKey) return
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('session')
+    nextParams.delete('event')
+    queueMicrotask(() => {
+      setPendingEventLink({ sessionId, eventKey })
+      setHighlightedEventKey(eventKey)
+      setCollapsedSessions((prev) => {
+        if (!prev.has(sessionId)) return prev
+        const next = new Set(prev)
+        next.delete(sessionId)
+        return next
+      })
+      setSearchParams(nextParams, { replace: true })
+    })
+  }, [searchParams, setCollapsedSessions, setSearchParams])
+
+  useEffect(() => {
+    if (!highlightedEventKey) return
+
+    const timeoutId = window.setTimeout(() => setHighlightedEventKey(null), 2500)
+    return () => window.clearTimeout(timeoutId)
+  }, [highlightedEventKey])
 
   const toggleSession = (id: string) => {
     setCollapsedSessions((prev) => {
@@ -42,6 +79,47 @@ export function EventsPage() {
       return next
     })
   }
+
+  const clearPendingEventLink = () => {
+    setPendingEventLink(null)
+  }
+
+  const handleActionFilterChange = (value: string) => {
+    clearPendingEventLink()
+    setActionFilter(value)
+  }
+
+  const handleAgentFilterChange = (value: string) => {
+    clearPendingEventLink()
+    setAgentFilter(value)
+  }
+
+  const handleSortOrderChange = (value: string) => {
+    clearPendingEventLink()
+    setSortOrder(value)
+  }
+
+  const handleTimeRangeChange = (value: string) => {
+    clearPendingEventLink()
+    setTimeRange(value)
+  }
+
+  const handleCustomStartChange = (value: string) => {
+    clearPendingEventLink()
+    setCustomStart(value)
+  }
+
+  const handleCustomEndChange = (value: string) => {
+    clearPendingEventLink()
+    setCustomEnd(value)
+  }
+
+  const handleSearchQueryChange = (value: string) => {
+    clearPendingEventLink()
+    setSearchQuery(value)
+  }
+
+  const handleTargetVisible = () => {}
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#0c0c0c]">
@@ -64,20 +142,20 @@ export function EventsPage() {
       <EventFilters
         id="event-filters"
         actionFilter={actionFilter}
-        setActionFilter={setActionFilter}
+        setActionFilter={handleActionFilterChange}
         agentFilter={agentFilter}
-        setAgentFilter={setAgentFilter}
+        setAgentFilter={handleAgentFilterChange}
         availableAgents={availableAgents}
         sortOrder={sortOrder}
-        setSortOrder={setSortOrder}
+        setSortOrder={handleSortOrderChange}
         timeRange={timeRange}
-        setTimeRange={setTimeRange}
+        setTimeRange={handleTimeRangeChange}
         customStart={customStart}
-        setCustomStart={setCustomStart}
+        setCustomStart={handleCustomStartChange}
         customEnd={customEnd}
-        setCustomEnd={setCustomEnd}
+        setCustomEnd={handleCustomEndChange}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchQueryChange}
         className={mobileFiltersOpen ? 'sm:flex' : 'hidden sm:flex'}
       />
 
@@ -107,6 +185,10 @@ export function EventsPage() {
             toggleSession={toggleSession}
             sessionUsage={sessionUsage}
             setTooltip={setTooltip}
+            targetSessionId={pendingEventLink?.sessionId ?? null}
+            targetEventKey={pendingEventLink?.eventKey ?? null}
+            highlightedEventKey={highlightedEventKey}
+            onTargetVisible={handleTargetVisible}
           />
         )}
 

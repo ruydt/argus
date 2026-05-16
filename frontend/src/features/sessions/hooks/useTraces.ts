@@ -56,10 +56,7 @@ function buildTraceSpans(rawEvents: EventRecord[]) {
   const activeStack: TraceSpan[] = []
 
   for (const span of sortedSpans) {
-    while (
-      activeStack.length > 0 &&
-      activeStack[activeStack.length - 1].endTime < span.startTime
-    ) {
+    while (activeStack.length > 0 && activeStack[activeStack.length - 1].endTime < span.startTime) {
       activeStack.pop()
     }
 
@@ -113,6 +110,26 @@ export function useTraces(sessionId: string, since?: string) {
   useEffect(() => {
     queueMicrotask(() => void fetchTraces())
   }, [fetchTraces])
+
+  useEffect(() => {
+    if (!sessionId) return
+
+    const params = new URLSearchParams({ session: sessionId })
+    const es = new EventSource(`/api/events/stream?${params.toString()}`)
+
+    es.onmessage = (message: MessageEvent<string>) => {
+      try {
+        const event = JSON.parse(message.data) as EventRecord
+        if (event.session === sessionId) {
+          queueMicrotask(() => void fetchTraces())
+        }
+      } catch {
+        // ignore malformed stream events
+      }
+    }
+
+    return () => es.close()
+  }, [fetchTraces, sessionId])
 
   return { traces, events, loading, error }
 }
