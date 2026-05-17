@@ -246,10 +246,12 @@ export function toTokenTimelineByAgentData(stats: DashboardStats | null, query: 
       : [...byDate.keys()].sort((a, b) => a.localeCompare(b))
 
   const data = orderedKeys.map((key) => {
-    const row = byDate.get(key) ?? ({
-      date: key,
-      localLabel: formatTimelineLabel(key, stats.timeline_granularity),
-    } as Record<string, number | string>)
+    const row =
+      byDate.get(key) ??
+      ({
+        date: key,
+        localLabel: formatTimelineLabel(key, stats.timeline_granularity),
+      } as Record<string, number | string>)
     const next = { ...row } as Record<string, number | string>
     for (const s of orderedSeries) {
       if (typeof next[s] !== 'number') next[s] = 0

@@ -27,7 +27,10 @@ function JsonBlock({ title, data }: { title: string; data: unknown }) {
   }
 
   return (
-    <Card size="sm" className="mb-6 w-full min-w-0 max-w-full border-white/10 bg-black/30 shadow-sm">
+    <Card
+      size="sm"
+      className="mb-6 w-full min-w-0 max-w-full border-white/10 bg-black/30 shadow-sm"
+    >
       <CardHeader className="border-b border-white/10">
         <CardTitle className="text-[12px] font-medium text-white/80">{title}</CardTitle>
         <CardAction>
@@ -45,7 +48,7 @@ function JsonBlock({ title, data }: { title: string; data: unknown }) {
       <CardContent className="w-full min-w-0 overflow-hidden p-0">
         <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
           <pre
-            className="w-max p-4 font-mono text-[12px] leading-relaxed text-blue-100/80"
+            className="w-max whitespace-pre p-4 font-mono text-[12px] leading-relaxed text-blue-100/80"
             style={{ fontFamily: '"Fira Code", "JetBrains Mono", monospace' }}
           >
             {content}
@@ -83,7 +86,9 @@ export function TraceInspectionPanel({ span, onClose }: Props) {
     <div className="flex w-full flex-col h-full overflow-hidden">
       <div className="flex w-full min-w-0 overflow-hidden items-center justify-between gap-3 border-b border-white/10 bg-black/20 px-5 py-3 shrink-0">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden">
-          <Badge variant="outline" className="shrink-0 text-[10px]">{span.type}</Badge>
+          <Badge variant="outline" className="shrink-0 text-[10px]">
+            {span.type}
+          </Badge>
           <span className="min-w-0 truncate text-[14px] font-semibold text-white">{span.name}</span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -138,7 +143,9 @@ export function TraceInspectionPanel({ span, onClose }: Props) {
                 <div className="flex w-full flex-col overflow-hidden">
                   <span className="text-[10px] uppercase tracking-wider text-white/40">Run ID</span>
                   <div className="mt-0.5 w-full overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
-                    <span className="block w-max break-all font-mono text-white/90">{span.id}</span>
+                    <span className="block min-w-max w-max break-all font-mono text-white/90">
+                      {span.id}
+                    </span>
                   </div>
                 </div>
                 <Separator orientation="horizontal" className="w-full" />

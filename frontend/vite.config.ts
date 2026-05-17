@@ -1,10 +1,19 @@
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import fs from 'fs'
 import path from 'path'
 import { defineConfig } from 'vitest/config'
 
+const versionPath = path.resolve(__dirname, '../VERSION')
+const hookerVersion = fs.existsSync(versionPath)
+  ? fs.readFileSync(versionPath, 'utf8').trim()
+  : '0.0.0-dev'
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  define: {
+    __HOOKER_VERSION__: JSON.stringify(hookerVersion),
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

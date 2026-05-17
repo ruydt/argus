@@ -87,7 +87,10 @@ export function SessionsTable({ stats }: SessionsTableProps) {
               </TableHeader>
               <TableBody>
                 {visibleSessions.map((session) => {
-                  const sessionCacheRead = session.models.reduce((sum, model) => sum + model.cache_read, 0)
+                  const sessionCacheRead = session.models.reduce(
+                    (sum, model) => sum + model.cache_read,
+                    0
+                  )
                   const sessionCacheWrite = session.models.reduce(
                     (sum, model) => sum + model.cache_creation,
                     0
@@ -119,10 +122,7 @@ export function SessionsTable({ stats }: SessionsTableProps) {
                         <div className="flex flex-wrap gap-2">
                           {session.models.map((model) => {
                             const modelTotal =
-                              model.input +
-                              model.output +
-                              model.cache_read +
-                              model.cache_creation
+                              model.input + model.output + model.cache_read + model.cache_creation
                             return (
                               <Badge
                                 key={`${session.session_id}-${model.provider}-${model.model}`}

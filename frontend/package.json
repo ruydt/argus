@@ -2,6 +2,7 @@
   "name": "hooker",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "pnpm@10.23.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +13,7 @@
     "test:sidebar": "vitest run tests/app/Sidebar.desktop.test.tsx",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run typecheck && npm run lint && npm run format:check",
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
     "preview": "vite preview"
   },
   "dependencies": {

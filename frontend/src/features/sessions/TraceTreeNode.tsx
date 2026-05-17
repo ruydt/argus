@@ -56,10 +56,7 @@ export function TraceTreeNode({
     timelineWidth - barLeftPx,
     Math.max(Math.max(rawRightPx - barLeftPx, 0), minBarWidth)
   )
-  const outsideLabelLeftPx = Math.min(
-    barLeftPx + barWidthPx + 8,
-    Math.max(timelineWidth - 44, 0)
-  )
+  const outsideLabelLeftPx = Math.min(barLeftPx + barWidthPx + 8, Math.max(timelineWidth - 44, 0))
 
   return (
     <div className="flex flex-col">
@@ -71,7 +68,10 @@ export function TraceTreeNode({
           onOpenPanel()
         }}
       >
-        <div className="relative mx-5 flex h-full items-center" style={{ width: `${timelineWidth}px` }}>
+        <div
+          className="relative mx-5 flex h-full items-center"
+          style={{ width: `${timelineWidth}px` }}
+        >
           <div className="absolute inset-y-0 left-0 right-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.02)_0,rgba(255,255,255,0.02)_1px,transparent_1px,transparent_100%)] bg-[length:56px_100%]" />
           <div
             className="absolute inset-y-0 left-0 w-px bg-white/8"
@@ -113,7 +113,9 @@ export function TraceTreeNode({
             >
               <Cpu className="h-3 w-3 shrink-0 text-white/80" />
               <span className="truncate">{span.type}</span>
-              <span className="truncate text-white/72 normal-case tracking-normal">{span.name}</span>
+              <span className="truncate text-white/72 normal-case tracking-normal">
+                {span.name}
+              </span>
             </div>
           </div>
           {barWidthPx > 84 ? (

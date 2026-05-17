@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BACKEND="$ROOT/backend"
+FRONTEND="$ROOT/frontend"
+
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/hooker <command>
+
+Commands:
+  setup   Install source dependencies for backend and frontend
+  doctor  Verify local toolchain, dependency state, and tests
+EOF
+}
+
+require_cmd() {
+  local cmd="$1"
+  local hint="$2"
+
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    printf 'missing %s. %s\n' "$cmd" "$hint" >&2
+    exit 1
+  fi
+}
+
+show_versions() {
+  printf 'go: '
+  go version
+  printf 'node: '
+  node --version
+  printf 'pnpm: '
+  pnpm --version
+}
+
+ensure_tools() {
+  require_cmd go 'Install Go 1.25.0 or newer.'
+  require_cmd node 'Install Node.js 18 or newer.'
+  require_cmd pnpm 'Install pnpm, or run: corepack enable && corepack prepare pnpm@latest --activate'
+}
+
+setup() {
+  ensure_tools
+  show_versions
+
+  printf '\nbackend: downloading Go modules\n'
+  (cd "$BACKEND" && go mod download)
+
+  printf '\nfrontend: installing pnpm dependencies\n'
+  (cd "$FRONTEND" && pnpm install --frozen-lockfile)
+
+  printf '\nsetup complete\n'
+  printf 'next: start backend with cd backend && go run ./cmd/server/main.go\n'
+  printf 'next: start frontend with cd frontend && pnpm run dev\n'
+}
+
+doctor() {
+  ensure_tools
+  show_versions
+
+  printf '\nchecking expected files\n'
+  test -f "$ROOT/VERSION"
+  test -f "$BACKEND/go.mod"
+  test -f "$FRONTEND/package.json"
+  test -f "$FRONTEND/pnpm-lock.yaml"
+  test ! -f "$FRONTEND/package-lock.json"
+
+  printf '\nbackend: running Go tests\n'
+  mkdir -p "$BACKEND/.cache/go-build"
+  (cd "$BACKEND" && GOCACHE="$BACKEND/.cache/go-build" go test ./...)
+
+  printf '\nfrontend: running typecheck, lint, and format check\n'
+  (cd "$FRONTEND" && pnpm run check)
+
+  printf '\nbackend live check\n'
+  if command -v curl >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8765/api/version >/dev/null 2>&1; then
+    printf 'backend reachable at http://127.0.0.1:8765\n'
+  else
+    printf 'backend not running or not reachable at http://127.0.0.1:8765; start it separately when needed\n'
+  fi
+
+  printf '\ndoctor complete\n'
+}
+
+case "${1:-}" in
+  setup)
+    setup
+    ;;
+  doctor)
+    doctor
+    ;;
+  -h|--help|help|'')
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac

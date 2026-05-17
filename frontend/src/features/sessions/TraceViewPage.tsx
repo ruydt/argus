@@ -139,15 +139,18 @@ export function TraceViewPage() {
     inspectionPanelRef.current?.collapse()
   }, [])
 
-  const handleSelectSpan = useCallback((span: TraceSpan) => {
-    setSelectedSpan(span)
-    if (isNarrowLayout) {
-      setPanelOpen(true)
-    } else {
-      setPanelOpen(true)
-      inspectionPanelRef.current?.expand()
-    }
-  }, [isNarrowLayout])
+  const handleSelectSpan = useCallback(
+    (span: TraceSpan) => {
+      setSelectedSpan(span)
+      if (isNarrowLayout) {
+        setPanelOpen(true)
+      } else {
+        setPanelOpen(true)
+        inspectionPanelRef.current?.expand()
+      }
+    },
+    [isNarrowLayout]
+  )
 
   return (
     <div className="flex h-full flex-col bg-[#0a0a0a] text-white">
@@ -177,6 +180,12 @@ export function TraceViewPage() {
               ? formatDuration(sessionDurationMs(session, new Date(session.last_seen_at).getTime()))
               : '-'}
           </span>
+          {session?.ended_at && (
+            <>
+              <span className="text-white/20">•</span>
+              <span>Ended {new Date(session.ended_at).toLocaleString()}</span>
+            </>
+          )}
         </div>
       </header>
 

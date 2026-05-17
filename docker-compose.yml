@@ -1,6 +1,16 @@
 services:
-  monitor:
-    build: .
+  hooker:
+    build:
+      context: .
+      args:
+        HOOKER_VERSION: "0.0.0-dev"
     ports:
       - "127.0.0.1:8765:8765"
+    environment:
+      DB_PATH: /data/hooker.db
+    volumes:
+      - hooker-data:/data
     restart: unless-stopped
+
+volumes:
+  hooker-data:

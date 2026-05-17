@@ -8,6 +8,7 @@ import (
 	"hooker/internal/repository/sqlite"
 	"hooker/internal/server"
 	"hooker/internal/service"
+	"hooker/internal/version"
 )
 
 func main() {
@@ -25,6 +26,7 @@ func main() {
 	handler := server.NewRouter(svc)
 
 	// Print the useful local endpoints on startup.
+	log.Printf("hooker version -> %s", version.Version)
 	log.Printf("hook endpoint -> POST http://%s/api/hook", cfg.Addr)
 	log.Printf("events SSE -> GET http://%s/api/events/stream", cfg.Addr)
 	log.Printf("db -> %s", cfg.DBPath)

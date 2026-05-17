@@ -432,7 +432,9 @@ describe('trace rendering', () => {
     expect(screen.getByRole('button', { name: /close details/i })).toBeInTheDocument()
     expect(screen.getByText(span.id)).toHaveClass('min-w-max')
     expect(screen.getByText(span.id).parentElement).toHaveClass('overflow-x-auto')
-    expect(screen.getByText(/"hook_event_name": "InstructionsLoaded"/i)).toHaveClass('whitespace-pre')
+    expect(screen.getByText(/"hook_event_name": "InstructionsLoaded"/i)).toHaveClass(
+      'whitespace-pre'
+    )
     expect(screen.getByText(/"hook_event_name": "InstructionsLoaded"/i).parentElement).toHaveClass(
       'overflow-x-auto'
     )

@@ -56,6 +56,16 @@ describe('Sidebar desktop toggle placement', () => {
     expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
   })
 
+  it('renders the app version in the expanded desktop sidebar', () => {
+    renderSidebar({
+      collapsed: false,
+      mode: 'desktop',
+      onToggleCollapse: vi.fn(),
+    })
+
+    expect(screen.getByText('v0.0.0-dev')).toBeInTheDocument()
+  })
+
   it('keeps the mobile close control separate and does not render the desktop collapse button', () => {
     const onClose = vi.fn()
 

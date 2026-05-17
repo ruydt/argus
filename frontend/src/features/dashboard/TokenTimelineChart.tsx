@@ -60,7 +60,9 @@ export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProp
   return (
     <Card className="overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-sm font-medium text-muted-foreground">Tokens over time</CardTitle>
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          Tokens over time
+        </CardTitle>
       </CardHeader>
       <CardContent className="px-3 sm:px-6">
         <div className="h-[300px] min-w-0 w-full">
@@ -88,9 +90,7 @@ export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProp
                 <ChartTooltip
                   content={
                     <ChartTooltipContent
-                      labelFormatter={(value) =>
-                        labelByBucket.get(String(value)) || String(value)
-                      }
+                      labelFormatter={(value) => labelByBucket.get(String(value)) || String(value)}
                     />
                   }
                 />

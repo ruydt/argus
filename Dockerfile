@@ -13,10 +13,12 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 COPY backend/ ./
 COPY --from=frontend-builder /frontend/dist ./internal/ui/dist
-RUN go build -o agent-monitor ./cmd/server
+ARG HOOKER_VERSION=0.0.0-dev
+RUN go build -ldflags "-X hooker/internal/version.Version=${HOOKER_VERSION}" -o hooker-server ./cmd/server
 
 FROM alpine:3.20
 WORKDIR /app
-COPY --from=builder /app/agent-monitor .
+COPY --from=builder /app/hooker-server .
+ENV ADDR=0.0.0.0:8765
 EXPOSE 8765
-CMD ["./agent-monitor"]
+CMD ["./hooker-server"]
