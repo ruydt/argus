@@ -10,6 +10,22 @@
 - **Usage Dashboard**: Administrative view for tracking aggregated OpenAI usage, costs, and model breakdowns.
 - **State Persistence**: Remembers sidebar state, API keys, and time-range filters.
 
+## Quick Install (autostart with Claude Code)
+
+Clone the repo and run the install script once:
+
+```bash
+git clone https://github.com/your-org/hooker.git
+cd hooker
+./install.sh
+```
+
+This builds the binary, installs a startup script to `~/.local/bin/`, and registers a `SessionStart` hook in `~/.claude/settings.json`. After that, hooker starts automatically every time you run `claude` — no manual step needed.
+
+UI available at **[http://127.0.0.1:8765](http://127.0.0.1:8765)** once running.
+
+---
+
 ## Prerequisites
 
 - **Go**: 1.25.0+
