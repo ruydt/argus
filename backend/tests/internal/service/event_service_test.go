@@ -81,6 +81,8 @@ func (m *mockRepo) GetSessionTree(_ string) ([]domain.SessionTreeNode, error) {
 	return nil, nil
 }
 
+func (m *mockRepo) GetTraces() ([]domain.NormalizedEvent, error) { return nil, nil }
+
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
 		return m.upsertErr
