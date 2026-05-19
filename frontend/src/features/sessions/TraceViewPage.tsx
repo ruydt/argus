@@ -47,7 +47,7 @@ export function TraceViewPage() {
   const [viewportWidth, setViewportWidth] = useState(0)
   const isNarrowLayout = isMobile
 
-  const { groups: fileGroups } = useFileChanges(sessionId)
+  const { groups: fileGroups, loading: fileChangesLoading, error: fileChangesError } = useFileChanges(sessionId)
 
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 768px)')
@@ -375,7 +375,14 @@ export function TraceViewPage() {
                 className="z-10 flex min-w-0 flex-col border-l border-white/10 bg-[#111216] shadow-[-4px_0_24px_-8px_rgba(0,0,0,0.5)]"
               >
                 {panelMode === 'files' ? (
-                  <FileChangesDrawer sessionId={sessionId} onClose={closePanel} />
+                  <FileChangesDrawer
+                    sessionId={sessionId}
+                    sessionStartedAt={session?.started_at ?? ''}
+                    groups={fileGroups}
+                    loading={fileChangesLoading}
+                    error={fileChangesError}
+                    onClose={closePanel}
+                  />
                 ) : (
                   <TraceInspectionPanel span={selectedSpan} />
                 )}
@@ -394,7 +401,14 @@ export function TraceViewPage() {
             />
             <aside className="absolute inset-y-0 right-0 z-50 flex w-[min(92vw,44rem)] min-w-0 flex-col border-l border-white/10 bg-[#111216] shadow-[-12px_0_40px_rgba(0,0,0,0.45)]">
               {panelMode === 'files' ? (
-                <FileChangesDrawer sessionId={sessionId} onClose={closePanel} />
+                <FileChangesDrawer
+                  sessionId={sessionId}
+                  sessionStartedAt={session?.started_at ?? ''}
+                  groups={fileGroups}
+                  loading={fileChangesLoading}
+                  error={fileChangesError}
+                  onClose={closePanel}
+                />
               ) : (
                 <TraceInspectionPanel span={selectedSpan} onClose={closePanel} />
               )}

@@ -1,12 +1,16 @@
 import { useState } from 'react'
-import { ChevronRight, ChevronDown, FileCode2, FilePen, FileText } from 'lucide-react'
+import { ChevronDown, ChevronRight, FileCode2, FilePen, FileText, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import type { FileChangeGroup, FileChangeEvent } from '@/types/sessions'
-import { useFileChanges } from './hooks/useFileChanges'
+import type { FileChangeEvent, FileChangeGroup } from '@/types/sessions'
 
 type FileChangesDrawerProps = {
   sessionId: string
+  sessionStartedAt: string
+  groups: FileChangeGroup[]
+  loading: boolean
+  error: string | null
   onClose: () => void
 }
 
@@ -33,8 +37,10 @@ function toolLabel(tool: string): string {
 
 function FileIcon({ tool }: { tool: string }) {
   const t = tool.toLowerCase()
-  if (t === 'write' || t === 'create_file' || t === 'new_file') return <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />
-  if (t === 'multiedit' || t === 'notebook_edit') return <FileCode2 className="h-3.5 w-3.5 shrink-0 text-purple-400/70" />
+  if (t === 'write' || t === 'create_file' || t === 'new_file')
+    return <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />
+  if (t === 'multiedit' || t === 'notebook_edit')
+    return <FileCode2 className="h-3.5 w-3.5 shrink-0 text-purple-400/70" />
   return <FilePen className="h-3.5 w-3.5 shrink-0 text-sky-400/70" />
 }
 
@@ -78,7 +84,7 @@ function FileRow({ group, sessionStart }: FileRowProps) {
           {shortenPath(group.path)}
         </span>
         <span className="shrink-0 rounded border border-white/10 bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-medium text-white/60">
-          {group.count}
+          {group.count}×
         </span>
         {open ? (
           <ChevronDown className="h-3 w-3 shrink-0 text-white/35" />
@@ -89,8 +95,8 @@ function FileRow({ group, sessionStart }: FileRowProps) {
 
       {open && (
         <div className="border-t border-white/10 px-3 py-2 space-y-1.5">
-          {group.changes.map((ev, i) => (
-            <ChangeRow key={i} ev={ev} sessionStart={sessionStart} />
+          {group.changes.map((ev) => (
+            <ChangeRow key={`${ev.time}-${ev.tool}`} ev={ev} sessionStart={sessionStart} />
           ))}
         </div>
       )}
@@ -104,7 +110,6 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
   const label = toolLabel(ev.tool)
   const color = toolColor(ev.tool)
   const relTime = formatRelativeTime(ev.time, sessionStart)
-
   const lineInfo = ev.start_line ? `L${ev.start_line}` : null
   const diffLines = ev.new_string
     ? ev.new_string.split('\n').length
@@ -133,11 +138,14 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
   )
 }
 
-export function FileChangesDrawer({ sessionId, onClose: _onClose }: FileChangesDrawerProps) {
-  const { groups, loading, error } = useFileChanges(sessionId)
-
-  const sessionStart = groups[0]?.changes[0]?.time ?? new Date().toISOString()
-
+export function FileChangesDrawer({
+  sessionId,
+  sessionStartedAt,
+  groups,
+  loading,
+  error,
+  onClose,
+}: FileChangesDrawerProps) {
   return (
     <div
       className="flex h-full flex-col bg-[#0d0d0d] text-white w-full overflow-hidden"
@@ -161,26 +169,34 @@ export function FileChangesDrawer({ sessionId, onClose: _onClose }: FileChangesD
             {groups.length} {groups.length === 1 ? 'file' : 'files'}
           </Badge>
         )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-white/45 hover:text-white hover:bg-white/10"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       <Separator className="bg-white/10 shrink-0" />
 
-      {/* Scrollable Body */}
+      {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden w-full [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
         <div className="p-4 w-full overflow-x-hidden">
-          {loading && (
-            <div className="text-sm text-white/45">Loading file changes...</div>
-          )}
-          {error && (
-            <div className="text-sm text-red-400/80">Failed to load: {error}</div>
-          )}
+          {loading && <div className="text-sm text-white/45">Loading file changes...</div>}
+          {error && <div className="text-sm text-red-400/80">Failed to load: {error}</div>}
           {!loading && !error && groups.length === 0 && (
             <div className="text-sm text-white/40">No file changes recorded for this session.</div>
           )}
           {!loading && !error && groups.length > 0 && (
             <div className="space-y-2">
               {groups.map((group) => (
-                <FileRow key={group.path} group={group} sessionStart={sessionStart} />
+                <FileRow
+                  key={group.path}
+                  group={group}
+                  sessionStart={sessionStartedAt}
+                />
               ))}
             </div>
           )}
