@@ -33,6 +33,10 @@ frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 
+# Embedded frontend dist (built by Dockerfile; gitkeep keeps dir for local go build)
+backend/internal/ui/dist/*
+!backend/internal/ui/dist/.gitkeep
+
 # AI agents
 docs/superpowers/
 

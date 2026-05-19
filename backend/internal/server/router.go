@@ -5,6 +5,7 @@ import (
 
 	"hooker/internal/handler"
 	"hooker/internal/service"
+	"hooker/internal/ui"
 )
 
 func NewRouter(svc *service.EventService) http.Handler {
@@ -20,6 +21,7 @@ func NewRouter(svc *service.EventService) http.Handler {
 	mux.Handle("GET /api/dashboard/stats", handler.DashboardStats(svc))
 	mux.Handle("GET /api/openai/", handler.OpenAIProxy())
 	mux.Handle("GET /api/anthropic/", handler.AnthropicProxy())
+	mux.Handle("GET /", ui.Handler())
 
 	return cors(logging(mux))
 }
