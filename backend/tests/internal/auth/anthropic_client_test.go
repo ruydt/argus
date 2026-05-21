@@ -193,7 +193,7 @@ func TestAnthropicClient_AutoOAuth_NoToken(t *testing.T) {
 		t.Skip("machine has valid keychain token — AutoOAuth absent path not testable here")
 	}
 
-	cfg := auth.ClientConfig{Mode: auth.AuthModeAutoOAuth, MaxTokens: 100, DisableCLIFallback: true}
+	cfg := auth.ClientConfig{Mode: auth.AuthModeAutoOAuth, MaxTokens: 100}
 	c, err := auth.NewAnthropicClient(cfg)
 	if err != nil {
 		t.Fatalf("NewAnthropicClient: %v", err)
