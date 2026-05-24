@@ -42,7 +42,8 @@ Backend:
 
 ```bash
 cd backend
-go run ./cmd/server/main.go
+go build -o hooker ./cmd/server
+./hooker
 ```
 
 Frontend:
@@ -69,7 +70,8 @@ Use `DB_PATH` when you want data stored outside the repo:
 
 ```bash
 cd backend
-DB_PATH="$HOME/.local/share/hooker/hooker.db" go run ./cmd/server/main.go
+go build -o hooker ./cmd/server
+DB_PATH="$HOME/.local/share/hooker/hooker.db" ./hooker
 ```
 
 Keep `ADDR` on loopback unless you understand the privacy and security impact.
@@ -127,3 +129,95 @@ cd backend
 mkdir -p .cache/go-build
 GOCACHE="$PWD/.cache/go-build" go test ./...
 ```
+
+## Data storage
+
+Hooker stores all data in a single SQLite database file.
+
+Default location: `backend/hooker.db` (relative to the repo root when started from `backend/`).
+
+Override with the `DB_PATH` environment variable:
+
+```bash
+DB_PATH="$HOME/.local/share/hooker/hooker.db" ./hooker
+```
+
+The resolved path is printed at startup:
+
+```text
+db -> /home/user/.local/share/hooker/hooker.db
+```
+
+### WAL files
+
+SQLite WAL (Write-Ahead Log) mode is enabled for performance. You will see two companion
+files alongside the database:
+
+- `hooker.db-wal` - write-ahead log (in-progress writes)
+- `hooker.db-shm` - shared memory index
+
+These are normal. They are managed automatically by SQLite. Do not delete them while the
+server is running.
+
+## Backup
+
+To back up your data, copy all three files while the server is stopped:
+
+```bash
+cp hooker.db hooker.db.bak
+cp hooker.db-wal hooker.db-wal.bak 2>/dev/null || true
+cp hooker.db-shm hooker.db-shm.bak 2>/dev/null || true
+```
+
+Or run a WAL checkpoint first (merges WAL into the main file), then copy only the `.db`:
+
+```bash
+sqlite3 hooker.db "PRAGMA wal_checkpoint(FULL);"
+cp hooker.db hooker.db.bak
+```
+
+## Reset
+
+To reset all stored data and start fresh:
+
+1. Stop the hooker server.
+2. Delete the database and WAL files:
+
+```bash
+rm -f backend/hooker.db backend/hooker.db-wal backend/hooker.db-shm
+```
+
+3. Restart the server. Migrations run automatically on the empty database.
+
+## Manual data prune
+
+To delete events older than 30 days without resetting everything:
+
+```bash
+sqlite3 backend/hooker.db \
+  "DELETE FROM events WHERE created_at < datetime('now', '-30 days');"
+```
+
+To see how many events exist by date:
+
+```bash
+sqlite3 backend/hooker.db \
+  "SELECT date(created_at), count(*) FROM events GROUP BY date(created_at) ORDER BY 1 DESC LIMIT 14;"
+```
+
+## Privacy
+
+Hooker captures and stores the following data locally:
+
+- **Prompts** - the full text of prompts sent to coding agents
+- **Tool outputs** - complete output from tool calls (file reads, shell commands, search results)
+- **File paths** - absolute paths to every file read, written, or modified
+- **Diffs** - code changes made during agent sessions
+- **Transcript references** - paths to local agent transcript files
+
+All data is stored only on your machine in the SQLite database. Nothing is sent to any
+external service by hooker itself.
+
+The hook endpoint (`POST /api/hook`) accepts requests only from localhost by default.
+Setting `ADDR` to a non-loopback address exposes this data to your local network.
+Use `./scripts/hooker doctor` to verify your ADDR setting.

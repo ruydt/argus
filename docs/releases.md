@@ -1,39 +1,57 @@
 # Releases
 
-Source install is the supported install path today. Release artifacts are a
-convenience layer and must include checksums.
+Hooker uses [GoReleaser](https://goreleaser.com) to produce versioned binaries with
+checksums. Releases are triggered by pushing a `v*` tag to GitHub.
 
-## Version
+## Before your first release
 
-The repo version lives in `VERSION`.
+**Required GitHub repo setting (one-time manual step):**
 
-Before tagging a release:
+Enable squash merging and enforce it as the only merge strategy:
 
-1. Update `VERSION`.
-2. Update `frontend/package.json` version to the same value without a leading
-   `v`.
-3. Build artifacts with the same version embedded:
+1. Go to your GitHub repository -> **Settings** -> **General**.
+2. Under **Pull Requests**, uncheck **Allow merge commits** and **Allow rebase merging**.
+3. Check only **Allow squash merging**.
+4. Set the squash merge commit message to **Pull request title and description**.
 
-   ```bash
-   cd backend
-   go build -ldflags "-X hooker/internal/version.Version=$(cat ../VERSION)" -o ../dist/release/hooker-server ./cmd/server
+This is required for GoReleaser changelog automation to work correctly. GoReleaser reads
+squash-merged PR titles as conventional commits.
 
-   cd ../frontend
-   pnpm run build
-   ```
+## Commit format
 
-## Checksums
+Use [Conventional Commits](https://www.conventionalcommits.org/) for PR titles:
 
-Put release files in `dist/release`, then run:
-
-```bash
-./scripts/release-checksums dist/release
+```text
+feat: add health endpoint
+fix: correct host header middleware allowlist
+docs: update quickstart for go build workflow
+ci: pin golangci-lint to v1.64
 ```
 
-Publish `SHA256SUMS` next to the artifacts.
+GoReleaser filters out `docs:`, `test:`, and `ci:` commits from the changelog automatically.
 
-## Current artifact stance
+## Tagging a release
 
-- Source install from repo: primary
-- Docker backend image: secondary
-- Prebuilt binaries: later convenience
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release GitHub Actions workflow triggers automatically on `v*` tags. It:
+
+1. Runs GoReleaser, which builds the frontend then cross-compiles the Go binary
+2. Produces `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64` archives
+3. Creates a `checksums.txt` with SHA256 hashes
+4. Publishes a GitHub Release with all artifacts attached
+
+## Verifying a release binary
+
+```bash
+# Download the checksum file and a binary archive
+sha256sum --check checksums.txt
+```
+
+## Release notes
+
+GoReleaser generates release notes automatically from PR titles since the previous tag.
+Edit the GitHub Release description to add context if needed.
