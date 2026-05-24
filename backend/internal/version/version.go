@@ -1,3 +1,7 @@
 package version
 
-var Version = "0.0.0-dev"
+var (
+	Version   = "0.0.0-dev"
+	Commit    = "none"
+	BuildDate = "unknown"
+)
