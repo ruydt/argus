@@ -22,7 +22,7 @@ bin/
 # Local agent/project state
 .claude/
 .codex/
-.planning/
+# .planning/ — tracked in git (GSD planning docs)
 
 # Backend local binaries
 backend/agent-monitor
