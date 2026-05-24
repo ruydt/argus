@@ -8,14 +8,11 @@ import (
 	"hooker/internal/ui"
 )
 
-type AIRepository interface {
-	handler.SummaryGetter
-	handler.AIInsightsGetter
-}
-
-func NewRouter(svc *service.EventService, db AIRepository) http.Handler {
+func NewRouter(svc *service.EventService, ready func() bool) http.Handler {
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /healthz", handler.Healthz())
+	mux.Handle("GET /readyz", handler.Readyz(ready))
 	mux.Handle("POST /api/hook", handler.Hook(svc))
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
@@ -27,11 +24,9 @@ func NewRouter(svc *service.EventService, db AIRepository) http.Handler {
 	mux.Handle("GET /api/traces", handler.Traces(svc))
 	mux.Handle("GET /api/file-changes", handler.FileChanges(svc))
 	mux.Handle("GET /api/dashboard/stats", handler.DashboardStats(svc))
-	mux.Handle("GET /api/sessions/{id}/summary", handler.SessionSummary(db))
-	mux.Handle("GET /api/ai-insights", handler.AIInsights(db))
 	mux.Handle("GET /api/openai/", handler.OpenAIProxy())
 	mux.Handle("GET /api/anthropic/", handler.AnthropicProxy())
 	mux.Handle("GET /", ui.Handler())
 
-	return cors(logging(mux))
+	return hostHeader(cors(logging(mux)))
 }
