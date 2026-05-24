@@ -118,31 +118,119 @@ setup() {
 }
 
 doctor() {
-  ensure_tools
-  show_versions
+  local doctor_errors=0
+  local PASS='[ok]  '
+  local FAIL='[FAIL]'
+  local WARN='[warn]'
+  local go_ver=""
+  local go_major=""
+  local go_minor=""
+  local node_ver=""
+  local node_major=""
+  local db_path="${DB_PATH:-$BACKEND/hooker.db}"
+  local db_dir=""
+  local claude_cfg="$HOME/.claude/settings.json"
+  local codex_cfg="$HOME/.codex/hooks.json"
+  local addr="${ADDR:-127.0.0.1:8765}"
+  local addr_host=""
 
-  printf '\nchecking expected files\n'
-  test -f "$ROOT/VERSION"
-  test -f "$BACKEND/go.mod"
-  test -f "$FRONTEND/package.json"
-  test -f "$FRONTEND/pnpm-lock.yaml"
-  test ! -f "$FRONTEND/package-lock.json"
+  check_required() {
+    local label="$1" result="$2" hint="$3"
+    if [ "$result" = "pass" ]; then
+      printf '%s %s\n' "$PASS" "$label"
+    else
+      printf '%s %s\n      fix: %s\n' "$FAIL" "$label" "$hint"
+      doctor_errors=$((doctor_errors + 1))
+    fi
+  }
 
-  printf '\nbackend: running Go tests\n'
-  mkdir -p "$BACKEND/.cache/go-build"
-  (cd "$BACKEND" && GOCACHE="$BACKEND/.cache/go-build" go test ./...)
+  check_optional() {
+    local label="$1" result="$2" hint="$3"
+    if [ "$result" = "pass" ]; then
+      printf '%s %s\n' "$PASS" "$label"
+    else
+      printf '%s %s\n      note: %s\n' "$WARN" "$label" "$hint"
+    fi
+  }
 
-  printf '\nfrontend: running typecheck, lint, and format check\n'
-  (cd "$FRONTEND" && pnpm run check)
+  printf 'hooker doctor — required checks\n'
+  printf '────────────────────────────────\n'
 
-  printf '\nbackend live check\n'
-  if command -v curl >/dev/null 2>&1 && curl -fsS http://127.0.0.1:8765/api/version >/dev/null 2>&1; then
-    printf 'backend reachable at http://127.0.0.1:8765\n'
+  if command -v go >/dev/null 2>&1; then
+    go_ver="$(go version | awk '{print $3}' | sed 's/go//')"
+    go_major="$(printf '%s' "$go_ver" | cut -d. -f1)"
+    go_minor="$(printf '%s' "$go_ver" | cut -d. -f2)"
+    if [ "$go_major" -gt 1 ] || { [ "$go_major" -eq 1 ] && [ "$go_minor" -ge 25 ]; }; then
+      check_required "go >= 1.25.0 (found $go_ver)" "pass" ""
+    else
+      check_required "go >= 1.25.0 (found $go_ver)" "fail" "Install Go 1.25.0 or newer from https://go.dev/dl/"
+    fi
   else
-    printf 'backend not running or not reachable at http://127.0.0.1:8765; start it separately when needed\n'
+    check_required "go installed" "fail" "Install Go 1.25.0 or newer from https://go.dev/dl/"
   fi
 
-  printf '\ndoctor complete\n'
+  if command -v node >/dev/null 2>&1; then
+    node_ver="$(node --version | sed 's/v//')"
+    node_major="$(printf '%s' "$node_ver" | cut -d. -f1)"
+    if [ "$node_major" -ge 18 ]; then
+      check_required "node >= 18 (found v$node_ver)" "pass" ""
+    else
+      check_required "node >= 18 (found v$node_ver)" "fail" "Install Node.js 18 or newer from https://nodejs.org/"
+    fi
+  else
+    check_required "node installed" "fail" "Install Node.js 18 or newer from https://nodejs.org/"
+  fi
+
+  if command -v pnpm >/dev/null 2>&1; then
+    check_required "pnpm installed ($(pnpm --version))" "pass" ""
+  else
+    check_required "pnpm installed" "fail" "Run: corepack enable && corepack prepare pnpm@10.23.0 --activate"
+  fi
+
+  db_dir="$(dirname "$db_path")"
+  if [ -w "$db_dir" ]; then
+    check_required "DB path writable ($db_path)" "pass" ""
+  else
+    check_required "DB path writable ($db_path)" "fail" "Directory $db_dir is not writable. Check permissions or set DB_PATH to a writable path."
+  fi
+
+  if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 http://127.0.0.1:8765/healthz >/dev/null 2>&1; then
+    check_required "port 8765 (hooker running)" "pass" ""
+  elif ! command -v lsof >/dev/null 2>&1 || ! lsof -i :8765 >/dev/null 2>&1; then
+    check_required "port 8765 available" "pass" ""
+  else
+    check_required "port 8765 available" "fail" "Port 8765 is in use by another process. Run: lsof -i :8765"
+  fi
+
+  printf '\nhooker doctor — optional checks\n'
+  printf '────────────────────────────────\n'
+
+  if [ -f "$claude_cfg" ] && grep -q "8765/api/hook" "$claude_cfg"; then
+    check_optional "Claude Code hooks configured" "pass" ""
+  else
+    check_optional "Claude Code hooks configured" "warn" "Run: ./scripts/hooker setup"
+  fi
+
+  if [ -f "$codex_cfg" ] && grep -q "8765/api/hook" "$codex_cfg"; then
+    check_optional "Codex hooks configured" "pass" ""
+  else
+    check_optional "Codex hooks configured" "warn" "Run: ./scripts/hooker setup"
+  fi
+
+  addr_host="$(printf '%s' "$addr" | cut -d: -f1)"
+  if [ "$addr_host" = "127.0.0.1" ] || [ "$addr_host" = "localhost" ] || [ "$addr_host" = "::1" ]; then
+    check_optional "ADDR is loopback ($addr)" "pass" ""
+  else
+    check_optional "ADDR is loopback ($addr)" "warn" "Non-loopback bind exposes hooker on the network. Hooker stores prompts, file paths, and diffs. Keep ADDR on loopback for personal use."
+  fi
+
+  printf '\n'
+  if [ "$doctor_errors" -gt 0 ]; then
+    printf '%d required check(s) failed. Fix the issues above before using hooker.\n' "$doctor_errors"
+    return 1
+  else
+    printf 'all required checks passed.\n'
+  fi
 }
 
 case "${1:-}" in
