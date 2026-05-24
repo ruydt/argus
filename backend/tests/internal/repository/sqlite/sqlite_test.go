@@ -116,7 +116,7 @@ func TestAddReturnsBeforeHookTimeoutWhenDatabaseIsWriteLocked(t *testing.T) {
 	if err != nil {
 		t.Fatalf("conn: %v", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	if _, err := conn.ExecContext(context.Background(), `BEGIN IMMEDIATE`); err != nil {
 		t.Fatalf("begin lock: %v", err)
 	}
