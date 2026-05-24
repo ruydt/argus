@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Completed 01-local-adoption-baseline-03-PLAN.md
-last_updated: "2026-05-24T11:27:17.576Z"
+last_updated: "2026-05-24T11:32:44.029Z"
 last_activity: 2026-05-24
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-24)
 ## Current Position
 
 Phase: 1 of 3 (Local Adoption Baseline)
-Plan: 2 of 6 in current phase
+Plan: 3 of 6 in current phase
 Status: Ready to execute
 Last activity: 2026-05-24
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 67%
 
 ## Wave Structure
 
@@ -60,6 +60,7 @@ Progress: [█████░░░░░] 50%
 
 *Updated after each plan completion*
 | Phase 01-local-adoption-baseline P03 | 6min | 2 tasks | 5 files |
+| Phase 01-local-adoption-baseline P04 | 25min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 1 Plan]: Plans 01-01 and 01-02 are interdependent — router won't compile until both land (01-01 references handler.Healthz/Readyz from 01-02; 01-02 references NewRouter signature change from 01-01)
 - [Phase 01-local-adoption-baseline]: Established push/PR CI with corepack-based pnpm, backend quality gates, and advisory govulncheck. — Implements locked decisions D-08, D-10, D-11 and CI requirements CI-01..CI-06.
 - [Phase 01-local-adoption-baseline]: Established v* tag-only GoReleaser v2 releases with checksums and limited token scope. — Implements REL-01/REL-02/REL-04 and locked decisions D-12, D-13, D-14.
+- [Phase 01-local-adoption-baseline]: Setup patches only Claude/Codex hook configs with backup and idempotent checks
+- [Phase 01-local-adoption-baseline]: Doctor is report-only with required-fail and optional-warn split
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-24T11:27:17.573Z
+Last session: 2026-05-24T11:32:23.721Z
 Stopped at: Completed 01-local-adoption-baseline-03-PLAN.md
 Resume file: None

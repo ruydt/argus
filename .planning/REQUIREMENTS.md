@@ -4,8 +4,8 @@
 
 ### Installation & Distribution (INSTALL)
 
-- [ ] **INSTALL-01**: User can run `./scripts/hooker setup` to install dependencies and patch Claude Code/Codex/Gemini CLI hook config automatically
-- [ ] **INSTALL-02**: User can run `./scripts/hooker doctor` to check Go version, Node version, DB writability, port availability, and hook config presence — with required failures vs optional warnings clearly separated
+- [x] **INSTALL-01**: User can run `./scripts/hooker setup` to install dependencies and patch Claude Code/Codex/Gemini CLI hook config automatically
+- [x] **INSTALL-02**: User can run `./scripts/hooker doctor` to check Go version, Node version, DB writability, port availability, and hook config presence — with required failures vs optional warnings clearly separated
 - [ ] **INSTALL-03**: User can follow `docs/quickstart.md` and reach first successful hook event capture in under 10 minutes using `go build` (not `go run`)
 - [ ] **INSTALL-04**: App emits resolved DB path on startup so user can verify which database file is in use
 - [ ] **INSTALL-05**: README is short and action-oriented; detailed content lives in `docs/install.md`, `docs/quickstart.md`, `docs/hooks.md`
@@ -28,7 +28,7 @@
 - [ ] **DIAG-03**: `GET /api/version` returns app version, Git commit, and build date
 - [ ] **DIAG-04**: App version visible in frontend UI
 - [ ] **DIAG-05**: Startup emits actionable fatal error messages for: port already in use, DB path not writable, migration failure, invalid config
-- [ ] **DIAG-06**: `doctor` warns on non-loopback bind address
+- [x] **DIAG-06**: `doctor` warns on non-loopback bind address
 
 ### Data Lifecycle (DATA)
 
@@ -146,8 +146,8 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| INSTALL-01 | Phase 1 | Pending |
-| INSTALL-02 | Phase 1 | Pending |
+| INSTALL-01 | Phase 1 | Complete |
+| INSTALL-02 | Phase 1 | Complete |
 | INSTALL-03 | Phase 1 | Pending |
 | INSTALL-04 | Phase 1 | Pending |
 | INSTALL-05 | Phase 1 | Pending |
@@ -164,7 +164,7 @@
 | DIAG-03 | Phase 1 | Pending |
 | DIAG-04 | Phase 1 | Pending |
 | DIAG-05 | Phase 1 | Pending |
-| DIAG-06 | Phase 1 | Pending |
+| DIAG-06 | Phase 1 | Complete |
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
 | DATA-03 | Phase 1 | Pending |
