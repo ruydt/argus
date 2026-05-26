@@ -35,8 +35,8 @@
 - [x] **DATA-01**: DB file location and override behavior documented; WAL file behavior explained
 - [x] **DATA-02**: Backup instructions documented (copy `.db` + `.db-wal` + `.db-shm`)
 - [x] **DATA-03**: Reset/cleanup instructions documented (delete DB file, restart to re-run migrations)
-- [ ] **DATA-04**: User can export all events as streaming NDJSON via `GET /api/export/events`
-- [ ] **DATA-05**: User can export a full-fidelity SQLite snapshot via `GET /api/export/snapshot` (uses `VACUUM INTO`)
+- [x] **DATA-04**: User can export all events as streaming NDJSON via `GET /api/export/events`
+- [x] **DATA-05**: User can export a full-fidelity SQLite snapshot via `GET /api/export/snapshot` (uses `VACUUM INTO`)
 - [x] **DATA-06**: Manual prune/cleanup command or script documented
 - [x] **DATA-07**: Privacy warning documented: prompts, diffs, file paths, tool outputs are stored locally
 
@@ -52,7 +52,7 @@
 
 - [x] **HARD-01**: HTTP server configured with `ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`; `WriteTimeout: 0` for SSE endpoint specifically
 - [x] **HARD-02**: Graceful shutdown drains with a finite context timeout (not `context.Background()` which can hang forever on open SSE tabs)
-- [ ] **HARD-03**: Panic recovery middleware logs stack trace and returns 500 instead of crashing process
+- [x] **HARD-03**: Panic recovery middleware logs stack trace and returns 500 instead of crashing process
 - [x] **HARD-04**: `log.Printf` replaced with `log/slog` structured logging (zero new deps)
 - [x] **HARD-05**: Migration runner wraps each migration in `BEGIN`/`COMMIT` with version record inside the same transaction (prevents partial-apply stuck state)
 - [x] **HARD-06**: Background goroutine runs `PRAGMA wal_checkpoint(PASSIVE)` periodically to prevent unbounded WAL growth from long-lived SSE connections
@@ -63,7 +63,7 @@
 - [ ] **SEC-02**: CORS origin restricted to explicit allowlist (not `*`) — at minimum `http://localhost` + configured port
 - [ ] **SEC-03**: Loopback-only bind (`127.0.0.1`) is enforced default; remote bind requires explicit env var opt-in with startup warning
 - [ ] **SEC-04**: Threat model documented: localhost-use only, single-user trust model, no auth for loopback use, remote sharing via ngrok is unofficial/unsupported
-- [ ] **SEC-05**: Export endpoints (`/api/export/*`) implement `Sec-Fetch-Site` check before being publicly documented
+- [x] **SEC-05**: Export endpoints (`/api/export/*`) implement `Sec-Fetch-Site` check before being publicly documented
 
 ### Testing & Regression (TEST)
 
@@ -176,8 +176,8 @@
 | REL-03 | Phase 1 | Complete |
 | REL-04 | Phase 1 | Complete |
 | REL-05 | Phase 1 | Pending |
-| DATA-04 | Phase 2 | Pending |
-| DATA-05 | Phase 2 | Pending |
+| DATA-04 | Phase 2 | Complete |
+| DATA-05 | Phase 2 | Complete |
 | MODEL-01 | Phase 2 | Complete |
 | MODEL-02 | Phase 2 | Complete |
 | MODEL-03 | Phase 2 | Complete |
@@ -185,7 +185,7 @@
 | MODEL-05 | Phase 2 | Complete |
 | HARD-01 | Phase 2 | Complete |
 | HARD-02 | Phase 2 | Complete |
-| HARD-03 | Phase 2 | Pending |
+| HARD-03 | Phase 2 | Complete |
 | HARD-04 | Phase 2 | Complete |
 | HARD-05 | Phase 2 | Complete |
 | HARD-06 | Phase 2 | Complete |
@@ -196,7 +196,7 @@
 | TEST-05 | Phase 2 | Pending |
 | TEST-06 | Phase 2 | Pending |
 | TEST-07 | Phase 2 | Pending |
-| SEC-05 | Phase 2 | Pending |
+| SEC-05 | Phase 2 | Complete |
 | SEC-02 | Phase 3 | Pending |
 | SEC-03 | Phase 3 | Pending |
 | SEC-04 | Phase 3 | Pending |

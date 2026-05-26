@@ -60,7 +60,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 02-02-PLAN.md — Degraded ingestion path in hook.go + NormalizerVersion constants in agents
-- [ ] 02-04-PLAN.md — Panic recovery + secFetchSite middleware + NDJSON export + snapshot export handler
+- [x] 02-04-PLAN.md — Panic recovery + secFetchSite middleware + NDJSON export + snapshot export handler
 - [ ] 02-05-PLAN.md — Frontend EventRecord type additions + degraded badge in EventBadges
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -88,5 +88,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Local Adoption Baseline | 6/6 | Complete   | 2026-05-24 |
-| 2. Reliable Daily Use | 3/8 | In Progress|  |
+| 2. Reliable Daily Use | 4/8 | In Progress|  |
 | 3. Mature Local Product | 0/TBD | Not started | - |
