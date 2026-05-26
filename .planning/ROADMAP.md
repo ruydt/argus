@@ -7,7 +7,7 @@ hooker is a working prototype that needs hardening into a trustworthy daily-use 
 ## Phases
 
 - [x] **Phase 1: Local Adoption Baseline** - CI gates + security fix + install/doctor/health/version/release pipeline (completed 2026-05-24)
-- [ ] **Phase 2: Reliable Daily Use** - Migration safety + backend hardening + data model + testing + export
+- [x] **Phase 2: Reliable Daily Use** - Migration safety + backend hardening + data model + testing + export (completed 2026-05-26)
 - [ ] **Phase 3: Mature Local Product** - Privacy controls + security posture + contributor infrastructure
 
 ## Phase Details
@@ -67,7 +67,7 @@ Plans:
 
 - [x] 02-06-PLAN.md — Frontend test infra (user-event, unstubGlobals) + hook tests + component tests
 - [x] 02-07-PLAN.md — Backend migration/dedup/normalization tests + export round-trip test
-- [ ] 02-08-PLAN.md — Playwright setup + smoke test + CI playwright job
+- [x] 02-08-PLAN.md — Playwright setup + smoke test + CI playwright job
 
 ### Phase 3: Mature Local Product
 
@@ -88,5 +88,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Local Adoption Baseline | 6/6 | Complete   | 2026-05-24 |
-| 2. Reliable Daily Use | 7/8 | In Progress|  |
+| 2. Reliable Daily Use | 8/8 | Complete   | 2026-05-26 |
 | 3. Mature Local Product | 0/TBD | Not started | - |

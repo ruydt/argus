@@ -73,7 +73,7 @@
 - [x] **TEST-04**: Backend: full-stack `httptest.NewServer` round-trip test (ingest fixture payload → verify via GET API)
 - [x] **TEST-05**: Backend: migration correctness test against file-based DB with pre-existing rows (not just `:memory:`)
 - [x] **TEST-06**: Backend: fixture corpus for known Claude Code and Codex payload variants; regression tests assert normalization output
-- [ ] **TEST-07**: Browser E2E smoke (Playwright, chromium-only): start app, load events/sessions/dashboard, verify core data visible
+- [x] **TEST-07**: Browser E2E smoke (Playwright, chromium-only): start app, load events/sessions/dashboard, verify core data visible
 
 ### Release & Versioning (REL)
 
@@ -195,7 +195,7 @@
 | TEST-04 | Phase 2 | Complete |
 | TEST-05 | Phase 2 | Complete |
 | TEST-06 | Phase 2 | Complete |
-| TEST-07 | Phase 2 | Pending |
+| TEST-07 | Phase 2 | Complete |
 | SEC-05 | Phase 2 | Complete |
 | SEC-02 | Phase 3 | Pending |
 | SEC-03 | Phase 3 | Pending |
