@@ -66,3 +66,24 @@ func TestNormalizeCommandRelativePathResolvedToCWD(t *testing.T) {
 		t.Fatalf("Path = %q, want %q", got.Path, want)
 	}
 }
+
+func TestNormalizeClaudecodeNormalizerVersion(t *testing.T) {
+	raw := []byte(`{
+		"session_id":"s3",
+		"transcript_path":"/home/user/.claude/sessions/abc.jsonl",
+		"cwd":"/tmp",
+		"hook_event_name":"PreToolUse",
+		"tool_name":"Read",
+		"tool_use_id":"u3",
+		"turn_id":"t3",
+		"tool_input":{"file_path":"foo.go"}
+	}`)
+
+	got, err := claudecode.Normalize(raw)
+	if err != nil {
+		t.Fatalf("Normalize: %v", err)
+	}
+	if got.NormalizerVersion != "claudecode/1" {
+		t.Fatalf("NormalizerVersion = %q, want claudecode/1", got.NormalizerVersion)
+	}
+}

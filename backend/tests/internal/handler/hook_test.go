@@ -105,6 +105,103 @@ func TestHookHandlerStoresEventWithoutPath(t *testing.T) {
 	}
 }
 
+func TestHookHandlerAcceptsDegradedPayload(t *testing.T) {
+	svc := newTestService(t)
+	h := handler.Hook(svc)
+
+	// Valid JSON but no fields that any agent's Normalize() recognises fully —
+	// passes json.Unmarshal for meta but results in a degraded store.
+	// We use a valid JSON object with unusual top-level fields to trigger
+	// the degraded path after the current "if err != nil → 400" is replaced.
+	body := []byte(`{"unknown_field":"some_value","another_field":42}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	// Must be 200, not 400 — degraded payloads are stored, not rejected
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (degraded accept); body: %s", rec.Code, rec.Body.String())
+	}
+
+	events, err := svc.ListEvents(10)
+	if err != nil {
+		t.Fatalf("ListEvents: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("events len = %d, want 1 (degraded event stored)", len(events))
+	}
+	if events[0].NormalizationStatus != "degraded" {
+		t.Fatalf("normalization_status = %q, want degraded", events[0].NormalizationStatus)
+	}
+	if events[0].Agent != "unknown" {
+		t.Fatalf("agent = %q, want unknown", events[0].Agent)
+	}
+}
+
+func TestHookHandlerTwoDifferentDegradedPayloadsStoredDistinctly(t *testing.T) {
+	svc := newTestService(t)
+	h := handler.Hook(svc)
+
+	body1 := []byte(`{"unknown_field":"value_one"}`)
+	body2 := []byte(`{"unknown_field":"value_two"}`)
+
+	for _, body := range [][]byte{body1, body2} {
+		req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
+		}
+	}
+
+	events, err := svc.ListEvents(10)
+	if err != nil {
+		t.Fatalf("ListEvents: %v", err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("events len = %d, want 2 (two distinct degraded payloads)", len(events))
+	}
+}
+
+func TestHookHandlerValidPayloadHasNormalizationStatusOK(t *testing.T) {
+	svc := newTestService(t)
+	h := handler.Hook(svc)
+
+	body := []byte(`{
+		"session_id": "s-ok",
+		"transcript_path": "/home/user/.claude/sessions/abc.jsonl",
+		"hook_event_name": "PreToolUse",
+		"tool_name": "Edit",
+		"tool_use_id": "tu-ok",
+		"turn_id": "t-ok",
+		"cwd": "/tmp",
+		"tool_input": {"file_path": "foo.go"}
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
+	}
+
+	events, err := svc.ListEvents(10)
+	if err != nil {
+		t.Fatalf("ListEvents: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("events len = %d, want 1", len(events))
+	}
+	if events[0].NormalizationStatus != "ok" {
+		t.Fatalf("normalization_status = %q, want ok", events[0].NormalizationStatus)
+	}
+	if events[0].NormalizerVersion != "claudecode/1" {
+		t.Fatalf("normalizer_version = %q, want claudecode/1", events[0].NormalizerVersion)
+	}
+}
+
 func TestHookHandlerAcknowledgesWhenStoreIsTemporarilyLocked(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "hooker-test.db")
 	db, err := sqlite.New(dbPath)

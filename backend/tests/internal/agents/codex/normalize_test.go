@@ -107,3 +107,24 @@ func TestNormalizeCompactEventIncludesTrigger(t *testing.T) {
 		t.Fatalf("Trigger = %q, want auto", got.Trigger)
 	}
 }
+
+func TestNormalizeCodexNormalizerVersion(t *testing.T) {
+	raw := []byte(`{
+		"session_id":"s6",
+		"transcript_path":"/tmp/codex-session.jsonl",
+		"cwd":"/tmp",
+		"hook_event_name":"PreToolUse",
+		"turn_id":"t6",
+		"tool_name":"read_file",
+		"tool_use_id":"u6",
+		"tool_input":{"file_path":"foo.go"}
+	}`)
+
+	got, err := codex.Normalize(raw)
+	if err != nil {
+		t.Fatalf("Normalize: %v", err)
+	}
+	if got.NormalizerVersion != "codex/1" {
+		t.Fatalf("NormalizerVersion = %q, want codex/1", got.NormalizerVersion)
+	}
+}
