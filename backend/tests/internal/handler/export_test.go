@@ -147,6 +147,56 @@ func newRouterWithRepo(repo *sqlite.DB) http.Handler {
 	return server.NewRouter(svc, repo, repo.Ready)
 }
 
+// TestExportEventsRoundTrip is a full end-to-end test: POST a hook event via
+// the real router, then GET /api/export/events and assert the session_id appears
+// in the NDJSON response.
+func TestExportEventsRoundTrip(t *testing.T) {
+	repo := newTestRepo(t)
+	srv := httptest.NewServer(newRouterWithRepo(repo))
+	defer srv.Close()
+
+	hookPayload := []byte(`{
+		"session_id": "export-test-sess",
+		"transcript_path": "/home/user/.claude/projects/x/transcript.jsonl",
+		"hook_event_name": "PreToolUse",
+		"turn_id": "t1",
+		"tool_use_id": "u1",
+		"cwd": "/tmp",
+		"tool_name": "Bash",
+		"tool_input": {"command": "true"}
+	}`)
+	resp, err := http.Post(srv.URL+"/api/hook", "application/json", bytes.NewReader(hookPayload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("POST /api/hook: %d", resp.StatusCode)
+	}
+
+	resp, err = http.Get(srv.URL + "/api/export/events")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/export/events: %d", resp.StatusCode)
+	}
+	ct := resp.Header.Get("Content-Type")
+	if !strings.Contains(ct, "ndjson") {
+		t.Errorf("Content-Type: want ndjson, got %q", ct)
+	}
+
+	var body strings.Builder
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		body.WriteString(scanner.Text())
+	}
+	if !strings.Contains(body.String(), "export-test-sess") {
+		t.Errorf("NDJSON output missing session_id 'export-test-sess'\nBody: %s", body.String())
+	}
+}
+
 func TestSecFetchSiteBlocksCrossSiteOnExportEvents(t *testing.T) {
 	repo := newTestRepo(t)
 	h := newRouterWithRepo(repo)

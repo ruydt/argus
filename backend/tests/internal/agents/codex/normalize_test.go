@@ -128,3 +128,29 @@ func TestNormalizeCodexNormalizerVersion(t *testing.T) {
 		t.Fatalf("NormalizerVersion = %q, want codex/1", got.NormalizerVersion)
 	}
 }
+
+// TestNormalizeCodexSetsMeta asserts that a valid Codex payload produces
+// NormalizationStatus="ok" and NormalizerVersion="codex/1".
+func TestNormalizeCodexSetsMeta(t *testing.T) {
+	raw := []byte(`{
+		"session_id": "sess-codex-meta",
+		"transcript_path": "/tmp/codex-session.jsonl",
+		"cwd": "/tmp",
+		"hook_event_name": "PreToolUse",
+		"turn_id": "t-meta",
+		"tool_name": "read_file",
+		"tool_use_id": "u-meta",
+		"tool_input": {"file_path": "main.go"}
+	}`)
+
+	got, err := codex.Normalize(raw)
+	if err != nil {
+		t.Fatalf("Normalize: %v", err)
+	}
+	if got.NormalizationStatus != "ok" {
+		t.Errorf("NormalizationStatus: want 'ok', got %q", got.NormalizationStatus)
+	}
+	if got.NormalizerVersion != "codex/1" {
+		t.Errorf("NormalizerVersion: want 'codex/1', got %q", got.NormalizerVersion)
+	}
+}
