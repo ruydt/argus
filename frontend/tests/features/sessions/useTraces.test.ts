@@ -16,10 +16,9 @@ class MockES {
   }
 }
 
-vi.stubGlobal('EventSource', MockES)
-
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubGlobal('EventSource', MockES)
 })
 
 describe('useTraces', () => {

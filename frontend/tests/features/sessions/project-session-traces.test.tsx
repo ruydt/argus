@@ -18,7 +18,6 @@ class MockES {
   constructor(public url: string) {}
 }
 
-vi.stubGlobal('EventSource', MockES)
 vi.mock('react-resizable-panels', () => ({
   Panel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Group: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -27,6 +26,7 @@ vi.mock('react-resizable-panels', () => ({
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubGlobal('EventSource', MockES)
 })
 
 describe('project scoped sessions pages', () => {

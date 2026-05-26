@@ -18,7 +18,6 @@ class MockES {
   }
 }
 
-vi.stubGlobal('EventSource', MockES)
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return {
@@ -30,6 +29,7 @@ vi.mock('react-router-dom', async () => {
 beforeEach(() => {
   vi.clearAllMocks()
   searchParams = new URLSearchParams()
+  vi.stubGlobal('EventSource', MockES)
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
