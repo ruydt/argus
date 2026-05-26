@@ -42,7 +42,16 @@ Plans:
   3. User can export all events as streaming NDJSON via `GET /api/export/events` and download a full-fidelity SQLite snapshot via `GET /api/export/snapshot`
   4. Backend survives a panic without crashing the process; HTTP timeouts are configured; graceful shutdown drains open connections within a finite timeout
   5. Frontend component/hook test suite passes in CI; Playwright smoke confirms events, sessions, and dashboard load with real data
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [ ] 02-01-PLAN.md — Migration 008 (3 new columns) + transactional runner (HARD-05) + domain model fields
+- [ ] 02-02-PLAN.md — Degraded ingestion path in hook.go + NormalizerVersion constants in agents
+- [ ] 02-03-PLAN.md — HTTP timeouts + graceful shutdown + slog migration + WAL checkpoint goroutine
+- [ ] 02-04-PLAN.md — Panic recovery + secFetchSite middleware + NDJSON export + snapshot export handler
+- [ ] 02-05-PLAN.md — Frontend EventRecord type additions + degraded badge in EventBadges
+- [ ] 02-06-PLAN.md — Frontend test infra (user-event, unstubGlobals) + hook tests + component tests
+- [ ] 02-07-PLAN.md — Backend migration/dedup/normalization tests + export round-trip test
+- [ ] 02-08-PLAN.md — Playwright setup + smoke test + CI playwright job
 
 ### Phase 3: Mature Local Product
 **Goal**: Users have explicit privacy controls over what data is captured, the security posture is documented and enforced, and contributors have everything they need to extend hooker safely
@@ -60,5 +69,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Local Adoption Baseline | 6/6 | Complete   | 2026-05-24 |
-| 2. Reliable Daily Use | 0/TBD | Not started | - |
+| 2. Reliable Daily Use | 0/8 | Not started | - |
 | 3. Mature Local Product | 0/TBD | Not started | - |
