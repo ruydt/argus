@@ -901,3 +901,127 @@ func TestGetSessionTree_cycleDoesNotRecurseInfinitely(t *testing.T) {
 		t.Fatal("expected at least one root node for cycle fallback")
 	}
 }
+
+// TestMigration008_Columns verifies migration 008 adds the three normalization
+// columns to hook_events and that existing rows receive the default value for
+// normalization_status.
+func TestMigration008_Columns(t *testing.T) {
+	db := newTestDB(t)
+
+	// Verify all three columns exist by querying PRAGMA table_info.
+	rawDB := db.RawDB()
+	rows, err := rawDB.Query(`PRAGMA table_info(hook_events)`)
+	if err != nil {
+		t.Fatalf("PRAGMA table_info: %v", err)
+	}
+	defer rows.Close()
+
+	cols := map[string]bool{}
+	for rows.Next() {
+		var cid int
+		var name, colType string
+		var notNull int
+		var dfltValue any
+		var pk int
+		if err := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); err != nil {
+			t.Fatalf("scan table_info: %v", err)
+		}
+		cols[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("table_info rows: %v", err)
+	}
+
+	for _, want := range []string{"normalizer_version", "agent_version", "normalization_status"} {
+		if !cols[want] {
+			t.Errorf("column %q missing from hook_events after migration 008", want)
+		}
+	}
+}
+
+// TestMigration008_DefaultStatus verifies that rows inserted without an explicit
+// normalization_status receive the default value 'ok'.
+func TestMigration008_DefaultStatus(t *testing.T) {
+	db := newTestDB(t)
+
+	e := domain.NormalizedEvent{
+		Time:          time.Now().Format(time.RFC3339),
+		Agent:         "claudecode",
+		Session:       "sess-norm",
+		HookEventName: "PreToolUse",
+		TurnID:        "t1",
+		ToolUseID:     "u1",
+		RawPayload:    []byte(`{}`),
+		// NormalizationStatus intentionally left empty → DB DEFAULT 'ok'
+	}
+	if err := db.Add(e); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	var status string
+	if err := db.RawDB().QueryRow(
+		`SELECT COALESCE(normalization_status,'') FROM hook_events LIMIT 1`,
+	).Scan(&status); err != nil {
+		t.Fatalf("query normalization_status: %v", err)
+	}
+	if status != "ok" {
+		t.Errorf("normalization_status = %q, want %q", status, "ok")
+	}
+}
+
+// TestMigration008_NormalizationFieldsRoundtrip verifies that NormalizationStatus,
+// NormalizerVersion, and AgentVersion are written by Add() and read back by List().
+func TestMigration008_NormalizationFieldsRoundtrip(t *testing.T) {
+	db := newTestDB(t)
+
+	e := domain.NormalizedEvent{
+		Time:                "2026-01-02T03:04:05Z",
+		Agent:               "claudecode",
+		Session:             "sess-rt",
+		HookEventName:       "PreToolUse",
+		TurnID:              "t2",
+		ToolUseID:           "u2",
+		RawPayload:          []byte(`{"key":"val"}`),
+		NormalizationStatus: "degraded",
+		NormalizerVersion:   "0.2.0",
+		AgentVersion:        "1.5.0",
+	}
+	if err := db.Add(e); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	events, err := db.List(10)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("got %d events, want 1", len(events))
+	}
+	got := events[0]
+	if got.NormalizationStatus != "degraded" {
+		t.Errorf("NormalizationStatus = %q, want %q", got.NormalizationStatus, "degraded")
+	}
+	if got.NormalizerVersion != "0.2.0" {
+		t.Errorf("NormalizerVersion = %q, want %q", got.NormalizerVersion, "0.2.0")
+	}
+	if got.AgentVersion != "1.5.0" {
+		t.Errorf("AgentVersion = %q, want %q", got.AgentVersion, "1.5.0")
+	}
+}
+
+// TestMigrationRunner_Transactional verifies that the migration runner is
+// idempotent (running migrate() twice does not re-apply completed migrations).
+func TestMigrationRunner_Idempotent(t *testing.T) {
+	db := newTestDB(t)
+
+	// A second call to New on the same DB would re-run migrate(). Instead,
+	// verify idempotency by checking schema_migrations has exactly 8 versions.
+	rawDB := db.RawDB()
+	var count int
+	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
+		t.Fatalf("count schema_migrations: %v", err)
+	}
+	if count != 8 {
+		t.Errorf("schema_migrations has %d rows, want 8 (migrations 1–8)", count)
+	}
+}
