@@ -66,7 +66,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 02-06-PLAN.md — Frontend test infra (user-event, unstubGlobals) + hook tests + component tests
-- [ ] 02-07-PLAN.md — Backend migration/dedup/normalization tests + export round-trip test
+- [x] 02-07-PLAN.md — Backend migration/dedup/normalization tests + export round-trip test
 - [ ] 02-08-PLAN.md — Playwright setup + smoke test + CI playwright job
 
 ### Phase 3: Mature Local Product
@@ -88,5 +88,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Local Adoption Baseline | 6/6 | Complete   | 2026-05-24 |
-| 2. Reliable Daily Use | 6/8 | In Progress|  |
+| 2. Reliable Daily Use | 7/8 | In Progress|  |
 | 3. Mature Local Product | 0/TBD | Not started | - |

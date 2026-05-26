@@ -70,9 +70,9 @@
 - [x] **TEST-01**: Frontend: `@testing-library/user-event@^14` added; `unstubGlobals: true` in `vitest.config.ts`
 - [x] **TEST-02**: Frontend: React Testing Library coverage for session rendering, event grouping, dashboard stats rendering, usage display, loading/error states
 - [x] **TEST-03**: Frontend: hook tests for `useSessions`, `useDashboardStats`, `useTraces`
-- [ ] **TEST-04**: Backend: full-stack `httptest.NewServer` round-trip test (ingest fixture payload → verify via GET API)
-- [ ] **TEST-05**: Backend: migration correctness test against file-based DB with pre-existing rows (not just `:memory:`)
-- [ ] **TEST-06**: Backend: fixture corpus for known Claude Code and Codex payload variants; regression tests assert normalization output
+- [x] **TEST-04**: Backend: full-stack `httptest.NewServer` round-trip test (ingest fixture payload → verify via GET API)
+- [x] **TEST-05**: Backend: migration correctness test against file-based DB with pre-existing rows (not just `:memory:`)
+- [x] **TEST-06**: Backend: fixture corpus for known Claude Code and Codex payload variants; regression tests assert normalization output
 - [ ] **TEST-07**: Browser E2E smoke (Playwright, chromium-only): start app, load events/sessions/dashboard, verify core data visible
 
 ### Release & Versioning (REL)
@@ -192,9 +192,9 @@
 | TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
 | TEST-03 | Phase 2 | Complete |
-| TEST-04 | Phase 2 | Pending |
-| TEST-05 | Phase 2 | Pending |
-| TEST-06 | Phase 2 | Pending |
+| TEST-04 | Phase 2 | Complete |
+| TEST-05 | Phase 2 | Complete |
+| TEST-06 | Phase 2 | Complete |
 | TEST-07 | Phase 2 | Pending |
 | SEC-05 | Phase 2 | Complete |
 | SEC-02 | Phase 3 | Pending |
