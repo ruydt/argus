@@ -84,3 +84,59 @@ jobs:
       - name: Build
         working-directory: frontend
         run: pnpm run build
+
+  playwright:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@10.23.0 --activate
+
+      - name: Build frontend (required for go:embed)
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Sync frontend dist into backend embed path
+        run: |
+          rm -rf backend/internal/ui/dist
+          mkdir -p backend/internal/ui
+          cp -R frontend/dist backend/internal/ui/dist
+
+      - name: Build backend binary
+        working-directory: backend
+        run: go build -o hooker ./cmd/server
+
+      - name: Install Playwright and chromium
+        run: |
+          npm install
+          npx playwright install chromium --with-deps
+
+      - name: Start hooker server
+        run: |
+          DB_PATH=/tmp/hooker-playwright-ci.db ./backend/hooker &
+          until curl -sf http://127.0.0.1:8765/healthz; do sleep 1; done
+        timeout-minutes: 1
+
+      - name: Run Playwright smoke tests
+        run: npx playwright test --project=chromium
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
