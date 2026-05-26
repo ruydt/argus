@@ -50,12 +50,12 @@
 
 ### Backend Hardening (HARD)
 
-- [ ] **HARD-01**: HTTP server configured with `ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`; `WriteTimeout: 0` for SSE endpoint specifically
-- [ ] **HARD-02**: Graceful shutdown drains with a finite context timeout (not `context.Background()` which can hang forever on open SSE tabs)
+- [x] **HARD-01**: HTTP server configured with `ReadHeaderTimeout`, `ReadTimeout`, `IdleTimeout`; `WriteTimeout: 0` for SSE endpoint specifically
+- [x] **HARD-02**: Graceful shutdown drains with a finite context timeout (not `context.Background()` which can hang forever on open SSE tabs)
 - [ ] **HARD-03**: Panic recovery middleware logs stack trace and returns 500 instead of crashing process
-- [ ] **HARD-04**: `log.Printf` replaced with `log/slog` structured logging (zero new deps)
+- [x] **HARD-04**: `log.Printf` replaced with `log/slog` structured logging (zero new deps)
 - [x] **HARD-05**: Migration runner wraps each migration in `BEGIN`/`COMMIT` with version record inside the same transaction (prevents partial-apply stuck state)
-- [ ] **HARD-06**: Background goroutine runs `PRAGMA wal_checkpoint(PASSIVE)` periodically to prevent unbounded WAL growth from long-lived SSE connections
+- [x] **HARD-06**: Background goroutine runs `PRAGMA wal_checkpoint(PASSIVE)` periodically to prevent unbounded WAL growth from long-lived SSE connections
 
 ### Security (SEC)
 
@@ -183,12 +183,12 @@
 | MODEL-03 | Phase 2 | Complete |
 | MODEL-04 | Phase 2 | Pending |
 | MODEL-05 | Phase 2 | Pending |
-| HARD-01 | Phase 2 | Pending |
-| HARD-02 | Phase 2 | Pending |
+| HARD-01 | Phase 2 | Complete |
+| HARD-02 | Phase 2 | Complete |
 | HARD-03 | Phase 2 | Pending |
-| HARD-04 | Phase 2 | Pending |
+| HARD-04 | Phase 2 | Complete |
 | HARD-05 | Phase 2 | Complete |
-| HARD-06 | Phase 2 | Pending |
+| HARD-06 | Phase 2 | Complete |
 | TEST-01 | Phase 2 | Pending |
 | TEST-02 | Phase 2 | Pending |
 | TEST-03 | Phase 2 | Pending |
