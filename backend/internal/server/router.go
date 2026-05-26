@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"hooker/internal/handler"
+	"hooker/internal/repository"
 	"hooker/internal/service"
 	"hooker/internal/ui"
 )
 
-func NewRouter(svc *service.EventService, ready func() bool) http.Handler {
+func NewRouter(svc *service.EventService, repo repository.EventRepository, ready func() bool) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /healthz", handler.Healthz())
@@ -26,7 +27,9 @@ func NewRouter(svc *service.EventService, ready func() bool) http.Handler {
 	mux.Handle("GET /api/dashboard/stats", handler.DashboardStats(svc))
 	mux.Handle("GET /api/openai/", handler.OpenAIProxy())
 	mux.Handle("GET /api/anthropic/", handler.AnthropicProxy())
+	mux.Handle("GET /api/export/events", secFetchSite(handler.ExportEvents(repo)))
+	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
 	mux.Handle("GET /", ui.Handler())
 
-	return hostHeader(cors(logging(mux)))
+	return panicRecovery(hostHeader(cors(logging(mux))))
 }

@@ -1,7 +1,9 @@
 package server_test
 
 import (
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -51,11 +53,15 @@ func (noopRepo) UpsertSession(string, string, string, string, string, string, st
 	return nil
 }
 
+func (noopRepo) ExportEvents(_ context.Context, _ io.Writer) error { return nil }
+
+func (noopRepo) ExportSnapshot(_ context.Context, _ string) error { return nil }
+
 func (noopRepo) Ready() bool { return true }
 
 func newTestRouter() http.Handler {
 	repo := noopRepo{}
-	return server.NewRouter(service.New(repo), repo.Ready)
+	return server.NewRouter(service.New(repo), repo, repo.Ready)
 }
 
 func localRequest(method, target string) *http.Request {

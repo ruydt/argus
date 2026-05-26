@@ -46,7 +46,7 @@ func main() {
 
 	svc := service.New(repo)
 
-	h := server.NewRouter(svc, repo.Ready)
+	h := server.NewRouter(svc, repo, repo.Ready)
 
 	slog.Info("hooker", "version", version.Version, "commit", version.Commit)
 	slog.Info("hook endpoint", "url", "POST http://"+cfg.Addr+"/api/hook")

@@ -4,8 +4,36 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"runtime/debug"
 	"time"
 )
+
+// panicRecovery catches panics from any handler, logs the stack trace, and returns 500.
+// It must be the outermost middleware so it catches panics from all inner middleware too.
+func panicRecovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				slog.Error("panic recovered", "panic", rec, "stack", string(debug.Stack()))
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+// secFetchSite rejects browser-originated cross-site requests (D-07, SEC-05).
+// Absent header = allowed: curl, wget, and CLI tools do not send Sec-Fetch-Site.
+// Present and cross-site = 403: prevents browser-based CSRF data exfiltration.
+func secFetchSite(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if v := r.Header.Get("Sec-Fetch-Site"); v == "cross-site" {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 func logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
