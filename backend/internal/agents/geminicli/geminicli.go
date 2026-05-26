@@ -11,6 +11,8 @@ import (
 	"hooker/internal/fileutil"
 )
 
+const geminicliNormalizerVersion = "geminicli/1"
+
 func AgentName() string {
 	return "geminicli"
 }
@@ -76,6 +78,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		ToolResultStderr:    fileutil.ToolResultStderr(p.ToolResponse),
 		DurationMS:          p.DurationMS,
 		Trigger:             p.Trigger,
+		NormalizerVersion:   geminicliNormalizerVersion,
 	}, nil
 }
 

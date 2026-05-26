@@ -245,6 +245,8 @@ func codexBreakdown(byModel map[string]*domain.ModelUsageBreakdown) domain.Usage
 	return breakdown
 }
 
+const codexNormalizerVersion = "codex/1"
+
 func AgentName() string {
 	return "codex"
 }
@@ -398,6 +400,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		ToolResultStderr:    toolResultStderr(p.ToolResponse),
 		DurationMS:          p.DurationMS,
 		Trigger:             p.Trigger,
+		NormalizerVersion:   codexNormalizerVersion,
 	}, nil
 }
 
