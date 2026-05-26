@@ -74,7 +74,7 @@ export function SummaryStats({ stats }: SummaryStatsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-foreground">
+            <div className="text-2xl font-semibold text-foreground" data-testid="stat-value">
               {item.format(item.value(stats))}
             </div>
           </CardContent>

@@ -87,6 +87,7 @@ export function EventRow({
       onDragEnd={() => {
         suppressDragRef.current = false
       }}
+      data-testid="event-row"
       className={cn(
         'border-b border-white/[0.03] py-2 text-[0.82rem] leading-[1.4] hover:bg-white/[0.02]',
         highlighted ? 'rounded-md bg-sky-500/8 ring-1 ring-sky-400/35' : '',
