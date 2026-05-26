@@ -801,7 +801,7 @@ func TestDedupKeyStability(t *testing.T) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Playwright and pnpm workspaces**
    - What we know: Playwright is typically installed at project root; this project uses pnpm in the `frontend/` subdirectory only.
