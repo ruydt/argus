@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"hooker/internal/agents/claudecode"
 	"hooker/internal/agents/codex"
@@ -35,17 +38,47 @@ func Hook(svc *service.EventService) http.Handler {
 		}
 
 		var e domain.NormalizedEvent
+		var normalizeErr error
 		switch {
 		case claudecode.MatchesTranscript(meta.TranscriptPath):
-			e, err = claudecode.Normalize(raw)
+			e, normalizeErr = claudecode.Normalize(raw)
 		case geminicli.MatchesTranscript(meta.TranscriptPath) || meta.Source == "gemini":
-			e, err = geminicli.Normalize(raw)
+			e, normalizeErr = geminicli.Normalize(raw)
 		default:
-			e, err = codex.Normalize(raw)
+			e, normalizeErr = codex.Normalize(raw)
 		}
-		if err != nil {
-			http.Error(w, "normalize payload", http.StatusBadRequest)
-			return
+
+		// Degraded mode (MODEL-04, D-03): unknown payloads are ingested rather than dropped.
+		// A normalization failure (parse error) OR a completely unrecognized payload (no session,
+		// no hook event, no tool — all agent parsers accept any valid JSON) both trigger degraded.
+		// The degraded check combines both cases to catch the full range of unrecognizable inputs.
+		isDegraded := normalizeErr != nil || (e.Session == "" && e.HookEventName == "" && e.Tool == "")
+		if isDegraded {
+			// Compute a stable dedup key from the raw bytes so two different unknown payloads
+			// don't collide at the INSERT OR IGNORE level.
+			rawHash := fmt.Sprintf("%x", sha256.Sum256(raw))
+			e = domain.NormalizedEvent{
+				Time:                time.Now().UTC().Format(time.RFC3339),
+				Agent:               "unknown",
+				Session:             "degraded-" + rawHash[:16],
+				RawPayload:          raw,
+				NormalizationStatus: "degraded",
+				NormalizerVersion:   "hooker/1",
+			}
+			if normalizeErr != nil {
+				slog.Warn("degraded ingest (parse error)", "err", normalizeErr, "raw_len", len(raw))
+			} else {
+				slog.Warn("degraded ingest (unrecognized payload)", "raw_len", len(raw))
+			}
+		} else {
+			e.NormalizationStatus = "ok"
+			// NormalizerVersion already set by agent Normalize() (Task 1).
+			// AgentVersion (MODEL-03): neither Claude Code nor Codex currently expose a version
+			// field in their hook payloads, so e.AgentVersion remains "" (the zero value). The
+			// field is stored as an empty string in the DB. When a payload version field is
+			// identified in a future adapter update, set it here via meta.AgentVersion.
+			// For now, the empty string is the correct and intentional value per RESEARCH.md Q3.
+			_ = e.AgentVersion // explicit acknowledgement: remains "" — best-effort field per MODEL-03
 		}
 
 		e = enrichContext(e)
@@ -63,10 +96,10 @@ func Hook(svc *service.EventService) http.Handler {
 			}
 		}
 
-		log.Printf("[hook] agent=%s session=%s tool=%s action=%s path=%s", e.Agent, e.Session, e.Tool, e.Action, e.Path)
+		slog.Info("hook", "agent", e.Agent, "session", e.Session, "tool", e.Tool, "action", e.Action, "path", e.Path)
 
 		if err := svc.AddEvent(e); err != nil {
-			log.Printf("[hook] store event: %v", err)
+			slog.Error("hook store event", "err", err)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusAccepted)
 			_, _ = w.Write([]byte(`{}`))
