@@ -1,6 +1,11 @@
 package repository
 
-import "hooker/internal/domain"
+import (
+	"context"
+	"io"
+
+	"hooker/internal/domain"
+)
 
 // EventRepository is the storage interface. The SQLite implementation lives in
 // ./sqlite. Tests use a hand-written mock of this interface.
@@ -20,5 +25,7 @@ type EventRepository interface {
 	GetTracesPage(sessionID, since string, page, size int) ([]domain.NormalizedEvent, int, error)
 	GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error)
 	GetSessionFileChangeCounts(ids []string) (map[string]int, error)
+	ExportEvents(ctx context.Context, w io.Writer) error
+	ExportSnapshot(ctx context.Context, destPath string) error
 	Ready() bool
 }

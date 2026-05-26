@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"path/filepath"
 	"slices"
@@ -1109,4 +1110,73 @@ func (d *DB) GetSessionFileChangeCounts(ids []string) (map[string]int, error) {
 		result[sid] = cnt
 	}
 	return result, rows.Err()
+}
+
+// ExportEvents streams all events as NDJSON to w (DATA-04).
+// Rows are read in INSERT order (id ASC) via a cursor — never buffered in memory.
+func (d *DB) ExportEvents(ctx context.Context, w io.Writer) error {
+	rows, err := d.db.QueryContext(ctx, `
+		SELECT created_at, agent, session_id, hook_event_name,
+		       COALESCE(turn_id,''), COALESCE(tool_use_id,''),
+		       COALESCE(tool_name,''), COALESCE(model,''), COALESCE(source,''),
+		       COALESCE(cwd,''), COALESCE(transcript_path,''),
+		       COALESCE(action,''), COALESCE(path,''), COALESCE(command,''),
+		       COALESCE(old_string,''), COALESCE(new_string,''),
+		       COALESCE(start_line,0), ctx_before, ctx_after,
+		       COALESCE(prompt,''), COALESCE(description,''),
+		       COALESCE(permission_mode,''), COALESCE(response,''),
+		       COALESCE(error_message,''), COALESCE(error_type,''),
+		       COALESCE(subagent_id,''), COALESCE(subagent_type,''),
+		       COALESCE(task_id,''), COALESCE(task_title,''), COALESCE(task_description,''),
+		       COALESCE(notification_type,''), COALESCE(notification_title,''), COALESCE(notification_message,''),
+		       COALESCE(change_type,''), COALESCE(old_cwd,''), COALESCE(new_cwd,''),
+		       COALESCE(tool_calls_json,''),
+		       COALESCE(tool_result_stdout,''), COALESCE(tool_result_stderr,''),
+		       COALESCE(duration_ms,0), COALESCE(trigger,''),
+		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,'')
+		FROM hook_events ORDER BY id ASC`)
+	if err != nil {
+		return fmt.Errorf("export events query: %w", err)
+	}
+	defer rows.Close()
+
+	enc := json.NewEncoder(w)
+	for rows.Next() {
+		var e domain.NormalizedEvent
+		var ctxBefore, ctxAfter string
+		if err := rows.Scan(
+			&e.Time, &e.Agent, &e.Session, &e.HookEventName,
+			&e.TurnID, &e.ToolUseID, &e.Tool, &e.Model, &e.Source,
+			&e.CWD, &e.TranscriptPath,
+			&e.Action, &e.Path, &e.Command,
+			&e.OldString, &e.NewString, &e.StartLine,
+			&ctxBefore, &ctxAfter,
+			&e.Prompt, &e.Description,
+			&e.PermissionMode, &e.Response,
+			&e.ErrorMessage, &e.ErrorType,
+			&e.SubagentID, &e.SubagentType,
+			&e.TaskID, &e.TaskTitle, &e.TaskDescription,
+			&e.NotificationType, &e.NotificationTitle, &e.NotificationMessage,
+			&e.ChangeType, &e.OldCWD, &e.NewCWD, &e.ToolCallsJSON,
+			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS, &e.Trigger,
+			&e.NormalizerVersion, &e.AgentVersion, &e.NormalizationStatus,
+		); err != nil {
+			return fmt.Errorf("export events scan: %w", err)
+		}
+		_ = json.Unmarshal([]byte(ctxBefore), &e.CtxBefore)
+		_ = json.Unmarshal([]byte(ctxAfter), &e.CtxAfter)
+		if err := enc.Encode(e); err != nil {
+			return fmt.Errorf("export events encode: %w", err)
+		}
+	}
+	return rows.Err()
+}
+
+// ExportSnapshot writes a full-fidelity SQLite copy to destPath via VACUUM INTO (DATA-05).
+// destPath must be a path in the OS temp directory — it is never user-supplied.
+func (d *DB) ExportSnapshot(ctx context.Context, destPath string) error {
+	if _, err := d.db.ExecContext(ctx, `VACUUM INTO ?`, destPath); err != nil {
+		return fmt.Errorf("vacuum into: %w", err)
+	}
+	return nil
 }

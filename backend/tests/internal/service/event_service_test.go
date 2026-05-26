@@ -1,7 +1,9 @@
 package service_test
 
 import (
+	"context"
 	"errors"
+	"io"
 	"os"
 	"sync"
 	"testing"
@@ -132,6 +134,10 @@ func (m *mockRepo) GetFileChanges(string) ([]domain.FileChangeGroup, error) { re
 func (m *mockRepo) GetSessionFileChangeCounts([]string) (map[string]int, error) {
 	return map[string]int{}, nil
 }
+
+func (m *mockRepo) ExportEvents(_ context.Context, _ io.Writer) error { return nil }
+
+func (m *mockRepo) ExportSnapshot(_ context.Context, _ string) error { return nil }
 
 func (m *mockRepo) Ready() bool { return true }
 
