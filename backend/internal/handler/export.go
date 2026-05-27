@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -48,10 +49,19 @@ func ExportSnapshot(repo repository.EventRepository) http.Handler {
 			return
 		}
 
+		f, err := os.Open(tmpPath)
+		if err != nil {
+			http.Error(w, "open snapshot", http.StatusInternalServerError)
+			return
+		}
+		defer f.Close() //nolint:errcheck
+
 		ts := time.Now().UTC().Format("20060102-150405")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="hooker-snapshot-%s.db"`, ts))
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", fi.Size()))
 		w.Header().Set("Content-Type", "application/octet-stream")
-		http.ServeFile(w, r, tmpPath)
+		if _, err := io.Copy(w, f); err != nil {
+			slog.Error("export snapshot copy", "err", err)
+		}
 	})
 }
