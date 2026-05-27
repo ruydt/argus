@@ -26,6 +26,18 @@ Known deferred close-out items:
 - Phase 01 verification still needs human confirmation for clean-machine onboarding timing, GitHub settings/hosted CI, and migration-failure message quality.
 - Phase 03 UAT still needs human confirmation for doctor privacy output, remote-bind runtime rejection, and end-to-end privacy gate behavior.
 
+## Current Milestone: v1.1 Diagnostics
+
+**Goal:** Build an operator-focused Diagnostics UI that tells a solo developer whether hooker is healthy, correctly connected to agent hooks, and safe to trust for local capture.
+
+**Target features:**
+
+- Diagnostics page in the React app.
+- Backend diagnostics endpoint(s) for version, DB path/size, readiness, event/session counts, last event time, and normalizer/degraded status.
+- Hook status summary for Claude Code, Codex, and Gemini CLI: configured/missing where detectable, last seen event per agent, compatibility/degraded warnings.
+- Privacy summary: ignore file path/load status, active ignore pattern count, and export sensitivity warning.
+- Backend and frontend tests covering diagnostics data, loading/error states, and rendered warnings.
+
 ## Requirements
 
 ### Validated
@@ -58,7 +70,12 @@ Known deferred close-out items:
 
 ### Active
 
-No active requirements are defined. Start the next milestone with `$gsd-new-milestone` to create fresh requirements and roadmap phases.
+**Milestone v1.1 — Diagnostics:**
+
+- [ ] Operator can open a Diagnostics page and understand whether hooker is healthy right now.
+- [ ] Operator can see whether supported agent hooks appear configured and recently active.
+- [ ] Operator can see privacy posture and export-sensitivity reminders without digging through docs.
+- [ ] Diagnostics data is backed by testable backend endpoints and frontend rendering tests.
 
 ### Candidate Next Milestone Ideas
 
@@ -125,4 +142,4 @@ This document evolves at milestone boundaries.
 4. Revisit Key Decisions and mark outcomes.
 
 ---
-*Last updated: 2026-05-27 after v1.0 milestone*
+*Last updated: 2026-05-27 after starting v1.1 Diagnostics milestone*
