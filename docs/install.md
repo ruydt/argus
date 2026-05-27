@@ -66,10 +66,13 @@ Hook endpoint: `http://127.0.0.1:8765/api/hook`
 
 Backend environment variables:
 
-| Variable  | Default             | Purpose                |
-| --------- | ------------------- | ---------------------- |
-| `ADDR`    | `127.0.0.1:8765`    | Backend listen address |
-| `DB_PATH` | `backend/hooker.db` | SQLite database path   |
+| Variable               | Default                          | Purpose                                                                       |
+| ---------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
+| `ADDR`                 | `127.0.0.1:8765`                 | Backend listen address                                                        |
+| `DB_PATH`              | `backend/hooker.db`              | SQLite database path                                                          |
+| `HOOKER_IGNORE`        | `~/.config/hooker/ignore`        | Path to gitignore-style privacy exclusion file                                |
+| `HOOKER_CORS_ORIGINS`  | _(derived from ADDR)_            | Extra comma-separated CORS origins allowed beyond the loopback defaults       |
+| `HOOKER_ALLOW_REMOTE`  | _(unset)_                        | Set to `1` to allow binding to non-loopback addresses (see security.md)      |
 
 See [docs/privacy.md](privacy.md) for ignore rules and export handling. See
 [docs/security.md](security.md) for loopback defaults, remote opt-in, and
