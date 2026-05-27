@@ -16,6 +16,10 @@ type Options struct {
 	// Matcher is the privacy ignore matcher applied before hook ingestion.
 	// If nil, an allow-none matcher is used (no events are ignored).
 	Matcher handler.IgnoreMatcher
+
+	// CORSOrigins is the explicit set of allowed CORS origins.
+	// If empty, the default loopback origins for port 8765 are used.
+	CORSOrigins []string
 }
 
 // allowNone is the default matcher used when Options.Matcher is nil.
@@ -28,6 +32,15 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	m := handler.IgnoreMatcher(allowNone{})
 	if opts.Matcher != nil {
 		m = opts.Matcher
+	}
+
+	corsOrigins := opts.CORSOrigins
+	if len(corsOrigins) == 0 {
+		corsOrigins = []string{
+			"http://localhost:8765",
+			"http://127.0.0.1:8765",
+			"http://[::1]:8765",
+		}
 	}
 
 	mux := http.NewServeMux()
@@ -51,5 +64,5 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
 	mux.Handle("GET /", ui.Handler())
 
-	return panicRecovery(hostHeader(cors(logging(mux))))
+	return panicRecovery(hostHeader(corsAllowlist(corsOrigins)(logging(mux))))
 }

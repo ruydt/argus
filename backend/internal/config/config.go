@@ -1,22 +1,61 @@
 package config
 
 import (
+	"net"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
-	Addr       string
-	DBPath     string
-	IgnorePath string
+	Addr        string
+	DBPath      string
+	IgnorePath  string
+	CORSOrigins []string
+	AllowRemote bool
 }
 
 func Load() Config {
-	return Config{
-		Addr:       envOr("ADDR", "127.0.0.1:8765"),
-		DBPath:     envOr("DB_PATH", defaultDBPath()),
-		IgnorePath: envOr("HOOKER_IGNORE", defaultIgnorePath()),
+	addr := envOr("ADDR", "127.0.0.1:8765")
+	origins := defaultCORSOrigins(addr)
+	if extra := parseCORSOrigins(os.Getenv("HOOKER_CORS_ORIGINS")); len(extra) > 0 {
+		origins = append(origins, extra...)
 	}
+	return Config{
+		Addr:        addr,
+		DBPath:      envOr("DB_PATH", defaultDBPath()),
+		IgnorePath:  envOr("HOOKER_IGNORE", defaultIgnorePath()),
+		CORSOrigins: origins,
+		AllowRemote: os.Getenv("HOOKER_ALLOW_REMOTE") == "1",
+	}
+}
+
+// defaultCORSOrigins derives the three canonical loopback CORS origins from the configured addr.
+func defaultCORSOrigins(addr string) []string {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil || port == "" {
+		port = "8765"
+	}
+	return []string{
+		"http://localhost:" + port,
+		"http://127.0.0.1:" + port,
+		"http://[::1]:" + port,
+	}
+}
+
+// parseCORSOrigins splits a comma-separated list of origins, trimming whitespace and empty values.
+func parseCORSOrigins(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 // defaultIgnorePath returns the canonical default ignore file path:

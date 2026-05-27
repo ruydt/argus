@@ -43,17 +43,50 @@ func logging(next http.Handler) http.Handler {
 	})
 }
 
-func cors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
+// corsAllowlist returns a middleware that echoes only origins present in the allowed set.
+// It never reflects wildcard or arbitrary origins. Allowed origins get Vary: Origin.
+// Disallowed CORS preflights (Origin header present but not in set) receive 403.
+func corsAllowlist(origins []string) func(http.Handler) http.Handler {
+	set := make(map[string]bool, len(origins))
+	for _, o := range origins {
+		if o != "" {
+			set[o] = true
 		}
-		next.ServeHTTP(w, r)
-	})
+	}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				// No Origin header: non-CORS request (curl, CLI, same-origin implicit).
+				if r.Method == http.MethodOptions {
+					w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+			if set[origin] {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin")
+				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusNoContent)
+					return
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+			// Origin present but not in allowlist.
+			if r.Method == http.MethodOptions {
+				http.Error(w, "forbidden", http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // hostHeader rejects requests whose Host header is not an explicit localhost

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -39,6 +40,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Reject non-loopback bind unless HOOKER_ALLOW_REMOTE=1 (D-07, D-08).
+	if err := validateBind(cfg); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+	if cfg.AllowRemote {
+		warnRemoteBind(cfg)
+	}
+
 	repo, err := sqlite.New(cfg.DBPath)
 	if err != nil {
 		slog.Error("open db", "err", err)
@@ -60,7 +70,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	h := server.NewRouter(svc, repo, repo.Ready, server.Options{Matcher: matcher})
+	h := server.NewRouter(svc, repo, repo.Ready, server.Options{
+		Matcher:     matcher,
+		CORSOrigins: cfg.CORSOrigins,
+	})
 
 	slog.Info("hooker", "version", version.Version, "commit", version.Commit)
 	slog.Info("hook endpoint", "url", "POST http://"+cfg.Addr+"/api/hook")
@@ -97,6 +110,39 @@ func main() {
 		os.Exit(1)
 	}
 	stop()
+}
+
+// validateBind rejects non-loopback ADDR unless AllowRemote is explicitly set (D-07, D-08).
+func validateBind(cfg config.Config) error {
+	host, _, err := net.SplitHostPort(cfg.Addr)
+	if err != nil {
+		return nil // malformed ADDR is caught by the earlier SplitHostPort check
+	}
+	if isLoopbackHost(host) {
+		return nil
+	}
+	if cfg.AllowRemote {
+		return nil
+	}
+	return fmt.Errorf("refusing non-loopback ADDR %q — set HOOKER_ALLOW_REMOTE=1 to enable", cfg.Addr)
+}
+
+// isLoopbackHost reports whether host is a known loopback address.
+func isLoopbackHost(host string) bool {
+	switch host {
+	case "localhost", "127.0.0.1", "::1", "[::1]":
+		return true
+	}
+	return false
+}
+
+// warnRemoteBind emits a prominent startup warning when remote bind is explicitly enabled (D-09).
+func warnRemoteBind(cfg config.Config) {
+	slog.Warn("REMOTE BIND ACTIVE — hooker is reachable beyond localhost",
+		"addr", cfg.Addr,
+		"captures", "prompts, diffs, file paths, tool outputs, raw payloads, exports",
+		"note", "public internet exposure is unsupported",
+	)
 }
 
 // isAddrInUse reports whether err indicates the port is already bound.
