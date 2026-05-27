@@ -84,11 +84,19 @@ Plans:
 **Plans**: 5 plans
 Plans:
 
+**Wave 1**
+
 - [ ] 03-01-PLAN.md — Matcher dependency approval checkpoint for PRIV-01
-- [ ] 03-02-PLAN.md — Privacy ignore matcher + hook ingestion gate
-- [ ] 03-03-PLAN.md — CORS allowlist + remote-bind enforcement + Docker behavior
 - [ ] 03-04-PLAN.md — Doctor privacy warning + privacy/security docs
 - [ ] 03-05-PLAN.md — Contributor guide + ADRs
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 03-02-PLAN.md — Privacy ignore matcher + hook ingestion gate
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 03-03-PLAN.md — CORS allowlist + remote-bind enforcement + Docker behavior
 
 ## Progress
 
