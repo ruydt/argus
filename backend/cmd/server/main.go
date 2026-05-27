@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"hooker/internal/config"
+	"hooker/internal/privacy/ignore"
 	"hooker/internal/repository/sqlite"
 	"hooker/internal/server"
 	"hooker/internal/service"
@@ -51,7 +52,15 @@ func main() {
 
 	svc := service.New(repo)
 
-	h := server.NewRouter(svc, repo, repo.Ready)
+	// Load ignore matcher. A missing default file returns an empty matcher (safe).
+	// An unreadable explicit HOOKER_IGNORE path exits with an actionable error (T-03-02-04).
+	matcher, err := ignore.Load(cfg.IgnorePath)
+	if err != nil {
+		slog.Error("load ignore file", "path", cfg.IgnorePath, "err", err)
+		os.Exit(1)
+	}
+
+	h := server.NewRouter(svc, repo, repo.Ready, server.Options{Matcher: matcher})
 
 	slog.Info("hooker", "version", version.Version, "commit", version.Commit)
 	slog.Info("hook endpoint", "url", "POST http://"+cfg.Addr+"/api/hook")

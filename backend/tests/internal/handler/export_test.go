@@ -144,7 +144,7 @@ func TestExportSnapshotContentLengthIsPositive(t *testing.T) {
 
 func newRouterWithRepo(repo *sqlite.DB) http.Handler {
 	svc := service.New(repo)
-	return server.NewRouter(svc, repo, repo.Ready)
+	return server.NewRouter(svc, repo, repo.Ready, server.Options{})
 }
 
 // TestExportEventsRoundTrip is a full end-to-end test: POST a hook event via

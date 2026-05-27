@@ -61,7 +61,7 @@ func (noopRepo) Ready() bool { return true }
 
 func newTestRouter() http.Handler {
 	repo := noopRepo{}
-	return server.NewRouter(service.New(repo), repo, repo.Ready)
+	return server.NewRouter(service.New(repo), repo, repo.Ready, server.Options{})
 }
 
 func localRequest(method, target string) *http.Request {

@@ -18,7 +18,13 @@ import (
 	"hooker/internal/service"
 )
 
-func Hook(svc *service.EventService) http.Handler {
+// IgnoreMatcher is the interface satisfied by privacy/ignore.Matcher.
+// Accepted by Hook so tests can inject allow-none or match-all stubs.
+type IgnoreMatcher interface {
+	MatchEvent(e domain.NormalizedEvent) (bool, string)
+}
+
+func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -82,6 +88,18 @@ func Hook(svc *service.EventService) http.Handler {
 		}
 
 		e = enrichContext(e)
+
+		// Privacy gate (D-03): apply ignore matcher after CWD/Path are canonical.
+		// Gate is before session-model backfill, hook logging, and svc.AddEvent so
+		// no data is persisted or broadcast for matched events (T-03-02-01).
+		if matched, reason := matcher.MatchEvent(e); matched {
+			// Metadata-only log: agent/session/action/reason only — no path, prompt,
+			// command, old_string, new_string, raw, stdout, or stderr (D-04, T-03-02-02).
+			slog.Info("hook ignored", "agent", e.Agent, "session", e.Session, "action", e.Action, "reason", reason)
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{}`))
+			return
+		}
 
 		if e.Model == "" && e.Session != "" {
 			if model, err := svc.SessionModel(e.Session); err == nil && model != "" {

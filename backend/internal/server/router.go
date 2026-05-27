@@ -3,18 +3,38 @@ package server
 import (
 	"net/http"
 
+	"hooker/internal/domain"
 	"hooker/internal/handler"
 	"hooker/internal/repository"
 	"hooker/internal/service"
 	"hooker/internal/ui"
 )
 
-func NewRouter(svc *service.EventService, repo repository.EventRepository, ready func() bool) http.Handler {
+// Options carries optional router configuration.
+// Add new fields here rather than widening the NewRouter parameter list.
+type Options struct {
+	// Matcher is the privacy ignore matcher applied before hook ingestion.
+	// If nil, an allow-none matcher is used (no events are ignored).
+	Matcher handler.IgnoreMatcher
+}
+
+// allowNone is the default matcher used when Options.Matcher is nil.
+// It never matches any event, so all events are ingested normally.
+type allowNone struct{}
+
+func (allowNone) MatchEvent(_ domain.NormalizedEvent) (bool, string) { return false, "" }
+
+func NewRouter(svc *service.EventService, repo repository.EventRepository, ready func() bool, opts Options) http.Handler {
+	m := handler.IgnoreMatcher(allowNone{})
+	if opts.Matcher != nil {
+		m = opts.Matcher
+	}
+
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /healthz", handler.Healthz())
 	mux.Handle("GET /readyz", handler.Readyz(ready))
-	mux.Handle("POST /api/hook", handler.Hook(svc))
+	mux.Handle("POST /api/hook", handler.Hook(svc, m))
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
 	mux.Handle("GET /api/version", handler.Version())
