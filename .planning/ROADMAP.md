@@ -81,7 +81,14 @@ Plans:
   3. `doctor` output and setup docs include a clear privacy warning listing what categories of data are captured (prompts, diffs, file paths, tool outputs)
   4. `CONTRIBUTING.md` covers project structure, layer boundaries, how to add a new agent adapter with its fixture requirement, and the frontend-backend contract change process; ADRs are documented for SQLite choice, normalization strategy, and local-first positioning
 
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+
+- [ ] 03-01-PLAN.md — Matcher dependency approval checkpoint for PRIV-01
+- [ ] 03-02-PLAN.md — Privacy ignore matcher + hook ingestion gate
+- [ ] 03-03-PLAN.md — CORS allowlist + remote-bind enforcement + Docker behavior
+- [ ] 03-04-PLAN.md — Doctor privacy warning + privacy/security docs
+- [ ] 03-05-PLAN.md — Contributor guide + ADRs
 
 ## Progress
 
