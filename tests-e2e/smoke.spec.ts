@@ -1,20 +1,29 @@
 import { test, expect, request } from '@playwright/test'
 
-// Fixture payloads that exercise the full ingest path (D-09)
+// Fixture payloads that exercise the full ingest path (D-09).
+// Shapes must match the actual domain.RawPayload fields read by each normalizer.
+// Claude Code: transcript_path contains /.claude/ → claudecode.Normalize() reads tool_name + tool_input.command.
+// Codex: transcript_path does NOT contain /.claude/ → codex.Normalize() reads tool_name + tool_input.command.
 const claudeCodeFixture = {
   session_id: 'smoke-cc-01',
   transcript_path: '/home/user/.claude/projects/hooker-smoke/transcript.jsonl',
   hook_event_name: 'PreToolUse',
   turn_id: 'turn-smoke-01',
   tool_use_id: 'tuse-smoke-01',
-  tool: { name: 'Bash', input: { command: 'echo hello' } },
+  tool_name: 'Bash',
+  cwd: '/tmp',
+  tool_input: { command: 'echo hello' },
 }
 
 const codexFixture = {
   session_id: 'smoke-codex-01',
-  hook_event_name: 'tool_call',
-  tool: 'bash',
-  command: 'echo world',
+  transcript_path: '/tmp/codex-smoke.jsonl',
+  hook_event_name: 'PreToolUse',
+  turn_id: 'turn-codex-01',
+  tool_use_id: 'tuse-codex-01',
+  tool_name: 'shell',
+  cwd: '/tmp',
+  tool_input: { command: 'echo world' },
 }
 
 test.beforeAll(async () => {
