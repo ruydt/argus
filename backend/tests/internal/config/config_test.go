@@ -61,3 +61,77 @@ func TestLoad_env(t *testing.T) {
 		t.Errorf("DBPath = %q, want /tmp/test.db", cfg.DBPath)
 	}
 }
+
+func TestLoad_CORSOrigins_DefaultFromAddr(t *testing.T) {
+	t.Setenv("ADDR", "127.0.0.1:8765")
+	if err := os.Unsetenv("HOOKER_CORS_ORIGINS"); err != nil {
+		t.Fatalf("Unsetenv: %v", err)
+	}
+	cfg := config.Load()
+	want := []string{
+		"http://localhost:8765",
+		"http://127.0.0.1:8765",
+		"http://[::1]:8765",
+	}
+	if len(cfg.CORSOrigins) < len(want) {
+		t.Fatalf("CORSOrigins len = %d, want >= %d; got %v", len(cfg.CORSOrigins), len(want), cfg.CORSOrigins)
+	}
+	for _, w := range want {
+		found := false
+		for _, o := range cfg.CORSOrigins {
+			if o == w {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("CORSOrigins missing %q; got %v", w, cfg.CORSOrigins)
+		}
+	}
+}
+
+func TestLoad_CORSOrigins_ExtraFromEnv(t *testing.T) {
+	t.Setenv("HOOKER_CORS_ORIGINS", "http://example.local:3000, http://other.local:4000")
+	cfg := config.Load()
+	found3000, found4000 := false, false
+	for _, o := range cfg.CORSOrigins {
+		if o == "http://example.local:3000" {
+			found3000 = true
+		}
+		if o == "http://other.local:4000" {
+			found4000 = true
+		}
+	}
+	if !found3000 {
+		t.Errorf("CORSOrigins missing example.local:3000; got %v", cfg.CORSOrigins)
+	}
+	if !found4000 {
+		t.Errorf("CORSOrigins missing other.local:4000; got %v", cfg.CORSOrigins)
+	}
+}
+
+func TestLoad_AllowRemote_Default(t *testing.T) {
+	if err := os.Unsetenv("HOOKER_ALLOW_REMOTE"); err != nil {
+		t.Fatalf("Unsetenv: %v", err)
+	}
+	cfg := config.Load()
+	if cfg.AllowRemote {
+		t.Error("AllowRemote = true, want false by default")
+	}
+}
+
+func TestLoad_AllowRemote_Enabled(t *testing.T) {
+	t.Setenv("HOOKER_ALLOW_REMOTE", "1")
+	cfg := config.Load()
+	if !cfg.AllowRemote {
+		t.Error("AllowRemote = false, want true when HOOKER_ALLOW_REMOTE=1")
+	}
+}
+
+func TestLoad_AllowRemote_NotEnabled(t *testing.T) {
+	t.Setenv("HOOKER_ALLOW_REMOTE", "true") // only "1" counts
+	cfg := config.Load()
+	if cfg.AllowRemote {
+		t.Error("AllowRemote = true, want false for HOOKER_ALLOW_REMOTE=true (only '1' enables)")
+	}
+}

@@ -59,9 +59,17 @@ func (noopRepo) ExportSnapshot(_ context.Context, _ string) error { return nil }
 
 func (noopRepo) Ready() bool { return true }
 
+var testCORSOrigins = []string{
+	"http://localhost:8765",
+	"http://127.0.0.1:8765",
+	"http://[::1]:8765",
+}
+
 func newTestRouter() http.Handler {
 	repo := noopRepo{}
-	return server.NewRouter(service.New(repo), repo, repo.Ready, server.Options{})
+	return server.NewRouter(service.New(repo), repo, repo.Ready, server.Options{
+		CORSOrigins: testCORSOrigins,
+	})
 }
 
 func localRequest(method, target string) *http.Request {
@@ -70,8 +78,9 @@ func localRequest(method, target string) *http.Request {
 	return req
 }
 
-func TestNewRouterOptionsReturnsCORSHeaders(t *testing.T) {
+func TestNewRouterCORSAllowsLocalhost(t *testing.T) {
 	req := localRequest(http.MethodOptions, "/api/hook")
+	req.Header.Set("Origin", "http://localhost:8765")
 	rec := httptest.NewRecorder()
 
 	newTestRouter().ServeHTTP(rec, req)
@@ -79,8 +88,70 @@ func TestNewRouterOptionsReturnsCORSHeaders(t *testing.T) {
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want 204", rec.Code)
 	}
-	if rec.Header().Get("Access-Control-Allow-Origin") != "*" {
-		t.Fatalf("allow-origin = %q, want *", rec.Header().Get("Access-Control-Allow-Origin"))
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:8765" {
+		t.Fatalf("allow-origin = %q, want http://localhost:8765", got)
+	}
+	if rec.Header().Get("Vary") != "Origin" {
+		t.Fatalf("Vary = %q, want Origin", rec.Header().Get("Vary"))
+	}
+}
+
+func TestNewRouterCORSAllows127(t *testing.T) {
+	req := localRequest(http.MethodOptions, "/api/hook")
+	req.Header.Set("Origin", "http://127.0.0.1:8765")
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, want 204", rec.Code)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://127.0.0.1:8765" {
+		t.Fatalf("allow-origin = %q, want http://127.0.0.1:8765", got)
+	}
+}
+
+func TestNewRouterCORSDeniesExternalOrigin(t *testing.T) {
+	req := localRequest(http.MethodOptions, "/api/hook")
+	req.Header.Set("Origin", "https://example.test")
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", rec.Code)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got == "*" || got == "https://example.test" {
+		t.Fatalf("allow-origin = %q, must not be wildcard or reflected", got)
+	}
+}
+
+func TestNewRouterCORSDeniesNullOrigin(t *testing.T) {
+	req := localRequest(http.MethodOptions, "/api/hook")
+	req.Header.Set("Origin", "null")
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", rec.Code)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("allow-origin = %q, want empty for null origin", got)
+	}
+}
+
+func TestNewRouterCORSNoOriginNonCORSRequest(t *testing.T) {
+	req := localRequest(http.MethodGet, "/api/version")
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got == "*" {
+		t.Fatalf("allow-origin = %q, must not be wildcard for non-CORS request", got)
 	}
 }
 
