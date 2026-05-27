@@ -86,8 +86,8 @@ Plans:
 
 **Wave 1**
 
-- [ ] 03-01-PLAN.md — Matcher dependency approval checkpoint for PRIV-01
-- [ ] 03-04-PLAN.md — Doctor privacy warning + privacy/security docs
+- [x] 03-01-PLAN.md — Matcher dependency approval checkpoint for PRIV-01
+- [x] 03-04-PLAN.md — Doctor privacy warning + privacy/security docs
 - [ ] 03-05-PLAN.md — Contributor guide + ADRs
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -104,4 +104,4 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Local Adoption Baseline | 6/6 | Complete   | 2026-05-24 |
 | 2. Reliable Daily Use | 8/8 | Complete   | 2026-05-26 |
-| 3. Mature Local Product | 0/TBD | Not started | - |
+| 3. Mature Local Product | 2/5 | In Progress|  |

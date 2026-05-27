@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 context gathered
-last_updated: "2026-05-27T04:14:33.833Z"
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-05-27T04:22:40.418Z"
 last_activity: 2026-05-27 -- Phase 03 execution started
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 16
   percent: 67
 ---
 
@@ -30,7 +30,7 @@ Plan: 1 of 5
 Status: Executing Phase 03
 Last activity: 2026-05-27 -- Phase 03 execution started
 
-Progress: [██████████] 100%
+Progress: [████████░░] 84%
 
 ## Wave Structure
 
@@ -96,7 +96,8 @@ Recent decisions affecting current work:
 - [Phase ?]: WAL checkpoint: 5 minutes PASSIVE mode goroutine, context.Background() because New() has no context parameter
 - [Phase 02-reliable-daily-use]: vi.stubGlobal('localStorage') in beforeEach required with unstubGlobals:true — vi.spyOn(Storage.prototype) fails after cross-file stub restore leaves localStorage undefined
 - [Phase ?]: Agent Normalize() now sets NormalizationStatus='ok' so the field is correct when calling Normalize() directly, not just via hook.go
-
+- [Phase 03-mature-local-product]: Canonical privacy and security guidance lives in docs/privacy.md and docs/security.md; README only links to those documents.
+- [Phase 03-mature-local-product]: Doctor warns about sensitive data capture without making privacy warnings a required-check failure.
 ### Pending Todos
 
 - Execute Wave 1 plans (01-01 through 01-05) in parallel
@@ -116,6 +117,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-27T03:29:42.762Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-mature-local-product/03-CONTEXT.md
+Last session: 2026-05-27T04:22:34.438Z
+Stopped at: Completed 03-04-PLAN.md
+Resume file: None

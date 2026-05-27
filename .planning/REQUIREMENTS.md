@@ -62,7 +62,7 @@
 - [x] **SEC-01**: Host header validation middleware rejects requests where Host is not `localhost`, `127.0.0.1`, or `[::1]` (prevents DNS rebinding attack on wildcard CORS)
 - [ ] **SEC-02**: CORS origin restricted to explicit allowlist (not `*`) — at minimum `http://localhost` + configured port
 - [ ] **SEC-03**: Loopback-only bind (`127.0.0.1`) is enforced default; remote bind requires explicit env var opt-in with startup warning
-- [ ] **SEC-04**: Threat model documented: localhost-use only, single-user trust model, no auth for loopback use, remote sharing via ngrok is unofficial/unsupported
+- [x] **SEC-04**: Threat model documented: localhost-use only, single-user trust model, no auth for loopback use, remote sharing via ngrok is unofficial/unsupported
 - [x] **SEC-05**: Export endpoints (`/api/export/*`) implement `Sec-Fetch-Site` check before being publicly documented
 
 ### Testing & Regression (TEST)
@@ -86,8 +86,8 @@
 ### Privacy & Data Controls (PRIV)
 
 - [ ] **PRIV-01**: gitignore-style path exclusion file (`~/.config/hooker/ignore` or `$HOOKER_IGNORE`) — matched paths not ingested
-- [ ] **PRIV-02**: Privacy warning visible in setup docs and `doctor` output: what categories of data are captured
-- [ ] **PRIV-03**: Privacy implications of NDJSON/snapshot export documented (exports contain full prompts, diffs, file paths)
+- [x] **PRIV-02**: Privacy warning visible in setup docs and `doctor` output: what categories of data are captured
+- [x] **PRIV-03**: Privacy implications of NDJSON/snapshot export documented (exports contain full prompts, diffs, file paths)
 
 ### Contributor Infrastructure (CONTRIB)
 
@@ -199,10 +199,10 @@
 | SEC-05 | Phase 2 | Complete |
 | SEC-02 | Phase 3 | Pending |
 | SEC-03 | Phase 3 | Pending |
-| SEC-04 | Phase 3 | Pending |
+| SEC-04 | Phase 3 | Complete |
 | PRIV-01 | Phase 3 | Pending |
-| PRIV-02 | Phase 3 | Pending |
-| PRIV-03 | Phase 3 | Pending |
+| PRIV-02 | Phase 3 | Complete |
+| PRIV-03 | Phase 3 | Complete |
 | CONTRIB-01 | Phase 3 | Pending |
 | CONTRIB-02 | Phase 3 | Pending |
 | CONTRIB-03 | Phase 3 | Pending |
