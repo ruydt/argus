@@ -55,13 +55,15 @@ func TestValidateBind_RemoteWithFlagPasses(t *testing.T) {
 }
 
 func TestIsLoopbackHost(t *testing.T) {
-	loopback := []string{"localhost", "127.0.0.1", "::1", "[::1]"}
+	// isLoopbackHost is only called after net.SplitHostPort strips brackets,
+	// so "::1" (bare) is the correct loopback form; "[::1]" never appears.
+	loopback := []string{"localhost", "127.0.0.1", "::1"}
 	for _, h := range loopback {
 		if !isLoopbackHost(h) {
 			t.Errorf("isLoopbackHost(%q) = false, want true", h)
 		}
 	}
-	remote := []string{"0.0.0.0", "", "192.168.1.1", "example.com"}
+	remote := []string{"0.0.0.0", "", "192.168.1.1", "example.com", "[::1]"}
 	for _, h := range remote {
 		if isLoopbackHost(h) {
 			t.Errorf("isLoopbackHost(%q) = true, want false", h)
