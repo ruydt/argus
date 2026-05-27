@@ -41,7 +41,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 04-03-PLAN.md — Backend tests for system health, storage stats, empty DB, and response shape
+- [x] 04-03-PLAN.md — Backend tests for system health, storage stats, empty DB, and response shape
 
 ### Phase 5: Hook and Privacy Diagnostics
 
@@ -90,6 +90,6 @@ Plans:
 | 1. Local Adoption Baseline | v1.0 | 6/6 | Complete | 2026-05-24 |
 | 2. Reliable Daily Use | v1.0 | 8/8 | Complete | 2026-05-26 |
 | 3. Mature Local Product | v1.0 | 5/5 | Complete | 2026-05-27 |
-| 4. Diagnostics Data Contract | v1.1 | 2/3 | In Progress|  |
+| 4. Diagnostics Data Contract | v1.1 | 3/3 | Complete   | 2026-05-27 |
 | 5. Hook and Privacy Diagnostics | v1.1 | 0/3 | Not started | - |
 | 6. Diagnostics UI | v1.1 | 0/3 | Not started | - |
