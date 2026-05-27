@@ -218,7 +218,12 @@ doctor() {
     check_optional "Codex hooks configured" "warn" "Run: ./scripts/hooker setup"
   fi
 
-  addr_host="$(printf '%s' "$addr" | cut -d: -f1)"
+  # Handle both IPv4 "host:port" and IPv6 "[::1]:port" ADDR formats.
+  if printf '%s' "$addr" | grep -q '^\['; then
+    addr_host="$(printf '%s' "$addr" | sed 's/^\[//; s/\]:.*//')"
+  else
+    addr_host="$(printf '%s' "$addr" | cut -d: -f1)"
+  fi
   if [ "$addr_host" = "127.0.0.1" ] || [ "$addr_host" = "localhost" ] || [ "$addr_host" = "::1" ]; then
     check_optional "ADDR is loopback ($addr)" "pass" ""
   else
