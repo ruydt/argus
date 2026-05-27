@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"slices"
@@ -259,7 +258,6 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 
 	path := fileutil.ResolvePath(p.CWD, firstNonEmpty(p.ToolInput.FilePath, p.FilePath))
 	cmd := p.ToolInput.Command
-	log.Printf("[codex] tool=%s cmd_len=%d cmd_preview=%q", p.ToolName, len(cmd), firstN(cmd, 100))
 
 	action := fileutil.HookEventAction(p.HookEventName)
 	if action == "" {
