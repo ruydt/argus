@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Diagnostics
-status: executing
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-05-27T17:02:17.656Z"
+status: ready_to_plan
+stopped_at: Phase 04 complete (3/3) — ready to discuss Phase 5
+last_updated: 2026-05-27T17:05:28.591Z
 last_activity: 2026-05-27
 progress:
   total_phases: 3
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-27)
 
 **Core value:** A developer can install hooker from source in under 10 minutes and trust that it reliably captures, stores, and surfaces their coding agent activity without data loss, silent failures, or upgrade surprises.
-**Current focus:** Phase 04 — Diagnostics Data Contract
+**Current focus:** Phase 5 — hook and privacy diagnostics
 
 ## Current Position
 
-Phase: 04 (Diagnostics Data Contract) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
+Phase: 5
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-05-27
 
 ## Wave Structure
@@ -42,7 +42,7 @@ Last activity: 2026-05-27
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 16
 - Average duration: —
 - Total execution time: —
 
@@ -52,6 +52,7 @@ Last activity: 2026-05-27
 |-------|-------|-------|----------|
 | 02 | 8 | - | - |
 | 03 | 5 | - | - |
+| 04 | 3 | - | - |
 
 **Recent Trend:**
 
