@@ -130,7 +130,7 @@ func validateBind(cfg config.Config) error {
 // isLoopbackHost reports whether host is a known loopback address.
 func isLoopbackHost(host string) bool {
 	switch host {
-	case "localhost", "127.0.0.1", "::1", "[::1]":
+	case "localhost", "127.0.0.1", "::1":
 		return true
 	}
 	return false
