@@ -88,7 +88,7 @@ Contributor work is documentation-heavy but still needs verification tasks. `CON
 
 - Prefer CodeGraph for structural questions and use native grep/read only for literal text queries. [VERIFIED: prompt AGENTS.md]
 - Handler/service/repository boundaries must be respected; do not skip layers. [VERIFIED: CLAUDE.md]
-- Backend changes require `go build ./...`, `go test ./...`, and `golangci-lint run ./...` before completion. [VERIFIED: CLAUDE.md]
+- Backend changes require `rtk go build ./...`, `rtk go test ./...`, and `rtk golangci-lint run ./...` before completion. [VERIFIED: CLAUDE.md + RTK project instruction]
 - New handlers/service methods require corresponding Go tests. [VERIFIED: CLAUDE.md]
 - Domain JSON tags in `backend/internal/domain/event.go` must stay synchronized with frontend TypeScript types. [VERIFIED: CLAUDE.md]
 - Migrations require new numbered SQL files; existing migrations must not be edited. [VERIFIED: CLAUDE.md]
@@ -122,15 +122,15 @@ Contributor work is documentation-heavy but still needs verification tasks. `CON
 **Installation:**
 ```bash
 cd backend
-go get github.com/git-pkgs/gitignore@v1.2.0
+rtk go get github.com/git-pkgs/gitignore@v1.2.0
 ```
 
 **Version verification performed:**
 ```bash
-go list -m -versions github.com/git-pkgs/gitignore
+rtk go list -m -versions github.com/git-pkgs/gitignore
 # github.com/git-pkgs/gitignore v0.1.0 v1.0.0 v1.1.0 v1.1.1 v1.1.2 v1.2.0
 
-go list -m -json github.com/git-pkgs/gitignore@v1.2.0
+rtk go list -m -json github.com/git-pkgs/gitignore@v1.2.0
 # Version v1.2.0, Time 2026-05-19T12:13:35Z, Origin https://github.com/git-pkgs/gitignore
 ```
 
@@ -417,17 +417,15 @@ tests := []struct {
 | A1 | Candidate relative path derivation should support both repo-relative and absolute-looking patterns. | Common Pitfalls | Ignore rules may surprise users and either over-capture or over-drop events. |
 | A2 | Docker should avoid setting `HOOKER_ALLOW_REMOTE=1` by default unless docs make the container-local bind model explicit. | Common Pitfalls | Container users may see startup failures or an over-broad warning. |
 
-## Open Questions
+## Resolved Questions
 
 1. **Final matcher dependency approval**
    - What we know: `github.com/git-pkgs/gitignore` has the best D-05 feature fit and Go module verification succeeded. [VERIFIED: go list; CITED: GitHub README]
-   - What's unclear: It is new and low-adoption; `slopcheck` cannot evaluate Go modules correctly in this environment. [VERIFIED: slopcheck output]
-   - Recommendation: Add a Wave 0 human checkpoint before `go get`; if rejected, plan a scoped in-tree matcher with Git-doc golden tests. [ASSUMED]
+   - Resolution: Not pre-approved. The package remains gated by the Wave 1 blocking human checkpoint in `03-01-PLAN.md`; execution must record either approval for exact `github.com/git-pkgs/gitignore@v1.2.0` or rejection with a scoped in-tree matcher path before any `rtk go get`. [RESOLVED: 2026-05-27]
 
 2. **Remote bind behavior for Docker**
    - What we know: Dockerfile sets `ADDR=0.0.0.0:8765`; compose publishes only loopback on the host. [VERIFIED: Dockerfile + docker-compose.yml]
-   - What's unclear: Whether Phase 3 should fail container startup without `HOOKER_ALLOW_REMOTE=1` or change Docker defaults.
-   - Recommendation: Planner should include an explicit Docker acceptance test and docs note. [ASSUMED]
+   - Resolution: Container usage remains intentional under the remote-bind gate. `03-03-PLAN.md` explicitly requires Docker config/docs updates so Docker either avoids an ungated remote bind default or opts in with `HOOKER_ALLOW_REMOTE=1` plus comments/docs that compose publishes `127.0.0.1:8765:8765` and public internet exposure remains unsupported. [RESOLVED: 2026-05-27]
 
 ## Environment Availability
 
@@ -442,7 +440,7 @@ tests := []struct {
 
 **Missing dependencies with no fallback:** none. [VERIFIED: environment probes]
 
-**Missing dependencies with fallback:** Go package legitimacy automation for Go modules; fallback is human checkpoint plus `go list -m -json`. [VERIFIED: local command]
+**Missing dependencies with fallback:** Go package legitimacy automation for Go modules; fallback is human checkpoint plus `rtk go list -m -json`. [VERIFIED: local command]
 
 ## Security Domain
 
