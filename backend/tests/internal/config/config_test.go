@@ -11,9 +11,7 @@ import (
 
 // TestLoad_IgnorePath_Default verifies the default ignore path is ~/.config/hooker/ignore.
 func TestLoad_IgnorePath_Default(t *testing.T) {
-	if err := os.Unsetenv("HOOKER_IGNORE"); err != nil {
-		t.Fatalf("Unsetenv HOOKER_IGNORE: %v", err)
-	}
+	t.Setenv("HOOKER_IGNORE", "")
 	cfg := config.Load()
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -35,12 +33,8 @@ func TestLoad_IgnorePath_EnvOverride(t *testing.T) {
 }
 
 func TestLoad_defaults(t *testing.T) {
-	if err := os.Unsetenv("ADDR"); err != nil {
-		t.Fatalf("Unsetenv ADDR: %v", err)
-	}
-	if err := os.Unsetenv("DB_PATH"); err != nil {
-		t.Fatalf("Unsetenv DB_PATH: %v", err)
-	}
+	t.Setenv("ADDR", "")
+	t.Setenv("DB_PATH", "")
 	cfg := config.Load()
 	if cfg.Addr != "127.0.0.1:8765" {
 		t.Errorf("Addr = %q, want 127.0.0.1:8765", cfg.Addr)
@@ -64,9 +58,7 @@ func TestLoad_env(t *testing.T) {
 
 func TestLoad_CORSOrigins_DefaultFromAddr(t *testing.T) {
 	t.Setenv("ADDR", "127.0.0.1:8765")
-	if err := os.Unsetenv("HOOKER_CORS_ORIGINS"); err != nil {
-		t.Fatalf("Unsetenv: %v", err)
-	}
+	t.Setenv("HOOKER_CORS_ORIGINS", "")
 	cfg := config.Load()
 	want := []string{
 		"http://localhost:8765",
@@ -111,9 +103,7 @@ func TestLoad_CORSOrigins_ExtraFromEnv(t *testing.T) {
 }
 
 func TestLoad_AllowRemote_Default(t *testing.T) {
-	if err := os.Unsetenv("HOOKER_ALLOW_REMOTE"); err != nil {
-		t.Fatalf("Unsetenv: %v", err)
-	}
+	t.Setenv("HOOKER_ALLOW_REMOTE", "")
 	cfg := config.Load()
 	if cfg.AllowRemote {
 		t.Error("AllowRemote = true, want false by default")
