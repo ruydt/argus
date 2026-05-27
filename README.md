@@ -20,6 +20,8 @@ your first event.
 
 - [docs/quickstart.md](docs/quickstart.md) - first-event walkthrough (under 10 minutes)
 - [docs/install.md](docs/install.md) - full install reference, support matrix, data lifecycle
+- [docs/privacy.md](docs/privacy.md) - capture categories, ignore controls, export implications
+- [docs/security.md](docs/security.md) - local threat model and remote-sharing posture
 - [docs/releases.md](docs/releases.md) - release runbook and conventional commit format
 
 ## License

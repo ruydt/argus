@@ -20,6 +20,11 @@ official secondary path for the backend. Prebuilt binaries are planned later.
 
 ## Source install
 
+Before enabling hooks, treat captured data as sensitive. Hooker can store prompts,
+diffs, file paths, tool outputs, raw payloads, and exports on this machine.
+Read [privacy controls](privacy.md) and the [local threat model](security.md)
+before changing defaults.
+
 ```bash
 git clone <repo-url> hooker
 cd hooker
@@ -66,6 +71,10 @@ Backend environment variables:
 | `ADDR`    | `127.0.0.1:8765`    | Backend listen address |
 | `DB_PATH` | `backend/hooker.db` | SQLite database path   |
 
+See [privacy controls](privacy.md) for ignore rules and export handling. See
+[security](security.md) for loopback defaults, remote opt-in, and unsupported
+remote sharing guidance.
+
 Use `DB_PATH` when you want data stored outside the repo:
 
 ```bash
@@ -75,8 +84,8 @@ DB_PATH="$HOME/.local/share/hooker/hooker.db" ./hooker
 ```
 
 Keep `ADDR` on loopback unless you understand the privacy and security impact.
-Hooker stores local development context, including prompts, file paths, tool
-outputs, diffs, and transcript references.
+Hooker stores local development context, including prompts, diffs, file paths,
+tool outputs, raw payloads, and exports.
 
 ## Doctor
 
@@ -210,14 +219,18 @@ sqlite3 backend/hooker.db \
 Hooker captures and stores the following data locally:
 
 - **Prompts** - the full text of prompts sent to coding agents
-- **Tool outputs** - complete output from tool calls (file reads, shell commands, search results)
-- **File paths** - absolute paths to every file read, written, or modified
 - **Diffs** - code changes made during agent sessions
-- **Transcript references** - paths to local agent transcript files
+- **File paths** - absolute paths to every file read, written, or modified
+- **Tool outputs** - complete output from tool calls (file reads, shell commands, search results)
+- **Raw payloads** - original hook request bodies stored with events
+- **Exports** - NDJSON event streams and SQLite snapshots that contain full-fidelity data
 
 All data is stored only on your machine in the SQLite database. Nothing is sent to any
 external service by hooker itself.
 
+See [privacy controls](privacy.md) for ignore rules and export implications.
+
 The hook endpoint (`POST /api/hook`) accepts requests only from localhost by default.
 Setting `ADDR` to a non-loopback address exposes this data to your local network.
-Use `./scripts/hooker doctor` to verify your ADDR setting.
+Use `./scripts/hooker doctor` to verify your ADDR setting and read the
+[security model](security.md) before changing it.

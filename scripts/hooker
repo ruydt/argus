@@ -204,6 +204,7 @@ doctor() {
 
   printf '\nhooker doctor — optional checks\n'
   printf '────────────────────────────────\n'
+  printf '%s Privacy: hooker captures prompts, diffs, file paths, tool outputs, raw payloads, and exports. Treat the local DB and exported files as sensitive.\n' "$WARN"
 
   if [ -f "$claude_cfg" ] && grep -q "8765/api/hook" "$claude_cfg"; then
     check_optional "Claude Code hooks configured" "pass" ""
@@ -221,7 +222,7 @@ doctor() {
   if [ "$addr_host" = "127.0.0.1" ] || [ "$addr_host" = "localhost" ] || [ "$addr_host" = "::1" ]; then
     check_optional "ADDR is loopback ($addr)" "pass" ""
   else
-    check_optional "ADDR is loopback ($addr)" "warn" "Non-loopback bind exposes hooker on the network. Hooker stores prompts, file paths, and diffs. Keep ADDR on loopback for personal use."
+    check_optional "ADDR is loopback ($addr)" "warn" "Non-loopback bind exposes hooker on the network. Hooker stores prompts, diffs, file paths, tool outputs, raw payloads, and exports. Keep ADDR on loopback for personal use."
   fi
 
   printf '\n'

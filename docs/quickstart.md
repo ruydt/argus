@@ -13,6 +13,10 @@ cd hooker
 The setup command checks `go`, `node`, and `pnpm`, downloads Go modules, and
 installs frontend dependencies from `pnpm-lock.yaml`.
 
+Before you send the first hook event, know what hooker captures: prompts, diffs,
+file paths, tool outputs, raw payloads, and exports are sensitive local data.
+See [privacy controls](privacy.md) and the [local security model](security.md).
+
 ## 2. Start backend
 
 Build and run the server binary:
