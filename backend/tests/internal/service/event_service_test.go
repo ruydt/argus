@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -24,6 +25,10 @@ type mockRepo struct {
 	upserts   int
 	lastUsage domain.SessionUsage
 	lastEnded string
+
+	diagnosticsStats domain.DiagnosticsStorageStats
+	diagnosticsErr   error
+	diagnosticsCalls int
 }
 
 func (m *mockRepo) Add(e domain.NormalizedEvent) error {
@@ -102,7 +107,10 @@ func (m *mockRepo) GetDashboardStats(_, _ string) (*domain.DashboardStats, error
 }
 
 func (m *mockRepo) DiagnosticsStorageStats() (domain.DiagnosticsStorageStats, error) {
-	return domain.DiagnosticsStorageStats{}, nil
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.diagnosticsCalls++
+	return m.diagnosticsStats, m.diagnosticsErr
 }
 
 func (m *mockRepo) GetSessionTree(_ string) ([]domain.SessionTreeNode, error) {
@@ -161,6 +169,98 @@ func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string
 		m.models[sessionID] = model
 	}
 	return nil
+}
+
+func TestDiagnosticsReportsNotReadyAndUnavailableMemoryDB(t *testing.T) {
+	latest := "2026-05-27T10:00:00Z"
+	repo := &mockRepo{
+		diagnosticsStats: domain.DiagnosticsStorageStats{
+			TotalEvents:   7,
+			TotalSessions: 3,
+			LatestEventAt: &latest,
+		},
+	}
+	svc := service.New(repo)
+
+	got, err := svc.Diagnostics(":memory:", false)
+	if err != nil {
+		t.Fatalf("Diagnostics: %v", err)
+	}
+	if repo.diagnosticsCalls != 1 {
+		t.Fatalf("diagnosticsCalls = %d, want 1", repo.diagnosticsCalls)
+	}
+	if !got.Health.Live {
+		t.Fatal("Health.Live = false, want true")
+	}
+	if got.Health.Ready {
+		t.Fatal("Health.Ready = true, want false")
+	}
+	if got.Health.Reason != "database not ready" {
+		t.Fatalf("Health.Reason = %q, want database not ready", got.Health.Reason)
+	}
+	if got.Storage.DBPath != ":memory:" {
+		t.Fatalf("Storage.DBPath = %q, want :memory:", got.Storage.DBPath)
+	}
+	if got.Storage.DBSizeBytes != nil {
+		t.Fatalf("Storage.DBSizeBytes = %d, want nil", *got.Storage.DBSizeBytes)
+	}
+	if got.Storage.DBSizeReason != "unavailable" {
+		t.Fatalf("Storage.DBSizeReason = %q, want unavailable", got.Storage.DBSizeReason)
+	}
+	if got.Storage.TotalEvents != 7 {
+		t.Fatalf("Storage.TotalEvents = %d, want 7", got.Storage.TotalEvents)
+	}
+	if got.Storage.TotalSessions != 3 {
+		t.Fatalf("Storage.TotalSessions = %d, want 3", got.Storage.TotalSessions)
+	}
+	if got.Storage.LatestEventAt == nil || *got.Storage.LatestEventAt != latest {
+		t.Fatalf("Storage.LatestEventAt = %v, want %q", got.Storage.LatestEventAt, latest)
+	}
+}
+
+func TestDiagnosticsReportsRealDBSizeAndStats(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "hooker.db")
+	if err := os.WriteFile(dbPath, []byte("abcd"), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	svc := service.New(&mockRepo{
+		diagnosticsStats: domain.DiagnosticsStorageStats{
+			TotalEvents:   2,
+			TotalSessions: 1,
+		},
+	})
+
+	got, err := svc.Diagnostics(dbPath, true)
+	if err != nil {
+		t.Fatalf("Diagnostics: %v", err)
+	}
+	if !got.Health.Live || !got.Health.Ready {
+		t.Fatalf("Health = %+v, want live and ready", got.Health)
+	}
+	if got.Health.Reason != "" {
+		t.Fatalf("Health.Reason = %q, want empty", got.Health.Reason)
+	}
+	if got.Storage.DBSizeBytes == nil || *got.Storage.DBSizeBytes != 4 {
+		t.Fatalf("Storage.DBSizeBytes = %v, want 4", got.Storage.DBSizeBytes)
+	}
+	if got.Storage.DBSizeReason != "" {
+		t.Fatalf("Storage.DBSizeReason = %q, want empty", got.Storage.DBSizeReason)
+	}
+	if got.Storage.TotalEvents != 2 {
+		t.Fatalf("Storage.TotalEvents = %d, want 2", got.Storage.TotalEvents)
+	}
+	if got.Storage.TotalSessions != 1 {
+		t.Fatalf("Storage.TotalSessions = %d, want 1", got.Storage.TotalSessions)
+	}
+}
+
+func TestDiagnosticsReturnsStorageStatsError(t *testing.T) {
+	wantErr := errors.New("stats failed")
+	svc := service.New(&mockRepo{diagnosticsErr: wantErr})
+
+	if _, err := svc.Diagnostics(":memory:", true); !errors.Is(err, wantErr) {
+		t.Fatalf("Diagnostics error = %v, want %v", err, wantErr)
+	}
 }
 
 func TestAddEventPersists(t *testing.T) {

@@ -73,6 +73,7 @@ func newTestRouter() http.Handler {
 	repo := noopRepo{}
 	return server.NewRouter(service.New(repo), repo, repo.Ready, server.Options{
 		CORSOrigins: testCORSOrigins,
+		DBPath:      ":memory:",
 	})
 }
 
@@ -207,6 +208,40 @@ func TestNewRouterVersionReturnsAppVersion(t *testing.T) {
 	}
 	if payload.BuildDate != "unknown" {
 		t.Fatalf("buildDate = %q, want unknown", payload.BuildDate)
+	}
+}
+
+func TestNewRouterDiagnosticsReturnsJSON(t *testing.T) {
+	req := localRequest(http.MethodGet, "/api/diagnostics")
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	var payload domain.Diagnostics
+	if err := json.NewDecoder(rec.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode diagnostics response: %v", err)
+	}
+	if payload.Version.BuildDate != "unknown" {
+		t.Fatalf("buildDate = %q, want unknown", payload.Version.BuildDate)
+	}
+	if !payload.Health.Live || !payload.Health.Ready {
+		t.Fatalf("health = %+v, want live and ready", payload.Health)
+	}
+	if payload.Storage.DBPath != ":memory:" {
+		t.Fatalf("storage.dbPath = %q, want :memory:", payload.Storage.DBPath)
+	}
+	if payload.Storage.DBSizeBytes != nil {
+		t.Fatalf("storage.dbSizeBytes = %d, want nil", *payload.Storage.DBSizeBytes)
+	}
+	if payload.Storage.DBSizeReason != "unavailable" {
+		t.Fatalf("storage.dbSizeReason = %q, want unavailable", payload.Storage.DBSizeReason)
+	}
+	if payload.Storage.LatestEventAt != nil {
+		t.Fatalf("storage.latestEventAt = %q, want nil", *payload.Storage.LatestEventAt)
 	}
 }
 

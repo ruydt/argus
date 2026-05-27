@@ -693,6 +693,74 @@ func TestGetDashboardStats_filtersEventsAcrossTimezoneOffsets(t *testing.T) {
 	}
 }
 
+func TestDiagnosticsStorageStatsEmptyDB(t *testing.T) {
+	db := newTestDB(t)
+
+	stats, err := db.DiagnosticsStorageStats()
+	if err != nil {
+		t.Fatalf("DiagnosticsStorageStats: %v", err)
+	}
+	if stats.TotalEvents != 0 {
+		t.Fatalf("TotalEvents = %d, want 0", stats.TotalEvents)
+	}
+	if stats.TotalSessions != 0 {
+		t.Fatalf("TotalSessions = %d, want 0", stats.TotalSessions)
+	}
+	if stats.LatestEventAt != nil {
+		t.Fatalf("LatestEventAt = %q, want nil", *stats.LatestEventAt)
+	}
+}
+
+func TestDiagnosticsStorageStatsCountsRowsAndLatestTimestamp(t *testing.T) {
+	db := newTestDB(t)
+	base := time.Date(2026, 5, 27, 10, 0, 0, 0, time.UTC)
+	early := base.Format(time.RFC3339)
+	middle := base.Add(time.Hour).Format(time.RFC3339)
+	latest := base.Add(2 * time.Hour).Format(time.RFC3339)
+
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:          latest,
+		Agent:         "codex",
+		Session:       "diagnostics-a",
+		HookEventName: "PostToolUse",
+		ToolUseID:     "tu-latest",
+		Tool:          "Edit",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:                early,
+		Agent:               "claudecode",
+		Session:             "diagnostics-b",
+		HookEventName:       "PreToolUse",
+		ToolUseID:           "tu-early",
+		Tool:                "Read",
+		NormalizationStatus: "degraded",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:          middle,
+		Agent:         "codex",
+		Session:       "diagnostics-a",
+		HookEventName: "Notification",
+		ToolUseID:     "tu-middle",
+		Tool:          "Shell",
+	})
+	addSessionAt(t, db, "diagnostics-a", "codex", base)
+	addSessionAt(t, db, "diagnostics-b", "claudecode", base)
+
+	stats, err := db.DiagnosticsStorageStats()
+	if err != nil {
+		t.Fatalf("DiagnosticsStorageStats: %v", err)
+	}
+	if stats.TotalEvents != 3 {
+		t.Fatalf("TotalEvents = %d, want 3", stats.TotalEvents)
+	}
+	if stats.TotalSessions != 2 {
+		t.Fatalf("TotalSessions = %d, want 2", stats.TotalSessions)
+	}
+	if stats.LatestEventAt == nil || *stats.LatestEventAt != latest {
+		t.Fatalf("LatestEventAt = %v, want %q", stats.LatestEventAt, latest)
+	}
+}
+
 func addEvent(t *testing.T, db *sqlite.DB, e domain.NormalizedEvent) {
 	t.Helper()
 	e.RawPayload = []byte(`{}`)
