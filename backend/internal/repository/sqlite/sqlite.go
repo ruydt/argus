@@ -46,8 +46,9 @@ var schema007 string
 var schema008 string
 
 type DB struct {
-	db    *sql.DB
-	ready atomic.Bool
+	db     *sql.DB
+	ready  atomic.Bool
+	cancel context.CancelFunc
 }
 
 const sqliteBusyTimeoutMS = 750
@@ -77,8 +78,16 @@ func New(path string) (*DB, error) {
 		return nil, err
 	}
 	d.ready.Store(true)
-	startWALCheckpoint(context.Background(), db, 5*time.Minute)
+	ctx, cancel := context.WithCancel(context.Background())
+	d.cancel = cancel
+	startWALCheckpoint(ctx, db, 5*time.Minute)
 	return d, nil
+}
+
+// Close stops the WAL checkpoint goroutine and closes the underlying database.
+func (d *DB) Close() error {
+	d.cancel()
+	return d.db.Close()
 }
 
 // Ready reports whether the database is open and migrations are complete.

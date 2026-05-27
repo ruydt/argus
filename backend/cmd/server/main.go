@@ -43,6 +43,11 @@ func main() {
 		slog.Error("open db", "err", err)
 		os.Exit(1)
 	}
+	defer func() {
+		if err := repo.Close(); err != nil {
+			slog.Error("close db", "err", err)
+		}
+	}()
 
 	svc := service.New(repo)
 
