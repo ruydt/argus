@@ -31,8 +31,16 @@
 **Plans**: 3 plans
 Plans:
 
+**Wave 1**
+
 - [ ] 04-01-PLAN.md — Domain response shape + repository diagnostics aggregate queries
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 04-02-PLAN.md — Service/handler wiring + `/api/diagnostics` route
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 04-03-PLAN.md — Backend tests for system health, storage stats, empty DB, and response shape
 
 ### Phase 5: Hook and Privacy Diagnostics
