@@ -7,8 +7,8 @@
 
 ### System Health (DIAG)
 
-- [ ] **DIAG-01**: Operator can open diagnostics and see app version, Git commit, and build date.
-- [ ] **DIAG-02**: Operator can see current health/readiness state in the Diagnostics UI.
+- [x] **DIAG-01**: Operator can open diagnostics and see app version, Git commit, and build date.
+- [x] **DIAG-02**: Operator can see current health/readiness state in the Diagnostics UI.
 - [x] **DIAG-03**: Operator can see DB path, DB size, total event count, total session count, and latest event timestamp.
 - [x] **DIAG-04**: Diagnostics backend computes counts with aggregate queries, not by loading all events into memory.
 
@@ -69,8 +69,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIAG-01 | Phase 4 | Pending |
-| DIAG-02 | Phase 4 | Pending |
+| DIAG-01 | Phase 4 | Complete |
+| DIAG-02 | Phase 4 | Complete |
 | DIAG-03 | Phase 4 | Complete |
 | DIAG-04 | Phase 4 | Complete |
 | HOOK-01 | Phase 5 | Pending |
