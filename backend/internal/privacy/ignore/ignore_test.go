@@ -3,6 +3,7 @@ package ignore_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"hooker/internal/domain"
@@ -283,7 +284,7 @@ func TestMatchEvent_ReasonDoesNotContainSensitiveFields(t *testing.T) {
 		"old code string",
 		"new code string",
 	} {
-		if reason == sensitive || len(reason) > 0 && reason == sensitive {
+		if strings.Contains(reason, sensitive) {
 			t.Errorf("reason contains sensitive data: %q", reason)
 		}
 	}
