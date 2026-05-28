@@ -17,7 +17,7 @@
 - [x] **HOOK-01**: Operator can see one diagnostics row each for Claude Code, Codex, and Gemini CLI.
 - [x] **HOOK-02**: Operator can see last-seen timestamp and event count per supported agent.
 - [x] **HOOK-03**: Operator can see degraded event count or warning state per supported agent.
-- [ ] **HOOK-04**: Operator can see best-effort hook config status using existing setup/doctor-detectable locations, with `unknown` where detection is not implemented.
+- [x] **HOOK-04**: Operator can see best-effort hook config status using existing setup/doctor-detectable locations, with `unknown` where detection is not implemented.
 - [x] **HOOK-05**: Diagnostics distinguishes `configured`, `missing`, `unknown`, `no events`, `stale`, and `degraded` without treating unknown states as fatal.
 
 ### Privacy and Security Posture (PRIV)
@@ -76,7 +76,7 @@
 | HOOK-01 | Phase 5 | Complete |
 | HOOK-02 | Phase 5 | Complete |
 | HOOK-03 | Phase 5 | Complete |
-| HOOK-04 | Phase 5 | Pending |
+| HOOK-04 | Phase 5 | Complete |
 | HOOK-05 | Phase 5 | Complete |
 | PRIV-01 | Phase 5 | Pending |
 | PRIV-02 | Phase 5 | Pending |
