@@ -46,6 +46,7 @@ export function useDiagnostics(): {
         setError(msg)
       })
       .finally(() => {
+        if (!mounted) return
         setLoading(false)
         setRefreshing(false)
       })
