@@ -29,7 +29,7 @@
 
 ### Diagnostics UI (UI)
 
-- [ ] **UI-01**: Diagnostics page is reachable from the sidebar at `/diagnostics`.
+- [x] **UI-01**: Diagnostics page is reachable from the sidebar at `/diagnostics`.
 - [ ] **UI-02**: Diagnostics page presents a compact operator layout: status summary, system facts, agent connectivity table, and privacy panel.
 - [ ] **UI-03**: Diagnostics page supports loading, error, empty, warning, healthy, and manual refresh states.
 - [ ] **UI-04**: Diagnostics page is responsive and consistent with the existing app shell.
@@ -82,7 +82,7 @@
 | PRIV-02 | Phase 5 | Complete |
 | PRIV-03 | Phase 5 | Complete |
 | PRIV-04 | Phase 5 | Complete |
-| UI-01 | Phase 6 | Pending |
+| UI-01 | Phase 6 | Complete |
 | UI-02 | Phase 6 | Pending |
 | UI-03 | Phase 6 | Pending |
 | UI-04 | Phase 6 | Pending |

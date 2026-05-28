@@ -89,7 +89,7 @@ Plans:
 
 **Wave 1**
 
-- [ ] 06-01-PLAN.md — Diagnostics route, hook, types, and sidebar navigation
+- [x] 06-01-PLAN.md — Diagnostics route, hook, types, and sidebar navigation
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -108,4 +108,4 @@ Plans:
 | 3. Mature Local Product | v1.0 | 5/5 | Complete | 2026-05-27 |
 | 4. Diagnostics Data Contract | v1.1 | 3/3 | Complete   | 2026-05-27 |
 | 5. Hook and Privacy Diagnostics | v1.1 | 3/3 | Complete    | 2026-05-28 |
-| 6. Diagnostics UI | v1.1 | 0/3 | Not started | - |
+| 6. Diagnostics UI | v1.1 | 1/3 | In Progress|  |
