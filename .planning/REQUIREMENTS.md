@@ -22,10 +22,10 @@
 
 ### Privacy and Security Posture (PRIV)
 
-- [ ] **PRIV-01**: Operator can see ignore file path and load status.
-- [ ] **PRIV-02**: Operator can see active ignore pattern count without exposing raw captured prompts, diffs, tool output, or raw payload content.
-- [ ] **PRIV-03**: Operator can see loopback/remote-bind posture and CORS origin summary.
-- [ ] **PRIV-04**: Diagnostics UI shows an export sensitivity warning covering prompts, diffs, file paths, tool outputs, raw payloads, and exports.
+- [x] **PRIV-01**: Operator can see ignore file path and load status.
+- [x] **PRIV-02**: Operator can see active ignore pattern count without exposing raw captured prompts, diffs, tool output, or raw payload content.
+- [x] **PRIV-03**: Operator can see loopback/remote-bind posture and CORS origin summary.
+- [x] **PRIV-04**: Diagnostics UI shows an export sensitivity warning covering prompts, diffs, file paths, tool outputs, raw payloads, and exports.
 
 ### Diagnostics UI (UI)
 
@@ -78,10 +78,10 @@
 | HOOK-03 | Phase 5 | Complete |
 | HOOK-04 | Phase 5 | Complete |
 | HOOK-05 | Phase 5 | Complete |
-| PRIV-01 | Phase 5 | Pending |
-| PRIV-02 | Phase 5 | Pending |
-| PRIV-03 | Phase 5 | Pending |
-| PRIV-04 | Phase 5 | Pending |
+| PRIV-01 | Phase 5 | Complete |
+| PRIV-02 | Phase 5 | Complete |
+| PRIV-03 | Phase 5 | Complete |
+| PRIV-04 | Phase 5 | Complete |
 | UI-01 | Phase 6 | Pending |
 | UI-02 | Phase 6 | Pending |
 | UI-03 | Phase 6 | Pending |
