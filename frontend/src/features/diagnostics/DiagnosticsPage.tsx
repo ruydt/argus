@@ -263,14 +263,14 @@ function LoadedContent({ data }: { data: Diagnostics }) {
                       <HookConfigCell hookConfigStatus={agent.hookConfigStatus} />
                     </TableCell>
                     <TableCell>
-                      {agent.warnings.length === 0 ? (
+                      {(agent.warnings ?? []).length === 0 ? (
                         '—'
                       ) : (
                         <span>
-                          {agent.warnings.slice(0, 2).join(', ')}
-                          {agent.warnings.length > 2 && (
+                          {(agent.warnings ?? []).slice(0, 2).join(', ')}
+                          {(agent.warnings ?? []).length > 2 && (
                             <span className="text-muted-foreground ml-1">
-                              +{agent.warnings.length - 2} more
+                              +{(agent.warnings ?? []).length - 2} more
                             </span>
                           )}
                         </span>
