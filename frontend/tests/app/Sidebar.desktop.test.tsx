@@ -86,4 +86,14 @@ describe('Sidebar desktop toggle placement', () => {
 
     expect(onClose).toHaveBeenCalledTimes(1)
   })
+
+  it('renders a Diagnostics nav item linking to /diagnostics', () => {
+    renderSidebar({
+      collapsed: false,
+      mode: 'desktop',
+      onToggleCollapse: vi.fn(),
+    })
+
+    expect(screen.getByRole('link', { name: /system diagnostics/i })).toBeInTheDocument()
+  })
 })
