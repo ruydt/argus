@@ -30,13 +30,13 @@ Known deferred close-out items:
 
 **Goal:** Build an operator-focused Diagnostics UI that tells a solo developer whether hooker is healthy, correctly connected to agent hooks, and safe to trust for local capture.
 
-**Progress:** Phase 4 complete on 2026-05-27. The backend diagnostics data contract is available at `GET /api/diagnostics` with version, health/readiness, DB path/size, total event/session counts, and latest event timestamp. Hook/privacy diagnostics and the React Diagnostics page remain in Phases 5 and 6.
+**Progress:** Phase 5 complete on 2026-05-28. The backend diagnostics contract is available at `GET /api/diagnostics` with version, health/readiness, DB path/size, total event/session counts, latest event timestamp, Claude Code/Codex agent telemetry, hook config status, privacy ignore posture, remote-bind/CORS posture, and export sensitivity warning. The React Diagnostics page remains in Phase 6.
 
 **Target features:**
 
 - Diagnostics page in the React app.
 - Backend diagnostics endpoint(s) for version, DB path/size, readiness, event/session counts, last event time, and normalizer/degraded status.
-- Hook status summary for Claude Code, Codex, and Gemini CLI: configured/missing where detectable, last seen event per agent, compatibility/degraded warnings.
+- Hook status summary for Claude Code and Codex: configured/missing/unknown where detectable, last seen event per agent, and degraded warnings. Gemini CLI diagnostics are deferred.
 - Privacy summary: ignore file path/load status, active ignore pattern count, and export sensitivity warning.
 - Backend and frontend tests covering diagnostics data, loading/error states, and rendered warnings.
 
@@ -70,16 +70,18 @@ Known deferred close-out items:
 - CORS allowlist and loopback-only default bind with `HOOKER_ALLOW_REMOTE=1` opt-in — v1.0
 - Threat model, privacy posture, contributor guide, and architecture ADRs — v1.0
 - Diagnostics backend data contract: `GET /api/diagnostics` grouped response with version, health/readiness, storage facts, aggregate counts, latest event timestamp, and captured-content non-leakage tests — v1.1 Phase 4
+- Diagnostics agent/privacy/security backend contract: Claude Code and Codex telemetry/config rows, ignore file status/count, remote-bind/CORS posture counts, and export sensitivity warning — v1.1 Phase 5
 
 ### Active
 
 **Milestone v1.1 — Diagnostics:**
 
 - [x] Backend diagnostics endpoint exposes version, health/readiness, DB facts, aggregate counts, and latest event timestamp.
+- [x] Backend diagnostics endpoint exposes Claude Code/Codex hook status, privacy posture, and security posture.
 - [ ] Operator can open a Diagnostics page and understand whether hooker is healthy right now.
-- [ ] Operator can see whether supported agent hooks appear configured and recently active.
-- [ ] Operator can see privacy posture and export-sensitivity reminders without digging through docs.
-- [ ] Diagnostics data is backed by testable backend endpoints and frontend rendering tests.
+- [ ] Operator can see whether supported agent hooks appear configured and recently active in the UI.
+- [ ] Operator can see privacy posture and export-sensitivity reminders in the UI without digging through docs.
+- [ ] Diagnostics data is backed by frontend rendering tests.
 
 ### Candidate Next Milestone Ideas
 
@@ -146,4 +148,4 @@ This document evolves at milestone boundaries.
 4. Revisit Key Decisions and mark outcomes.
 
 ---
-*Last updated: 2026-05-27 after completing v1.1 Diagnostics Phase 4*
+*Last updated: 2026-05-28 after completing v1.1 Diagnostics Phase 5*
