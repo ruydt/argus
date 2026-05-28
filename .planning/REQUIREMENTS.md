@@ -37,8 +37,8 @@
 ### Regression Coverage (TEST)
 
 - [x] **TEST-01**: Backend tests cover diagnostics response shape, DB stats, agent summaries, privacy status, and hook config detection states.
-- [ ] **TEST-02**: Frontend tests cover diagnostics rendering for healthy, warning, loading, error, and empty states.
-- [ ] **TEST-03**: Route/sidebar tests cover Diagnostics navigation.
+- [x] **TEST-02**: Frontend tests cover diagnostics rendering for healthy, warning, loading, error, and empty states.
+- [x] **TEST-03**: Route/sidebar tests cover Diagnostics navigation.
 
 ## Future Requirements
 
@@ -87,8 +87,8 @@
 | UI-03 | Phase 6 | Complete |
 | UI-04 | Phase 6 | Complete |
 | TEST-01 | Phase 4 | Complete |
-| TEST-02 | Phase 6 | Pending |
-| TEST-03 | Phase 6 | Pending |
+| TEST-02 | Phase 6 | Complete |
+| TEST-03 | Phase 6 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 20 total
