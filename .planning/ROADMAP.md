@@ -87,8 +87,16 @@ Plans:
 **Plans**: 3 plans
 Plans:
 
+**Wave 1**
+
 - [ ] 06-01-PLAN.md — Diagnostics route, hook, types, and sidebar navigation
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 06-02-PLAN.md — Diagnostics page layout: status summary, system facts, agent table, privacy panel
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 06-03-PLAN.md — Frontend rendering/state tests and responsive polish
 
 ## Progress
