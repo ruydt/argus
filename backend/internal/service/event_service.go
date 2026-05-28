@@ -72,7 +72,7 @@ func (s *EventService) SessionModel(sessionID string) (string, error) {
 	return s.repo.SessionModel(sessionID)
 }
 
-func (s *EventService) Diagnostics(dbPath string, ready bool) (domain.Diagnostics, error) {
+func (s *EventService) Diagnostics(dbPath string, ready bool, hookConfigs ...[]domain.DiagnosticsHookConfig) (domain.Diagnostics, error) {
 	stats, err := s.repo.DiagnosticsStorageStats()
 	if err != nil {
 		return domain.Diagnostics{}, err
@@ -113,14 +113,25 @@ func (s *EventService) Diagnostics(dbPath string, ready bool) (domain.Diagnostic
 		},
 		Health:  health,
 		Storage: storage,
-		Agents:  diagnosticsAgents(agentStats),
+		Agents:  diagnosticsAgents(agentStats, hookConfigSlice(hookConfigs)),
 	}, nil
 }
 
-func diagnosticsAgents(stats []domain.DiagnosticsAgentStats) []domain.DiagnosticsAgent {
+func hookConfigSlice(hookConfigs [][]domain.DiagnosticsHookConfig) []domain.DiagnosticsHookConfig {
+	if len(hookConfigs) == 0 {
+		return nil
+	}
+	return hookConfigs[0]
+}
+
+func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domain.DiagnosticsHookConfig) []domain.DiagnosticsAgent {
 	byAgent := map[string]domain.DiagnosticsAgentStats{}
 	for _, stat := range stats {
 		byAgent[stat.Agent] = stat
+	}
+	hookByAgent := map[string]domain.DiagnosticsHookConfig{}
+	for _, hookConfig := range hookConfigs {
+		hookByAgent[hookConfig.Agent] = hookConfig
 	}
 	defs := []struct {
 		id    string
@@ -141,6 +152,10 @@ func diagnosticsAgents(stats []domain.DiagnosticsAgentStats) []domain.Diagnostic
 			NormalizerVersion: stat.NormalizerVersion,
 			HookConfigStatus:  "unknown",
 			Status:            "ok",
+		}
+		if hookConfig, ok := hookByAgent[def.id]; ok {
+			row.HookConfigStatus = hookConfig.Status
+			row.HookConfigReason = hookConfig.Reason
 		}
 		switch {
 		case row.DegradedCount > 0:

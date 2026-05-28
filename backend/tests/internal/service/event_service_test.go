@@ -318,6 +318,36 @@ func TestDiagnosticsIncludesClaudeCodeAndCodexAgentRows(t *testing.T) {
 	}
 }
 
+func TestDiagnosticsMergesHookConfigStatuses(t *testing.T) {
+	svc := service.New(&mockRepo{})
+
+	got, err := svc.Diagnostics(":memory:", true, []domain.DiagnosticsHookConfig{
+		{Agent: "claudecode", Status: "configured"},
+		{Agent: "codex", Status: "unknown", Reason: "invalid_json"},
+		{Agent: "geminicli", Status: "configured"},
+	})
+	if err != nil {
+		t.Fatalf("Diagnostics: %v", err)
+	}
+	if got.Agents[0].HookConfigStatus != "configured" {
+		t.Fatalf("Claude hook status = %q, want configured", got.Agents[0].HookConfigStatus)
+	}
+	if got.Agents[0].Status != "no events" {
+		t.Fatalf("Claude status = %q, want no events", got.Agents[0].Status)
+	}
+	if got.Agents[1].HookConfigStatus != "unknown" || got.Agents[1].HookConfigReason != "invalid_json" {
+		t.Fatalf("Codex hook config = %+v, want unknown invalid_json", got.Agents[1])
+	}
+	for _, agent := range got.Agents {
+		if agent.ID == "geminicli" {
+			t.Fatalf("unexpected Gemini row: %+v", agent)
+		}
+	}
+	if !got.Health.Ready {
+		t.Fatalf("health should stay ready for hook config warnings: %+v", got.Health)
+	}
+}
+
 func TestAddEventPersists(t *testing.T) {
 	svc := service.New(&mockRepo{})
 

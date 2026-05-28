@@ -42,6 +42,7 @@ type DiagnosticsAgent struct {
 	DegradedCount     int      `json:"degradedCount"`
 	NormalizerVersion *string  `json:"normalizerVersion"`
 	HookConfigStatus  string   `json:"hookConfigStatus"`
+	HookConfigReason  string   `json:"hookConfigReason,omitempty"`
 	Status            string   `json:"status"`
 	Warnings          []string `json:"warnings"`
 }
@@ -52,4 +53,11 @@ type DiagnosticsAgentStats struct {
 	LastSeenAt        *string
 	DegradedCount     int
 	NormalizerVersion *string
+}
+
+type DiagnosticsHookConfig struct {
+	Agent  string
+	Path   string
+	Status string
+	Reason string
 }

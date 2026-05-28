@@ -78,6 +78,10 @@ func newTestRouter() http.Handler {
 	return server.NewRouter(service.New(repo), repo, repo.Ready, server.Options{
 		CORSOrigins: testCORSOrigins,
 		DBPath:      ":memory:",
+		HookConfig: []domain.DiagnosticsHookConfig{
+			{Agent: "claudecode", Status: "configured"},
+			{Agent: "codex", Status: "missing"},
+		},
 	})
 }
 
@@ -183,6 +187,30 @@ func TestNewRouterAnthropicRouteIsGETOnly(t *testing.T) {
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, want 405", rec.Code)
+	}
+}
+
+func TestNewRouterDiagnosticsIncludesHookConfig(t *testing.T) {
+	req := localRequest(http.MethodGet, "/api/diagnostics")
+	rec := httptest.NewRecorder()
+
+	newTestRouter().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var payload domain.Diagnostics
+	if err := json.NewDecoder(rec.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode diagnostics: %v", err)
+	}
+	if len(payload.Agents) != 2 {
+		t.Fatalf("len agents = %d, want 2", len(payload.Agents))
+	}
+	if payload.Agents[0].HookConfigStatus != "configured" {
+		t.Fatalf("Claude hook status = %q, want configured", payload.Agents[0].HookConfigStatus)
+	}
+	if payload.Agents[1].HookConfigStatus != "missing" {
+		t.Fatalf("Codex hook status = %q, want missing", payload.Agents[1].HookConfigStatus)
 	}
 }
 

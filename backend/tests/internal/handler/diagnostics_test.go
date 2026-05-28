@@ -150,3 +150,29 @@ func TestDiagnosticsHandlerReturns500OnAggregateError(t *testing.T) {
 		t.Fatalf("status = %d, want 500", rec.Code)
 	}
 }
+
+func TestDiagnosticsHandlerSerializesHookConfigStatus(t *testing.T) {
+	repo := newTestRepo(t)
+	svc := service.New(repo)
+	h := handler.Diagnostics(svc, repo.Ready, ":memory:", []domain.DiagnosticsHookConfig{
+		{Agent: "claudecode", Status: "missing"},
+		{Agent: "codex", Status: "unknown", Reason: "read_error"},
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{`"hookConfigStatus":"missing"`, `"hookConfigStatus":"unknown"`, `"hookConfigReason":"read_error"`} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("diagnostics response missing %s: %s", want, body)
+		}
+	}
+	if strings.Contains(body, "permission denied") {
+		t.Fatalf("diagnostics response leaked raw read error: %s", body)
+	}
+}

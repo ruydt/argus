@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"hooker/internal/config"
+	"hooker/internal/hookconfig"
 	"hooker/internal/privacy/ignore"
 	"hooker/internal/repository/sqlite"
 	"hooker/internal/server"
@@ -74,6 +75,7 @@ func main() {
 		Matcher:     matcher,
 		CORSOrigins: cfg.CORSOrigins,
 		DBPath:      cfg.DBPath,
+		HookConfig:  hookconfig.Detector{}.Detect(),
 	})
 
 	slog.Info("hooker", "version", version.Version, "commit", version.Commit)
