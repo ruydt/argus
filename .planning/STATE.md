@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Diagnostics
-status: archived
-stopped_at: v1.1 archived 2026-05-29, ready for next milestone planning
-last_updated: 2026-05-29T09:15:00.000Z
+milestone: v1.2
+milestone_name: Polish & Cleanup
+status: planning
+last_updated: "2026-05-29T09:37:23.966Z"
 last_activity: 2026-05-29
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-29)
 
 ## Current Position
 
-Phase: 06
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-28
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-29 — Milestone v1.2 started
 
 ## Wave Structure
 

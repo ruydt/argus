@@ -8,6 +8,17 @@ hooker is a local-first monitoring dashboard for AI coding agent activity. It re
 
 A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
 
+## Current Milestone: v1.2 Polish & Cleanup
+
+**Goal:** Improve component quality and eliminate technical debt across backend, frontend, tests, and docs — no new features.
+
+**Target features:**
+- Frontend component quality: Replace ad-hoc UI with proper shadcn primitives in Events, Sessions, Dashboard, Usage pages
+- Backend Go cleanup: dead code, handler consolidation, over-concentrated EventService, duplicated query parsing
+- Frontend TypeScript cleanup: inconsistent patterns, dead imports, prop drilling
+- Test quality: flaky/slow tests, missing coverage
+- Docs cleanup: outdated docs, stale comments, README drift
+
 ## Current State
 
 **v1.1 Diagnostics shipped on 2026-05-29.** Both milestones are archived in `.planning/milestones/` and summarized in `.planning/MILESTONES.md`.
@@ -63,7 +74,14 @@ Known deferred close-out items:
 
 ### Active
 
-No active milestone requirements. Start next milestone with `/gsd-new-milestone`.
+**Milestone v1.2 Polish & Cleanup**
+
+- [ ] Replace ad-hoc UI with proper shadcn primitives in Events, Sessions, Dashboard, and Usage pages
+- [ ] Fix broken component patterns and inconsistencies across frontend
+- [ ] Backend Go cleanup: dead code removal, handler consolidation, duplicated query parsing
+- [ ] Frontend TypeScript cleanup: inconsistent patterns, dead imports, prop drilling
+- [ ] Test quality: flaky/slow tests, missing coverage gaps
+- [ ] Docs cleanup: outdated docs, stale comments, README drift
 
 ### Candidate Next Milestone Ideas
 
@@ -134,4 +152,4 @@ This document evolves at milestone boundaries.
 4. Revisit Key Decisions and mark outcomes.
 
 ---
-*Last updated: 2026-05-29 after v1.1 Diagnostics milestone*
+*Last updated: 2026-05-29 after v1.2 Polish & Cleanup milestone start*
