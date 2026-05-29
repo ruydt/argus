@@ -1,7 +1,7 @@
 # hooker
 
 Local-first monitoring dashboard for AI coding agent activity. Receives hook payloads from
-Claude Code, Codex, and Gemini CLI, normalizes them to a canonical event model, persists to
+Claude Code and Codex, normalizes them to a canonical event model, persists to
 SQLite, and streams to a React SPA in real time.
 
 ## Quick start
