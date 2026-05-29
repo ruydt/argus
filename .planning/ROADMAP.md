@@ -37,40 +37,54 @@
 ## Phase Details
 
 ### Phase 7: Backend Code Quality
+
 **Goal**: Backend handlers are observable, consistent, and covered by tests
 **Depends on**: Nothing (Go-only changes, independent from frontend)
 **Requirements**: BACK-01, BACK-02, BACK-03
 **Success Criteria** (what must be TRUE):
+
   1. Any JSON encode failure in a handler produces a log line — no silent discard
   2. Sessions and traces handlers both delegate page-size parsing to a single shared helper — no duplicated parsing logic
   3. Dashboard, file_changes, health, usage, and version handlers each have at least one httptest-based test that exercises the happy path
+
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
+
 - [ ] 07-01-PLAN.md — Extract parsePageSize helper; update sessions.go and traces.go (BACK-02)
 - [ ] 07-02-PLAN.md — Add smoke tests for dashboard, file_changes, health, usage, version handlers (BACK-03)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 07-03-PLAN.md — Replace all 14 suppressed JSON encode errors with log.Printf calls (BACK-01)
 
 ### Phase 8: Frontend Component Quality
+
 **Goal**: Sessions feature uses consistent, maintainable UI primitives with no prop drilling beyond 2 levels
 **Depends on**: Phase 7 (logically independent, but ordering keeps frontend changes batched)
 **Requirements**: COMP-01, COMP-02, COMP-03
 **Success Criteria** (what must be TRUE):
+
   1. FileChangesDrawer, TraceViewPage, EventTimeline, and TraceTreeNode render no raw `<button>` elements — all use the shadcn Button primitive
   2. FileChangesDrawer contains no `style={{}}` attributes for properties expressible as Tailwind utility classes
   3. TraceTreeNode receives session data through no more than 2 component levels from TraceViewPage — intermediate prop chains eliminated
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 9: Frontend Test Coverage & Docs Cleanup
+
 **Goal**: Key frontend pages have Vitest coverage for all rendering states, and stale placeholder docs are gone
 **Depends on**: Phase 8 (component shape must be stable before writing component tests)
 **Requirements**: TEST-01, TEST-02, TEST-03, DOCS-01
 **Success Criteria** (what must be TRUE):
+
   1. DiagnosticsPage Vitest suite covers loading, error, healthy, and degraded state branches — all pass
   2. UsagePage Vitest suite covers loading, empty, and populated state branches — all pass
   3. VersionBadge Vitest suite covers loaded, loading, and error states — all pass
   4. No files under `docs/superpowers/specs/` or `docs/superpowers/plans/` contain placeholder or stub content — directory is either empty or contains only finalized material
+
 **Plans**: TBD
 
 ---
