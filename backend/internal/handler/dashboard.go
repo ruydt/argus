@@ -11,8 +11,6 @@ import (
 
 func DashboardStats(svc *service.EventService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
 		var since string
 		start := r.URL.Query().Get("start")
 		end := r.URL.Query().Get("end")
@@ -45,9 +43,11 @@ func DashboardStats(svc *service.EventService) http.Handler {
 
 		stats, err := svc.GetDashboardStats(since, until)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("[handler] GetDashboardStats: %v", err)
+			http.Error(w, "get dashboard stats", http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(stats); err != nil {
 			log.Printf("[handler] encode %T: %v", stats, err)
 		}
