@@ -14,7 +14,7 @@
 ### BACK — Backend Code Quality
 
 - [ ] **BACK-01**: All JSON encode failures in handlers are logged rather than silently discarded — 14 suppressed `_ = json.NewEncoder` errors replaced with log output
-- [ ] **BACK-02**: Pagination query parameter parsing is extracted into a shared `parsePageSize()` helper used by both sessions.go and traces.go — no duplication
+- [x] **BACK-02**: Pagination query parameter parsing is extracted into a shared `parsePageSize()` helper used by both sessions.go and traces.go — no duplication
 - [ ] **BACK-03**: Backend handler tests added for dashboard, file_changes, health, usage, and version handlers using httptest
 
 ### TEST — Frontend Test Coverage
@@ -63,7 +63,7 @@
 | COMP-02 | Phase 8 | Pending |
 | COMP-03 | Phase 8 | Pending |
 | BACK-01 | Phase 7 | Pending |
-| BACK-02 | Phase 7 | Pending |
+| BACK-02 | Phase 7 | Complete |
 | BACK-03 | Phase 7 | Pending |
 | TEST-01 | Phase 9 | Pending |
 | TEST-02 | Phase 9 | Pending |
