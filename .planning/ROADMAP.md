@@ -53,7 +53,7 @@ Plans:
 **Wave 1**
 
 - [x] 07-01-PLAN.md — Extract parsePageSize helper; update sessions.go and traces.go (BACK-02)
-- [ ] 07-02-PLAN.md — Add smoke tests for dashboard, file_changes, health, usage, version handlers (BACK-03)
+- [x] 07-02-PLAN.md — Add smoke tests for dashboard, file_changes, health, usage, version handlers (BACK-03)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -99,7 +99,7 @@ Plans:
 | 4. Diagnostics Data Contract | v1.1 | 3/3 | Complete | 2026-05-27 |
 | 5. Hook and Privacy Diagnostics | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 6. Diagnostics UI | v1.1 | 3/3 | Complete | 2026-05-28 |
-| 7. Backend Code Quality | v1.2 | 1/3 | In Progress|  |
+| 7. Backend Code Quality | v1.2 | 2/3 | In Progress|  |
 | 8. Frontend Component Quality | v1.2 | 0/? | Not started | - |
 | 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 0/? | Not started | - |
 
