@@ -11,7 +11,6 @@ import (
 
 func FileChanges(svc *service.EventService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
 		sessionID := r.URL.Query().Get("session_id")
 		if sessionID == "" {
 			http.Error(w, "session_id required", http.StatusBadRequest)
@@ -25,6 +24,7 @@ func FileChanges(svc *service.EventService) http.Handler {
 		if groups == nil {
 			groups = []domain.FileChangeGroup{}
 		}
+		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(groups); err != nil {
 			log.Printf("[handler] encode %T: %v", groups, err)
 		}
