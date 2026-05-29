@@ -639,16 +639,13 @@ func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 	if err != nil {
 		return nil, fmt.Errorf("diagnostics agent normalizer versions: %w", err)
 	}
+	defer versionRows.Close()
 	for versionRows.Next() {
 		var agent, normalizerVersion string
 		if err := versionRows.Scan(&agent, &normalizerVersion); err != nil {
-			versionRows.Close()
 			return nil, fmt.Errorf("diagnostics agent normalizer version scan: %w", err)
 		}
 		stats[agent].NormalizerVersion = &normalizerVersion
-	}
-	if err := versionRows.Close(); err != nil {
-		return nil, fmt.Errorf("diagnostics agent normalizer versions close: %w", err)
 	}
 	if err := versionRows.Err(); err != nil {
 		return nil, fmt.Errorf("diagnostics agent normalizer versions rows: %w", err)

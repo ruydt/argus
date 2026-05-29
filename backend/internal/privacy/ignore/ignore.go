@@ -281,22 +281,6 @@ func matchGlobRec(pattern, candidate []string, pi, ci int) bool {
 	return pi == len(pattern) && ci == len(candidate)
 }
 
-// matchGlobSegments matches a slice of pattern segments against an equal-length slice
-// of candidate segments (no length mismatch, no **).
-func matchGlobSegments(pattern, candidate []string) bool {
-	if len(pattern) != len(candidate) {
-		return false
-	}
-	for i := range pattern {
-		if pattern[i] == "**" {
-			continue // ** in fixed-length match always passes
-		}
-		if !matchSegment(pattern[i], candidate[i]) {
-			return false
-		}
-	}
-	return true
-}
 
 // matchSegment matches a single path segment against a glob pattern that may
 // contain * (zero or more non-slash characters).

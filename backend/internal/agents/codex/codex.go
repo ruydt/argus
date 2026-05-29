@@ -134,12 +134,6 @@ func patchFilePathFromHeader(trimmed string) string {
 	}
 }
 
-func firstN(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "..."
-}
 
 func ComputeUsage(transcriptPath string) domain.SessionUsage {
 	return ComputeUsageBreakdown(transcriptPath).Total
