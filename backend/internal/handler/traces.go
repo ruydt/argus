@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"hooker/internal/domain"
 	"hooker/internal/service"
@@ -17,7 +18,13 @@ func Traces(svc *service.EventService) http.Handler {
 		pageStr := q.Get("page")
 		sizeStr := q.Get("size")
 
-		w.Header().Set("Content-Type", "application/json")
+		// Validate since param format if provided (WR-02).
+		if since != "" {
+			if _, err := time.Parse(time.RFC3339, since); err != nil {
+				http.Error(w, "invalid since: must be RFC3339", http.StatusBadRequest)
+				return
+			}
+		}
 
 		if pageStr != "" {
 			page, size := parsePageSize(pageStr, sizeStr, 50, 500)
@@ -30,7 +37,9 @@ func Traces(svc *service.EventService) http.Handler {
 			if traces == nil {
 				traces = []domain.NormalizedEvent{}
 			}
-			hasMore := (page * size) < total
+			// Use actual returned count rather than theoretical max to avoid
+			// false hasMore=true on partial last pages (WR-03).
+			hasMore := (page-1)*size+len(traces) < total
 			resp := map[string]any{
 				"traces":   traces,
 				"total":    total,
@@ -38,6 +47,7 @@ func Traces(svc *service.EventService) http.Handler {
 				"size":     size,
 				"has_more": hasMore,
 			}
+			w.Header().Set("Content-Type", "application/json")
 			if err := json.NewEncoder(w).Encode(resp); err != nil {
 				log.Printf("[handler] encode %T: %v", resp, err)
 			}
@@ -49,6 +59,7 @@ func Traces(svc *service.EventService) http.Handler {
 			http.Error(w, "get traces", http.StatusInternalServerError)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		resp := map[string]any{"traces": traces}
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			log.Printf("[handler] encode %T: %v", resp, err)
