@@ -44,7 +44,12 @@
   1. Any JSON encode failure in a handler produces a log line — no silent discard
   2. Sessions and traces handlers both delegate page-size parsing to a single shared helper — no duplicated parsing logic
   3. Dashboard, file_changes, health, usage, and version handlers each have at least one httptest-based test that exercises the happy path
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Extract parsePageSize helper; update sessions.go and traces.go (BACK-02)
+- [ ] 07-02-PLAN.md — Add smoke tests for dashboard, file_changes, health, usage, version handlers (BACK-03)
+- [ ] 07-03-PLAN.md — Replace all 14 suppressed JSON encode errors with log.Printf calls (BACK-01)
 
 ### Phase 8: Frontend Component Quality
 **Goal**: Sessions feature uses consistent, maintainable UI primitives with no prop drilling beyond 2 levels
@@ -80,11 +85,11 @@
 | 4. Diagnostics Data Contract | v1.1 | 3/3 | Complete | 2026-05-27 |
 | 5. Hook and Privacy Diagnostics | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 6. Diagnostics UI | v1.1 | 3/3 | Complete | 2026-05-28 |
-| 7. Backend Code Quality | v1.2 | 0/? | Not started | - |
+| 7. Backend Code Quality | v1.2 | 0/3 | Not started | - |
 | 8. Frontend Component Quality | v1.2 | 0/? | Not started | - |
 | 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 0/? | Not started | - |
 
 ---
 
 *Roadmap created: 2026-05-24*
-*Last updated: 2026-05-29 — v1.2 phases 7-9 added*
+*Last updated: 2026-05-29 — Phase 7 planned (3 plans, 2 waves)*
