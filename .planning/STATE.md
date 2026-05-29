@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish & Cleanup
 status: planning
-last_updated: "2026-05-29T09:37:23.966Z"
+last_updated: "2026-05-29T09:57:00.000Z"
 last_activity: 2026-05-29
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,22 +20,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
-**Current focus:** Planning next milestone (v1.2)
+**Current focus:** v1.2 Polish & Cleanup — Phase 7 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 7 — Backend Code Quality (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-29 — Milestone v1.2 started
+Status: Roadmap defined, awaiting phase planning
+Last activity: 2026-05-29 — v1.2 roadmap created (phases 7-9)
+
+```
+v1.2 Progress [░░░░░░░░░░] 0% — 0/3 phases
+```
+
+## Phase Structure
+
+| Phase | Name | Requirements | Status |
+|-------|------|--------------|--------|
+| 7 | Backend Code Quality | BACK-01, BACK-02, BACK-03 | Not started |
+| 8 | Frontend Component Quality | COMP-01, COMP-02, COMP-03 | Not started |
+| 9 | Frontend Test Coverage & Docs Cleanup | TEST-01, TEST-02, TEST-03, DOCS-01 | Not started |
 
 ## Wave Structure
 
 | Wave | Plans | Autonomous | Description |
 |------|-------|------------|-------------|
-| 1 | 04-01, 04-02, 04-03 | no | Backend diagnostics data contract, endpoint, and tests |
-| 2 | 05-01, 05-02, 05-03 | no | Hook telemetry, config detection, and privacy/security diagnostics |
-| 3 | 06-01, 06-02, 06-03 | no | Diagnostics route, UI layout, states, and frontend tests |
+| 1 | 07-xx | TBD | Backend handler observability, pagination helper, and handler tests |
+| 2 | 08-xx | TBD | shadcn Button adoption, inline style removal, prop drilling refactor |
+| 3 | 09-xx | TBD | DiagnosticsPage/UsagePage/VersionBadge Vitest suites; stale doc cleanup |
 
 ## Performance Metrics
 
@@ -107,8 +119,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Start Phase 4 with `$gsd-discuss-phase 4` or `$gsd-plan-phase 4`.
-- Decide whether to burn down or keep deferring the three human verification items listed below.
+- Plan Phase 7 with `/gsd-plan-phase 7`.
 
 ### Blockers/Concerns
 
@@ -125,14 +136,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-28T15:52:02.616Z
-Stopped at: Phase 6 UI-SPEC approved
+Last session: 2026-05-29T09:57:00.000Z
+Stopped at: v1.2 roadmap created
 Resume file: None
 
 ## Operator Next Steps
 
-- Start Phase 4 with `$gsd-discuss-phase 4`.
-- Or skip discussion and plan directly with `$gsd-plan-phase 4`.
-
-r skip discussion and plan directly with `$gsd-plan-phase 4`.
-kip discussion and plan directly with `$gsd-plan-phase 4`.
+- Plan Phase 7 with `/gsd-plan-phase 7`.
