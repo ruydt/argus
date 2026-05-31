@@ -72,7 +72,11 @@ Plans:
   4. The page keeps a compact session header with breadcrumbs, session ID, started time, duration, and file-change count
   5. Any backend/API changes are limited to gaps discovered while proving existing file-change data cannot satisfy old/new snippets or pagination
 
-**Plans**: TBD
+**Plans**:
+
+- [ ] 08-01-PLAN.md — Replace the session trace route shell with the file-change page and compact session header (SESS-01, SESS-03)
+- [ ] 08-02-PLAN.md — Build paginated file rows with expandable timestamp/tool/line old-new snippets (SESS-01, SESS-02)
+- [ ] 08-03-PLAN.md — Add route, hook, and backend contract verification for the file-change page (SESS-01, SESS-02, SESS-03)
 **UI hint**: yes
 
 ### Phase 9: Frontend Test Coverage & Docs Cleanup
