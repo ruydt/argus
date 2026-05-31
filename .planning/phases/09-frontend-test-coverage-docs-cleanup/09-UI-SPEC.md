@@ -47,7 +47,7 @@ Declared values (must be multiples of 4):
 
 Exceptions:
 
-- Preserve existing Diagnostics summary grid `gap-3` and body gap of 24px (`gap-6`).
+- Diagnostics summary grid must use the approved 16px (`gap-4`) grid gap; preserve existing body gap of 24px (`gap-6`).
 - Preserve existing UsagePanel 300px empty/loading panel height.
 - Preserve existing VersionBadge compact line-height and 0.66rem text size.
 - Do not change spacing to make tests easier; tests should adapt to the current UI contract.
