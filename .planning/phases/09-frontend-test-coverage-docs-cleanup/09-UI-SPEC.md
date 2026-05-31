@@ -47,7 +47,7 @@ Declared values (must be multiples of 4):
 
 Exceptions:
 
-- Preserve existing Diagnostics summary grid gap of 12px (`gap-3`) and body gap of 24px (`gap-6`).
+- Preserve existing Diagnostics summary grid `gap-3` and body gap of 24px (`gap-6`).
 - Preserve existing UsagePanel 300px empty/loading panel height.
 - Preserve existing VersionBadge compact line-height and 0.66rem text size.
 - Do not change spacing to make tests easier; tests should adapt to the current UI contract.
@@ -62,8 +62,8 @@ Use exactly these four size tiers for any production UI touched by this phase:
 
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Muted / compact label | 12px | 400 | 1.5 |
-| Body / table / control text | 14px | 400 | 1.5 |
+| VersionBadge compact text | 0.66rem | 400 | existing compact line-height |
+| Body / table / control / muted label text | 14px | 400 | 1.5 |
 | Metric value | 20px | 600 | 1.2 |
 | Page heading | 22px | 600 | 1.2 |
 
@@ -101,6 +101,8 @@ Do not introduce a new accent color, gradient, theme switcher, light mode, or re
 ---
 
 ## State And Interaction Contracts
+
+Primary visual hierarchy remains page heading first, then state panel content, then secondary metadata and status badges. Phase 09 tests should preserve that hierarchy and must not promote badges, helper text, or metadata above the page-level heading.
 
 ### DiagnosticsPage
 
@@ -167,7 +169,7 @@ No component additions are required. If implementation discovers a production UI
 
 | Element | Copy |
 |---------|------|
-| Primary CTA | `Fetch` on UsagePage; `Retry Load` on DiagnosticsPage error |
+| Primary CTA | `Fetch Usage` on UsagePage; `Retry Load` on DiagnosticsPage error |
 | Diagnostics loading | Existing skeleton state; no visible loading sentence required |
 | Diagnostics error heading | `Failed to load diagnostics` |
 | Diagnostics error body | `Could not reach /api/diagnostics` |
