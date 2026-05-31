@@ -83,6 +83,37 @@ describe('useFileChanges', () => {
     expect(result.current.groups).toEqual([])
   })
 
+  it('clears stale groups when a rerendered session fetch fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          {
+            path: '/tmp/app.ts',
+            count: 1,
+            changes: [],
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { rerender, result } = renderHook(({ sessionId }) => useFileChanges(sessionId), {
+      initialProps: { sessionId: 'sess-1' },
+    })
+
+    await waitFor(() => expect(result.current.groups).toHaveLength(1))
+
+    rerender({ sessionId: 'sess-2' })
+
+    await waitFor(() => expect(result.current.error).toBe('500'))
+    expect(result.current.groups).toEqual([])
+  })
+
   it('does not fetch for an empty session ID', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
