@@ -5,11 +5,11 @@
 
 ## v1.2 Requirements
 
-### COMP — Frontend Component Quality
+### SESS — Session File Changes View
 
-- [ ] **COMP-01**: Developer sees consistent Button usage in sessions feature — raw `<button>` elements in FileChangesDrawer, TraceViewPage, EventTimeline, and TraceTreeNode replaced with shadcn Button primitive
-- [ ] **COMP-02**: FileChangesDrawer uses no static inline `style={{}}` for CSS properties expressible as Tailwind utility classes
-- [ ] **COMP-03**: Sessions trace tree component hierarchy passes props no more than 2 levels deep — 7-prop drilling chain from TraceViewPage to TraceTreeNode refactored
+- [ ] **SESS-01**: `/sessions/:cwd/:sessionId` replaces the trace/timeline experience with a paginated file-change browser for files created or modified during the session
+- [ ] **SESS-02**: Each file row expands to show per-change timestamp, tool/action, available line number, and compact old/new line snippets for that file
+- [ ] **SESS-03**: The file-change page uses the existing file change API/data first, adding backend support only if current data cannot provide required old/new line details or pagination needs
 
 ### BACK — Backend Code Quality
 
@@ -35,6 +35,7 @@
 - Filter UI by agent, session, time range, model, event type, and status
 - Richer diff navigation and code context viewing
 - Agent/session comparison tools
+- Frontend component cleanup for raw shadcn Button usage, FileChangesDrawer inline style cleanup, and trace-tree prop drilling if trace/timeline UI returns in a future scope
 
 ### Analytics
 
@@ -49,7 +50,8 @@
 
 | Feature | Reason |
 |---------|--------|
-| New user-facing features | This milestone is cleanup only — no new capabilities |
+| Trace/timeline redesign or retention | Phase 8 replaces the session trace/timeline page with a file-change browser |
+| New filtering/search controls for file changes | File pagination and expandable old/new snippets are the Phase 8 scope |
 | ai-insights feature tests | Feature scope unclear; audit first before adding test coverage |
 | projects feature tests | Feature scope unclear; audit first before adding test coverage |
 | proxy handler tests | Proxy handlers (OpenAI/Anthropic) need functional spec before coverage |
@@ -59,9 +61,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| COMP-01 | Phase 8 | Pending |
-| COMP-02 | Phase 8 | Pending |
-| COMP-03 | Phase 8 | Pending |
+| SESS-01 | Phase 8 | Pending |
+| SESS-02 | Phase 8 | Pending |
+| SESS-03 | Phase 8 | Pending |
 | BACK-01 | Phase 7 | Pending |
 | BACK-02 | Phase 7 | Complete |
 | BACK-03 | Phase 7 | Complete |
@@ -77,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-05-29*
-*Last updated: 2026-05-29 — traceability table filled after roadmap creation*
+*Last updated: 2026-05-31 — Phase 8 re-scoped to Sessions file changes view*

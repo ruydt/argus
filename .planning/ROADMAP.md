@@ -29,7 +29,7 @@
 **v1.2 Polish & Cleanup**
 
 - [x] **Phase 7: Backend Code Quality** — Eliminate silent JSON failures, extract shared pagination helper, and add missing handler tests (completed 2026-05-29)
-- [ ] **Phase 8: Frontend Component Quality** — Replace raw buttons with shadcn primitive, remove inline styles, and flatten deep prop drilling in sessions feature
+- [ ] **Phase 8: Session File Changes View** — Replace the session trace/timeline page with a paginated file-change browser showing old/new snippets
 - [ ] **Phase 9: Frontend Test Coverage & Docs Cleanup** — Add Vitest coverage for DiagnosticsPage, UsagePage, and VersionBadge; archive stale spec files
 
 ---
@@ -59,16 +59,18 @@ Plans:
 
 - [x] 07-03-PLAN.md — Replace all 14 suppressed JSON encode errors with log.Printf calls (BACK-01)
 
-### Phase 8: Frontend Component Quality
+### Phase 8: Session File Changes View
 
-**Goal**: Sessions feature uses consistent, maintainable UI primitives with no prop drilling beyond 2 levels
+**Goal**: The session detail page shows files created or modified during the session with timestamps, pagination, and old/new line snippets instead of the trace/timeline UI
 **Depends on**: Phase 7 (logically independent, but ordering keeps frontend changes batched)
-**Requirements**: COMP-01, COMP-02, COMP-03
+**Requirements**: SESS-01, SESS-02, SESS-03
 **Success Criteria** (what must be TRUE):
 
-  1. FileChangesDrawer, TraceViewPage, EventTimeline, and TraceTreeNode render no raw `<button>` elements — all use the shadcn Button primitive
-  2. FileChangesDrawer contains no `style={{}}` attributes for properties expressible as Tailwind utility classes
-  3. TraceTreeNode receives session data through no more than 2 component levels from TraceViewPage — intermediate prop chains eliminated
+  1. `/sessions/:cwd/:sessionId` no longer renders the trace tree, event timeline, or inspection timeline as the primary experience
+  2. The page renders a paginated list of changed files using existing file-change API/data first
+  3. Expanding a file shows each change timestamp, tool/action, available line number, and compact old/new snippets
+  4. The page keeps a compact session header with breadcrumbs, session ID, started time, duration, and file-change count
+  5. Any backend/API changes are limited to gaps discovered while proving existing file-change data cannot satisfy old/new snippets or pagination
 
 **Plans**: TBD
 **UI hint**: yes
@@ -100,10 +102,10 @@ Plans:
 | 5. Hook and Privacy Diagnostics | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 6. Diagnostics UI | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 7. Backend Code Quality | v1.2 | 3/3 | Complete   | 2026-05-29 |
-| 8. Frontend Component Quality | v1.2 | 0/? | Not started | - |
+| 8. Session File Changes View | v1.2 | 0/? | Not started | - |
 | 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 0/? | Not started | - |
 
 ---
 
 *Roadmap created: 2026-05-24*
-*Last updated: 2026-05-29 — Phase 7 planned (3 plans, 2 waves)*
+*Last updated: 2026-05-31 — Phase 8 re-scoped to session file changes view*

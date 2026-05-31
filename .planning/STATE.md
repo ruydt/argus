@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish & Cleanup
 status: planning
-stopped_at: Phase 8 UI-SPEC approved
-last_updated: "2026-05-31T10:36:24.651Z"
+stopped_at: Phase 8 re-scoped to session file changes view
+last_updated: "2026-05-31T10:55:00.000Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 3
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
-**Current focus:** Phase 8 — frontend component quality
+**Current focus:** Phase 8 — session file changes view
 
 ## Current Position
 
@@ -39,7 +39,7 @@ v1.2 Progress [░░░░░░░░░░] 0% — 0/3 phases
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 7 | Backend Code Quality | BACK-01, BACK-02, BACK-03 | Not started |
-| 8 | Frontend Component Quality | COMP-01, COMP-02, COMP-03 | Not started |
+| 8 | Session File Changes View | SESS-01, SESS-02, SESS-03 | Not started |
 | 9 | Frontend Test Coverage & Docs Cleanup | TEST-01, TEST-02, TEST-03, DOCS-01 | Not started |
 
 ## Wave Structure
@@ -47,7 +47,7 @@ v1.2 Progress [░░░░░░░░░░] 0% — 0/3 phases
 | Wave | Plans | Autonomous | Description |
 |------|-------|------------|-------------|
 | 1 | 07-xx | TBD | Backend handler observability, pagination helper, and handler tests |
-| 2 | 08-xx | TBD | shadcn Button adoption, inline style removal, prop drilling refactor |
+| 2 | 08-xx | TBD | Replace session trace/timeline UI with paginated file-change browser and old/new snippets |
 | 3 | 09-xx | TBD | DiagnosticsPage/UsagePage/VersionBadge Vitest suites; stale doc cleanup |
 
 ## Performance Metrics
@@ -140,9 +140,9 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-31T10:36:24.646Z
-Stopped at: Phase 8 UI-SPEC approved
-Resume file: .planning/phases/08-frontend-component-quality/08-UI-SPEC.md
+Last session: 2026-05-31T10:55:00.000Z
+Stopped at: Phase 8 re-scoped to session file changes view
+Resume file: .planning/phases/08-session-file-changes-view/08-CONTEXT.md
 
 ## Operator Next Steps
 
