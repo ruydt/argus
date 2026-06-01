@@ -14,16 +14,16 @@ Requirements for the UI Quality milestone. Each maps to roadmap phases.
 ### Frontend
 
 - [x] **FRONT-01**: Diagnostics page caches loaded data; re-fetches only on explicit refresh button press
-- [ ] **FRONT-02**: Dashboard chart displays token values at all magnitudes — small values are not visually invisible on a large-scale axis
+- [x] **FRONT-02**: Dashboard chart displays token values at all magnitudes — small values are not visually invisible on a large-scale axis
 
 ### UX
 
-- [ ] **UX-01**: User can copy session ID from Events page with one click
-- [ ] **UX-02**: Session file-change view shows line numbers alongside changed code
+- [x] **UX-01**: User can copy session ID from Events page with one click
+- [x] **UX-02**: Session file-change view shows line numbers alongside changed code
 
 ### Triage
 
-- [ ] **TRIAGE-01**: UI bugs discovered during manual testing are fixed within the milestone
+- [x] **TRIAGE-01**: UI bugs discovered during manual testing are fixed within the milestone
 
 ## Future Requirements
 
@@ -48,10 +48,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | PERF-01 | 10 | Complete 2026-06-01 |
 | FRONT-01 | 11 | Complete |
-| FRONT-02 | 11 | Pending |
-| UX-01 | 11 | Pending |
-| UX-02 | 11 | Pending |
-| TRIAGE-01 | 11 | Pending |
+| FRONT-02 | 11 | Complete |
+| UX-01 | 11 | Complete |
+| UX-02 | 11 | Complete |
+| TRIAGE-01 | 11 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 6 total

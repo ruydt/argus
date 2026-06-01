@@ -30,7 +30,7 @@
 <summary>v1.3 UI Quality (Phases 10-11) — IN PROGRESS</summary>
 
 - [x] Phase 10: Diagnostics Backend Performance (1/1 plans) — completed 2026-06-01
-- [ ] Phase 11: Frontend Polish & UX (0/2 plans) — not started
+- [x] Phase 11: Frontend Polish & UX (0/2 plans) — not started (completed 2026-06-01)
 
 **Goal:** Deliver five v1.3 requirements: diagnostics caching, chart log scale, session ID copy, file-change line numbers, and triage bug fixes.
 
@@ -38,7 +38,7 @@
 
 Plans:
 - [x] 11-01-PLAN.md — Backend TTL cache (EventService) + useDiagnostics module cache
-- [ ] 11-02-PLAN.md — YAxis log scale, AgentSession copy icon, ChangeRow expandable code
+- [x] 11-02-PLAN.md — YAxis log scale, AgentSession copy icon, ChangeRow expandable code
 
 </details>
 
@@ -53,4 +53,4 @@ Plans:
 | 5. Hook and Privacy Diagnostics | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 6. Diagnostics UI | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 10. Diagnostics Backend Performance | v1.3 | 1/1 | Complete | 2026-06-01 |
-| 11. Frontend Polish & UX | v1.3 | 1/2 | In Progress|  |
+| 11. Frontend Polish & UX | v1.3 | 2/2 | Complete   | 2026-06-01 |
