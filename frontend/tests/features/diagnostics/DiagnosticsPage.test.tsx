@@ -104,6 +104,8 @@ describe('DiagnosticsPage', () => {
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
     renderPage()
     expect(screen.getByRole('heading', { name: 'Diagnostics' })).toBeInTheDocument()
+    // Skeleton container is marked busy for accessibility
+    expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument()
     // Content cards are not yet rendered
     expect(screen.queryByText('Agent Connectivity')).not.toBeInTheDocument()
     expect(screen.queryByText('System Facts')).not.toBeInTheDocument()
