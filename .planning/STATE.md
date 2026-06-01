@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish & Cleanup
-status: milestone_complete
-stopped_at: Milestone complete (Phase 09 was final phase)
-last_updated: 2026-06-01T03:58:31.800Z
-last_activity: 2026-06-01
+status: Awaiting next milestone
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-06-01T10:18:01.339Z"
+last_activity: 2026-06-01 — Milestone v1.2 completed and archived
 progress:
   total_phases: 3
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 18
+  total_plans: 11
+  completed_plans: 11
   percent: 100
 ---
 
@@ -18,21 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-29)
+See: .planning/PROJECT.md (updated 2026-06-01)
 
 **Core value:** A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
-**Current focus:** Milestone complete
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 09
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-06-01
-
-```
-v1.2 Progress [███████░░░] 67% — 2/3 phases
-```
+Phase: Milestone v1.2 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-06-01 — Milestone v1.2 completed and archived
 
 ## Phase Structure
 
@@ -40,7 +36,7 @@ v1.2 Progress [███████░░░] 67% — 2/3 phases
 |-------|------|--------------|--------|
 | 7 | Backend Code Quality | BACK-01, BACK-02, BACK-03 | Complete |
 | 8 | Session File Changes View | SESS-01, SESS-02, SESS-03 | Complete |
-| 9 | Frontend Test Coverage & Docs Cleanup | TEST-01, TEST-02, TEST-03, DOCS-01 | Ready to plan |
+| 9 | Frontend Test Coverage & Docs Cleanup | TEST-01, TEST-02, TEST-03, DOCS-01 | Complete |
 
 ## Wave Structure
 
@@ -127,7 +123,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Plan Phase 7 with `/gsd-plan-phase 7`.
+- Start the next milestone with `/gsd-new-milestone`.
 
 ### Blockers/Concerns
 
@@ -144,10 +140,10 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-06-01T03:52:12.533Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-06-01T10:18:01.339Z
+Stopped at: Completed v1.2 milestone archive
 Resume file: None
 
 ## Operator Next Steps
 
-- Discuss Phase 9 with `/gsd-discuss-phase 9`.
+- Start the next milestone with /gsd-new-milestone

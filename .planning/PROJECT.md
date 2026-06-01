@@ -8,20 +8,13 @@ hooker is a local-first monitoring dashboard for AI coding agent activity. It re
 
 A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
 
-## Current Milestone: v1.2 Polish & Cleanup
+## Current Milestone: Awaiting Next Milestone
 
-**Goal:** Improve component quality and eliminate technical debt across backend, frontend, tests, and docs — no new features.
-
-**Target features:**
-- Frontend component quality: Replace ad-hoc UI with proper shadcn primitives in Events, Sessions, Dashboard, Usage pages
-- Backend Go cleanup: dead code, handler consolidation, over-concentrated EventService, duplicated query parsing
-- Frontend TypeScript cleanup: inconsistent patterns, dead imports, prop drilling
-- Test quality: flaky/slow tests, missing coverage
-- Docs cleanup: outdated docs, stale comments, README drift
+v1.2 Polish & Cleanup shipped on 2026-06-01. Start the next milestone with `$gsd-new-milestone` so requirements are discovered fresh instead of extending the archived v1.2 requirements file.
 
 ## Current State
 
-**v1.1 Diagnostics shipped on 2026-05-29. Phase 9 (frontend-test-coverage-docs-cleanup) complete on 2026-06-01 — 102 frontend tests + 180 backend tests passing, stale docs removed.** Both milestones are archived in `.planning/milestones/` and summarized in `.planning/MILESTONES.md`.
+**v1.2 Polish & Cleanup shipped on 2026-06-01.** v1.0, v1.1, and v1.2 are archived in `.planning/milestones/` and summarized in `.planning/MILESTONES.md`.
 
 What is now in place:
 
@@ -32,12 +25,15 @@ What is now in place:
 - Privacy and security controls: host header validation, explicit CORS allowlist, loopback-only default bind, remote-bind opt-in, gitignore-style ignore file, privacy docs, and local threat model docs.
 - Contributor guardrails: `CONTRIBUTING.md`, frontend-backend contract checklist, adapter fixture requirements, and ADRs for SQLite, normalization, local-first positioning, and proxy scope.
 - Operator Diagnostics: `GET /api/diagnostics` with version/health/storage/agent/privacy/security sections; React DiagnosticsPage with 7 state branches, agent connectivity table, system facts card, and privacy & security card.
+- Backend code quality: shared pagination parsing for sessions/traces, logged JSON encode failures in handlers, and httptest smoke coverage for dashboard/file_changes/health/usage/version handlers.
+- Session file-change browser: `/sessions/:cwd/:sessionId` now shows changed files with pagination, compact session header, expandable timestamp/tool/line metadata, and old/new snippets. Codex `apply_patch` events are visible for both future normalized events and historical command-only rows.
+- Frontend and docs coverage: DiagnosticsPage, UsagePage, and VersionBadge have focused Vitest coverage for required states; stale active superpowers trace/timeline docs were removed.
 
 Known deferred close-out items:
 
 - Phase 01 verification still needs human confirmation for clean-machine onboarding timing, GitHub settings/hosted CI, and migration-failure message quality.
 - Phase 03 UAT still needs human confirmation for doctor privacy output, remote-bind runtime rejection, and end-to-end privacy gate behavior.
-- Phases 4–6 have no VALIDATION.md (Nyquist) files; all phases have VERIFICATION.md with full evidence.
+- Phases 7–9 have formal VERIFICATION.md and VALIDATION.md artifacts. Older deferred human checks from v1.0 remain recorded in STATE.md.
 
 ## Requirements
 
@@ -71,17 +67,13 @@ Known deferred close-out items:
 - Diagnostics backend data contract: `GET /api/diagnostics` grouped response with version, health/readiness, storage facts, aggregate counts, latest event timestamp, and captured-content non-leakage tests — v1.1 Phase 4
 - Diagnostics agent/privacy/security backend contract: Claude Code and Codex telemetry/config rows, ignore file status/count, remote-bind/CORS posture counts, and export sensitivity warning — v1.1 Phase 5
 - Operator Diagnostics page: compact React UI with 7 state branches, 4 summary tiles, agent connectivity table, system facts card, privacy & security card, responsive layout, and 87/87 tests — v1.1 Phase 6
+- Backend handler observability, shared pagination parsing, and handler smoke tests — v1.2 Phase 7
+- Session file-change browser with paginated changed-file rows, expandable old/new snippets, and Codex `apply_patch` compatibility — v1.2 Phase 8
+- DiagnosticsPage, UsagePage, and VersionBadge rendering-state coverage plus active stale-doc cleanup — v1.2 Phase 9
 
 ### Active
 
-**Milestone v1.2 Polish & Cleanup**
-
-- [ ] Replace ad-hoc UI with proper shadcn primitives in Events, Sessions, Dashboard, and Usage pages
-- [ ] Fix broken component patterns and inconsistencies across frontend
-- [ ] Backend Go cleanup: dead code removal, handler consolidation, duplicated query parsing
-- [ ] Frontend TypeScript cleanup: inconsistent patterns, dead imports, prop drilling
-- [ ] Test quality: flaky/slow tests, missing coverage gaps — Validated in Phase 09: DiagnosticsPage (7 tests), UsagePage (7 tests), VersionBadge (5 tests) — 102 total passing
-- [ ] Docs cleanup: outdated docs, stale comments, README drift — Validated in Phase 09: 8 stale superpowers specs/plans removed (DOCS-01)
+No active requirements. Start the next milestone with `$gsd-new-milestone`.
 
 ### Candidate Next Milestone Ideas
 
@@ -111,7 +103,7 @@ Known deferred close-out items:
 - **Architecture:** Layered Go monolith (config -> service -> repository) with embedded React SPA. Agent normalizers are in-tree strategy adapters.
 - **Known architectural concerns:** `EventService` is over-concentrated; multiple handlers duplicate query parsing. These remain tracked in `.planning/codebase/ARCHITECTURE.md`.
 - **Local usage scale target:** Dozens of sessions and years of history. SQLite remains the right default.
-- **Planning state:** v1.0 artifacts are archived. New product work should begin with fresh requirements, not by extending the archived v1 requirement file.
+- **Planning state:** v1.0, v1.1, and v1.2 artifacts are archived. New product work should begin with fresh requirements, not by extending archived milestone requirement files.
 
 ## Constraints
 
@@ -140,6 +132,9 @@ Known deferred close-out items:
 | hookconfig as separate Go package | Testable and reusable without shelling out to scripts/hooker | Good — doctor-equivalent detection in-process |
 | HOOK-01 scope reduced to Claude Code + Codex | Gemini CLI not emitting compatible hook payloads; implementing would require spec work | Good — requirement updated at audit, no tech debt |
 | Agent status "healthy" not "ok" | UI AgentStatusCell switch needs exact string match; "ok" hit the default case silently | Good — fixed at audit, prevented silent rendering failure |
+| Session detail page is file-change first | The old trace/timeline route was less useful than direct file inspection for coding-agent sessions | Good — v1.2 shipped file-change browser and kept trace components only as support modules |
+| Codex patch compatibility belongs in backend normalization/read path | Parsing raw patch commands in UI would leak backend format assumptions and expose command text unnecessarily | Good — future and historical Codex patch edits now flow through existing `/api/file-changes` contract |
+| Focused rendering-state tests before broader component cleanup | High-value coverage for DiagnosticsPage, UsagePage, and VersionBadge reduces risk before larger UI refactors | Good — v1.2 closed known coverage gaps without production UI churn |
 
 ## Evolution
 
@@ -152,4 +147,4 @@ This document evolves at milestone boundaries.
 4. Revisit Key Decisions and mark outcomes.
 
 ---
-*Last updated: 2026-05-29 after v1.2 Polish & Cleanup milestone start*
+*Last updated: 2026-06-01 after v1.2 Polish & Cleanup shipped*

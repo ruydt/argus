@@ -94,6 +94,51 @@
 
 ---
 
+## Milestone: v1.2 — Polish & Cleanup
+
+**Shipped:** 2026-06-01  
+**Phases:** 3 (07–09) | **Plans:** 11 | **Tasks:** 7
+
+### What Was Built
+
+- Backend code-quality cleanup: shared pagination helper for sessions/traces, logged JSON encode failures, and handler smoke tests for dashboard, file_changes, health, usage, and version.
+- Session file-change browser replacing the session trace/timeline primary page, with compact header, file pagination, expandable timestamp/tool/line metadata, and old/new snippets.
+- Codex `apply_patch` compatibility for file changes, including future normalized events and historical command-only rows.
+- Frontend coverage for DiagnosticsPage, UsagePage, and VersionBadge state branches.
+- Active docs cleanup: stale superpowers trace/timeline/session-waterfall specs and plans removed.
+
+### What Worked
+
+- Milestone audit caught traceability gaps without finding integration gaps; formal verification plus Nyquist validation made the close decision objective.
+- UAT surfaced the Codex file-change visibility issue before archive, and the fix was covered at normalizer, handler, repository, and frontend-contract levels.
+- Focused tests produced high confidence quickly: Phase 9 finished with 102 frontend tests and typecheck passing.
+
+### What Was Inefficient
+
+- Phase 8 grew from 3 planned tasks to 5 summaries because Codex historical compatibility was discovered during UAT, after the first implementation.
+- Requirements checkboxes and roadmap progress drifted until milestone audit even though phase verification already proved completion.
+- SDK milestone accomplishment extraction produced noisy `One-liner:` entries, requiring manual cleanup in MILESTONES.md.
+
+### Patterns Established
+
+- File-change UI should consume normalized API fields only; agent-specific patch parsing belongs in backend normalization/read-path compatibility.
+- Nyquist validation files are useful close-out artifacts for completed phases, even when reconstructed after execution.
+- Focused rendering-state tests should be added before broad frontend cleanup work to pin expected behavior.
+
+### Key Lessons
+
+1. Update `REQUIREMENTS.md` and ROADMAP progress as soon as phase verification passes.
+2. Treat UAT findings as first-class phase work; add regression coverage at the data boundary where the bug originates.
+3. Summary metadata needs clean one-liners and `requirements-completed` fields so milestone archive automation stays useful.
+
+### Cost Observations
+
+- Model mix: not tracked for v1.2.
+- Sessions: multiple short focused sessions across audit, validation, and close-out.
+- Notable: most close-out work was planning hygiene, not product-code remediation.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -102,6 +147,7 @@
 |-----------|----------|--------|------------|
 | v1.0 | not tracked | 3 | Established GSD milestone archive, audit, and deferred-item close-out loop |
 | v1.1 | ~8 sessions | 3 | Sequential wave structure; audit-driven gap closure; `server.Options` pattern for diagnostics inputs |
+| v1.2 | multiple focused sessions | 3 | Nyquist validation reconstructed for all active phases; UAT-driven Codex compatibility fix |
 
 ### Cumulative Quality
 
@@ -109,6 +155,7 @@
 |-----------|-------|----------|-------------------|
 | v1.0 | Backend, frontend, and Playwright smoke suites | Not measured | Privacy matcher implemented in-tree after dependency checkpoint |
 | v1.1 | 176 backend + 87 frontend (263 total) | Not measured | hookconfig detector added in-process; no new external dependencies |
+| v1.2 | Backend focused suites + 102 frontend tests | Not measured | Codex patch read-path compatibility reused existing parser; no new external dependencies |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -116,3 +163,4 @@
 2. Human runtime verification should be scheduled as explicit UAT as soon as implementation lands.
 3. Frontend-backend string contract values (status enums, JSON field names) must be validated at implementation time, not discovered at audit.
 4. React async hooks need mounted guards in `finally` blocks as a standard pattern — document in CONVENTIONS.md.
+5. Milestone archive automation needs clean summary metadata; otherwise final MILESTONES.md entries require manual correction.

@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.2 Polish & Cleanup (Shipped: 2026-06-01)
+
+**Delivered:** Backend handler cleanup, a session file-change browser, focused frontend coverage, and stale docs cleanup.
+
+**Phases completed:** 3 phases (7–9), 11 plans, 7 tasks  
+**Archive:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md), [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md), [v1.2-MILESTONE-AUDIT.md](milestones/v1.2-MILESTONE-AUDIT.md)
+
+**Key accomplishments:**
+
+- Extracted shared backend pagination parsing and removed silent JSON encode failures across handlers.
+- Added httptest coverage for dashboard, file_changes, health, usage, and version handlers.
+- Replaced the session trace/timeline page with a paginated file-change browser showing expandable old/new snippets.
+- Fixed Codex `apply_patch` visibility for both future normalized events and historical command-only rows.
+- Added Vitest coverage for DiagnosticsPage, UsagePage, and VersionBadge rendering states.
+- Removed stale active superpowers docs that referenced obsolete trace/timeline/session-waterfall direction.
+- Completed formal verification and Nyquist validation for all v1.2 phases: 10/10 requirements satisfied.
+
+---
+
 ## v1.0 MVP (Shipped: 2026-05-27)
 
 **Phases completed:** 3 phases, 19 plans, 30 tasks  
