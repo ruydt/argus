@@ -73,7 +73,8 @@ describe('UsagePage', () => {
       return null
     })
     // Never-resolving fetch keeps loading=true and stats=null
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => {}))
+    vi.stubGlobal('fetch', fetchMock)
 
     renderUsagePage()
 
@@ -84,6 +85,8 @@ describe('UsagePage', () => {
     expect(btn).toBeDisabled()
     // Loading spinner panel is rendered
     expect(screen.getByText('Loading usage data...')).toBeInTheDocument()
+    // Verify that the auto-fetch effect was actually triggered
+    expect(fetchMock).toHaveBeenCalled()
   })
 
   it('renders charts and tables with populated usage data', async () => {
