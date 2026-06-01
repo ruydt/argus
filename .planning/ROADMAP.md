@@ -51,7 +51,10 @@
   1. Opening the Diagnostics page completes within 2 seconds on a dataset with thousands of hook events
   2. The agent stats section shows correct normalizer version data (same values as before, faster query)
   3. `go test ./...` passes with the refactored query; no regression in diagnostics data contract tests
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 10-01-PLAN.md — Replace O(n²) correlated subqueries in DiagnosticsAgentStats with O(n) MAX()+GROUP BY queries
 
 ### Phase 11: Frontend Polish & UX
 **Goal**: Users can interact with the UI without encountering the known chart, caching, copy, and line-number deficiencies
@@ -81,10 +84,10 @@
 | 7. Backend Code Quality | v1.2 | 3/3 | Complete | 2026-05-29 |
 | 8. Session File Changes View | v1.2 | 5/5 | Complete | 2026-05-31 |
 | 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 3/3 | Complete | 2026-06-01 |
-| 10. Diagnostics Backend Performance | v1.3 | 0/0 | Not started | - |
+| 10. Diagnostics Backend Performance | v1.3 | 0/1 | Not started | - |
 | 11. Frontend Polish & UX | v1.3 | 0/0 | Not started | - |
 
 ---
 
 *Roadmap created: 2026-05-24*
-*Last updated: 2026-06-01 — v1.3 UI Quality phases added*
+*Last updated: 2026-06-01 — Phase 10 planned (1 plan)*
