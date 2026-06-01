@@ -125,27 +125,7 @@ func (m *mockRepo) GetSessionTree(_ string) ([]domain.SessionTreeNode, error) {
 	return nil, nil
 }
 
-func (m *mockRepo) GetTraces(sessionID, since string) ([]domain.NormalizedEvent, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	var filtered []domain.NormalizedEvent
-	for _, event := range m.events {
-		if sessionID != "" && event.Session != sessionID {
-			continue
-		}
-		if since != "" && event.Time < since {
-			continue
-		}
-		filtered = append(filtered, event)
-	}
-	return filtered, nil
-}
-
 func (m *mockRepo) ListSessionsByCWDPage(_ string, _ string, _ int, _ int) ([]domain.Session, int, error) {
-	return nil, 0, nil
-}
-
-func (m *mockRepo) GetTracesPage(_ string, _ string, _ int, _ int) ([]domain.NormalizedEvent, int, error) {
 	return nil, 0, nil
 }
 

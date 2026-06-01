@@ -549,44 +549,6 @@ func TestListSessionsByCWDFiltersAndAppliesSince(t *testing.T) {
 	}
 }
 
-func TestGetTracesFiltersBySessionAndSince(t *testing.T) {
-	db := newTestDB(t)
-
-	addEvent(t, db, domain.NormalizedEvent{
-		Time:          "2026-05-14T09:00:00Z",
-		Agent:         "codex",
-		Session:       "target",
-		HookEventName: "PreToolUse",
-		Tool:          "Read",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time:          "2026-05-14T11:00:00Z",
-		Agent:         "codex",
-		Session:       "target",
-		HookEventName: "PostToolUse",
-		Tool:          "Read",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time:          "2026-05-14T12:00:00Z",
-		Agent:         "codex",
-		Session:       "other",
-		HookEventName: "PostToolUse",
-		Tool:          "Bash",
-	})
-
-	traces, err := db.GetTraces("target", "2026-05-14T10:00:00Z")
-	if err != nil {
-		t.Fatalf("GetTraces: %v", err)
-	}
-
-	if len(traces) != 1 {
-		t.Fatalf("traces len = %d, want 1", len(traces))
-	}
-	if traces[0].Session != "target" || traces[0].HookEventName != "PostToolUse" {
-		t.Fatalf("trace = %+v, want target PostToolUse", traces[0])
-	}
-}
-
 func TestList_respectsLimit(t *testing.T) {
 	db := newTestDB(t)
 

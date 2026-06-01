@@ -7,6 +7,7 @@
 ---
 
 <user_constraints>
+
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
@@ -29,18 +30,20 @@
 - Diff view (old → new) in FileChangesDrawer
 - Toast notifications for copy feedback
 - Changes to diagnostics query logic beyond caching
-</user_constraints>
+  </user_constraints>
 
 <phase_requirements>
+
 ## Phase Requirements
 
-| ID | Description | Research Support |
-|----|-------------|------------------|
-| FRONT-01 | Diagnostics page caches loaded data; re-fetches only on explicit refresh button press | Backend 30s TTL cache in `EventService`; frontend module-level cache in `useDiagnostics` mirroring `useDashboardStats` pattern |
-| FRONT-02 | Dashboard chart displays token values at all magnitudes | `scale="log"` is a first-class `ScaleType` in Recharts 3.8.1 YAxis; `domain={[1,'auto']}` avoids log(0) |
-| UX-01 | User can copy session ID from Events page with one click | `CopyIconButton` component already exists at `features/events/renderers/CopyIconButton.tsx` — reuse pattern directly |
-| UX-02 | Session file-change view shows line numbers alongside changed code | `ChangeRow` already receives `FileChangeEvent` which carries `new_string?`, `start_line?`; inline expansion with `<pre>` is additive-only |
-| TRIAGE-01 | UI bugs fixed during implementation | Surface during 11-01/11-02 development and testing |
+| ID        | Description                                                                           | Research Support                                                                                                                          |
+| --------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| FRONT-01  | Diagnostics page caches loaded data; re-fetches only on explicit refresh button press | Backend 30s TTL cache in `EventService`; frontend module-level cache in `useDiagnostics` mirroring `useDashboardStats` pattern            |
+| FRONT-02  | Dashboard chart displays token values at all magnitudes                               | `scale="log"` is a first-class `ScaleType` in Recharts 3.8.1 YAxis; `domain={[1,'auto']}` avoids log(0)                                   |
+| UX-01     | User can copy session ID from Events page with one click                              | `CopyIconButton` component already exists at `features/events/renderers/CopyIconButton.tsx` — reuse pattern directly                      |
+| UX-02     | Session file-change view shows line numbers alongside changed code                    | `ChangeRow` already receives `FileChangeEvent` which carries `new_string?`, `start_line?`; inline expansion with `<pre>` is additive-only |
+| TRIAGE-01 | UI bugs fixed during implementation                                                   | Surface during 11-01/11-02 development and testing                                                                                        |
+
 </phase_requirements>
 
 ---
@@ -57,12 +60,12 @@ The codebase already has canonical patterns for every new requirement. The TTL c
 
 ## Architectural Responsibility Map
 
-| Capability | Primary Tier | Secondary Tier | Rationale |
-|------------|-------------|----------------|-----------|
-| Diagnostics response caching | API / Backend (`EventService`) | Frontend hook | 6m30s TTFB is a backend query problem; cache at source. Frontend cache prevents re-fetch on navigation only. |
-| Chart Y-axis scale | Browser / Client | — | Pure rendering prop on `<YAxis>` — no data shape change |
-| Session ID clipboard copy | Browser / Client | — | `navigator.clipboard` API; no server involvement |
-| File-change line number display | Browser / Client | — | `start_line` already in `FileChangeEvent` type — display-only |
+| Capability                      | Primary Tier                   | Secondary Tier | Rationale                                                                                                    |
+| ------------------------------- | ------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| Diagnostics response caching    | API / Backend (`EventService`) | Frontend hook  | 6m30s TTFB is a backend query problem; cache at source. Frontend cache prevents re-fetch on navigation only. |
+| Chart Y-axis scale              | Browser / Client               | —              | Pure rendering prop on `<YAxis>` — no data shape change                                                      |
+| Session ID clipboard copy       | Browser / Client               | —              | `navigator.clipboard` API; no server involvement                                                             |
+| File-change line number display | Browser / Client               | —              | `start_line` already in `FileChangeEvent` type — display-only                                                |
 
 ---
 
@@ -70,12 +73,12 @@ The codebase already has canonical patterns for every new requirement. The TTL c
 
 ### Core (all pre-existing — no new installs)
 
-| Library | Installed Version | Purpose | Where used |
-|---------|------------------|---------|------------|
-| Recharts | 3.8.1 [VERIFIED: node_modules] | Chart rendering | `TokenUsageChart.tsx` |
-| lucide-react | 1.14.0 [VERIFIED: node_modules] | Icons | `AgentSession.tsx`, `FileChangesDrawer.tsx` |
-| Go `sync` | stdlib | `RWMutex` for cache | `event_service.go` |
-| Go `time` | stdlib | TTL check with `time.Since` | `event_service.go` |
+| Library      | Installed Version               | Purpose                     | Where used                                  |
+| ------------ | ------------------------------- | --------------------------- | ------------------------------------------- |
+| Recharts     | 3.8.1 [VERIFIED: node_modules]  | Chart rendering             | `TokenUsageChart.tsx`                       |
+| lucide-react | 1.14.0 [VERIFIED: node_modules] | Icons                       | `AgentSession.tsx`, `FileChangesDrawer.tsx` |
+| Go `sync`    | stdlib                          | `RWMutex` for cache         | `event_service.go`                          |
+| Go `time`    | stdlib                          | TTL check with `time.Since` | `event_service.go`                          |
 
 ### Verified icon availability in lucide-react 1.14.0
 
@@ -153,24 +156,24 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 
 ```typescript
 // Source: [VERIFIED: mirroring useDashboardStats.ts:81 pattern]
-let diagnosticsCache: Diagnostics | null = null
-let diagnosticsCachedAt: Date | null = null
+let diagnosticsCache: Diagnostics | null = null;
+let diagnosticsCachedAt: Date | null = null;
 
 export function useDiagnostics() {
-  const [reloadKey, setReloadKey] = useState(0)
-  const [data, setData] = useState<Diagnostics | null>(() => diagnosticsCache)
+  const [reloadKey, setReloadKey] = useState(0);
+  const [data, setData] = useState<Diagnostics | null>(() => diagnosticsCache);
   // ...
 
   useEffect(() => {
     // Skip fetch if cache is fresh and this is a mount (not explicit reload)
     if (reloadKey === 0 && diagnosticsCache !== null) {
-      setData(diagnosticsCache)
-      setLastUpdatedAt(diagnosticsCachedAt)
-      setLoading(false)
-      return
+      setData(diagnosticsCache);
+      setLastUpdatedAt(diagnosticsCachedAt);
+      setLoading(false);
+      return;
     }
     // ... fetch, then: diagnosticsCache = json; diagnosticsCachedAt = new Date()
-  }, [reloadKey])
+  }, [reloadKey]);
 }
 ```
 
@@ -187,18 +190,19 @@ export function useDiagnostics() {
 **Zero-value segment handling:** Individual `<Bar>` segments with value=0 within a stack render as zero-height slices — not broken. Recharts handles this internally for stacked bars. The `domain` protects the axis calculation; individual zero-height segments are fine.
 
 **Minimal change:**
+
 ```tsx
 // Source: [VERIFIED: TokenUsageChart.tsx:60 — current YAxis, plus D-02 decision]
 <YAxis
   scale="log"
-  domain={[1, 'auto']}
+  domain={[1, "auto"]}
   fontSize={10}
   axisLine={false}
   tickLine={false}
   tickFormatter={(value) => {
-    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
-    if (value >= 1000) return `${(value / 1000).toFixed(1)}k`
-    return value
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+    return value;
   }}
 />
 ```
@@ -211,7 +215,7 @@ export function useDiagnostics() {
 
 **Hover-reveal:** Use Tailwind `group` + `group-hover:opacity-100 opacity-0` on the icon. The hover group should be on the innermost container that contains the session ID text and the copy icon, not the whole header row (which also has drag behavior).
 
-**Icon choice:** Use `Copy` from lucide-react (consistent with all existing copy interactions in the codebase) [VERIFIED: `CopyIconButton.tsx:1`]. Switch to `Check` on copied state [VERIFIED: `CopyIconButton.tsx:1`, `TraceInspectionPanel.tsx:7`].
+**Icon choice:** Use `Copy` from lucide-react (consistent with existing copy interactions in the codebase) [VERIFIED: `CopyIconButton.tsx:1`]. Switch to `Check` on copied state [VERIFIED: `CopyIconButton.tsx:1`].
 
 ```tsx
 // Source: [VERIFIED: CopyIconButton.tsx pattern, adapted for inline use]
@@ -257,47 +261,53 @@ useEffect(() => {
 ```tsx
 // Source: [VERIFIED: FileChangesDrawer.tsx ChangeRow:109, FileChangeEvent types:23]
 function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
-  const content = ev.new_string ?? ev.old_string ?? null
-  const canExpand = content !== null
-  const [expanded, setExpanded] = useState(false)
+  const content = ev.new_string ?? ev.old_string ?? null;
+  const canExpand = content !== null;
+  const [expanded, setExpanded] = useState(false);
 
-  const lines = content?.split('\n') ?? []
-  const startLine = ev.start_line ?? 1
-  const truncated = lines.length > 200
-  const displayLines = truncated ? lines.slice(0, 200) : lines
-  const maxWidth = String(startLine + lines.length - 1).length
+  const lines = content?.split("\n") ?? [];
+  const startLine = ev.start_line ?? 1;
+  const truncated = lines.length > 200;
+  const displayLines = truncated ? lines.slice(0, 200) : lines;
+  const maxWidth = String(startLine + lines.length - 1).length;
 
   return (
     <div>
       <div
-        className={cn('flex items-center gap-2 py-0.5', canExpand && 'cursor-pointer')}
+        className={cn(
+          "flex items-center gap-2 py-0.5",
+          canExpand && "cursor-pointer",
+        )}
         onClick={canExpand ? () => setExpanded((v) => !v) : undefined}
-        role={canExpand ? 'button' : undefined}
+        role={canExpand ? "button" : undefined}
       >
         {/* ... existing label, relTime, lineInfo spans ... */}
-        {canExpand && (expanded
-          ? <ChevronDown className="ml-auto h-3 w-3 shrink-0 text-white/35" />
-          : <ChevronRight className="ml-auto h-3 w-3 shrink-0 text-white/35" />
-        )}
+        {canExpand &&
+          (expanded ? (
+            <ChevronDown className="ml-auto h-3 w-3 shrink-0 text-white/35" />
+          ) : (
+            <ChevronRight className="ml-auto h-3 w-3 shrink-0 text-white/35" />
+          ))}
         {!canExpand && diffLines !== null && (
           <span className="ml-auto shrink-0 font-mono text-[10px] text-white/35">
-            {diffLines} {diffLines === 1 ? 'line' : 'lines'}
+            {diffLines} {diffLines === 1 ? "line" : "lines"}
           </span>
         )}
       </div>
 
       {expanded && canExpand && (
         <pre className="mt-1 overflow-x-auto rounded bg-black/30 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-blue-100/80">
-          {displayLines.map((line, i) => (
-            `${String(startLine + i).padStart(maxWidth, ' ')} │ ${line}\n`
-          ))}
+          {displayLines.map(
+            (line, i) =>
+              `${String(startLine + i).padStart(maxWidth, " ")} │ ${line}\n`,
+          )}
           {truncated && (
             <span className="text-white/35">{`… ${lines.length - 200} more lines`}</span>
           )}
         </pre>
       )}
     </div>
-  )
+  );
 }
 ```
 
@@ -305,48 +315,54 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
 
 ## Don't Hand-Roll
 
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Copy-with-feedback icon | Custom clipboard hook | Inline the `CopyIconButton` pattern (or use the component) | Pattern is already tested and in-codebase |
+| Problem                     | Don't Build                 | Use Instead                                                               | Why                                            |
+| --------------------------- | --------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
+| Copy-with-feedback icon     | Custom clipboard hook       | Inline the `CopyIconButton` pattern (or use the component)                | Pattern is already tested and in-codebase      |
 | Module-level frontend cache | localStorage, React context | Module-level `let` variable (same as `statsCache` in `useDashboardStats`) | SPA scope is sufficient; no persistence needed |
-| Log axis scale | Custom tick calculation | Recharts `scale="log"` | d3-scale is already bundled with Recharts |
-| Go TTL cache | External caching lib | `sync.RWMutex` + `time.Time` field on struct | No dependency needed; stdlib-only |
+| Log axis scale              | Custom tick calculation     | Recharts `scale="log"`                                                    | d3-scale is already bundled with Recharts      |
+| Go TTL cache                | External caching lib        | `sync.RWMutex` + `time.Time` field on struct                              | No dependency needed; stdlib-only              |
 
 ---
 
 ## Common Pitfalls
 
 ### Pitfall 1: `log(0) = -Infinity` breaks Recharts stacked bar
+
 **What goes wrong:** A model entry where all four token categories are 0 causes the stacked bar height to be log(0) = -Infinity, rendering a broken chart.
 **Why it happens:** Recharts maps 0 to log(0) before computing bar height.
 **How to avoid:** Set `domain={[1, 'auto']}` on `<YAxis>`. This clips the domain minimum at 1, so a zero-value bar renders at the baseline height (1) rather than -Infinity.
 **Warning signs:** Chart container renders empty or throws a React error in the Recharts internals when data contains a model with all-zero tokens.
 
 ### Pitfall 2: Stop-propagation missed on copy icon click
+
 **What goes wrong:** Clicking the copy icon also toggles the `Collapsible` open/close state because `CollapsibleTrigger` wraps the entire header `div`.
 **Why it happens:** The header is a `<CollapsibleTrigger asChild>` wrapper [VERIFIED: `AgentSession.tsx:77`]. All click events bubble up to it.
 **How to avoid:** Always call `e.stopPropagation()` on the copy button's `onClick`.
 **Warning signs:** Clicking copy icon collapses or expands the session in addition to copying.
 
 ### Pitfall 3: `navigator.clipboard` is undefined in test environment
+
 **What goes wrong:** Tests throw `TypeError: Cannot read properties of undefined (reading 'writeText')` because jsdom does not implement `navigator.clipboard`.
 **Why it happens:** jsdom does not ship a Clipboard API implementation.
 **How to avoid:** Add `Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockResolvedValue(undefined) }, writable: true })` in the test's `beforeEach`. Existing tests in `DiagnosticsPage.test.tsx` already do this [VERIFIED: line 88]. Copy this pattern.
 **Warning signs:** Test suite error mentioning clipboard is undefined.
 
 ### Pitfall 4: Backend cache stores pointer — concurrent mutation
+
 **What goes wrong:** Two concurrent requests read the same `*domain.Diagnostics` pointer and one of them (or a later cache store) mutates fields.
 **Why it happens:** Go slices (e.g., `Agents []DiagnosticsAgent`) are reference types; if any code downstream modifies the slice, the cached value is corrupted.
 **How to avoid:** Return a copy on cache hit: `result := *s.diagCache` dereferences the struct (shallow copy). The `Agents` slice inside is still shared, but `diagnosticsAgents()` builds a new slice on every call — and on a cache hit we never rebuild — so the hit path is safe. The cached value is never mutated after assignment.
 **Warning signs:** Flaky tests where agent count or warnings differ across repeated calls.
 
 ### Pitfall 5: Frontend module cache not cleared between Vitest test files
+
 **What goes wrong:** A test that populates `diagnosticsCache` leaves stale data for the next test file because module-level variables persist across test runs in the same Vitest worker.
 **Why it happens:** Vitest workers cache modules unless `vi.resetModules()` is called.
 **How to avoid:** In tests that exercise `useDiagnostics` with module cache, reset the cache between tests by calling the cache-reset escape hatch (export a `_resetDiagnosticsCache` function for testing, or use `vi.resetModules()`). The `DiagnosticsPage.test.tsx` currently stubs `fetch` — once the cache is added, tests that expect a fresh fetch on mount will fail unless the cache is cleared.
 **Warning signs:** Test passes in isolation but fails when run with the full suite.
 
 ### Pitfall 6: Recharts stacked bar with log scale renders negative or NaN ticks
+
 **What goes wrong:** The auto-computed tick values include 0 or negative numbers when `domain={[1,'auto']}` is set but data has very small values (e.g., 1).
 **Why it happens:** Recharts tick generation with log scale can produce unexpected intermediate values.
 **How to avoid:** The existing `tickFormatter` already handles small values gracefully (returns raw number for < 1000). No additional handling needed beyond `domain={[1,'auto']}`.
@@ -361,12 +377,12 @@ Step 2.5 SKIPPED: Phase 11 is not a rename/refactor/migration phase. No stored d
 
 ## Environment Availability
 
-| Dependency | Required By | Available | Version | Fallback |
-|------------|------------|-----------|---------|----------|
-| Go toolchain | Backend cache | ✓ | 1.25.0 [VERIFIED: go.mod] | — |
-| Node.js / pnpm | Frontend | ✓ | (running tests confirmed) | — |
-| Recharts | FRONT-02 | ✓ | 3.8.1 [VERIFIED: node_modules] | — |
-| lucide-react | UX-01, UX-02 | ✓ | 1.14.0 [VERIFIED: node_modules] | — |
+| Dependency     | Required By   | Available | Version                         | Fallback |
+| -------------- | ------------- | --------- | ------------------------------- | -------- |
+| Go toolchain   | Backend cache | ✓         | 1.25.0 [VERIFIED: go.mod]       | —        |
+| Node.js / pnpm | Frontend      | ✓         | (running tests confirmed)       | —        |
+| Recharts       | FRONT-02      | ✓         | 3.8.1 [VERIFIED: node_modules]  | —        |
+| lucide-react   | UX-01, UX-02  | ✓         | 1.14.0 [VERIFIED: node_modules] | —        |
 
 No missing dependencies.
 
@@ -376,29 +392,30 @@ No missing dependencies.
 
 ### Test Framework
 
-| Property | Value |
-|----------|-------|
-| Backend framework | Go `testing` package |
-| Frontend framework | Vitest 4.1.5 + Testing Library |
-| Backend config | `backend/.golangci.yml`, `go.mod` |
-| Frontend config | `frontend/vite.config.ts` (test.environment: jsdom) |
-| Backend quick run | `cd backend && go test ./internal/service/...` |
-| Backend full suite | `cd backend && go test ./...` (173 tests, currently passing) |
-| Frontend quick run | `cd frontend && npx vitest run tests/features/diagnostics/` |
+| Property            | Value                                                         |
+| ------------------- | ------------------------------------------------------------- |
+| Backend framework   | Go `testing` package                                          |
+| Frontend framework  | Vitest 4.1.5 + Testing Library                                |
+| Backend config      | `backend/.golangci.yml`, `go.mod`                             |
+| Frontend config     | `frontend/vite.config.ts` (test.environment: jsdom)           |
+| Backend quick run   | `cd backend && go test ./internal/service/...`                |
+| Backend full suite  | `cd backend && go test ./...` (173 tests, currently passing)  |
+| Frontend quick run  | `cd frontend && npx vitest run tests/features/diagnostics/`   |
 | Frontend full suite | `cd frontend && npx vitest run` (78 tests, currently passing) |
 
 ### Phase Requirements → Test Map
 
-| Req ID | Behavior | Test Type | Automated Command | File Exists? |
-|--------|----------|-----------|-------------------|-------------|
-| FRONT-01 (backend) | Cache hit skips repo calls | unit | `go test ./tests/internal/service/... -run TestDiagnosticsCache` | ❌ Wave 0 |
-| FRONT-01 (backend) | Cache expires after 30s | unit | `go test ./tests/internal/service/... -run TestDiagnosticsCacheTTL` | ❌ Wave 0 |
-| FRONT-01 (frontend) | `useDiagnostics` does not re-fetch on re-mount when cache is warm | unit | `npx vitest run tests/features/diagnostics/` | ❌ Wave 0 |
-| FRONT-02 | YAxis renders with log scale (smoke — no crash) | unit (mocked) | `npx vitest run tests/features/dashboard/` | ✅ (mocked in token-usage-panel.test.tsx) |
-| UX-01 | Copy icon appears; click copies sessionId to clipboard | unit | `npx vitest run tests/features/events/` | ❌ Wave 0 |
-| UX-02 | Click ChangeRow expands code with line numbers | unit | `npx vitest run tests/features/sessions/` | ❌ Wave 0 |
+| Req ID              | Behavior                                                          | Test Type     | Automated Command                                                   | File Exists?                              |
+| ------------------- | ----------------------------------------------------------------- | ------------- | ------------------------------------------------------------------- | ----------------------------------------- |
+| FRONT-01 (backend)  | Cache hit skips repo calls                                        | unit          | `go test ./tests/internal/service/... -run TestDiagnosticsCache`    | ❌ Wave 0                                 |
+| FRONT-01 (backend)  | Cache expires after 30s                                           | unit          | `go test ./tests/internal/service/... -run TestDiagnosticsCacheTTL` | ❌ Wave 0                                 |
+| FRONT-01 (frontend) | `useDiagnostics` does not re-fetch on re-mount when cache is warm | unit          | `npx vitest run tests/features/diagnostics/`                        | ❌ Wave 0                                 |
+| FRONT-02            | YAxis renders with log scale (smoke — no crash)                   | unit (mocked) | `npx vitest run tests/features/dashboard/`                          | ✅ (mocked in token-usage-panel.test.tsx) |
+| UX-01               | Copy icon appears; click copies sessionId to clipboard            | unit          | `npx vitest run tests/features/events/`                             | ❌ Wave 0                                 |
+| UX-02               | Click ChangeRow expands code with line numbers                    | unit          | `npx vitest run tests/features/sessions/`                           | ❌ Wave 0                                 |
 
 ### Sampling Rate
+
 - **Per task commit:** quick run for affected feature only (e.g., `go test ./tests/internal/service/...` or `npx vitest run tests/features/diagnostics/`)
 - **Per wave merge:** full suite (`go test ./...` + `npx vitest run`)
 - **Phase gate:** Full suite green before `/gsd-verify-work`
@@ -406,10 +423,12 @@ No missing dependencies.
 ### Wave 0 Gaps
 
 **Backend (add to `tests/internal/service/event_service_test.go`):**
+
 - [ ] `TestDiagnosticsCacheReturnsCachedResult` — second call within TTL does not invoke `diagnosticsCalls` again (already tracked by `mockRepo.diagnosticsCalls` counter)
 - [ ] `TestDiagnosticsCacheExpires` — after injecting a past `cachedAt`, next call hits repo again
 
 **Frontend (new test files):**
+
 - [ ] `tests/features/events/__tests__/AgentSession.test.tsx` — covers UX-01 clipboard copy + stop-propagation
 - [ ] `tests/features/sessions/FileChangesDrawer.test.tsx` — covers UX-02 ChangeRow expand/collapse + line number rendering
 - [ ] Update `tests/features/diagnostics/DiagnosticsPage.test.tsx` — add "no fetch on re-mount" test after module cache is introduced (requires `vi.resetModules()` or exported reset function)
@@ -422,21 +441,21 @@ No missing dependencies.
 
 ### Applicable ASVS Categories
 
-| ASVS Category | Applies | Standard Control |
-|---------------|---------|-----------------|
-| V2 Authentication | no | — |
-| V3 Session Management | no | — |
-| V4 Access Control | no | — |
-| V5 Input Validation | no | No new user input. Session IDs are read from existing domain data. Line content (`new_string`) is rendered verbatim in a `<pre>` — React escapes HTML automatically. |
-| V6 Cryptography | no | — |
+| ASVS Category         | Applies | Standard Control                                                                                                                                                     |
+| --------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| V2 Authentication     | no      | —                                                                                                                                                                    |
+| V3 Session Management | no      | —                                                                                                                                                                    |
+| V4 Access Control     | no      | —                                                                                                                                                                    |
+| V5 Input Validation   | no      | No new user input. Session IDs are read from existing domain data. Line content (`new_string`) is rendered verbatim in a `<pre>` — React escapes HTML automatically. |
+| V6 Cryptography       | no      | —                                                                                                                                                                    |
 
 ### Known Threat Patterns for this phase
 
-| Pattern | STRIDE | Standard Mitigation |
-|---------|--------|---------------------|
-| XSS via `new_string` content | Spoofing/Tampering | React `<pre>` renders as text (not `dangerouslySetInnerHTML`) — auto-escaped |
-| Cache poisoning | Tampering | Backend cache is server-internal only; no user input affects cached value |
-| Clipboard content leakage | Info Disclosure | Session IDs are not sensitive beyond normal operational context; no mitigation needed |
+| Pattern                      | STRIDE             | Standard Mitigation                                                                   |
+| ---------------------------- | ------------------ | ------------------------------------------------------------------------------------- |
+| XSS via `new_string` content | Spoofing/Tampering | React `<pre>` renders as text (not `dangerouslySetInnerHTML`) — auto-escaped          |
+| Cache poisoning              | Tampering          | Backend cache is server-internal only; no user input affects cached value             |
+| Clipboard content leakage    | Info Disclosure    | Session IDs are not sensitive beyond normal operational context; no mitigation needed |
 
 **Privacy note (from CLAUDE.md):** `new_string` in file changes may contain prompts, diffs, and file paths. These are already stored in SQLite and displayed in the sessions view — Phase 11 only adds a display toggle, not new data access.
 
@@ -444,10 +463,10 @@ No missing dependencies.
 
 ## Assumptions Log
 
-| # | Claim | Section | Risk if Wrong |
-|---|-------|---------|---------------|
-| A1 | Stacked BarChart + `scale="log"` + `domain={[1,'auto']}` renders correctly with the actual chart data shape (stacked by `stackId="a"`) | Standard Stack / Common Pitfalls | Low — documented in Recharts YAxis.d.ts and working for non-zero data; edge case only when all 4 token categories are 0 |
-| A2 | The `diagnosticsCache` single-slot design is safe because `opts` (server config) is static after startup | Architecture Patterns — Backend | Low — if opts changed dynamically, cached result would be stale; by inspection of `handler/diagnostics.go` opts is constructed at handler registration time |
+| #   | Claim                                                                                                                                  | Section                          | Risk if Wrong                                                                                                                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Stacked BarChart + `scale="log"` + `domain={[1,'auto']}` renders correctly with the actual chart data shape (stacked by `stackId="a"`) | Standard Stack / Common Pitfalls | Low — documented in Recharts YAxis.d.ts and working for non-zero data; edge case only when all 4 token categories are 0                                     |
+| A2  | The `diagnosticsCache` single-slot design is safe because `opts` (server config) is static after startup                               | Architecture Patterns — Backend  | Low — if opts changed dynamically, cached result would be stale; by inspection of `handler/diagnostics.go` opts is constructed at handler registration time |
 
 ---
 
@@ -468,6 +487,7 @@ No missing dependencies.
 ## Sources
 
 ### Primary (HIGH confidence)
+
 - `[VERIFIED: node_modules/recharts/types/cartesian/YAxis.d.ts]` — `scale="log"` officially documented with `@example`, `ScaleType` union includes `'log'`
 - `[VERIFIED: node_modules/recharts/types/util/types.d.ts]` — `ScaleType = 'auto' | RechartsScaleType`, `RechartsScaleType` includes `'log'`
 - `[VERIFIED: frontend/src/features/events/renderers/CopyIconButton.tsx]` — established clipboard copy pattern with `useEffect` cleanup
@@ -481,6 +501,7 @@ No missing dependencies.
 - `[VERIFIED: node_modules/lucide-react/dist/cjs/lucide-react.js]` — `Clipboard`, `Copy`, `Check` all available in v1.14.0
 
 ### Secondary (MEDIUM confidence)
+
 - `[VERIFIED: frontend/src/test/setup.ts]` — jsdom does not include clipboard; tests must mock it via `Object.defineProperty`
 
 ---
@@ -488,6 +509,7 @@ No missing dependencies.
 ## Metadata
 
 **Confidence breakdown:**
+
 - Standard stack: HIGH — all libraries verified from installed node_modules and Go source
 - Architecture patterns: HIGH — derived from reading actual source files; patterns are direct extensions of existing code
 - Pitfalls: HIGH (pitfalls 1-4), MEDIUM (pitfalls 5-6) — pitfalls 1-4 derived from source reading; pitfalls 5-6 from knowledge of Vitest module isolation

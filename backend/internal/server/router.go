@@ -76,7 +76,6 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/projects", handler.Projects(svc))
 	mux.Handle("GET /api/sessions", handler.Sessions(svc))
 	mux.Handle("GET /api/sessions/tree", handler.SessionsTree(svc))
-	mux.Handle("GET /api/traces", handler.Traces(svc))
 	mux.Handle("GET /api/file-changes", handler.FileChanges(svc))
 	mux.Handle("GET /api/dashboard/stats", handler.DashboardStats(svc))
 	mux.Handle("GET /api/openai/", handler.OpenAIProxy())

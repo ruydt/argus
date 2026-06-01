@@ -17,8 +17,10 @@ const ProjectsPage = lazy(() =>
 const SessionList = lazy(() =>
   import('./features/sessions/SessionListPage').then((m) => ({ default: m.SessionListPage }))
 )
-const TraceView = lazy(() =>
-  import('./features/sessions/TraceViewPage').then((m) => ({ default: m.TraceViewPage }))
+const SessionFileChanges = lazy(() =>
+  import('./features/sessions/SessionFileChangesPage').then((m) => ({
+    default: m.SessionFileChangesPage,
+  }))
 )
 const Diagnostics = lazy(() =>
   import('./features/diagnostics/DiagnosticsPage').then((m) => ({ default: m.DiagnosticsPage }))
@@ -74,7 +76,7 @@ export default function App() {
             path="sessions/:encodedCwd/:sessionId"
             element={
               <Suspense fallback={null}>
-                <TraceView />
+                <SessionFileChanges />
               </Suspense>
             }
           />

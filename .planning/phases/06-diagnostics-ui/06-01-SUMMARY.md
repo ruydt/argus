@@ -43,20 +43,22 @@ metrics:
 
 ## Tasks Completed
 
-| Task | Name | Commit | Files |
-|------|------|--------|-------|
-| 1 | Create types.ts and useDiagnostics hook | 3f8e847 | types.ts, hooks/useDiagnostics.ts |
-| 2 | Scaffold DiagnosticsPage stub, wire route and sidebar | d9a4eca | DiagnosticsPage.tsx, App.tsx, Sidebar.tsx |
+| Task | Name                                                  | Commit  | Files                                     |
+| ---- | ----------------------------------------------------- | ------- | ----------------------------------------- |
+| 1    | Create types.ts and useDiagnostics hook               | 3f8e847 | types.ts, hooks/useDiagnostics.ts         |
+| 2    | Scaffold DiagnosticsPage stub, wire route and sidebar | d9a4eca | DiagnosticsPage.tsx, App.tsx, Sidebar.tsx |
 
 ## What Was Built
 
 **types.ts** — 10 named TypeScript interfaces mirroring `backend/internal/domain/diagnostics.go` JSON shape:
+
 - Go `*int64` → `number | null` (dbSizeBytes)
 - Go `*string` → `string | null` (latestEventAt, lastSeenAt, normalizerVersion)
 - Go `string` with `omitempty` → TypeScript `string?` optional (reason, dbSizeReason, hookConfigReason)
 - CORS field correctly named `cors` (from Go JSON tag `"cors"`, not the struct field name `CORS`)
 
 **useDiagnostics hook** — Fetch-on-mount-only hook (D-13) with:
+
 - `loading: boolean` — true on first fetch, false after
 - `refreshing: boolean` — true during reload when data already exists (D-14)
 - `error: string | null` — surfaces fetch failure as string (D-09)
@@ -66,7 +68,7 @@ metrics:
 
 **DiagnosticsPage stub** — Named export with placeholder `<h1>Diagnostics</h1>` heading; enough for lazy import to resolve and Plan 02 to replace the body.
 
-**App.tsx** — DiagnosticsPage lazy import added after TraceView; `path="diagnostics"` route registered inside `<Route element={<Layout />}>` block.
+**App.tsx** — DiagnosticsPage lazy import added; `path="diagnostics"` route registered inside `<Route element={<Layout />}>` block.
 
 **Sidebar.tsx** — `Stethoscope` added to lucide-react import; `Diagnostics` NAV_ITEMS entry with `ariaLabel="System Diagnostics"` and `to="/diagnostics"` appended after Projects.
 
@@ -83,8 +85,8 @@ None — plan executed exactly as written.
 
 ## Known Stubs
 
-| File | Description |
-|------|-------------|
+| File                                                  | Description                                                                             |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | frontend/src/features/diagnostics/DiagnosticsPage.tsx | Placeholder body with only `<h1>Diagnostics</h1>` heading; full layout wired in Plan 02 |
 
 This stub is intentional per plan spec — Plan 02 replaces the body. The placeholder does not prevent the plan's goal (route wiring and contract establishment) from being achieved.

@@ -82,48 +82,6 @@ func TestSessionsHandlerFiltersByCWDQuery(t *testing.T) {
 	}
 }
 
-func TestTracesHandlerFiltersBySessionIDQuery(t *testing.T) {
-	svc := newTestService(t)
-	addHandlerEvent(t, svc, domain.NormalizedEvent{
-		Time:          "2026-05-14T10:00:00Z",
-		Agent:         "codex",
-		Session:       "target",
-		CWD:           "/work/hooker",
-		HookEventName: "PreToolUse",
-		Tool:          "Read",
-	})
-	addHandlerEvent(t, svc, domain.NormalizedEvent{
-		Time:          "2026-05-14T11:00:00Z",
-		Agent:         "codex",
-		Session:       "other",
-		CWD:           "/work/hooker",
-		HookEventName: "PostToolUse",
-		Tool:          "Bash",
-	})
-
-	h := handler.Traces(svc)
-	req := httptest.NewRequest(http.MethodGet, "/api/traces?session_id=target", nil)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
-	}
-
-	var payload struct {
-		Traces []domain.NormalizedEvent `json:"traces"`
-	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if len(payload.Traces) != 1 {
-		t.Fatalf("traces len = %d, want 1", len(payload.Traces))
-	}
-	if payload.Traces[0].Session != "target" {
-		t.Fatalf("session = %q, want target", payload.Traces[0].Session)
-	}
-}
-
 func addHandlerEvent(t *testing.T, svc interface {
 	AddEvent(domain.NormalizedEvent) error
 }, e domain.NormalizedEvent) {

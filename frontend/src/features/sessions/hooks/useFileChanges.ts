@@ -14,6 +14,7 @@ export function useFileChanges(sessionId: string | null) {
     Promise.resolve()
       .then(() => {
         if (!cancelled) {
+          setGroups([])
           setLoading(true)
           setError(null)
         }
@@ -27,7 +28,10 @@ export function useFileChanges(sessionId: string | null) {
         if (!cancelled) setGroups(data ?? [])
       })
       .catch((err: unknown) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'error')
+        if (!cancelled) {
+          setGroups([])
+          setError(err instanceof Error ? err.message : 'error')
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)

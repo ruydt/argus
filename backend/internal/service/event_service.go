@@ -553,10 +553,6 @@ func (s *EventService) GetSessionTree(since string) ([]domain.SessionTreeNode, e
 	return s.repo.GetSessionTree(since)
 }
 
-func (s *EventService) GetTraces(sessionID, since string) ([]domain.NormalizedEvent, error) {
-	return s.repo.GetTraces(sessionID, since)
-}
-
 func (s *EventService) ListSessionsByCWDPage(cwd, since string, page, size int) ([]domain.Session, int, error) {
 	sessions, total, err := s.repo.ListSessionsByCWDPage(cwd, since, page, size)
 	if err != nil {
@@ -581,8 +577,4 @@ func (s *EventService) ListSessionsByCWDPage(cwd, since string, page, size int) 
 
 func (s *EventService) GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error) {
 	return s.repo.GetFileChanges(sessionID)
-}
-
-func (s *EventService) GetTracesPage(sessionID, since string, page, size int) ([]domain.NormalizedEvent, int, error) {
-	return s.repo.GetTracesPage(sessionID, since, page, size)
 }

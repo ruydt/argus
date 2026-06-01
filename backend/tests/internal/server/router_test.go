@@ -41,13 +41,7 @@ func (noopRepo) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) 
 
 func (noopRepo) GetSessionTree(string) ([]domain.SessionTreeNode, error) { return nil, nil }
 
-func (noopRepo) GetTraces(string, string) ([]domain.NormalizedEvent, error) { return nil, nil }
-
 func (noopRepo) ListSessionsByCWDPage(string, string, int, int) ([]domain.Session, int, error) {
-	return nil, 0, nil
-}
-
-func (noopRepo) GetTracesPage(string, string, int, int) ([]domain.NormalizedEvent, int, error) {
 	return nil, 0, nil
 }
 

@@ -41,7 +41,7 @@ Phase 4 does not cover hook connectivity rows, privacy/security posture diagnost
 
 ### SQLite Aggregate Patterns
 
-- Existing count queries appear in `ListSessionsByCWDPage` and `GetTracesPage`.
+- Existing count queries appear in `ListSessionsByCWDPage` and `GetDashboardStats`.
 - `GetDashboardStats` already uses `COUNT(*)` against `sessions` and `hook_events`, but also runs dashboard-specific enrichment queries. Do not reuse this service flow for diagnostics because Phase 4 explicitly needs a compact, dedicated aggregate contract.
 - Relevant indexes already exist:
   - `idx_hook_events_created ON hook_events(created_at DESC)`

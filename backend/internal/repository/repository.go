@@ -22,9 +22,7 @@ type EventRepository interface {
 	DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error)
 	GetDashboardStats(since, until string) (*domain.DashboardStats, error)
 	GetSessionTree(since string) ([]domain.SessionTreeNode, error)
-	GetTraces(sessionID, since string) ([]domain.NormalizedEvent, error)
 	ListSessionsByCWDPage(cwd, since string, page, size int) ([]domain.Session, int, error)
-	GetTracesPage(sessionID, since string, page, size int) ([]domain.NormalizedEvent, int, error)
 	GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error)
 	GetSessionFileChangeCounts(ids []string) (map[string]int, error)
 	ExportEvents(ctx context.Context, w io.Writer) error

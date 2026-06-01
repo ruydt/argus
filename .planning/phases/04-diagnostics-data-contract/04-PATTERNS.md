@@ -9,19 +9,19 @@ Map each expected Phase 4 file change to existing analogs so executors copy loca
 
 ## New or Modified Files
 
-| Target | Role | Closest Existing Analogs | Pattern to Reuse |
-|--------|------|--------------------------|------------------|
-| `backend/internal/domain/diagnostics.go` | Diagnostics response and aggregate structs | `backend/internal/domain/event.go` | Plain structs with JSON tags; keep wire tags explicit. Use camelCase only for this new diagnostics contract. |
-| `backend/internal/repository/repository.go` | Storage interface expansion | Existing `EventRepository` methods | Add one diagnostics aggregate method near other read methods; update all test doubles immediately. |
-| `backend/internal/repository/sqlite/sqlite.go` | SQLite aggregate implementation | `ListSessionsByCWDPage`, `GetTracesPage`, `GetDashboardStats` | Use targeted `QueryRow` aggregate queries. Avoid dashboard enrichment and list-loading flows. |
-| `backend/internal/service/event_service.go` | Diagnostics composition | Existing `GetDashboardStats`, `ListSessions`, `ListEvents` wrappers | Service method delegates storage aggregates to repo and composes version/health/storage fields. Do not backfill or mutate sessions. |
-| `backend/internal/handler/diagnostics.go` | HTTP handler | `backend/internal/handler/version.go`, `backend/internal/handler/dashboard.go` | `http.HandlerFunc`, set `Content-Type`, encode typed response, return 500 only on storage aggregate errors. |
-| `backend/internal/server/router.go` | Route wiring and options | Existing `/api/version`, `/readyz`, `Options` struct | Add `GET /api/diagnostics`; prefer extending `Options` with DB path over widening `NewRouter` signature. |
-| `backend/cmd/server/main.go` | Runtime wiring | Existing `server.NewRouter` call and `config.Load()` | Pass `cfg.DBPath` through `server.Options`. Keep readiness function as `repo.Ready`. |
-| `backend/tests/internal/repository/sqlite/sqlite_test.go` | Aggregate query tests | Existing `newTestDB`, `addEvent`, `UpsertSession` tests | Test empty DB, counts, degraded stored events, and `MAX(created_at)` semantics. |
-| `backend/tests/internal/service/event_service_test.go` | Service behavior tests and mock update | Existing `mockRepo` | Add diagnostics aggregate fields/method to mock. Assert no list-based diagnostics behavior. |
-| `backend/tests/internal/handler/diagnostics_test.go` | Handler response tests | `backend/tests/internal/handler/hook_test.go`, `export_test.go` | Use `httptest`, in-memory DB or service mock, decode JSON into typed/anonymous structs. |
-| `backend/tests/internal/server/router_test.go` | Router smoke test and noop mock update | Existing version route test | Add `noopRepo` diagnostics method and assert `/api/diagnostics` is mounted. |
+| Target                                                    | Role                                       | Closest Existing Analogs                                                       | Pattern to Reuse                                                                                                                    |
+| --------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/internal/domain/diagnostics.go`                  | Diagnostics response and aggregate structs | `backend/internal/domain/event.go`                                             | Plain structs with JSON tags; keep wire tags explicit. Use camelCase only for this new diagnostics contract.                        |
+| `backend/internal/repository/repository.go`               | Storage interface expansion                | Existing `EventRepository` methods                                             | Add one diagnostics aggregate method near other read methods; update all test doubles immediately.                                  |
+| `backend/internal/repository/sqlite/sqlite.go`            | SQLite aggregate implementation            | `ListSessionsByCWDPage`, `GetDashboardStats`                                   | Use targeted `QueryRow` aggregate queries. Avoid dashboard enrichment and list-loading flows.                                       |
+| `backend/internal/service/event_service.go`               | Diagnostics composition                    | Existing `GetDashboardStats`, `ListSessions`, `ListEvents` wrappers            | Service method delegates storage aggregates to repo and composes version/health/storage fields. Do not backfill or mutate sessions. |
+| `backend/internal/handler/diagnostics.go`                 | HTTP handler                               | `backend/internal/handler/version.go`, `backend/internal/handler/dashboard.go` | `http.HandlerFunc`, set `Content-Type`, encode typed response, return 500 only on storage aggregate errors.                         |
+| `backend/internal/server/router.go`                       | Route wiring and options                   | Existing `/api/version`, `/readyz`, `Options` struct                           | Add `GET /api/diagnostics`; prefer extending `Options` with DB path over widening `NewRouter` signature.                            |
+| `backend/cmd/server/main.go`                              | Runtime wiring                             | Existing `server.NewRouter` call and `config.Load()`                           | Pass `cfg.DBPath` through `server.Options`. Keep readiness function as `repo.Ready`.                                                |
+| `backend/tests/internal/repository/sqlite/sqlite_test.go` | Aggregate query tests                      | Existing `newTestDB`, `addEvent`, `UpsertSession` tests                        | Test empty DB, counts, degraded stored events, and `MAX(created_at)` semantics.                                                     |
+| `backend/tests/internal/service/event_service_test.go`    | Service behavior tests and mock update     | Existing `mockRepo`                                                            | Add diagnostics aggregate fields/method to mock. Assert no list-based diagnostics behavior.                                         |
+| `backend/tests/internal/handler/diagnostics_test.go`      | Handler response tests                     | `backend/tests/internal/handler/hook_test.go`, `export_test.go`                | Use `httptest`, in-memory DB or service mock, decode JSON into typed/anonymous structs.                                             |
+| `backend/tests/internal/server/router_test.go`            | Router smoke test and noop mock update     | Existing version route test                                                    | Add `noopRepo` diagnostics method and assert `/api/diagnostics` is mounted.                                                         |
 
 ## Concrete Code Patterns
 
@@ -43,7 +43,7 @@ Follow `backend/internal/handler/health.go`:
 
 ### SQLite Aggregates
 
-Follow the query style in `ListSessionsByCWDPage` and `GetTracesPage`:
+Follow the query style in `ListSessionsByCWDPage` and `GetDashboardStats`:
 
 - `QueryRow("SELECT COUNT(*) FROM ...").Scan(&total)`
 - `sql.NullString` for `MAX(created_at)`

@@ -97,11 +97,10 @@ export function ActivityPanel({ stats, query }: ActivityPanelProps) {
                       type="linear"
                       dataKey={agent}
                       name={agentLabel(agent)}
-                      stackId="events"
                       stroke={`var(--color-${agent})`}
                       strokeWidth={2}
                       fill={`var(--color-${agent})`}
-                      fillOpacity={0.2}
+                      fillOpacity={0.1}
                     />
                   ))}
                 </AreaChart>
