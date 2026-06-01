@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, FileCode2, FilePen, FileText, X } from 'luci
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 import type { FileChangeEvent, FileChangeGroup } from '@/types/sessions'
 
 type FileChangesDrawerProps = {
@@ -111,28 +112,71 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
   const color = toolColor(ev.tool)
   const relTime = formatRelativeTime(ev.time, sessionStart)
   const lineInfo = ev.start_line ? `L${ev.start_line}` : null
-  const diffLines = ev.new_string
-    ? ev.new_string.split('\n').length
-    : ev.old_string
-      ? ev.old_string.split('\n').length
+
+  // D-04: expandable code block with line numbers
+  const content = ev.new_string ?? ev.old_string ?? null
+  const canExpand = content !== null
+  const [expanded, setExpanded] = useState(false)
+
+  const lines = content?.split('\n') ?? []
+  const startLine = ev.start_line ?? 1
+  const truncated = lines.length > 200
+  const displayLines = truncated ? lines.slice(0, 200) : lines
+  const maxWidth = String(startLine + lines.length - 1).length
+
+  // Show diffLines count only when canExpand is false (chevron replaces the count)
+  const diffLines =
+    !canExpand
+      ? ev.new_string
+        ? ev.new_string.split('\n').length
+        : ev.old_string
+          ? ev.old_string.split('\n').length
+          : null
       : null
 
   return (
-    <div className="flex items-center gap-2 py-0.5">
-      <span
-        className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
-        style={{ background: color }}
+    <div>
+      <div
+        className={cn(
+          'flex items-center gap-2 py-0.5',
+          canExpand && 'cursor-pointer hover:bg-white/[0.03] rounded'
+        )}
+        onClick={canExpand ? () => setExpanded((v) => !v) : undefined}
+        role={canExpand ? 'button' : undefined}
       >
-        {label}
-      </span>
-      <span className="shrink-0 font-mono text-[10px] text-white/45">{relTime}</span>
-      {lineInfo && (
-        <span className="shrink-0 font-mono text-[10px] text-white/35">{lineInfo}</span>
-      )}
-      {diffLines !== null && (
-        <span className="ml-auto shrink-0 font-mono text-[10px] text-white/35">
-          {diffLines} {diffLines === 1 ? 'line' : 'lines'}
+        <span
+          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+          style={{ background: color }}
+        >
+          {label}
         </span>
+        <span className="shrink-0 font-mono text-[10px] text-white/45">{relTime}</span>
+        {lineInfo && (
+          <span className="shrink-0 font-mono text-[10px] text-white/35">{lineInfo}</span>
+        )}
+        {canExpand && (
+          <span className="ml-auto">
+            {expanded ? (
+              <ChevronDown className="h-3 w-3 shrink-0 text-white/35" />
+            ) : (
+              <ChevronRight className="h-3 w-3 shrink-0 text-white/35" />
+            )}
+          </span>
+        )}
+        {!canExpand && diffLines !== null && (
+          <span className="ml-auto shrink-0 font-mono text-[10px] text-white/35">
+            {diffLines} {diffLines === 1 ? 'line' : 'lines'}
+          </span>
+        )}
+      </div>
+
+      {expanded && canExpand && (
+        <pre className="mt-1 overflow-x-auto rounded bg-black/30 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-blue-100/80">
+          {displayLines.map((line, i) => `${String(startLine + i).padStart(maxWidth, ' ')} │ ${line}\n`)}
+          {truncated && (
+            <span className="text-white/35">{`… ${lines.length - 200} more lines`}</span>
+          )}
+        </pre>
       )}
     </div>
   )

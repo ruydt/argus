@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
+import { Check, Copy } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { PaginationBar } from '@/components/shared/PaginationBar'
 import { cn } from '@/lib/utils'
@@ -47,6 +48,18 @@ export function AgentSession({
 
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return
+    const id = window.setTimeout(() => setCopied(false), 1500)
+    return () => window.clearTimeout(id)
+  }, [copied])
+
+  const onCopySessionId = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(sessionId).then(() => setCopied(true)).catch(() => {})
+  }
 
   const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
   const clampedPage = Math.min(page, totalPages - 1)
@@ -87,13 +100,21 @@ export function AgentSession({
             isCollapsed && 'border-b-0'
           )}
         >
-          <div className="inline-flex min-w-0 items-center gap-2 text-[0.8rem] font-bold text-[#47ff9c]">
+          <div className="group inline-flex min-w-0 items-center gap-2 text-[0.8rem] font-bold text-[#47ff9c]">
             <span className={cn('agent-badge', `agent-${agent.badgeClass}`)}>
               <Logo size={12} />
             </span>
             <span className="min-w-0 break-words sm:break-all">
               {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
             </span>
+            <button
+              type="button"
+              onClick={onCopySessionId}
+              className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex h-4 w-4 items-center justify-center rounded text-[#666] hover:text-[#47ff9c]"
+              aria-label={copied ? 'Copied session ID' : 'Copy session ID'}
+            >
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </button>
             <span className="ml-[10px] shrink-0 text-[0.7rem] text-[#666]">
               {isCollapsed ? '▼' : '▲'}
             </span>
