@@ -19,6 +19,7 @@ import (
 	// Register SQLite driver for database/sql.
 	_ "modernc.org/sqlite"
 
+	"hooker/internal/agents/codex"
 	"hooker/internal/domain"
 )
 
@@ -1181,7 +1182,8 @@ func (d *DB) GetTraces(sessionID, since string) ([]domain.NormalizedEvent, error
 
 const fileChangeCondition = `(
 	LOWER(tool_name) IN ('write','edit','multiedit','str_replace','create_file','notebook_edit',
-	                      'str_replace_based_edit_tool','str_replace_based_edit','new_file','create')
+	                      'str_replace_based_edit_tool','str_replace_based_edit','new_file','create',
+	                      'apply_patch')
 	OR COALESCE(old_string,'') != ''
 	OR COALESCE(new_string,'') != ''
 )`
@@ -1189,7 +1191,8 @@ const fileChangeCondition = `(
 func (d *DB) GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error) {
 	rows, err := d.db.Query(`
 		SELECT path, COALESCE(tool_name,''), created_at, COALESCE(action,''),
-		       COALESCE(old_string,''), COALESCE(new_string,''), COALESCE(start_line,0)
+		       COALESCE(old_string,''), COALESCE(new_string,''), COALESCE(start_line,0),
+		       COALESCE(command,'')
 		FROM hook_events
 		WHERE session_id = ?
 		  AND path != '' AND path IS NOT NULL
@@ -1205,10 +1208,14 @@ func (d *DB) GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error) 
 	groups := map[string]*entry{}
 	order := []string{}
 	for rows.Next() {
-		var path, tool, createdAt, action, oldStr, newStr string
+		var path, tool, createdAt, action, oldStr, newStr, command string
 		var startLine int
-		if err := rows.Scan(&path, &tool, &createdAt, &action, &oldStr, &newStr, &startLine); err != nil {
+		if err := rows.Scan(&path, &tool, &createdAt, &action, &oldStr, &newStr, &startLine, &command); err != nil {
 			return nil, err
+		}
+		if strings.EqualFold(tool, "apply_patch") && oldStr == "" && newStr == "" && command != "" {
+			_, hunks := codex.ParseApplyPatch(command)
+			oldStr, newStr = codex.PatchSnippetStrings(hunks)
 		}
 		if _, ok := groups[path]; !ok {
 			groups[path] = &entry{Path: path}

@@ -134,7 +134,7 @@ func patchFilePathFromHeader(trimmed string) string {
 	}
 }
 
-func patchSnippetStrings(hunks []ParseHunk) (oldStr, newStr string) {
+func PatchSnippetStrings(hunks []ParseHunk) (oldStr, newStr string) {
 	var oldLines, newLines []string
 	for _, h := range hunks {
 		oldLines = append(oldLines, h.OldLines...)
@@ -284,7 +284,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 	var startLine int
 	if isApplyPatchTool {
 		patchPath, hunks := ParseApplyPatch(cmd)
-		patchOld, patchNew := patchSnippetStrings(hunks)
+		patchOld, patchNew := PatchSnippetStrings(hunks)
 		if oldStr == "" {
 			oldStr = patchOld
 		}
