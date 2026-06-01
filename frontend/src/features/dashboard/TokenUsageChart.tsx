@@ -58,8 +58,6 @@ export function TokenUsageChart({ stats }: TokenUsageChartProps) {
                   }}
                 />
                 <YAxis
-                  scale="log"
-                  domain={[1, 'auto']}
                   fontSize={10}
                   axisLine={false}
                   tickLine={false}

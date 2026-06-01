@@ -115,9 +115,6 @@ export function AgentSession({
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
             </button>
-            <span className="ml-[10px] shrink-0 text-[0.7rem] text-[#666]">
-              {isCollapsed ? '▼' : '▲'}
-            </span>
           </div>
           <div className="inline-flex w-full flex-wrap items-center gap-2 text-[0.68rem] text-[#666] sm:w-auto sm:justify-end sm:text-right">
             {sessionUsage[sessionId] &&

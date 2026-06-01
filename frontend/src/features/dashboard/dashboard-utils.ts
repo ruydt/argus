@@ -51,16 +51,18 @@ export function getModelColor(model: string, idx: number) {
 
 export function toTokenChartData(stats: DashboardStats | null) {
   if (!stats) return []
-  return stats.agent_usage.map((usage) => ({
-    label: `${usage.agent} / ${displayModel(usage.model)}`,
-    agent: usage.agent,
-    model: displayModel(usage.model),
-    input: usage.input,
-    output: usage.output,
-    cache_creation: usage.cache_creation,
-    cache_read: usage.cache_read,
-    total: usage.input + usage.output + usage.cache_creation + usage.cache_read,
-  }))
+  return stats.agent_usage
+    .filter((usage) => usage.model !== '<synthetic>')
+    .map((usage) => ({
+      label: `${usage.agent} / ${displayModel(usage.model)}`,
+      agent: usage.agent,
+      model: displayModel(usage.model),
+      input: usage.input,
+      output: usage.output,
+      cache_creation: usage.cache_creation,
+      cache_read: usage.cache_read,
+      total: usage.input + usage.output + usage.cache_creation + usage.cache_read,
+    }))
 }
 
 export function toTokenShareChartData(stats: DashboardStats | null) {

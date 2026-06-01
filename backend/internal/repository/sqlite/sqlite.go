@@ -611,30 +611,23 @@ func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 	}
 
 	versionRows, err := d.db.Query(`
-		WITH inferred AS (
-			SELECT
-				CASE
-					WHEN agent IN ('claudecode', 'codex') THEN agent
-					WHEN transcript_path LIKE '%/.claude/%' THEN 'claudecode'
-					WHEN source = 'codex' THEN 'codex'
-					ELSE ''
-				END AS inferred_agent,
-				normalizer_version,
-				created_at
+		SELECT * FROM (
+			SELECT 'claudecode' AS agent, normalizer_version
 			FROM hook_events
-			WHERE COALESCE(normalizer_version, '') != ''
+			WHERE (agent = 'claudecode' OR (agent = '' AND transcript_path LIKE '%/.claude/%'))
+			  AND COALESCE(normalizer_version, '') != ''
+			ORDER BY created_at DESC, id DESC
+			LIMIT 1
 		)
-		SELECT e.inferred_agent, e.normalizer_version
-		FROM inferred e
-		WHERE e.inferred_agent IN ('claudecode', 'codex')
-		  AND e.created_at = (
-		    SELECT e2.created_at
-		    FROM inferred e2
-		    WHERE e2.inferred_agent = e.inferred_agent
-		    ORDER BY datetime(e2.created_at) DESC, e2.created_at DESC
-		    LIMIT 1
-		  )
-		GROUP BY e.inferred_agent
+		UNION ALL
+		SELECT * FROM (
+			SELECT 'codex' AS agent, normalizer_version
+			FROM hook_events
+			WHERE (agent = 'codex' OR (agent = '' AND source = 'codex'))
+			  AND COALESCE(normalizer_version, '') != ''
+			ORDER BY created_at DESC, id DESC
+			LIMIT 1
+		)
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("diagnostics agent normalizer versions: %w", err)
