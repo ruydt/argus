@@ -6,7 +6,7 @@ import (
 	"hooker/internal/agents/codex"
 )
 
-func TestNormalizeApplyPatchUsesPatchRendering(t *testing.T) {
+func TestNormalizeApplyPatchExtractsFileChangeSnippets(t *testing.T) {
 	raw := []byte(`{
 		"session_id":"s2",
 		"transcript_path":"/tmp/codex-session.jsonl",
@@ -31,8 +31,11 @@ func TestNormalizeApplyPatchUsesPatchRendering(t *testing.T) {
 	if got.Path != "/tmp/foo.go" {
 		t.Fatalf("Path = %q, want /tmp/foo.go", got.Path)
 	}
-	if got.OldString != "" || got.NewString != "" {
-		t.Fatalf("diff = (%q, %q), want empty for patch rendering", got.OldString, got.NewString)
+	if got.OldString != "old line" {
+		t.Fatalf("OldString = %q, want old line", got.OldString)
+	}
+	if got.NewString != "new line" {
+		t.Fatalf("NewString = %q, want new line", got.NewString)
 	}
 	if got.StartLine != 1 {
 		t.Fatalf("StartLine = %d, want 1", got.StartLine)

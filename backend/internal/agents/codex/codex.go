@@ -134,6 +134,14 @@ func patchFilePathFromHeader(trimmed string) string {
 	}
 }
 
+func patchSnippetStrings(hunks []ParseHunk) (oldStr, newStr string) {
+	var oldLines, newLines []string
+	for _, h := range hunks {
+		oldLines = append(oldLines, h.OldLines...)
+		newLines = append(newLines, h.NewLines...)
+	}
+	return strings.Join(oldLines, "\n"), strings.Join(newLines, "\n")
+}
 
 func ComputeUsage(transcriptPath string) domain.SessionUsage {
 	return ComputeUsageBreakdown(transcriptPath).Total
@@ -276,6 +284,13 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 	var startLine int
 	if isApplyPatchTool {
 		patchPath, hunks := ParseApplyPatch(cmd)
+		patchOld, patchNew := patchSnippetStrings(hunks)
+		if oldStr == "" {
+			oldStr = patchOld
+		}
+		if newStr == "" {
+			newStr = patchNew
+		}
 
 		if path == "" && patchPath != "" {
 			path = fileutil.ResolvePath(p.CWD, patchPath)
@@ -292,14 +307,14 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		for _, h := range hunks {
 			actualStart := h.StartLine
 			searchStr := strings.Join(h.SearchLines, "\n")
-			
+
 			foundLine := 0
 			if path != "" {
 				// 1. Try to find the whole block first
 				if searchStr != "" {
 					foundLine = fileutil.FindStartLine(path, searchStr)
 				}
-				
+
 				// 2. Fallback: Try to find based on the LONGEST (most unique) context line
 				if foundLine == 0 {
 					bestLine := ""
@@ -313,7 +328,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 							}
 						}
 					}
-					
+
 					if bestLine != "" {
 						if found := fileutil.FindStartLine(path, bestLine); found > 0 {
 							// found is the line of bestLine, so start is found - bestIdx
@@ -344,12 +359,9 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 			}
 		}
 		perfectLines = append(perfectLines, "*** End Patch")
-		
+
 		// Use this perfect patch as the command for the UI to render
 		p.ToolInput.Command = strings.Join(perfectLines, "\n")
-		// Clear oldStr/newStr to force PatchBlock usage
-		oldStr = ""
-		newStr = ""
 	}
 
 	return domain.NormalizedEvent{
