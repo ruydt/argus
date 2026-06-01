@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiagnosticsPage } from '@/features/diagnostics/DiagnosticsPage'
 import type { Diagnostics } from '@/features/diagnostics/types'
+import { _resetDiagnosticsCache } from '@/features/diagnostics/hooks/useDiagnostics'
 
 const healthyDiagnostics: Diagnostics = {
   version: { version: '1.1.0', commit: 'abc12345', buildDate: '2026-05-28' },
@@ -84,6 +85,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  _resetDiagnosticsCache()
   vi.clearAllMocks()
   Object.defineProperty(navigator, 'clipboard', {
     value: { writeText: vi.fn() },
@@ -202,5 +204,37 @@ describe('DiagnosticsPage', () => {
     // Resolve the refresh fetch
     resolveRefresh({ ok: true, json: async () => healthyDiagnostics })
     await waitFor(() => expect(refreshBtn).not.toBeDisabled())
+  })
+})
+
+describe('useDiagnostics module cache', () => {
+  beforeEach(() => {
+    _resetDiagnosticsCache()
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  it('skips fetch on re-mount when cache is warm', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(healthyDiagnostics),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <DiagnosticsPage />
+      </MemoryRouter>
+    )
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    unmount()
+
+    render(
+      <MemoryRouter>
+        <DiagnosticsPage />
+      </MemoryRouter>
+    )
+    // Allow any pending effects to settle
+    await new Promise((r) => setTimeout(r, 50))
+    expect(fetchMock).toHaveBeenCalledTimes(1) // still 1 — cache hit on re-mount
   })
 })

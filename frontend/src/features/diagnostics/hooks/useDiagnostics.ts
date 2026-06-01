@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Diagnostics } from '../types'
 
+// Module-level cache: persists across React navigations within the same browser session.
+// No TTL on the frontend — the backend 30s TTL governs data freshness.
+// Cleared on full page reload (module re-evaluation) or by _resetDiagnosticsCache() in tests.
+let diagnosticsCache: Diagnostics | null = null
+let diagnosticsCachedAt: Date | null = null
+
+/** Test-only: reset module-level cache between test runs. Do not call in production code. */
+export function _resetDiagnosticsCache(): void {
+  diagnosticsCache = null
+  diagnosticsCachedAt = null
+}
+
 export function useDiagnostics(): {
   data: Diagnostics | null
   loading: boolean
@@ -10,17 +22,28 @@ export function useDiagnostics(): {
   reload: () => void
 } {
   const [reloadKey, setReloadKey] = useState(0)
-  const [data, setData] = useState<Diagnostics | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<Diagnostics | null>(() => diagnosticsCache)
+  const [loading, setLoading] = useState(diagnosticsCache === null)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null)
-  const hasDataRef = useRef(false)
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(() => diagnosticsCachedAt)
+  const hasDataRef = useRef(diagnosticsCache !== null)
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), [])
 
   useEffect(() => {
     let mounted = true
+
+    // Cache hit: reloadKey===0 means this is a navigation mount, not an explicit refresh.
+    // Skip fetch and hydrate from module cache.
+    if (reloadKey === 0 && diagnosticsCache !== null) {
+      setData(diagnosticsCache)
+      setLastUpdatedAt(diagnosticsCachedAt)
+      setLoading(false)
+      setRefreshing(false)
+      return
+    }
+
     const isRefresh = reloadKey > 0 && hasDataRef.current
     if (isRefresh) {
       setRefreshing(true)
@@ -36,9 +59,11 @@ export function useDiagnostics(): {
       })
       .then((json: Diagnostics) => {
         if (!mounted) return
+        diagnosticsCache = json
+        diagnosticsCachedAt = new Date()
         setData(json)
         hasDataRef.current = true
-        setLastUpdatedAt(new Date())
+        setLastUpdatedAt(diagnosticsCachedAt)
       })
       .catch((err: unknown) => {
         if (!mounted) return
