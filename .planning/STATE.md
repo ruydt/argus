@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polish & Cleanup
 status: executing
-stopped_at: Phase 9 UI-SPEC approved
-last_updated: "2026-05-31T19:07:59.380Z"
-last_activity: 2026-05-31 -- Phase 09 planning complete
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-06-01T03:46:19.906Z"
+last_activity: 2026-06-01
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 67
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
-**Current focus:** Phase 9 — frontend test coverage & docs cleanup
+**Current focus:** Phase 09 — frontend-test-coverage-docs-cleanup
 
 ## Current Position
 
-Phase: 9
-Plan: Not started
+Phase: 09 (frontend-test-coverage-docs-cleanup) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-05-31 -- Phase 09 planning complete
+Last activity: 2026-06-01
 
 ```
 v1.2 Progress [███████░░░] 67% — 2/3 phases
@@ -89,6 +89,7 @@ v1.2 Progress [███████░░░] 67% — 2/3 phases
 | Phase 06-diagnostics-ui P03 | 8min | 2 tasks | 3 files |
 | Phase 07-backend-code-quality P01 | 1min | 2 tasks | 3 files |
 | Phase 07-backend-code-quality P02 | 3min | 1 tasks | 1 files |
+| Phase 09 P01 | 1 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,7 @@ Recent decisions affecting current work:
 - [Phase 03-mature-local-product]: Contributor guide is checklist-driven for adapter changes, DB field decisions, and frontend-backend contract synchronization.
 - [Phase 03-mature-local-product]: ADRs use lightweight accepted files under docs/adr/ for SQLite storage, normalization strategy, local-first positioning, and proxy scope.
 - [Phase ?]: vi.stubGlobal('fetch') used for all diagnostics tests — vi.spyOn(Storage.prototype) prohibited per Phase 2 decision
+- [Phase ?]: DiagnosticsPage TEST-01 audit: all 7 branches covered; aria-busy assertion added to loading test as only gap
 
 ### Pending Todos
 
@@ -141,9 +143,9 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-31T14:49:52.107Z
-Stopped at: Phase 9 UI-SPEC approved
-Resume file: .planning/phases/09-frontend-test-coverage-docs-cleanup/09-UI-SPEC.md
+Last session: 2026-06-01T03:46:19.901Z
+Stopped at: Completed 09-01-PLAN.md
+Resume file: None
 
 ## Operator Next Steps
 
