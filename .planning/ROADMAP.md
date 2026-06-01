@@ -113,10 +113,10 @@ Plans:
 | 5. Hook and Privacy Diagnostics | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 6. Diagnostics UI | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 7. Backend Code Quality | v1.2 | 3/3 | Complete   | 2026-05-29 |
-| 8. Session File Changes View | v1.2 | 0/? | Not started | - |
+| 8. Session File Changes View | v1.2 | 5/5 | Complete | 2026-05-31 |
 | 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 3/3 | Complete   | 2026-06-01 |
 
 ---
 
 *Roadmap created: 2026-05-24*
-*Last updated: 2026-05-31 — Phase 8 re-scoped to session file changes view*
+*Last updated: 2026-06-01 — v1.2 verification completed*

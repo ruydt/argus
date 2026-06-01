@@ -7,13 +7,13 @@
 
 ### SESS — Session File Changes View
 
-- [ ] **SESS-01**: `/sessions/:cwd/:sessionId` replaces the trace/timeline experience with a paginated file-change browser for files created or modified during the session
-- [ ] **SESS-02**: Each file row expands to show per-change timestamp, tool/action, available line number, and compact old/new line snippets for that file
-- [ ] **SESS-03**: The file-change page uses the existing file change API/data first, adding backend support only if current data cannot provide required old/new line details or pagination needs
+- [x] **SESS-01**: `/sessions/:cwd/:sessionId` replaces the trace/timeline experience with a paginated file-change browser for files created or modified during the session
+- [x] **SESS-02**: Each file row expands to show per-change timestamp, tool/action, available line number, and compact old/new line snippets for that file
+- [x] **SESS-03**: The file-change page uses the existing file change API/data first, adding backend support only if current data cannot provide required old/new line details or pagination needs
 
 ### BACK — Backend Code Quality
 
-- [ ] **BACK-01**: All JSON encode failures in handlers are logged rather than silently discarded — 14 suppressed `_ = json.NewEncoder` errors replaced with log output
+- [x] **BACK-01**: All JSON encode failures in handlers are logged rather than silently discarded — 14 suppressed `_ = json.NewEncoder` errors replaced with log output
 - [x] **BACK-02**: Pagination query parameter parsing is extracted into a shared `parsePageSize()` helper used by both sessions.go and traces.go — no duplication
 - [x] **BACK-03**: Backend handler tests added for dashboard, file_changes, health, usage, and version handlers using httptest
 
@@ -61,10 +61,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | Phase 8 | Pending |
-| SESS-02 | Phase 8 | Pending |
-| SESS-03 | Phase 8 | Pending |
-| BACK-01 | Phase 7 | Pending |
+| SESS-01 | Phase 8 | Complete |
+| SESS-02 | Phase 8 | Complete |
+| SESS-03 | Phase 8 | Complete |
+| BACK-01 | Phase 7 | Complete |
 | BACK-02 | Phase 7 | Complete |
 | BACK-03 | Phase 7 | Complete |
 | TEST-01 | Phase 9 | Complete |
@@ -79,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-05-29*
-*Last updated: 2026-05-31 — Phase 8 re-scoped to Sessions file changes view*
+*Last updated: 2026-06-01 — v1.2 verification completed*
