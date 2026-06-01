@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Diagnostics
-status: archived
-stopped_at: v1.1 archived 2026-05-29, ready for next milestone planning
-last_updated: 2026-05-29T09:15:00.000Z
-last_activity: 2026-05-29
+milestone: v1.3
+milestone_name: Diagnostics Backend Performance
+status: executing
+stopped_at: "Completed 10-01-PLAN.md: O(n) rewrite of DiagnosticsAgentStats queries"
+last_updated: "2026-06-01T15:50:35.389Z"
+last_activity: 2026-06-01 -- Phase 11 planning complete
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-29)
 
 **Core value:** A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
-**Current focus:** Planning next milestone (v1.2)
+**Current focus:** Phase 10 complete — ready for Phase 11 (Frontend Polish & UX)
 
 ## Current Position
 
-Phase: 06
-Plan: Not started
-Status: Milestone complete
-Last activity: 2026-05-28
+Phase: 10 → 11
+Plan: — (Phase 10 complete, Phase 11 not started)
+Status: Ready to execute
+Last activity: 2026-06-01 -- Phase 11 planning complete
 
 ## Wave Structure
 
@@ -73,6 +73,7 @@ Last activity: 2026-05-28
 | Phase 02-reliable-daily-use P07 | 2min | 2 tasks | 8 files |
 | Phase 02-reliable-daily-use P08 | 35min | 2 tasks | 8 files |
 | Phase 06-diagnostics-ui P03 | 8min | 2 tasks | 3 files |
+| Phase 10-diagnostics-backend-performance P01 | 1min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -105,11 +106,14 @@ Recent decisions affecting current work:
 - [Phase 03-mature-local-product]: Contributor guide is checklist-driven for adapter changes, DB field decisions, and frontend-backend contract synchronization.
 - [Phase 03-mature-local-product]: ADRs use lightweight accepted files under docs/adr/ for SQLite storage, normalization strategy, local-first positioning, and proxy scope.
 - [Phase ?]: vi.stubGlobal('fetch') used for all diagnostics tests — vi.spyOn(Storage.prototype) prohibited per Phase 2 decision
+- [Phase 10-01]: DiagnosticsAgentStats lastSeenRows replaced with MAX(last_seen_at) GROUP BY agent — O(n) aggregate
+- [Phase 10-01]: DiagnosticsAgentStats versionRows replaced with two-CTE MAX(created_at)+JOIN pattern — O(n) aggregate
 
 ### Pending Todos
 
-- Start Phase 4 with `$gsd-discuss-phase 4` or `$gsd-plan-phase 4`.
-- Decide whether to burn down or keep deferring the three human verification items listed below.
+- Phase 10 verified complete (O(n) rewrite + NULL scan fix committed).
+- Run `/gsd-discuss-phase 11` to discuss Phase 11 (Frontend Polish & UX) before planning.
+- Or `/gsd-plan-phase 11` to plan directly if context already gathered.
 
 ### Blockers/Concerns
 
@@ -126,14 +130,11 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-05-28T15:52:02.616Z
-Stopped at: Phase 6 UI-SPEC approved
+Last session: 2026-06-01T11:27:24.327Z
+Stopped at: Completed 10-01-PLAN.md: O(n) rewrite of DiagnosticsAgentStats queries
 Resume file: None
 
 ## Operator Next Steps
 
-- Start Phase 4 with `$gsd-discuss-phase 4`.
-- Or skip discussion and plan directly with `$gsd-plan-phase 4`.
-
-r skip discussion and plan directly with `$gsd-plan-phase 4`.
-kip discussion and plan directly with `$gsd-plan-phase 4`.
+- Phase 10 verified complete. Start Phase 11 with `/gsd-discuss-phase 11` or `/gsd-plan-phase 11`.
+- Or continue with outstanding deferred human verification items.
