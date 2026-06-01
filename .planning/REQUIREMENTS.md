@@ -20,7 +20,7 @@
 ### TEST — Frontend Test Coverage
 
 - [x] **TEST-01**: DiagnosticsPage has Vitest tests covering all main rendering states (loading, error, healthy, degraded)
-- [ ] **TEST-02**: UsagePage has Vitest tests covering main rendering states (loading, empty, populated)
+- [x] **TEST-02**: UsagePage has Vitest tests covering main rendering states (loading, empty, populated)
 - [ ] **TEST-03**: VersionBadge / version feature has Vitest tests covering loaded, loading, and error states
 
 ### DOCS — Documentation
@@ -68,7 +68,7 @@
 | BACK-02 | Phase 7 | Complete |
 | BACK-03 | Phase 7 | Complete |
 | TEST-01 | Phase 9 | Complete |
-| TEST-02 | Phase 9 | Pending |
+| TEST-02 | Phase 9 | Complete |
 | TEST-03 | Phase 9 | Pending |
 | DOCS-01 | Phase 9 | Pending |
 

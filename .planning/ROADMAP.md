@@ -97,7 +97,7 @@ Plans:
 **Wave 1**
 
 - [x] 09-01-PLAN.md — Audit and tighten DiagnosticsPage rendering-state coverage (TEST-01)
-- [ ] 09-02-PLAN.md — Add UsagePage loading and populated state coverage through the real hook path (TEST-02)
+- [x] 09-02-PLAN.md — Add UsagePage loading and populated state coverage through the real hook path (TEST-02)
 - [ ] 09-03-PLAN.md — Add VersionBadge state coverage and remove stale active superpowers docs (TEST-03, DOCS-01)
 
 ---
@@ -114,7 +114,7 @@ Plans:
 | 6. Diagnostics UI | v1.1 | 3/3 | Complete | 2026-05-28 |
 | 7. Backend Code Quality | v1.2 | 3/3 | Complete   | 2026-05-29 |
 | 8. Session File Changes View | v1.2 | 0/? | Not started | - |
-| 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 1/3 | In Progress|  |
+| 9. Frontend Test Coverage & Docs Cleanup | v1.2 | 2/3 | In Progress|  |
 
 ---
 
