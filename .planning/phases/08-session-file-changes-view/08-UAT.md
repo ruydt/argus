@@ -1,17 +1,22 @@
 ---
-status: complete
+status: testing
 phase: 08-session-file-changes-view
 source:
   - 08-01-SUMMARY.md
   - 08-02-SUMMARY.md
   - 08-03-SUMMARY.md
 started: 2026-06-01T04:14:20Z
-updated: 2026-06-01T04:21:29Z
+updated: 2026-06-01T04:33:09Z
+retested: 2026-06-01T04:27:23Z
 ---
 
 ## Current Test
 
-[testing complete]
+number: 3
+name: Expand File Row Shows Change Details
+expected: |
+  Clicking a changed Codex `apply_patch` file row expands it. The expanded view shows each change timestamp, tool/action label, line number when available, and compact `Before` / `After` old-new snippet blocks without rendering unsafe HTML. Codex sessions should show changed files the same way Claude Code sessions do.
+awaiting: user response
 
 ## Tests
 
@@ -26,8 +31,10 @@ result: pass
 ### 3. Expand File Row Shows Change Details
 expected: Clicking a changed file row expands it. The expanded view shows each change timestamp, tool/action label, line number when available, and compact `Before` / `After` old-new snippet blocks without rendering unsafe HTML.
 result: issue
-reported: "i only see files changed displayed for claudecode but not codex"
+reported: "After 08-04 fix, Codex sessions still show no files. DB inspection shows backend/hooker.db has 717 Codex apply_patch events with paths but 0 old_string/new_string values, so 0 Codex sessions match the existing /api/file-changes condition. Recent rows after the code fix still have old/new empty, indicating the running server process is still using an old go-build binary or historical rows need backfill."
 severity: major
+previously_reported: "i only see files changed displayed for claudecode but not codex"
+fix_summary: "08-04 preserved Codex apply_patch old/new snippets in normalization and added hook-to-file-changes regression coverage, but the running DB/process still has no Codex old/new values."
 
 ### 4. File Pagination Works by File Group
 expected: A session with more than one page of changed files shows a range such as `1-25 of 26 files`, first/previous/next/last controls, disabled controls at the bounds, and moving pages swaps file rows while resetting expanded state.
@@ -64,4 +71,6 @@ blocked: 0
   missing:
     - "Regression coverage proving a Codex apply_patch event appears in `/api/file-changes`"
     - "Normalization or API contract change that exposes Codex patch old/new snippets to FileChangesList"
+    - "Restart/rebuild running backend so future Codex hook payloads use the fixed normalizer"
+    - "Backfill existing Codex apply_patch rows in backend/hooker.db from stored command/raw_payload patch text, or broaden the file-change API to parse command-only patch rows"
   debug_session: "inline-uat-diagnosis-2026-06-01"
