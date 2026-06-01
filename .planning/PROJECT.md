@@ -8,9 +8,17 @@ hooker is a local-first monitoring dashboard for AI coding agent activity. It re
 
 A developer can install hooker from source, capture coding-agent activity locally, and trust that the app handles diagnostics, data durability, privacy controls, exports, and security posture without silent surprises.
 
-## Current Milestone: Awaiting Next Milestone
+## Current Milestone: v1.3 UI Quality
 
-v1.2 Polish & Cleanup shipped on 2026-06-01. Start the next milestone with `$gsd-new-milestone` so requirements are discovered fresh instead of extending the archived v1.2 requirements file.
+**Goal:** Fix known UI bugs and polish design based on manual testing feedback.
+
+**Target features:**
+- Copyable session ID on Events page
+- Line numbers in Sessions file-change view
+- Diagnostics O(n²) SQL query fix (correlated subquery over hook_events causes ~1 min load)
+- Diagnostics frontend caching (no refetch on every page visit)
+- Dashboard chart scale bug (small token values visually invisible on large-scale axis)
+- Additional bugs and design changes discovered during ongoing manual testing
 
 ## Current State
 
@@ -73,7 +81,12 @@ Known deferred close-out items:
 
 ### Active
 
-No active requirements. Start the next milestone with `$gsd-new-milestone`.
+- [ ] Copyable session ID on Events page
+- [ ] Line numbers in Sessions file-change view
+- [ ] Fix diagnostics O(n²) SQL correlated subquery (DiagnosticsAgentStats normalizer version query)
+- [ ] Cache diagnostics data in frontend (no refetch on every page visit)
+- [ ] Fix dashboard chart scale — small token values visually invisible on large-scale axis
+- [ ] Fix bugs and apply design improvements discovered through manual testing
 
 ### Candidate Next Milestone Ideas
 
@@ -147,4 +160,4 @@ This document evolves at milestone boundaries.
 4. Revisit Key Decisions and mark outcomes.
 
 ---
-*Last updated: 2026-06-01 after v1.2 Polish & Cleanup shipped*
+*Last updated: 2026-06-01 after v1.3 UI Quality milestone started*
