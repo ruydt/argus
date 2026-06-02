@@ -48,7 +48,8 @@ The release GitHub Actions workflow triggers automatically on `v*` tags. It:
 
 ```bash
 # Download the checksum file and a binary archive
-sha256sum --check checksums.txt
+sha256sum --check checksums.txt        # Linux
+shasum -a 256 --check checksums.txt   # macOS
 ```
 
 ## Release notes
