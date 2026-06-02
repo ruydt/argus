@@ -5,6 +5,7 @@ import (
 
 	"hooker/internal/domain"
 	"hooker/internal/handler"
+	"hooker/internal/hookconfig"
 	"hooker/internal/repository"
 	"hooker/internal/service"
 	"hooker/internal/ui"
@@ -24,8 +25,9 @@ type Options struct {
 	// DBPath is reported by the read-only diagnostics endpoint.
 	DBPath string
 
-	// HookConfig carries best-effort hook configuration diagnostics.
-	HookConfig []domain.DiagnosticsHookConfig
+	// HookConfigDetector is called on each diagnostics TTL refresh to re-read hook config files.
+	// If nil, a default Detector with auto-detected home directory is used.
+	HookConfigDetector func() []domain.DiagnosticsHookConfig
 
 	// IgnoreFile carries safe ignore-file diagnostics: path, status, and count only.
 	IgnoreFile domain.DiagnosticsIgnoreFile
@@ -73,13 +75,17 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
 	mux.Handle("GET /api/events/raw", handler.EventRawPayload(svc))
 	mux.Handle("GET /api/version", handler.Version())
+	hookDetector := opts.HookConfigDetector
+	if hookDetector == nil {
+		hookDetector = hookconfig.Detector{}.Detect
+	}
 	mux.Handle("GET /api/diagnostics", handler.Diagnostics(svc, ready, service.DiagnosticsOptions{
-		DBPath:      opts.DBPath,
-		HookConfig:  opts.HookConfig,
-		IgnoreFile:  opts.IgnoreFile,
-		Addr:        opts.Addr,
-		AllowRemote: opts.AllowRemote,
-		CORSOrigins: corsOrigins,
+		DBPath:             opts.DBPath,
+		HookConfigDetector: hookDetector,
+		IgnoreFile:         opts.IgnoreFile,
+		Addr:               opts.Addr,
+		AllowRemote:        opts.AllowRemote,
+		CORSOrigins:        corsOrigins,
 	}))
 	mux.Handle("GET /api/session-usage", handler.Usage())
 	mux.Handle("GET /api/projects", handler.Projects(svc))

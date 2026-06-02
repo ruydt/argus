@@ -13,30 +13,65 @@ import {
 import type { AgentKey, HookEntry, HookGroup, HooksConfig } from './types'
 
 const CLAUDE_EVENT_TYPES = [
+  // Session lifecycle
   'SessionStart',
   'Setup',
   'SessionEnd',
+  // Per-turn
   'UserPromptSubmit',
   'UserPromptExpansion',
+  'Stop',
+  'StopFailure',
+  // Agentic loop
   'PreToolUse',
   'PostToolUse',
+  'PostToolUseFailure',
+  'PostToolBatch',
+  'PermissionRequest',
+  'PermissionDenied',
+  // Subagent & task
+  'SubagentStart',
+  'SubagentStop',
+  'TeammateIdle',
+  'TaskCreated',
+  'TaskCompleted',
+  // File & config
+  'FileChanged',
+  'CwdChanged',
+  'ConfigChange',
+  'InstructionsLoaded',
+  // Context & display
+  'MessageDisplay',
+  'Notification',
+  // Compaction
   'PreCompact',
   'PostCompact',
-  'Stop',
-  'SubagentStop',
+  // Worktree
+  'WorktreeCreate',
+  'WorktreeRemove',
+  // MCP elicitation
+  'Elicitation',
+  'ElicitationResult',
 ]
 
 const CODEX_EVENT_TYPES = [
   'SessionStart',
+  'SubagentStart',
   'PreToolUse',
-  'PostToolUse',
   'PermissionRequest',
+  'PostToolUse',
   'PreCompact',
   'PostCompact',
+  'UserPromptSubmit',
+  'SubagentStop',
+  'Stop',
 ]
 
 function emptyEntry(): HookEntry {
-  return { type: 'command', command: '' }
+  return {
+    type: 'command',
+    command: "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+  }
 }
 
 function emptyGroup(): HookGroup {
@@ -71,6 +106,7 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
   }
 
   function addEventType(eventType: string) {
+    setCollapsed((prev) => ({ ...prev, [eventType]: false }))
     onChange({ hooks: { ...config.hooks, [eventType]: [emptyGroup()] } })
   }
 
@@ -286,9 +322,9 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
 
       {availableToAdd.length > 0 && (
         <div className="flex items-center gap-2 pt-1">
-          <Select onValueChange={addEventType}>
+          <Select key={usedEvents.join(',')} onValueChange={addEventType}>
             <SelectTrigger className="h-8 text-[13px] w-[220px]">
-              <SelectValue placeholder="Add event type..." />
+              <SelectValue placeholder="Add hook event" />
             </SelectTrigger>
             <SelectContent>
               {availableToAdd.map((e) => (

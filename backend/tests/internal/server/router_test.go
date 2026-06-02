@@ -81,9 +81,11 @@ func newTestRouter() http.Handler {
 		},
 		Addr:        "127.0.0.1:8765",
 		AllowRemote: false,
-		HookConfig: []domain.DiagnosticsHookConfig{
-			{Agent: "claudecode", Status: "configured"},
-			{Agent: "codex", Status: "missing"},
+		HookConfigDetector: func() []domain.DiagnosticsHookConfig {
+			return []domain.DiagnosticsHookConfig{
+				{Agent: "claudecode", Status: "configured"},
+				{Agent: "codex", Status: "missing"},
+			}
 		},
 	})
 }

@@ -20,18 +20,19 @@ type EventService struct {
 	repo        repository.EventRepository
 	subscribers sync.Map
 
-	diagMu       sync.RWMutex
-	diagCache    *domain.Diagnostics
-	diagCachedAt time.Time
+	diagMu         sync.RWMutex
+	diagCache      *domain.Diagnostics
+	diagCachedAt   time.Time
+	diagAgentStats []domain.DiagnosticsAgentStats
 }
 
 type DiagnosticsOptions struct {
-	DBPath      string
-	HookConfig  []domain.DiagnosticsHookConfig
-	IgnoreFile  domain.DiagnosticsIgnoreFile
-	Addr        string
-	AllowRemote bool
-	CORSOrigins []string
+	DBPath             string
+	HookConfigDetector func() []domain.DiagnosticsHookConfig
+	IgnoreFile         domain.DiagnosticsIgnoreFile
+	Addr               string
+	AllowRemote        bool
+	CORSOrigins        []string
 }
 
 const exportSensitivityWarning = "Exports may include prompts, diffs, file paths, tool outputs, raw payloads, and exports; handle exported data as sensitive."
@@ -95,18 +96,24 @@ func (s *EventService) SessionModel(sessionID string) (string, error) {
 }
 
 func (s *EventService) Diagnostics(dbPath string, ready bool, hookConfigs ...[]domain.DiagnosticsHookConfig) (domain.Diagnostics, error) {
+	configs := hookConfigSlice(hookConfigs)
 	return s.DiagnosticsWithOptions(DiagnosticsOptions{
-		DBPath:     dbPath,
-		HookConfig: hookConfigSlice(hookConfigs),
+		DBPath:             dbPath,
+		HookConfigDetector: func() []domain.DiagnosticsHookConfig { return configs },
 	}, ready)
 }
 
 func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready bool) (domain.Diagnostics, error) {
 	const ttl = 30 * time.Second
 
+	// Hook config detection is always live (file reads only — cheap, no DB).
+	hookConfigs := detectHookConfigs(opts.HookConfigDetector)
+
 	s.diagMu.RLock()
 	if s.diagCache != nil && time.Since(s.diagCachedAt) < ttl {
 		result := *s.diagCache // shallow copy — safe, cached value is never mutated after store
+		// Overlay fresh hook config statuses onto the cached agent rows.
+		result.Agents = diagnosticsAgents(s.diagAgentStats, hookConfigs)
 		s.diagMu.RUnlock()
 		return result, nil
 	}
@@ -152,7 +159,7 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 		},
 		Health:  health,
 		Storage: storage,
-		Agents:  diagnosticsAgents(agentStats, opts.HookConfig),
+		Agents:  diagnosticsAgents(agentStats, hookConfigs),
 		Privacy: domain.DiagnosticsPrivacy{
 			IgnoreFile:    opts.IgnoreFile,
 			ExportWarning: exportSensitivityWarning,
@@ -166,6 +173,7 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 	s.diagMu.Lock()
 	s.diagCache = &result
 	s.diagCachedAt = time.Now()
+	s.diagAgentStats = agentStats
 	s.diagMu.Unlock()
 	return result, nil
 }
@@ -213,6 +221,13 @@ func hookConfigSlice(hookConfigs [][]domain.DiagnosticsHookConfig) []domain.Diag
 		return nil
 	}
 	return hookConfigs[0]
+}
+
+func detectHookConfigs(detector func() []domain.DiagnosticsHookConfig) []domain.DiagnosticsHookConfig {
+	if detector == nil {
+		return nil
+	}
+	return detector()
 }
 
 func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domain.DiagnosticsHookConfig) []domain.DiagnosticsAgent {

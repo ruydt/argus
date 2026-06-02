@@ -47,20 +47,23 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
     }
   }, [agent, reloadKey])
 
+  const normalizeConfig = useCallback((c: HooksConfig): HooksConfig => ({ hooks: c.hooks ?? {} }), [])
+
   const setConfig = useCallback((c: HooksConfig) => {
-    setConfigState(c)
-    setDraftJSONState(JSON.stringify(c, null, 2))
-  }, [])
+    const normalized = normalizeConfig(c)
+    setConfigState(normalized)
+    setDraftJSONState(JSON.stringify(normalized, null, 2))
+  }, [normalizeConfig])
 
   const setDraftJSON = useCallback((json: string) => {
     setDraftJSONState(json)
     try {
       const parsed = JSON.parse(json) as HooksConfig
-      setConfigState(parsed)
+      setConfigState(normalizeConfig(parsed))
     } catch {
       // keep stale config; draftJSON is the live edit buffer
     }
-  }, [])
+  }, [normalizeConfig])
 
   const save = useCallback(async () => {
     setSaveError(null)
@@ -76,7 +79,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
         const text = await res.text()
         throw new Error(text.trim() || `HTTP ${res.status}`)
       }
-      const saved = (await res.json()) as HooksConfig
+      const saved = normalizeConfig((await res.json()) as HooksConfig)
       const json = JSON.stringify(saved, null, 2)
       setConfigState(saved)
       setDraftJSONState(json)
@@ -86,7 +89,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
     } finally {
       setSaving(false)
     }
-  }, [agent, draftJSON])
+  }, [agent, draftJSON, normalizeConfig])
 
   return {
     config,

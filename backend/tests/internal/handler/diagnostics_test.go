@@ -177,9 +177,11 @@ func TestDiagnosticsHandlerSerializesHookConfigStatus(t *testing.T) {
 	svc := service.New(repo)
 	h := handler.Diagnostics(svc, repo.Ready, service.DiagnosticsOptions{
 		DBPath: ":memory:",
-		HookConfig: []domain.DiagnosticsHookConfig{
-			{Agent: "claudecode", Status: "missing"},
-			{Agent: "codex", Status: "unknown", Reason: "read_error"},
+		HookConfigDetector: func() []domain.DiagnosticsHookConfig {
+			return []domain.DiagnosticsHookConfig{
+				{Agent: "claudecode", Status: "missing"},
+				{Agent: "codex", Status: "unknown", Reason: "read_error"},
+			}
 		},
 	})
 

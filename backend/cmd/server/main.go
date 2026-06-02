@@ -15,7 +15,6 @@ import (
 
 	"hooker/internal/config"
 	"hooker/internal/domain"
-	"hooker/internal/hookconfig"
 	"hooker/internal/privacy/ignore"
 	"hooker/internal/repository/sqlite"
 	"hooker/internal/server"
@@ -86,7 +85,6 @@ func run() int {
 		IgnoreFile:  domainIgnoreFile(ignoreStatus),
 		Addr:        cfg.Addr,
 		AllowRemote:        cfg.AllowRemote,
-		HookConfig:         hookconfig.Detector{}.Detect(),
 		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
 		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
 	})
