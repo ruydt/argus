@@ -125,14 +125,13 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
   const maxWidth = String(startLine + lines.length - 1).length
 
   // Show diffLines count only when canExpand is false (chevron replaces the count)
-  const diffLines =
-    !canExpand
-      ? ev.new_string
-        ? ev.new_string.split('\n').length
-        : ev.old_string
-          ? ev.old_string.split('\n').length
-          : null
-      : null
+  const diffLines = !canExpand
+    ? ev.new_string
+      ? ev.new_string.split('\n').length
+      : ev.old_string
+        ? ev.old_string.split('\n').length
+        : null
+    : null
 
   return (
     <div>
@@ -172,7 +171,9 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
 
       {expanded && canExpand && (
         <pre className="mt-1 overflow-x-auto rounded bg-black/30 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-blue-100/80">
-          {displayLines.map((line, i) => `${String(startLine + i).padStart(maxWidth, ' ')} │ ${line}\n`)}
+          {displayLines.map(
+            (line, i) => `${String(startLine + i).padStart(maxWidth, ' ')} │ ${line}\n`
+          )}
           {truncated && (
             <span className="text-white/35">{`… ${lines.length - 200} more lines`}</span>
           )}
@@ -236,11 +237,7 @@ export function FileChangesDrawer({
           {!loading && !error && groups.length > 0 && (
             <div className="space-y-2">
               {groups.map((group) => (
-                <FileRow
-                  key={group.path}
-                  group={group}
-                  sessionStart={sessionStartedAt}
-                />
+                <FileRow key={group.path} group={group} sessionStart={sessionStartedAt} />
               ))}
             </div>
           )}

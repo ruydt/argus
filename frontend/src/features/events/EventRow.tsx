@@ -111,9 +111,8 @@ export function EventRow({
             {(e.hook_event_name === 'PreToolUse' ||
               e.hook_event_name === 'PostToolUse' ||
               e.hook_event_name === 'PreCompact' ||
-              e.hook_event_name === 'PostCompact') && (
-              <span className="event-model">{displayModel(e.model)}</span>
-            )}
+              e.hook_event_name === 'PostCompact') &&
+              e.model && <span className="event-model">{displayModel(e.model)}</span>}
             {e.action !== 'BASH' && (highlight(e.path || '', searchQuery) as ReactNode)}
           </div>
 

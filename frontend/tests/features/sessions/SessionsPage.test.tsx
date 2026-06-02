@@ -74,10 +74,7 @@ describe('SessionListPage', () => {
 
   it('renders loading state before data arrives', async () => {
     // Use a promise that never resolves to keep loading state
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockReturnValue(new Promise(() => {}))
-    )
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
 
     renderSessionList('/Users/dev/project')
 
@@ -115,7 +112,11 @@ describe('SessionListPage', () => {
   })
 
   it('renders Running for sessions without ended_at', async () => {
-    const runningSession: Session = { ...SESSION, session_id: 'sess-running-xyz', ended_at: undefined }
+    const runningSession: Session = {
+      ...SESSION,
+      session_id: 'sess-running-xyz',
+      ended_at: undefined,
+    }
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({

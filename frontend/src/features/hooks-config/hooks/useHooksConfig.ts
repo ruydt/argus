@@ -12,12 +12,14 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
   const [reloadKey, setReloadKey] = useState(0)
   const mountedRef = useRef(true)
 
-  const reload = useCallback(() => setReloadKey((k) => k + 1), [])
+  const reload = useCallback(() => {
+    setLoading(true)
+    setError(null)
+    setReloadKey((k) => k + 1)
+  }, [])
 
   useEffect(() => {
     mountedRef.current = true
-    setLoading(true)
-    setError(null)
 
     fetch(`/api/hooks-config?agent=${agent}`)
       .then((res) => {

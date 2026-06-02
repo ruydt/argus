@@ -3,7 +3,13 @@ import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig } from './types'
 
 const CLAUDE_EVENT_TYPES = [
@@ -51,7 +57,7 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
   const availableToAdd = knownEvents.filter((e) => !usedEvents.includes(e))
 
   function toggleCollapse(eventType: string) {
-    setCollapsed((prev) => ({ ...prev, [eventType]: !prev[eventType] }))
+    setCollapsed((prev) => ({ ...prev, [eventType]: !(prev[eventType] ?? true) }))
   }
 
   function setEventGroups(eventType: string, groups: HookGroup[]) {
@@ -120,7 +126,7 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
       {usedEvents.map((eventType) => {
         const groups = config.hooks[eventType] ?? []
         const hookCount = groups.reduce((n, g) => n + g.hooks.length, 0)
-        const isCollapsed = collapsed[eventType] ?? false
+        const isCollapsed = collapsed[eventType] ?? true
 
         return (
           <div key={eventType} className="border border-border rounded-lg overflow-hidden">

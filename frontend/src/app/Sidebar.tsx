@@ -44,20 +44,37 @@ type NavButtonProps = NavItem &
   }
 
 const NavButton = forwardRef<HTMLAnchorElement, NavButtonProps>(function NavButton(
-  { to, label, ariaLabel, icon: Icon, end, onNavigate, desktopNavLabelClassName, navButtonClassNameFn, ...rest },
-  ref,
+  {
+    to,
+    label,
+    ariaLabel,
+    icon: Icon,
+    end,
+    onNavigate,
+    desktopNavLabelClassName,
+    navButtonClassNameFn,
+    ...rest
+  },
+  ref
 ) {
   const match = useMatch({ path: to, end })
   const isActive = match !== null
 
   return (
     <Button asChild variant="ghost" className={navButtonClassNameFn(isActive)}>
-      <NavLink ref={ref} to={to} end={end} aria-label={ariaLabel} onClick={() => onNavigate?.()} {...rest}>
+      <NavLink
+        ref={ref}
+        to={to}
+        end={end}
+        aria-label={ariaLabel}
+        onClick={() => onNavigate?.()}
+        {...rest}
+      >
         <span className="flex size-9 shrink-0 items-center justify-center">
           <Icon
             className={cn(
               'size-[15px] shrink-0 transition-colors duration-200',
-              isActive ? 'text-[#e6e6e6]' : 'text-current',
+              isActive ? 'text-[#e6e6e6]' : 'text-current'
             )}
           />
         </span>

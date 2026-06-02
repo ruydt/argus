@@ -74,7 +74,14 @@ export function ActivityPanel({ stats, query }: ActivityPanelProps) {
                 <AreaChart data={timelineData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                   <defs>
                     {series.map((agent) => (
-                      <linearGradient key={`color-${agent}`} id={`color-${agent}`} x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        key={`color-${agent}`}
+                        id={`color-${agent}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop offset="5%" stopColor={`var(--color-${agent})`} stopOpacity={0.3} />
                         <stop offset="95%" stopColor={`var(--color-${agent})`} stopOpacity={0} />
                       </linearGradient>
@@ -112,7 +119,8 @@ export function ActivityPanel({ stats, query }: ActivityPanelProps) {
                       fillOpacity={1}
                     />
                   ))}
-                </AreaChart>              </ChartContainer>
+                </AreaChart>{' '}
+              </ChartContainer>
             ) : (
               <DashboardEmpty title="No activity" description="No activity data available." />
             )}

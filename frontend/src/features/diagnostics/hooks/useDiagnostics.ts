@@ -29,7 +29,15 @@ export function useDiagnostics(): {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(() => diagnosticsCachedAt)
   const hasDataRef = useRef(diagnosticsCache !== null)
 
-  const reload = useCallback(() => setReloadKey((k) => k + 1), [])
+  const reload = useCallback(() => {
+    if (hasDataRef.current) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
+    setError(null)
+    setReloadKey((k) => k + 1)
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -37,21 +45,8 @@ export function useDiagnostics(): {
     // Cache hit: reloadKey===0 means this is a navigation mount, not an explicit refresh.
     // Skip fetch and hydrate from module cache.
     if (reloadKey === 0 && diagnosticsCache !== null) {
-      setData(diagnosticsCache)
-      setLastUpdatedAt(diagnosticsCachedAt)
-      setLoading(false)
-      setRefreshing(false)
       return
     }
-
-    const isRefresh = reloadKey > 0 && hasDataRef.current
-    if (isRefresh) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
-    setError(null)
-
     fetch('/api/diagnostics')
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)

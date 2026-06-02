@@ -5,15 +5,14 @@ import { useHooksConfig } from '@/features/hooks-config/hooks/useHooksConfig'
 const emptyConfig = { hooks: {} }
 const populatedConfig = {
   hooks: {
-    SessionStart: [{ hooks: [{ type: 'command', command: 'curl http://localhost:8765/api/hook' }] }],
+    SessionStart: [
+      { hooks: [{ type: 'command', command: 'curl http://localhost:8765/api/hook' }] },
+    ],
   },
 }
 
 beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig })
-  )
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig }))
 })
 
 afterEach(() => vi.clearAllMocks())
@@ -37,10 +36,7 @@ describe('useHooksConfig', () => {
   })
 
   it('sets error on fetch failure', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 500 })
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
     const { result } = renderHook(() => useHooksConfig('codex'))
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.error).toContain('HTTP 500')
@@ -56,10 +52,7 @@ describe('useHooksConfig', () => {
   })
 
   it('isDirty stays false when setDraftJSON matches saved content', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig })
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig }))
     const { result } = renderHook(() => useHooksConfig('claudecode'))
     await waitFor(() => expect(result.current.loading).toBe(false))
 
@@ -94,7 +87,8 @@ describe('useHooksConfig', () => {
   it('save sets saveError on PUT failure', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn()
+      vi
+        .fn()
         .mockResolvedValueOnce({ ok: true, json: async () => emptyConfig })
         .mockResolvedValueOnce({ ok: false, status: 500, text: async () => 'disk full' })
     )
@@ -108,9 +102,7 @@ describe('useHooksConfig', () => {
   })
 
   it('reload triggers a new fetch', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue({ ok: true, json: async () => emptyConfig })
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig })
     vi.stubGlobal('fetch', fetchMock)
 
     const { result } = renderHook(() => useHooksConfig('codex'))

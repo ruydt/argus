@@ -55,10 +55,7 @@ afterEach(() => {
 describe('Dashboard', () => {
   it('renders skeleton loading state while fetching stats', () => {
     // Return a promise that never resolves to keep the loading state
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockReturnValue(new Promise(() => {}))
-    )
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
 
     renderDashboard()
 

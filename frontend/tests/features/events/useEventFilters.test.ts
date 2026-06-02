@@ -155,13 +155,10 @@ describe('useEventFilters — sessionFilter', () => {
       },
     ]
 
-    const { rerender } = renderHook(
-      ({ events }) => useEventFilters(events, '', vi.fn()),
-      {
-        initialProps: { events: firstEvents },
-        wrapper: makeWrapper(),
-      }
-    )
+    const { rerender } = renderHook(({ events }) => useEventFilters(events, '', vi.fn()), {
+      initialProps: { events: firstEvents },
+      wrapper: makeWrapper(),
+    })
 
     await waitFor(() => expect(fetchProjects).toHaveBeenCalledTimes(1))
 

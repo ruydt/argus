@@ -58,7 +58,10 @@ export function AgentSession({
 
   const onCopySessionId = (e: React.MouseEvent) => {
     e.stopPropagation()
-    navigator.clipboard.writeText(sessionId).then(() => setCopied(true)).catch(() => {})
+    navigator.clipboard
+      .writeText(sessionId)
+      .then(() => setCopied(true))
+      .catch(() => {})
   }
 
   const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
