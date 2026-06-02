@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -48,7 +48,7 @@ func main() {
 	for {
 		files, err := filepath.Glob(filepath.Join(chatsDir, "*.jsonl"))
 		if err != nil {
-			log.Printf("Glob error: %v", err)
+			slog.Error("glob", "err", err)
 			time.Sleep(pollInterval)
 			continue
 		}
@@ -148,7 +148,7 @@ func sendHook(payload interface{}) {
 	data, _ := json.Marshal(payload)
 	resp, err := http.Post(hookURL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		log.Printf("Hook error: %v", err)
+		slog.Error("hook", "err", err)
 		return
 	}
 	_ = resp.Body.Close()
