@@ -44,6 +44,9 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 	if e.Time == "" {
 		e.Time = time.Now().Format(time.RFC3339)
 	}
+	if e.DedupKey == "" {
+		e.DedupKey = domain.ComputeDedupKey(e)
+	}
 	if err := s.repo.Add(e); err != nil {
 		return err
 	}

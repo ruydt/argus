@@ -1,5 +1,10 @@
 package domain
 
+import (
+	"crypto/sha256"
+	"fmt"
+)
+
 // NormalizedEvent is the canonical representation of a hook event from any agent.
 // JSON tags match the original FileEvent wire format — frontend requires no changes.
 type NormalizedEvent struct {
@@ -53,6 +58,15 @@ type NormalizedEvent struct {
 	NormalizationStatus string `json:"normalization_status,omitempty"`
 	NormalizerVersion   string `json:"normalizer_version,omitempty"`
 	AgentVersion        string `json:"agent_version,omitempty"`
+}
+
+// ComputeDedupKey returns the SHA-256-based dedup key for an event.
+// Used by both the repository (insert) and service (broadcast).
+func ComputeDedupKey(e NormalizedEvent) string {
+	h := sha256.Sum256([]byte(
+		e.Session + "|" + e.TurnID + "|" + e.ToolUseID + "|" + e.HookEventName + "|" + e.Time,
+	))
+	return fmt.Sprintf("%x", h)
 }
 
 type CtxLine struct {

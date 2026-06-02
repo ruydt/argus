@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
 	_ "embed"
 	"encoding/json"
@@ -924,10 +923,7 @@ func timelineBucketFormat(since, until string) (format string, granularity strin
 }
 
 func dedupKey(e domain.NormalizedEvent) string {
-	h := sha256.Sum256([]byte(
-		e.Session + "|" + e.TurnID + "|" + e.ToolUseID + "|" + e.HookEventName + "|" + e.Time,
-	))
-	return fmt.Sprintf("%x", h)
+	return domain.ComputeDedupKey(e)
 }
 
 func (d *DB) GetRawPayload(dedupKey string) ([]byte, error) {
