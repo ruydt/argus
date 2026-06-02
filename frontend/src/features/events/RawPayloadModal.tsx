@@ -46,7 +46,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="flex max-h-[80vh] max-w-5xl flex-col gap-3">
+      <DialogContent className="flex max-h-[80vh] w-[90vw] sm:max-w-4xl flex-col gap-3">
         <DialogHeader>
           <DialogTitle className="font-mono text-xs text-[#8b949e]">{label}</DialogTitle>
         </DialogHeader>
@@ -57,7 +57,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
           </Alert>
         )}
         {status === 'ready' && (
-          <div className="relative rounded-md border overflow-y-auto flex-1 min-h-0" role="region" aria-label="Raw payload JSON">
+          <div className="relative rounded-md border flex-1 min-h-0 flex flex-col" role="region" aria-label="Raw payload JSON">
             <button
               onClick={handleCopy}
               className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10 transition-colors"
@@ -66,6 +66,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
             >
               {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
             </button>
+            <div className="overflow-y-auto flex-1 min-h-0">
             <CodeMirror
               value={rawJson}
               theme="none"
@@ -84,6 +85,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
                 foldGutter: true,
               }}
             />
+            </div>
           </div>
         )}
       </DialogContent>
