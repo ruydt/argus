@@ -25,6 +25,7 @@ type NormalizedEvent struct {
 	CtxAfter       []CtxLine `json:"ctx_after,omitempty"`
 	Agent          string    `json:"agent,omitempty"`
 	RawPayload     []byte    `json:"-"`
+	DedupKey       string    `json:"dedup_key,omitempty"`
 
 	// Extended fields for new hook events
 	PermissionMode      string `json:"permission_mode,omitempty"`

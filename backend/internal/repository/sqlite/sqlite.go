@@ -201,7 +201,8 @@ func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domai
 		       COALESCE(tool_calls_json,''),
 		       COALESCE(tool_result_stdout,''), COALESCE(tool_result_stderr,''),
 		       COALESCE(duration_ms,0), COALESCE(trigger,''),
-		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,'')
+		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,''),
+		       COALESCE(dedup_key,'')
 		FROM hook_events
 	`
 	if where != "" {
@@ -241,6 +242,7 @@ func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domai
 			&e.ChangeType, &e.OldCWD, &e.NewCWD, &e.ToolCallsJSON,
 			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS, &e.Trigger,
 			&e.NormalizerVersion, &e.AgentVersion, &e.NormalizationStatus,
+			&e.DedupKey,
 		); err != nil {
 			return nil, err
 		}
