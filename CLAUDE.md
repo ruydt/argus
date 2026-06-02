@@ -300,7 +300,7 @@ hooker is a local-first monitoring dashboard for AI coding agent activity. It re
 
 ## Naming Patterns
 
-- Frontend React components use `PascalCase.tsx` (for example `frontend/src/components/Layout.tsx`, `frontend/src/features/events/EventRow.tsx`).
+- Frontend React components use `PascalCase.tsx` (for example `frontend/src/app/Layout.tsx`, `frontend/src/features/events/EventRow.tsx`).
 - Frontend hooks use `useX.ts`/`useX.tsx` (for example `frontend/src/hooks/useSessions.ts`, `frontend/src/features/events/hooks/useEvents.ts`).
 - Frontend utility and config files use `kebab-case` or lowercase (`frontend/src/lib/format.ts`, `frontend/vite.config.ts`).
 - Backend Go files use `snake_case.go` by area (`backend/internal/service/event_service.go`, `backend/internal/repository/sqlite/sqlite.go`).

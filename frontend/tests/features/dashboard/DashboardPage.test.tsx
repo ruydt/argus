@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Dashboard } from '@/pages/Dashboard'
+import { DashboardPage } from '@/features/dashboard/DashboardPage'
 
 // Mock recharts to avoid canvas/SVG rendering issues in jsdom
 vi.mock('recharts', async () => {
@@ -29,10 +29,10 @@ const minimalStats = {
   session_usage: [],
 }
 
-function renderDashboard() {
+function renderDashboardPage() {
   return render(
     <MemoryRouter>
-      <Dashboard />
+      <DashboardPage />
     </MemoryRouter>
   )
 }
@@ -52,12 +52,12 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('Dashboard', () => {
+describe('DashboardPage', () => {
   it('renders skeleton loading state while fetching stats', () => {
     // Return a promise that never resolves to keep the loading state
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
 
-    renderDashboard()
+    renderDashboardPage()
 
     // DashboardSkeleton renders multiple Skeleton elements; heading stays
     expect(screen.getByText('Summary')).toBeInTheDocument()
@@ -74,7 +74,7 @@ describe('Dashboard', () => {
       })
     )
 
-    renderDashboard()
+    renderDashboardPage()
 
     expect(await screen.findByText('Sessions')).toBeInTheDocument()
     expect(screen.getByText('Events')).toBeInTheDocument()
@@ -83,7 +83,7 @@ describe('Dashboard', () => {
   })
 
   it('renders tab navigation after stats load', async () => {
-    renderDashboard()
+    renderDashboardPage()
 
     expect(await screen.findByText('Token usage')).toBeInTheDocument()
     expect(screen.getByText('Activity')).toBeInTheDocument()
@@ -91,7 +91,7 @@ describe('Dashboard', () => {
   })
 
   it('renders page heading regardless of loading state', () => {
-    renderDashboard()
+    renderDashboardPage()
     expect(screen.getByText('Summary')).toBeInTheDocument()
   })
 })

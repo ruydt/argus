@@ -14,11 +14,11 @@ import {
   type DashboardRangePreset,
 } from '@/features/dashboard/date-range'
 import { DashboardDateRangePicker } from '@/features/dashboard/date-range-picker'
-import { UsagePanel } from '@/features/usage/UsagePanel'
 import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats'
+import { UsagePanel } from '@/features/usage/UsagePanel'
 import { cn } from '@/lib/utils'
 
-export function Dashboard() {
+export function DashboardPage() {
   const [preset, setPreset] = useState<DashboardRangePreset>('14d')
   const [range, setRange] = useState<DateRange>(() => presetToDateRange('14d'))
   const [view, setView] = useState<'activity' | 'tokens' | 'api-usage'>('tokens')
