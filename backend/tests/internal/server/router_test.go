@@ -59,6 +59,8 @@ func (noopRepo) ExportEvents(_ context.Context, _ io.Writer) error { return nil 
 
 func (noopRepo) ExportSnapshot(_ context.Context, _ string) error { return nil }
 
+func (noopRepo) GetRawPayload(_ string) ([]byte, error) { return nil, nil }
+
 func (noopRepo) Ready() bool { return true }
 
 var testCORSOrigins = []string{

@@ -930,6 +930,21 @@ func dedupKey(e domain.NormalizedEvent) string {
 	return fmt.Sprintf("%x", h)
 }
 
+func (d *DB) GetRawPayload(dedupKey string) ([]byte, error) {
+	var raw string
+	err := d.db.QueryRow(
+		`SELECT COALESCE(raw_payload,'') FROM hook_events WHERE dedup_key = ? LIMIT 1`,
+		dedupKey,
+	).Scan(&raw)
+	if err == sql.ErrNoRows || raw == "" {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return []byte(raw), nil
+}
+
 func nullStr(s string) any {
 	if s == "" {
 		return nil

@@ -27,5 +27,6 @@ type EventRepository interface {
 	GetSessionFileChangeCounts(ids []string) (map[string]int, error)
 	ExportEvents(ctx context.Context, w io.Writer) error
 	ExportSnapshot(ctx context.Context, destPath string) error
+	GetRawPayload(dedupKey string) ([]byte, error)
 	Ready() bool
 }

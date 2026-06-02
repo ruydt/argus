@@ -1158,3 +1158,48 @@ func TestMigrationRunner_Idempotent(t *testing.T) {
 		t.Errorf("schema_migrations has %d rows, want 8 (migrations 1–8)", count)
 	}
 }
+
+func TestGetRawPayload_returnsStoredBytes(t *testing.T) {
+	db := newTestDB(t)
+	e := domain.NormalizedEvent{
+		Time:          "2026-01-01T00:00:00Z",
+		Agent:         "claudecode",
+		Session:       "sess1",
+		HookEventName: "PreToolUse",
+		TurnID:        "t1",
+		ToolUseID:     "u1",
+		RawPayload:    []byte(`{"tool":"Bash","input":"echo hi"}`),
+	}
+	if err := db.Add(e); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	events, err := db.List(10)
+	if err != nil || len(events) == 0 {
+		t.Fatalf("List: %v, len=%d", err, len(events))
+	}
+	key := events[0].DedupKey
+	if key == "" {
+		t.Fatal("DedupKey is empty after list")
+	}
+
+	got, err := db.GetRawPayload(key)
+	if err != nil {
+		t.Fatalf("GetRawPayload: %v", err)
+	}
+	want := `{"tool":"Bash","input":"echo hi"}`
+	if string(got) != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+func TestGetRawPayload_unknownKeyReturnsNil(t *testing.T) {
+	db := newTestDB(t)
+	got, err := db.GetRawPayload("nonexistentkey")
+	if err != nil {
+		t.Fatalf("GetRawPayload: %v", err)
+	}
+	if got != nil {
+		t.Errorf("expected nil for unknown key, got %q", got)
+	}
+}

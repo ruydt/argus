@@ -139,6 +139,8 @@ func (m *mockRepo) ExportEvents(_ context.Context, _ io.Writer) error { return n
 
 func (m *mockRepo) ExportSnapshot(_ context.Context, _ string) error { return nil }
 
+func (m *mockRepo) GetRawPayload(_ string) ([]byte, error) { return nil, nil }
+
 func (m *mockRepo) Ready() bool { return true }
 
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {
