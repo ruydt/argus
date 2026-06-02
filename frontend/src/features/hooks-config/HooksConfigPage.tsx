@@ -3,7 +3,7 @@ import { indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
 import { EditorView, keymap } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
-import { AppWindowIcon, Check, CodeIcon, Copy, RefreshCw, Save } from 'lucide-react'
+import { AppWindowIcon, Check, CodeIcon, Copy, ExternalLink, RefreshCw, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -173,7 +173,22 @@ export function HooksConfigPage() {
     <div className="flex-1 overflow-y-auto bg-background text-foreground">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-[22px] font-semibold text-foreground">Hooks Config</h1>
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-[22px] font-semibold text-foreground">Hooks Config</h1>
+            <a
+              href={
+                activeAgent === 'claudecode'
+                  ? 'https://code.claude.com/docs/en/hooks'
+                  : 'https://developers.openai.com/codex/hooks'
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="size-3" />
+              Hooks documentation
+            </a>
+          </div>
           <div className="flex items-center gap-2">
             {activeState.isDirty && !activeState.loading && (
               <span className="text-[12px] text-[var(--cwd)]">Unsaved changes</span>

@@ -8,10 +8,15 @@ SQLite, and streams to a React SPA in real time.
 
 ```bash
 git clone https://github.com/duytrandt04-afk/hooker
-cd hooker/backend
-go build -o hooker ./cmd/server
-./hooker
+cd hooker
+make build   # builds frontend, copies dist/, compiles Go binary
+~/.local/bin/hooker-monitor
 ```
+
+> **Requirements:** Go 1.25+, Node.js 18+, pnpm 10.x
+>
+> The Go binary embeds the React SPA at compile time (`//go:embed all:dist`), so the
+> frontend must be built before `go build`. `make build` handles this in one step.
 
 Then follow [docs/quickstart.md](docs/quickstart.md) to configure agent hooks and verify
 your first event.
