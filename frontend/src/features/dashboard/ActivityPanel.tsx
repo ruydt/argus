@@ -71,16 +71,25 @@ export function ActivityPanel({ stats, query }: ActivityPanelProps) {
           <div className="h-[300px] min-w-0 w-full">
             {timelineData.length > 0 ? (
               <ChartContainer config={activityChartConfig} className="h-full w-full">
-                <AreaChart data={timelineData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <AreaChart data={timelineData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    {series.map((agent) => (
+                      <linearGradient key={`color-${agent}`} id={`color-${agent}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={`var(--color-${agent})`} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={`var(--color-${agent})`} stopOpacity={0} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
                   <XAxis
                     dataKey="date"
+                    stroke="#666"
                     fontSize={10}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(value) => labelByBucket.get(String(value)) || String(value)}
                   />
-                  <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#666" fontSize={10} axisLine={false} tickLine={false} />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent
@@ -94,17 +103,16 @@ export function ActivityPanel({ stats, query }: ActivityPanelProps) {
                   {series.map((agent) => (
                     <Area
                       key={agent}
-                      type="linear"
+                      type="monotone"
                       dataKey={agent}
                       name={agentLabel(agent)}
                       stroke={`var(--color-${agent})`}
                       strokeWidth={2}
-                      fill={`var(--color-${agent})`}
-                      fillOpacity={0.1}
+                      fill={`url(#color-${agent})`}
+                      fillOpacity={1}
                     />
                   ))}
-                </AreaChart>
-              </ChartContainer>
+                </AreaChart>              </ChartContainer>
             ) : (
               <DashboardEmpty title="No activity" description="No activity data available." />
             )}

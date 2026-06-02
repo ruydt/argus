@@ -162,12 +162,12 @@ export function toTimelineByAgentChartData(stats: DashboardStats | null, query: 
 }
 
 function formatTimelineLabel(date: string, granularity: DashboardStats['timeline_granularity']) {
-  const utcDate = new Date(`${date.replace(' ', 'T')}:00Z`)
-  if (Number.isNaN(utcDate.getTime())) return date
+  const localDate = new Date(`${date.replace(' ', 'T')}:00`)
+  if (Number.isNaN(localDate.getTime())) return date
   if (granularity === 'day') {
-    return utcDate.toLocaleDateString([], { month: 'short', day: '2-digit' })
+    return localDate.toLocaleDateString([], { month: 'short', day: '2-digit' })
   }
-  return utcDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+  return localDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
 function timelineKeysFromQuery(query: string, granularity: DashboardStats['timeline_granularity']) {
@@ -194,27 +194,26 @@ function timelineKeysFromQuery(query: string, granularity: DashboardStats['timel
 }
 
 function bucketFloor(date: Date, granularity: DashboardStats['timeline_granularity']) {
-  const year = date.getUTCFullYear()
-  const month = date.getUTCMonth()
-  const day = date.getUTCDate()
-  const hour = date.getUTCHours()
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const day = date.getDate()
+  const hour = date.getHours()
   if (granularity === 'day') {
-    return new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
+    return new Date(year, month, day, 0, 0, 0, 0)
   }
-  return new Date(Date.UTC(year, month, day, hour, 0, 0, 0))
+  return new Date(year, month, day, hour, 0, 0, 0)
 }
 
 function toBucketKey(date: Date, granularity: DashboardStats['timeline_granularity']) {
-  const year = date.getUTCFullYear()
-  const month = `${date.getUTCMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getUTCDate()}`.padStart(2, '0')
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
   if (granularity === 'day') {
     return `${year}-${month}-${day} 00:00`
   }
-  const hour = `${date.getUTCHours()}`.padStart(2, '0')
+  const hour = `${date.getHours()}`.padStart(2, '0')
   return `${year}-${month}-${day} ${hour}:00`
 }
-
 function agentLabel(agent: string) {
   return (
     AGENTS.find((item) => item.id === agent)?.label || (agent === 'unknown' ? 'Unknown' : agent)

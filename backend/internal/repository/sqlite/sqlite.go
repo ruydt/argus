@@ -759,7 +759,7 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 
 	// Timeline
 	if rows, err := d.db.Query(fmt.Sprintf(`
-		SELECT strftime('%s', created_at) as bucket, COUNT(*) 
+		SELECT strftime('%s', created_at, 'localtime') as bucket, COUNT(*) 
 		FROM hook_events 
 		WHERE created_at IS NOT NULL`+buildAndClause(eventClauses)+`
 		GROUP BY bucket 
@@ -779,7 +779,7 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 
 	// Timeline By Agent
 	if rows, err := d.db.Query(fmt.Sprintf(`
-		SELECT strftime('%s', created_at) as bucket, COALESCE(NULLIF(agent, ''), 'unknown') as agent_name, COUNT(*) 
+		SELECT strftime('%s', created_at, 'localtime') as bucket, COALESCE(NULLIF(agent, ''), 'unknown') as agent_name, COUNT(*) 
 		FROM hook_events 
 		WHERE created_at IS NOT NULL`+buildAndClause(eventClauses)+`
 		GROUP BY bucket, agent_name
@@ -799,7 +799,7 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 
 	// Token Timeline
 	if rows, err := d.db.Query(fmt.Sprintf(`
-		SELECT strftime('%s', started_at) as bucket,
+		SELECT strftime('%s', started_at, 'localtime') as bucket,
 		       SUM(input_tokens), SUM(output_tokens),
 		       SUM(cache_creation_tokens), SUM(cache_read_tokens)
 		FROM sessions
@@ -821,7 +821,7 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 
 	// Token Timeline By Agent
 	if rows, err := d.db.Query(fmt.Sprintf(`
-		SELECT strftime('%s', started_at) as bucket,
+		SELECT strftime('%s', started_at, 'localtime') as bucket,
 		       COALESCE(NULLIF(agent, ''), 'unknown') as agent_name,
 		       SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens)
 		FROM sessions
