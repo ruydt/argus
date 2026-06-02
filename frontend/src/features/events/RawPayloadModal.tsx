@@ -57,7 +57,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
           </Alert>
         )}
         {status === 'ready' && (
-          <div className="relative rounded-md border overflow-hidden" role="region" aria-label="Raw payload JSON">
+          <div className="relative rounded-md border overflow-y-auto flex-1 min-h-0" role="region" aria-label="Raw payload JSON">
             <button
               onClick={handleCopy}
               className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10 transition-colors"
