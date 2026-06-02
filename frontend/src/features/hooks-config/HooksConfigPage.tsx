@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
-import { keymap } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import { AppWindowIcon, Check, CodeIcon, Copy, RefreshCw, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -124,7 +124,7 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
             <CodeMirror
               value={draftJSON}
               onChange={(value) => setDraftJSON(value)}
-              extensions={[json(), keymap.of([indentWithTab]), hookerEditorTheme, hookerHighlighting]}
+              extensions={[json(), keymap.of([indentWithTab]), hookerEditorTheme, hookerHighlighting, EditorView.lineWrapping]}
               theme="none"
               height="calc(100dvh - 220px)"
               minHeight="320px"
