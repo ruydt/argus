@@ -30,7 +30,10 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
         setRawJson(JSON.stringify(data.raw_payload, null, 2))
         setStatus('ready')
       })
-      .catch(() => setStatus('error'))
+      .catch((err: unknown) => {
+        console.error('[RawPayloadModal] fetch failed:', err)
+        setStatus('error')
+      })
   }, [open, dedupKey])
 
   return (
