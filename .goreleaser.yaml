@@ -34,7 +34,7 @@ builds:
 archives:
   - id: default
     name_template: "hooker_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
+    formats: [tar.gz]
 
 checksum:
   name_template: "checksums.txt"
