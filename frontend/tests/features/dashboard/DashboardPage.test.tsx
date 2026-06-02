@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { Dashboard } from '@/pages/Dashboard'
 
 // Mock recharts to avoid canvas/SVG rendering issues in jsdom
 vi.mock('recharts', async () => {
@@ -34,14 +33,6 @@ function renderDashboardPage() {
   return render(
     <MemoryRouter>
       <DashboardPage />
-    </MemoryRouter>
-  )
-}
-
-function renderDashboardShim() {
-  return render(
-    <MemoryRouter>
-      <Dashboard />
     </MemoryRouter>
   )
 }
@@ -101,13 +92,6 @@ describe('DashboardPage', () => {
 
   it('renders page heading regardless of loading state', () => {
     renderDashboardPage()
-    expect(screen.getByText('Summary')).toBeInTheDocument()
-  })
-
-  it('renders the dashboard UI through the compatibility shim', async () => {
-    renderDashboardShim()
-
-    expect(await screen.findByText('Sessions')).toBeInTheDocument()
     expect(screen.getByText('Summary')).toBeInTheDocument()
   })
 })

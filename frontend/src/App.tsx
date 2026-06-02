@@ -2,8 +2,10 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './app/Layout'
 
-const Dashboard = lazy(() =>
-  import('./pages/Dashboard').then((module) => ({ default: module.Dashboard }))
+const DashboardPage = lazy(() =>
+  import('./features/dashboard/DashboardPage').then((module) => ({
+    default: module.DashboardPage,
+  }))
 )
 const Events = lazy(() =>
   import('./features/events/EventsPage').then((module) => ({ default: module.EventsPage }))
@@ -46,7 +48,7 @@ export default function App() {
             path="dashboard"
             element={
               <Suspense fallback={null}>
-                <Dashboard />
+                <DashboardPage />
               </Suspense>
             }
           />
