@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HooksConfigPage } from '@/features/hooks-config/HooksConfigPage'
@@ -14,10 +15,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig })
-  )
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => emptyConfig }))
 })
 
 afterEach(() => vi.clearAllMocks())
@@ -38,7 +36,9 @@ describe('HooksConfigPage', () => {
 
   it('Save button is disabled when config is unchanged', async () => {
     renderPage()
-    await waitFor(() => expect(screen.getByRole('button', { name: /save hooks config/i })).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /save hooks config/i })).toBeTruthy()
+    )
     expect(screen.getByRole('button', { name: /save hooks config/i })).toBeDisabled()
   })
 
@@ -48,27 +48,30 @@ describe('HooksConfigPage', () => {
   })
 
   it('shows error card when load fails for active agent', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 503 })
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
     renderPage()
     await waitFor(() => expect(screen.getByText(/failed to load hooks config/i)).toBeTruthy())
   })
 
   it('shows loading skeleton initially', () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockReturnValue(new Promise(() => {}))
-    )
+    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
     renderPage()
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
   })
 
-  it('shows "Edit as JSON" toggle button after load', async () => {
+  it('shows Structured and JSON view mode tabs after load', async () => {
     renderPage()
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /edit as json/i })).toBeTruthy()
-    )
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /structured/i })).toBeTruthy()
+      expect(screen.getByRole('tab', { name: /json/i })).toBeTruthy()
+    })
+  })
+
+  it('renders CodeMirror editor region in JSON mode', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('tab', { name: /json/i }))
+    expect(screen.getByRole('region', { name: /hooks config json/i })).toBeTruthy()
   })
 })

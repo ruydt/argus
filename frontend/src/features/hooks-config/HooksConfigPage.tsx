@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { Code2, List, RefreshCw, Save } from 'lucide-react'
+import { indentWithTab } from '@codemirror/commands'
+import { json } from '@codemirror/lang-json'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { keymap } from '@codemirror/view'
+import CodeMirror from '@uiw/react-codemirror'
+import { AppWindowIcon, CodeIcon, RefreshCw, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -28,8 +33,11 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
     }
   })()
 
-  function handleToggleView() {
-    if (viewMode === 'json') {
+  function handleViewModeChange(nextMode: string) {
+    const mode = nextMode as 'structured' | 'json'
+    if (mode === viewMode) return
+
+    if (mode === 'structured') {
       if (!jsonIsValid) return
       try {
         setConfig(JSON.parse(draftJSON) as HooksConfig)
@@ -37,7 +45,7 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
         return
       }
     }
-    setViewMode((m) => (m === 'structured' ? 'json' : 'structured'))
+    setViewMode(mode)
   }
 
   if (loading) {
@@ -65,31 +73,25 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
   return (
     <div className="flex flex-col gap-4 mt-4">
       <div className="flex items-center justify-end">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-[12px] h-8 gap-1.5 text-muted-foreground hover:text-foreground"
-          onClick={handleToggleView}
-          disabled={viewMode === 'json' && !jsonIsValid}
-          title={
-            viewMode === 'json' && !jsonIsValid
-              ? 'Fix JSON errors before switching to structured view'
-              : undefined
-          }
-        >
-          {viewMode === 'structured' ? (
-            <>
-              <Code2 className="size-3.5" />
-              Edit as JSON
-            </>
-          ) : (
-            <>
-              <List className="size-3.5" />
-              Structured view
-            </>
-          )}
-        </Button>
+        <Tabs value={viewMode} onValueChange={handleViewModeChange}>
+          <TabsList>
+            <TabsTrigger
+              value="structured"
+              aria-label="Structured"
+              disabled={viewMode === 'json' && !jsonIsValid}
+              title={
+                viewMode === 'json' && !jsonIsValid
+                  ? 'Fix JSON errors before switching to structured view'
+                  : undefined
+              }
+            >
+              <AppWindowIcon />
+            </TabsTrigger>
+            <TabsTrigger value="json" aria-label="JSON">
+              <CodeIcon />
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {viewMode === 'structured' && config !== null && (
@@ -98,19 +100,28 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
 
       {viewMode === 'json' && (
         <div className="flex flex-col gap-1">
-          <textarea
-            value={draftJSON}
-            onChange={(e) => setDraftJSON(e.target.value)}
-            className={cn(
-              'w-full min-h-[400px] rounded-md border bg-background p-3 font-mono text-[13px] resize-y focus:outline-none focus:ring-2 focus:ring-ring',
-              !jsonIsValid && 'border-destructive focus:ring-destructive'
-            )}
+          <div
+            className={cn('rounded-md border overflow-hidden', !jsonIsValid && 'border-destructive')}
+            role="region"
             aria-label="Hooks config JSON"
-            spellCheck={false}
-          />
-          {!jsonIsValid && (
-            <p className="text-[12px] text-destructive mt-0.5">Invalid JSON</p>
-          )}
+          >
+            <CodeMirror
+              value={draftJSON}
+              onChange={(value) => setDraftJSON(value)}
+              extensions={[json(), keymap.of([indentWithTab])]}
+              theme={oneDark}
+              height="calc(100dvh - 220px)"
+              minHeight="320px"
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLine: true,
+                bracketMatching: true,
+                autocompletion: false,
+                foldGutter: true,
+              }}
+            />
+          </div>
+          {!jsonIsValid && <p className="text-[12px] text-destructive mt-0.5">Invalid JSON</p>}
         </div>
       )}
 
