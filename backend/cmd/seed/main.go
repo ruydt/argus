@@ -4,8 +4,9 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/rand"
+	"os"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -16,11 +17,12 @@ func main() {
 	dbPath := "/home/leeduy0403/emruy/backend/cmd/server/hooker.db"
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		log.Fatalf("failed to open db: %v", err)
+		slog.Error("failed to open db", "err", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Printf("failed to close db: %v", err)
+			slog.Error("failed to close db", "err", err)
 		}
 	}()
 
@@ -63,7 +65,7 @@ func main() {
 			inputTokens, outputTokens, rand.Intn(2000), rand.Intn(10000), turns,
 		)
 		if err != nil {
-			log.Printf("failed to insert session %s: %v", sessionID, err)
+			slog.Error("failed to insert session", "session_id", sessionID, "err", err)
 			continue
 		}
 
@@ -94,7 +96,7 @@ func main() {
 				dedupKey,
 			)
 			if err != nil {
-				log.Printf("failed to insert event for session %s: %v", sessionID, err)
+				slog.Error("failed to insert event", "session_id", sessionID, "err", err)
 			}
 		}
 	}
