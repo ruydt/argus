@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
-import { oneDark } from '@codemirror/theme-one-dark'
 import { keymap } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
-import { AppWindowIcon, CodeIcon, RefreshCw, Save } from 'lucide-react'
+import { AppWindowIcon, Check, CodeIcon, Copy, RefreshCw, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import { hookerEditorTheme, hookerHighlighting } from './editorTheme'
 import { StructuredEditor } from './StructuredEditor'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import type { AgentKey, HooksConfig, HooksConfigState } from './types'
@@ -22,7 +22,15 @@ type AgentTabContentProps = {
 
 function AgentTabContent({ agent, state }: AgentTabContentProps) {
   const [viewMode, setViewMode] = useState<'structured' | 'json'>('structured')
+  const [copied, setCopied] = useState(false)
   const { config, draftJSON, loading, error, saveError, setDraftJSON, setConfig, reload } = state
+
+  function handleCopy() {
+    void navigator.clipboard.writeText(draftJSON).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
 
   const jsonIsValid = (() => {
     try {
@@ -101,15 +109,23 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
       {viewMode === 'json' && (
         <div className="flex flex-col gap-1">
           <div
-            className={cn('rounded-md border overflow-hidden', !jsonIsValid && 'border-destructive')}
+            className={cn('relative rounded-md border overflow-hidden', !jsonIsValid && 'border-destructive')}
             role="region"
             aria-label="Hooks config JSON"
           >
+            <button
+              onClick={handleCopy}
+              className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10 transition-colors"
+              aria-label="Copy JSON"
+              title="Copy JSON"
+            >
+              {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
+            </button>
             <CodeMirror
               value={draftJSON}
               onChange={(value) => setDraftJSON(value)}
-              extensions={[json(), keymap.of([indentWithTab])]}
-              theme={oneDark}
+              extensions={[json(), keymap.of([indentWithTab]), hookerEditorTheme, hookerHighlighting]}
+              theme="none"
               height="calc(100dvh - 220px)"
               minHeight="320px"
               basicSetup={{
