@@ -60,7 +60,7 @@ func corsAllowlist(origins []string) func(http.Handler) http.Handler {
 				// No Origin header: non-CORS request (curl, CLI, same-origin implicit).
 				if r.Method == http.MethodOptions {
 					w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 					w.WriteHeader(http.StatusNoContent)
 					return
 				}
@@ -71,7 +71,7 @@ func corsAllowlist(origins []string) func(http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
 				w.Header().Set("Vary", "Origin")
 				w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 				if r.Method == http.MethodOptions {
 					w.WriteHeader(http.StatusNoContent)
 					return
