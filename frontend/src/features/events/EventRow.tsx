@@ -14,6 +14,10 @@ import { NotifyBlock } from './renderers/NotifyBlock'
 import { CwdBlock } from './renderers/CwdBlock'
 import { ToolResultBlock } from './renderers/ToolResultBlock'
 import { BatchBlock } from './renderers/BatchBlock'
+import { ElicitBlock } from './renderers/ElicitBlock'
+import { DisplayBlock } from './renderers/DisplayBlock'
+import { WorktreeBlock } from './renderers/WorktreeBlock'
+import { InstructBlock } from './renderers/InstructBlock'
 import { EventBadges } from './EventBadges'
 import { Braces } from 'lucide-react'
 import { RawPayloadModal } from './RawPayloadModal'
@@ -134,14 +138,18 @@ export function EventRow({
           </div>
 
           {/* Prompts and commands */}
-          {(e.prompt || e.command) && !isPatchCommand && (
-            <CommandBlock
-              prompt={e.prompt}
-              command={e.command}
-              path={e.path}
-              searchQuery={searchQuery}
-            />
-          )}
+          {(e.prompt || e.command) &&
+            !isPatchCommand &&
+            e.action !== 'ELICIT' &&
+            e.action !== 'DISPLAY' &&
+            e.action !== 'INSTRUCT' && (
+              <CommandBlock
+                prompt={e.prompt}
+                command={e.command}
+                path={e.path}
+                searchQuery={searchQuery}
+              />
+            )}
 
           {/* Standard string replacement diff */}
           {e.action === 'EDIT' && (e.old_string || e.new_string) && (
@@ -203,6 +211,27 @@ export function EventRow({
             />
           )}
           {e.action === 'BATCH' && <BatchBlock json={e.tool_calls_json} />}
+          {e.action === 'DISPLAY' && (
+            <DisplayBlock message={e.notification_message || e.prompt} searchQuery={searchQuery} />
+          )}
+          {e.action === 'ELICIT' && (
+            <ElicitBlock
+              serverName={e.server_name}
+              prompt={e.prompt || e.notification_message}
+              response={e.response}
+              searchQuery={searchQuery}
+            />
+          )}
+          {e.action === 'WORKTREE' && (
+            <WorktreeBlock branch={e.branch} hookEventName={e.hook_event_name} />
+          )}
+          {e.action === 'INSTRUCT' && (
+            <InstructBlock
+              memoryType={e.memory_type}
+              loadReason={e.load_reason}
+              searchQuery={searchQuery}
+            />
+          )}
 
           {/* Metadata Badges */}
           <EventBadges event={e} />

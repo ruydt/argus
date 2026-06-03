@@ -18,7 +18,9 @@ export function EventBadges({ event: e }: EventBadgesProps) {
     e.task_id ||
     e.notification_type ||
     e.change_type ||
-    e.trigger
+    e.trigger ||
+    e.command_name ||
+    e.expansion_type
 
   if (!hasAny) return null
 
@@ -111,6 +113,22 @@ export function EventBadges({ event: e }: EventBadgesProps) {
           className="text-[0.68rem] text-[#888] border-white/5 bg-white/[0.04] px-[6px] py-[2px] h-auto rounded"
         >
           <strong className="text-[#aaa] font-semibold mr-1">Trigger:</strong> {e.trigger}
+        </Badge>
+      )}
+      {e.command_name && (
+        <Badge
+          variant="outline"
+          className="text-[0.68rem] text-[#888] border-white/5 bg-white/[0.04] px-[6px] py-[2px] h-auto rounded"
+        >
+          <strong className="text-[#aaa] font-semibold mr-1">Command:</strong> {e.command_name}
+        </Badge>
+      )}
+      {e.expansion_type && (
+        <Badge
+          variant="outline"
+          className="text-[0.68rem] text-[#888] border-white/5 bg-white/[0.04] px-[6px] py-[2px] h-auto rounded"
+        >
+          <strong className="text-[#aaa] font-semibold mr-1">Expansion:</strong> {e.expansion_type}
         </Badge>
       )}
     </div>
