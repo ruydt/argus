@@ -52,6 +52,12 @@ export interface EventRecord {
   normalizer_version?: string
   agent_version?: string
   dedup_key?: string
+  expansion_type?: string
+  command_name?: string
+  memory_type?: string
+  load_reason?: string
+  branch?: string
+  server_name?: string
 }
 
 export interface SessionUsage {

@@ -34,6 +34,8 @@
   --compact: #60a5fa;
   --cwd: #f59e0b;
   --instruct: #818cf8;
+  --display: #e2c4ff;
+  --elicit: #ff9f6b;
 
   /* shadcn semantic tokens — set to dark values since app is always dark */
   --background: #111111;
