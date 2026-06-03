@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { Activity, AlertTriangle, Copy, RefreshCw, Shield, Zap } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -15,8 +16,46 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
+import { detectHookConfigLabel } from '@/features/hooks-config/presets'
+import type { HooksConfig } from '@/features/hooks-config/types'
+import type { AgentKey } from '@/features/hooks-config/types'
 import { useDiagnostics } from './hooks/useDiagnostics'
-import type { Diagnostics } from './types'
+import type { Diagnostics, DiagnosticsAgent } from './types'
+
+const PRESET_AGENT_IDS = new Set<string>(['claudecode', 'codex'])
+
+function useHookConfigLabels(agents: DiagnosticsAgent[] | undefined): Record<string, string> {
+  const [labels, setLabels] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!agents) return
+    const targets = agents.filter(
+      (a) => a.hookConfigStatus === 'configured' && PRESET_AGENT_IDS.has(a.id)
+    )
+    if (targets.length === 0) return
+
+    let cancelled = false
+    Promise.all(
+      targets.map((a) =>
+        fetch(`/api/hooks-config?agent=${a.id}`)
+          .then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`)
+            return r.json() as Promise<HooksConfig>
+          })
+          .then((config) => [a.id, detectHookConfigLabel(a.id as AgentKey, config)] as const)
+          .catch(() => [a.id, 'Configured'] as const)
+      )
+    ).then((entries) => {
+      if (!cancelled) setLabels(Object.fromEntries(entries))
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [agents])
+
+  return labels
+}
 
 // Badge className overrides — do NOT use variant="destructive" directly
 const BADGE_RED = 'border-[var(--destructive)] text-[var(--destructive)] bg-[rgba(255,95,86,0.1)]'
@@ -83,32 +122,40 @@ function AgentStatusCell({ status }: { status: string }) {
   }
 }
 
-function HookConfigCell({ hookConfigStatus }: { hookConfigStatus: string }) {
-  switch (hookConfigStatus) {
-    case 'configured':
-      return (
-        <Badge variant="outline" className={BADGE_GREEN}>
-          Configured
-        </Badge>
-      )
-    case 'missing':
-      return (
-        <Badge variant="outline" className={BADGE_RED}>
-          Missing
-        </Badge>
-      )
-    case 'unknown':
-      return (
-        <Badge variant="outline" className={BADGE_AMBER}>
-          Unknown
-        </Badge>
-      )
-    default:
-      return <span className="text-[12px] text-muted-foreground">{hookConfigStatus}</span>
+function HookConfigCell({
+  hookConfigStatus,
+  label,
+}: {
+  hookConfigStatus: string
+  label?: string
+}) {
+  if (hookConfigStatus === 'missing') {
+    return (
+      <Badge variant="outline" className={BADGE_RED}>
+        Missing
+      </Badge>
+    )
   }
+  if (hookConfigStatus === 'configured') {
+    const display = label ?? 'Configured'
+    return (
+      <Badge variant="outline" className={BADGE_GREEN}>
+        {display}
+      </Badge>
+    )
+  }
+  if (hookConfigStatus === 'unknown') {
+    return (
+      <Badge variant="outline" className={BADGE_AMBER}>
+        Unknown
+      </Badge>
+    )
+  }
+  return <span className="text-[12px] text-muted-foreground">{hookConfigStatus}</span>
 }
 
 function LoadedContent({ data }: { data: Diagnostics }) {
+  const hookConfigLabels = useHookConfigLabels(data.agents)
   const agentWarningCount = data.agents.filter(
     (a) =>
       a.status === 'degraded' ||
@@ -260,7 +307,10 @@ function LoadedContent({ data }: { data: Diagnostics }) {
                         : '—'}
                     </TableCell>
                     <TableCell>
-                      <HookConfigCell hookConfigStatus={agent.hookConfigStatus} />
+                      <HookConfigCell
+                        hookConfigStatus={agent.hookConfigStatus}
+                        label={hookConfigLabels[agent.id]}
+                      />
                     </TableCell>
                     <TableCell>
                       {(agent.warnings ?? []).length === 0 ? (
