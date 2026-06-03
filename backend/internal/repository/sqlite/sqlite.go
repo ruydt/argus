@@ -46,6 +46,9 @@ var schema007 string
 //go:embed migrations/008_normalization_fields.sql
 var schema008 string
 
+//go:embed migrations/009_new_event_fields.sql
+var schema009 string
+
 type DB struct {
 	db     *sql.DB
 	ready  atomic.Bool
@@ -110,6 +113,7 @@ func (d *DB) migrate() error {
 		{6, schema006},
 		{7, schema007},
 		{8, schema008},
+		{9, schema009},
 	}
 	for _, m := range migrations {
 		var count int
@@ -153,8 +157,9 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 			notification_type, notification_title, notification_message,
 			change_type, old_cwd, new_cwd, tool_calls_json,
 			tool_result_stdout, tool_result_stderr, duration_ms, trigger,
-			normalizer_version, agent_version, normalization_status
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+			normalizer_version, agent_version, normalization_status,
+			expansion_type, command_name, memory_type, load_reason, branch, server_name
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		e.Time, e.Agent, e.Session, e.HookEventName, e.TurnID, e.ToolUseID,
 		e.Tool, e.Model, e.Source, e.CWD, e.TranscriptPath,
 		nullStr(e.Action), nullStr(e.Path), nullStr(e.Command),
@@ -169,6 +174,8 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 		nullStr(e.ChangeType), nullStr(e.OldCWD), nullStr(e.NewCWD), nullStr(e.ToolCallsJSON),
 		nullStr(e.ToolResultStdout), nullStr(e.ToolResultStderr), nullInt(e.DurationMS), nullStr(e.Trigger),
 		nullStr(e.NormalizerVersion), nullStr(e.AgentVersion), normalizationStatus(e.NormalizationStatus),
+		nullStr(e.ExpansionType), nullStr(e.CommandName), nullStr(e.MemoryType),
+		nullStr(e.LoadReason), nullStr(e.Branch), nullStr(e.ServerName),
 	)
 	return err
 }
@@ -201,6 +208,9 @@ func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domai
 		       COALESCE(tool_result_stdout,''), COALESCE(tool_result_stderr,''),
 		       COALESCE(duration_ms,0), COALESCE(trigger,''),
 		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,''),
+		       COALESCE(expansion_type,''), COALESCE(command_name,''),
+		       COALESCE(memory_type,''), COALESCE(load_reason,''),
+		       COALESCE(branch,''), COALESCE(server_name,''),
 		       COALESCE(dedup_key,'')
 		FROM hook_events
 	`
@@ -241,6 +251,7 @@ func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domai
 			&e.ChangeType, &e.OldCWD, &e.NewCWD, &e.ToolCallsJSON,
 			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS, &e.Trigger,
 			&e.NormalizerVersion, &e.AgentVersion, &e.NormalizationStatus,
+			&e.ExpansionType, &e.CommandName, &e.MemoryType, &e.LoadReason, &e.Branch, &e.ServerName,
 			&e.DedupKey,
 		); err != nil {
 			return nil, err
@@ -1275,7 +1286,10 @@ func (d *DB) ExportEvents(ctx context.Context, w io.Writer) error {
 		       COALESCE(tool_calls_json,''),
 		       COALESCE(tool_result_stdout,''), COALESCE(tool_result_stderr,''),
 		       COALESCE(duration_ms,0), COALESCE(trigger,''),
-		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,'')
+		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,''),
+		       COALESCE(expansion_type,''), COALESCE(command_name,''),
+		       COALESCE(memory_type,''), COALESCE(load_reason,''),
+		       COALESCE(branch,''), COALESCE(server_name,'')
 		FROM hook_events ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("export events query: %w", err)
@@ -1302,6 +1316,7 @@ func (d *DB) ExportEvents(ctx context.Context, w io.Writer) error {
 			&e.ChangeType, &e.OldCWD, &e.NewCWD, &e.ToolCallsJSON,
 			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS, &e.Trigger,
 			&e.NormalizerVersion, &e.AgentVersion, &e.NormalizationStatus,
+			&e.ExpansionType, &e.CommandName, &e.MemoryType, &e.LoadReason, &e.Branch, &e.ServerName,
 		); err != nil {
 			return fmt.Errorf("export events scan: %w", err)
 		}
