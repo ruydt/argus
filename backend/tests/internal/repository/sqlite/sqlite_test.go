@@ -487,7 +487,7 @@ func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
 	if err := db.UpsertSession("sess-live", "claudecode", "claude-opus-4-7", "", "/work/hooker", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession live: %v", err)
 	}
-	if err := db.UpsertSession("sess-other", "geminicli", "gemini-3", "", "/work/other", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-other", "codex", "gpt-5.4", "", "/work/other", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession other: %v", err)
 	}
 
@@ -753,8 +753,6 @@ func TestDiagnosticsAgentStatsAggregatesSessionsAndEvents(t *testing.T) {
 	addSessionAt(t, db, "claude-a", "claudecode", base)
 	addSessionAt(t, db, "claude-b", "claudecode", base.Add(time.Hour))
 	addSessionAt(t, db, "codex-a", "codex", base.Add(2*time.Hour))
-	addSessionAt(t, db, "gemini-a", "geminicli", base.Add(3*time.Hour))
-
 	addEvent(t, db, domain.NormalizedEvent{
 		Time:                claudeSeen,
 		Agent:               "claudecode",
@@ -763,6 +761,16 @@ func TestDiagnosticsAgentStatsAggregatesSessionsAndEvents(t *testing.T) {
 		ToolUseID:           "claude-tool",
 		Tool:                "Read",
 		NormalizationStatus: "degraded",
+		NormalizerVersion:   "claudecode/1",
+	})
+	addEvent(t, db, domain.NormalizedEvent{
+		Time:                base.Add(90 * time.Minute).Format(time.RFC3339),
+		Agent:               "claudecode",
+		Session:             "claude-a",
+		HookEventName:       "PostToolUse",
+		ToolUseID:           "claude-tool-2",
+		Tool:                "Write",
+		NormalizationStatus: "ok",
 		NormalizerVersion:   "claudecode/1",
 	})
 	addEvent(t, db, domain.NormalizedEvent{
@@ -775,18 +783,6 @@ func TestDiagnosticsAgentStatsAggregatesSessionsAndEvents(t *testing.T) {
 		NormalizationStatus: "ok",
 		NormalizerVersion:   "codex/1",
 	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time:                base.Add(30 * time.Minute).Format(time.RFC3339),
-		Agent:               "unknown",
-		Source:              "gemini",
-		Session:             "unknown-gemini",
-		HookEventName:       "PostToolUse",
-		ToolUseID:           "gemini-tool",
-		Tool:                "Read",
-		NormalizationStatus: "degraded",
-		NormalizerVersion:   "hooker/1",
-	})
-
 	stats, err := db.DiagnosticsAgentStats()
 	if err != nil {
 		t.Fatalf("DiagnosticsAgentStats: %v", err)
@@ -794,9 +790,6 @@ func TestDiagnosticsAgentStatsAggregatesSessionsAndEvents(t *testing.T) {
 	byAgent := map[string]domain.DiagnosticsAgentStats{}
 	for _, stat := range stats {
 		byAgent[stat.Agent] = stat
-	}
-	if _, ok := byAgent["geminicli"]; ok {
-		t.Fatalf("geminicli stats present: %+v", byAgent["geminicli"])
 	}
 	claude := byAgent["claudecode"]
 	if claude.EventCount != 2 {
