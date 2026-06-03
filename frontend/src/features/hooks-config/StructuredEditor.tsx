@@ -10,6 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  HOOK_PRESETS,
+  HOOKER_STATUS_MESSAGE,
+  PRESET_KEYS,
+  PRESET_LABELS,
+  applyPreset,
+  hasAnyHookerHooks,
+  removeHookerHooks,
+} from './presets'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig } from './types'
 
 const CLAUDE_EVENT_TYPES = [
@@ -71,6 +80,7 @@ function emptyEntry(): HookEntry {
   return {
     type: 'command',
     command: "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+    statusMessage: HOOKER_STATUS_MESSAGE,
   }
 }
 
@@ -108,6 +118,15 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
   function addEventType(eventType: string) {
     setCollapsed((prev) => ({ ...prev, [eventType]: false }))
     onChange({ hooks: { ...config.hooks, [eventType]: [emptyGroup()] } })
+  }
+
+  function handleApplyPreset(key: string) {
+    const preset = HOOK_PRESETS[agent][key as keyof (typeof HOOK_PRESETS)[typeof agent]]
+    onChange(applyPreset(config, preset))
+  }
+
+  function handleRemoveHookerHooks() {
+    onChange(removeHookerHooks(config))
   }
 
   function addGroup(eventType: string) {
@@ -159,6 +178,59 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        {availableToAdd.length > 0 && (
+          <Select key={usedEvents.join(',')} onValueChange={addEventType}>
+            <SelectTrigger className="h-8 text-[13px] w-[200px]">
+              <SelectValue placeholder="Add hook event" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableToAdd.map((e) => (
+                <SelectItem key={e} value={e} className="font-mono text-[13px]">
+                  {e}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <Select key={`preset-${usedEvents.length}`} onValueChange={handleApplyPreset}>
+          <SelectTrigger className="h-8 text-[13px] w-[160px]">
+            <SelectValue placeholder="Apply preset…" />
+          </SelectTrigger>
+          <SelectContent>
+            {PRESET_KEYS.map((key) => (
+              <SelectItem key={key} value={key} className="text-[13px]">
+                <span className="font-medium">{PRESET_LABELS[key].label}</span>
+                <span className="ml-1.5 text-muted-foreground text-[12px]">
+                  — {PRESET_LABELS[key].description}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 text-[13px] text-muted-foreground hover:text-destructive"
+          disabled={!hasAnyHookerHooks(config)}
+          onClick={handleRemoveHookerHooks}
+          aria-label="Remove Hooker hooks"
+          title="Remove all hooks installed by Hooker"
+        >
+          <Trash2 className="size-3.5 mr-1.5" />
+          Remove Hooker hooks
+        </Button>
+      </div>
+
+      {usedEvents.length === 0 && (
+        <p className="text-[13px] text-muted-foreground">
+          No hooks configured. Use the selectors above to add events or apply a preset.
+        </p>
+      )}
+
       {usedEvents.map((eventType) => {
         const groups = config.hooks[eventType] ?? []
         const hookCount = groups.reduce((n, g) => n + g.hooks.length, 0)
@@ -320,28 +392,6 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
         )
       })}
 
-      {availableToAdd.length > 0 && (
-        <div className="flex items-center gap-2 pt-1">
-          <Select key={usedEvents.join(',')} onValueChange={addEventType}>
-            <SelectTrigger className="h-8 text-[13px] w-[220px]">
-              <SelectValue placeholder="Add hook event" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableToAdd.map((e) => (
-                <SelectItem key={e} value={e} className="font-mono text-[13px]">
-                  {e}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {usedEvents.length === 0 && (
-        <p className="text-[13px] text-muted-foreground">
-          No hooks configured. Use the selector above to add an event type.
-        </p>
-      )}
     </div>
   )
 }
