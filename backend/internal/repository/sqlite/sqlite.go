@@ -498,7 +498,7 @@ func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 
 	sessionRows, err := d.db.Query(`
 		SELECT agent, COUNT(*) AS event_count
-		FROM sessions
+		FROM hook_events
 		WHERE agent IN ('claudecode', 'codex')
 		GROUP BY agent
 	`)

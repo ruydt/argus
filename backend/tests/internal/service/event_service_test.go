@@ -265,7 +265,6 @@ func TestDiagnosticsIncludesClaudeCodeAndCodexAgentRows(t *testing.T) {
 				DegradedCount:     1,
 				NormalizerVersion: &claudeVersion,
 			},
-			{Agent: "geminicli", EventCount: 99},
 		},
 	})
 
@@ -291,11 +290,6 @@ func TestDiagnosticsIncludesClaudeCodeAndCodexAgentRows(t *testing.T) {
 	if got.Agents[1].ID != "codex" || got.Agents[1].EventCount != 0 || got.Agents[1].Status != "no events" {
 		t.Fatalf("Codex zero row = %+v, want no events", got.Agents[1])
 	}
-	for _, agent := range got.Agents {
-		if agent.ID == "geminicli" {
-			t.Fatalf("unexpected Gemini CLI row: %+v", agent)
-		}
-	}
 	if !got.Health.Ready {
 		t.Fatalf("health should remain ready despite agent warnings: %+v", got.Health)
 	}
@@ -307,7 +301,6 @@ func TestDiagnosticsMergesHookConfigStatuses(t *testing.T) {
 	got, err := svc.Diagnostics(":memory:", true, []domain.DiagnosticsHookConfig{
 		{Agent: "claudecode", Status: "configured"},
 		{Agent: "codex", Status: "unknown", Reason: "invalid_json"},
-		{Agent: "geminicli", Status: "configured"},
 	})
 	if err != nil {
 		t.Fatalf("Diagnostics: %v", err)
@@ -320,11 +313,6 @@ func TestDiagnosticsMergesHookConfigStatuses(t *testing.T) {
 	}
 	if got.Agents[1].HookConfigStatus != "unknown" || got.Agents[1].HookConfigReason != "invalid_json" {
 		t.Fatalf("Codex hook config = %+v, want unknown invalid_json", got.Agents[1])
-	}
-	for _, agent := range got.Agents {
-		if agent.ID == "geminicli" {
-			t.Fatalf("unexpected Gemini row: %+v", agent)
-		}
 	}
 	if !got.Health.Ready {
 		t.Fatalf("health should stay ready for hook config warnings: %+v", got.Health)

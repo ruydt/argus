@@ -3,7 +3,7 @@ import type { EventRecord, SessionUsage } from '@/types'
 
 export type { EventRecord, SessionUsage } from '@/types'
 
-export type AgentId = 'claudecode' | 'codex' | 'geminicli'
+export type AgentId = 'claudecode' | 'codex'
 
 export type UsageTooltipItem = {
   cls: string

@@ -16,7 +16,6 @@ official secondary path for the backend. Prebuilt binaries are planned later.
 | Frontend package manager | pnpm 10.x                                |
 | Backend database         | SQLite at `backend/hooker.db` by default |
 | Supported agents         | Codex, Claude Code                       |
-| Experimental agents      | Gemini CLI                               |
 
 ## Source install
 

@@ -13,7 +13,6 @@ import (
 
 	"hooker/internal/agents/claudecode"
 	"hooker/internal/agents/codex"
-	"hooker/internal/agents/geminicli"
 	"hooker/internal/domain"
 	"hooker/internal/fileutil"
 	"hooker/internal/service"
@@ -56,8 +55,6 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 		switch {
 		case claudecode.MatchesTranscript(meta.TranscriptPath):
 			e, normalizeErr = claudecode.Normalize(raw)
-		case geminicli.MatchesTranscript(meta.TranscriptPath) || meta.Source == "gemini":
-			e, normalizeErr = geminicli.Normalize(raw)
 		default:
 			e, normalizeErr = codex.Normalize(raw)
 		}
@@ -117,8 +114,6 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 		if e.Model == "" && e.TranscriptPath != "" {
 			if claudecode.MatchesTranscript(e.TranscriptPath) {
 				e.Model = claudecode.ModelFromTranscript(e.TranscriptPath)
-			} else if geminicli.MatchesTranscript(e.TranscriptPath) {
-				e.Model = geminicli.ModelFromTranscript(e.TranscriptPath)
 			}
 		}
 

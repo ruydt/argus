@@ -72,15 +72,6 @@ func TestDetectReportsUnknownForInvalidJSONAndReadError(t *testing.T) {
 	}
 }
 
-func TestDetectDoesNotIncludeGemini(t *testing.T) {
-	got := hookconfig.Detector{HomeDir: t.TempDir()}.Detect()
-	for _, result := range got {
-		if result.Agent == "geminicli" {
-			t.Fatalf("unexpected Gemini result: %+v", result)
-		}
-	}
-}
-
 func writeFile(t *testing.T, home, rel, content string) {
 	t.Helper()
 	path := filepath.Join(home, rel)

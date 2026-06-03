@@ -70,8 +70,6 @@ Or configure manually using the hook guide for your agent:
 - [Codex](hooks.md#codex)
 - [Claude Code](hooks.md#claude-code)
 
-Gemini CLI support exists but is experimental.
-
 ## 5. Verify one event
 
 1. Start Codex or Claude Code in any repo.

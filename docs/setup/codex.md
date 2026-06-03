@@ -1,46 +1,48 @@
 # Codex Setup
 
+## Step 1: Enable hooks in Codex
+
 `~/.codex/config.toml`:
+
 ```toml
 [features]
 codex_hooks = true
 ```
 
-`~/.codex/hooks.json`:
+## Step 2: Configure hook entries
+
+### Option A: UI preset (recommended)
+
+Open the Hooker dashboard → **Hooks Config** → **Codex** tab → **Apply preset** → choose Baseline, Medium, or Full → **Save**.
+
+Hooker writes entries to `~/.codex/hooks.json` without touching your existing config.
+
+See [docs/hooks.md](../hooks.md) for what each preset captures and how to manage installed hooks.
+
+### Option B: Manual JSON
+
+Create or update `~/.codex/hooks.json`. The Baseline equivalent:
+
 ```json
 {
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume",
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
       }
     ],
-    "PreToolUse": [
+    "UserPromptSubmit": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
@@ -52,42 +54,7 @@ codex_hooks = true
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "matcher": ".*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
@@ -98,7 +65,7 @@ codex_hooks = true
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
@@ -108,4 +75,6 @@ codex_hooks = true
 }
 ```
 
-After editing `hooks.json`, run `codex` then `/hooks` once and trust updated hook hashes.
+## Step 3: Trust hook hashes
+
+After saving `hooks.json`, run `codex`, open `/hooks`, and trust the updated hook hashes.

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiagnosticsPage } from '@/features/diagnostics/DiagnosticsPage'
+import { HOOK_PRESETS, applyPreset } from '@/features/hooks-config/presets'
 import type { Diagnostics } from '@/features/diagnostics/types'
 import { _resetDiagnosticsCache } from '@/features/diagnostics/hooks/useDiagnostics'
 
@@ -84,6 +85,17 @@ function renderPage() {
   )
 }
 
+const emptyHooksConfig = { hooks: {} }
+
+function makeFetchMock(diagnosticsData = healthyDiagnostics) {
+  return vi.fn().mockImplementation((url: string) => {
+    if (typeof url === 'string' && url.includes('/api/hooks-config')) {
+      return Promise.resolve({ ok: true, json: async () => emptyHooksConfig })
+    }
+    return Promise.resolve({ ok: true, json: async () => diagnosticsData })
+  })
+}
+
 beforeEach(() => {
   _resetDiagnosticsCache()
   vi.clearAllMocks()
@@ -92,10 +104,7 @@ beforeEach(() => {
     writable: true,
     value: { writeText: vi.fn() },
   })
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({ ok: true, json: async () => healthyDiagnostics })
-  )
+  vi.stubGlobal('fetch', makeFetchMock())
 })
 
 afterEach(() => {
@@ -139,11 +148,48 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText(/Exported data may contain prompts/)).toBeInTheDocument()
   })
 
-  it('renders degraded and extra CORS badges in warning state', async () => {
+  it('shows preset label in hook config column when config matches a known preset', async () => {
+    const fullConfig = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.full)
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: async () => warningDiagnostics })
+      vi.fn().mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('/api/hooks-config?agent=claudecode')) {
+          return Promise.resolve({ ok: true, json: async () => fullConfig })
+        }
+        if (typeof url === 'string' && url.includes('/api/hooks-config')) {
+          return Promise.resolve({ ok: true, json: async () => emptyHooksConfig })
+        }
+        return Promise.resolve({ ok: true, json: async () => healthyDiagnostics })
+      })
     )
+    renderPage()
+    await screen.findByText('Agent Connectivity')
+    expect(await screen.findByText('Full')).toBeInTheDocument()
+  })
+
+  it('shows Configured label when hooks exist but none are hooker-managed', async () => {
+    const manualConfig = {
+      hooks: {
+        SessionStart: [{ hooks: [{ type: 'command', command: 'echo manual' }] }],
+      },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (typeof url === 'string' && url.includes('/api/hooks-config')) {
+          return Promise.resolve({ ok: true, json: async () => manualConfig })
+        }
+        return Promise.resolve({ ok: true, json: async () => healthyDiagnostics })
+      })
+    )
+    renderPage()
+    await screen.findByText('Agent Connectivity')
+    // Both agents have manual config — "Configured" appears at least once
+    expect(await screen.findAllByText('Configured')).not.toHaveLength(0)
+  })
+
+  it('renders degraded and extra CORS badges in warning state', async () => {
+    vi.stubGlobal('fetch', makeFetchMock(warningDiagnostics))
     renderPage()
     // Degraded badge for agent 0
     expect(await screen.findByText('Degraded')).toBeInTheDocument()
@@ -152,10 +198,7 @@ describe('DiagnosticsPage', () => {
   })
 
   it('renders first-run hint when no events have been observed', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: async () => emptyDiagnostics })
-    )
+    vi.stubGlobal('fetch', makeFetchMock(emptyDiagnostics))
     renderPage()
     expect(await screen.findByText('No activity observed yet')).toBeInTheDocument()
     expect(screen.getByText(/hooker setup/)).toBeInTheDocument()
@@ -166,10 +209,7 @@ describe('DiagnosticsPage', () => {
       ...healthyDiagnostics,
       health: { live: true, ready: false, reason: 'Database migration pending' },
     }
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: async () => notReadyDiagnostics })
-    )
+    vi.stubGlobal('fetch', makeFetchMock(notReadyDiagnostics))
     renderPage()
     expect(await screen.findByText('Not ready')).toBeInTheDocument()
     expect(screen.getByText(/Database migration pending/)).toBeInTheDocument()
@@ -178,15 +218,20 @@ describe('DiagnosticsPage', () => {
   })
 
   it('shows spin animation on refresh button click and keeps data visible', async () => {
-    // First fetch resolves immediately
     let resolveRefresh!: (v: unknown) => void
     const refreshPromise = new Promise((res) => {
       resolveRefresh = res
     })
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => healthyDiagnostics })
-      .mockReturnValueOnce(refreshPromise)
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (typeof url === 'string' && url.includes('/api/hooks-config')) {
+        return Promise.resolve({ ok: true, json: async () => emptyHooksConfig })
+      }
+      // First diagnostics call resolves immediately; subsequent (refresh) hangs
+      if (fetchMock.mock.calls.filter((c: unknown[]) => !String(c[0]).includes('hooks-config')).length <= 1) {
+        return Promise.resolve({ ok: true, json: async () => healthyDiagnostics })
+      }
+      return refreshPromise
+    })
     vi.stubGlobal('fetch', fetchMock)
 
     renderPage()
@@ -194,7 +239,6 @@ describe('DiagnosticsPage', () => {
     // Wait for initial data
     expect(await screen.findByText('Agent Connectivity')).toBeInTheDocument()
 
-    // Existing data still visible (not replaced with skeleton)
     const refreshBtn = screen.getByRole('button', { name: /refresh diagnostics/i })
     fireEvent.click(refreshBtn)
 
@@ -217,18 +261,18 @@ describe('useDiagnostics module cache', () => {
   })
 
   it('skips fetch on re-mount when cache is warm', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(healthyDiagnostics),
-    })
+    const fetchMock = makeFetchMock()
     vi.stubGlobal('fetch', fetchMock)
+
+    const diagnosticsCalls = () =>
+      fetchMock.mock.calls.filter((c: unknown[]) => !String(c[0]).includes('hooks-config'))
 
     const { unmount } = render(
       <MemoryRouter>
         <DiagnosticsPage />
       </MemoryRouter>
     )
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(diagnosticsCalls()).toHaveLength(1))
     unmount()
 
     render(
@@ -238,6 +282,6 @@ describe('useDiagnostics module cache', () => {
     )
     // Allow any pending effects to settle
     await new Promise((r) => setTimeout(r, 50))
-    expect(fetchMock).toHaveBeenCalledTimes(1) // still 1 — cache hit on re-mount
+    expect(diagnosticsCalls()).toHaveLength(1) // still 1 — cache hit on re-mount
   })
 })

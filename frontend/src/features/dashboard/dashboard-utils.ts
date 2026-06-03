@@ -28,9 +28,6 @@ export const MODEL_COLORS: Record<string, string> = {
   'claude-4-6-sonnet': 'var(--chart-1)',
   'claude-4-7-opus': 'var(--chart-1)',
   'claude-4-5-haiku': 'var(--chart-1)',
-  'gemini-2.0-flash': 'var(--chart-5)',
-  'gemini-2.0-pro-exp': 'var(--chart-5)',
-  'gemini-3-flash-preview': 'var(--chart-5)',
 }
 
 export function apiRange(value: string) {

@@ -15,13 +15,15 @@ import { StructuredEditor } from './StructuredEditor'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import type { AgentKey, HooksConfig, HooksConfigState } from './types'
 
+type ViewMode = 'structured' | 'json'
+
 type AgentTabContentProps = {
   agent: AgentKey
   state: HooksConfigState
+  viewMode: ViewMode
 }
 
-function AgentTabContent({ agent, state }: AgentTabContentProps) {
-  const [viewMode, setViewMode] = useState<'structured' | 'json'>('structured')
+function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
   const [copied, setCopied] = useState(false)
   const { config, draftJSON, loading, error, saveError, setDraftJSON, setConfig, reload } = state
 
@@ -40,21 +42,6 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
       return false
     }
   })()
-
-  function handleViewModeChange(nextMode: string) {
-    const mode = nextMode as 'structured' | 'json'
-    if (mode === viewMode) return
-
-    if (mode === 'structured') {
-      if (!jsonIsValid) return
-      try {
-        setConfig(JSON.parse(draftJSON) as HooksConfig)
-      } catch {
-        return
-      }
-    }
-    setViewMode(mode)
-  }
 
   if (loading) {
     return (
@@ -80,28 +67,6 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      <div className="flex items-center justify-end">
-        <Tabs value={viewMode} onValueChange={handleViewModeChange}>
-          <TabsList>
-            <TabsTrigger
-              value="structured"
-              aria-label="Structured"
-              disabled={viewMode === 'json' && !jsonIsValid}
-              title={
-                viewMode === 'json' && !jsonIsValid
-                  ? 'Fix JSON errors before switching to structured view'
-                  : undefined
-              }
-            >
-              <AppWindowIcon />
-            </TabsTrigger>
-            <TabsTrigger value="json" aria-label="JSON">
-              <CodeIcon />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
       {viewMode === 'structured' && config !== null && (
         <StructuredEditor config={config} agent={agent} onChange={setConfig} />
       )}
@@ -152,6 +117,7 @@ function AgentTabContent({ agent, state }: AgentTabContentProps) {
 
 export function HooksConfigPage() {
   const [activeAgent, setActiveAgent] = useState<AgentKey>('claudecode')
+  const [viewMode, setViewMode] = useState<ViewMode>('structured')
 
   const claudeState = useHooksConfig('claudecode')
   const codexState = useHooksConfig('codex')
@@ -168,6 +134,20 @@ export function HooksConfigPage() {
   })()
 
   const canSave = activeState.isDirty && jsonIsValid && !activeState.saving && !activeState.loading
+
+  function handleViewModeChange(nextMode: string) {
+    const mode = nextMode as ViewMode
+    if (mode === viewMode) return
+    if (mode === 'structured') {
+      if (!jsonIsValid) return
+      try {
+        activeState.setConfig(JSON.parse(activeState.draftJSON) as HooksConfig)
+      } catch {
+        return
+      }
+    }
+    setViewMode(mode)
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-background text-foreground">
@@ -218,15 +198,36 @@ export function HooksConfigPage() {
           onValueChange={(v) => setActiveAgent(v as AgentKey)}
           className="w-full"
         >
-          <TabsList>
-            <TabsTrigger value="claudecode">Claude Code</TabsTrigger>
-            <TabsTrigger value="codex">Codex</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="claudecode">Claude Code</TabsTrigger>
+              <TabsTrigger value="codex">Codex</TabsTrigger>
+            </TabsList>
+            <Tabs value={viewMode} onValueChange={handleViewModeChange}>
+              <TabsList>
+                <TabsTrigger
+                  value="structured"
+                  aria-label="Structured"
+                  disabled={viewMode === 'json' && !jsonIsValid}
+                  title={
+                    viewMode === 'json' && !jsonIsValid
+                      ? 'Fix JSON errors before switching to structured view'
+                      : undefined
+                  }
+                >
+                  <AppWindowIcon />
+                </TabsTrigger>
+                <TabsTrigger value="json" aria-label="JSON">
+                  <CodeIcon />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
           <TabsContent value="claudecode">
-            <AgentTabContent agent="claudecode" state={claudeState} />
+            <AgentTabContent agent="claudecode" state={claudeState} viewMode={viewMode} />
           </TabsContent>
           <TabsContent value="codex">
-            <AgentTabContent agent="codex" state={codexState} />
+            <AgentTabContent agent="codex" state={codexState} viewMode={viewMode} />
           </TabsContent>
         </Tabs>
       </div>

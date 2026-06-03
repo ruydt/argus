@@ -10,7 +10,6 @@ import (
 
 	"hooker/internal/agents/claudecode"
 	"hooker/internal/agents/codex"
-	"hooker/internal/agents/geminicli"
 )
 
 func Usage() http.Handler {
@@ -39,12 +38,6 @@ func Usage() http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		if claudecode.MatchesTranscript(path) {
 			result := claudecode.ComputeUsage(path)
-			if err := json.NewEncoder(w).Encode(result); err != nil {
-				log.Printf("[handler] encode %T: %v", result, err)
-			}
-			return
-		} else if geminicli.MatchesTranscript(path) {
-			result := geminicli.ComputeUsage(path)
 			if err := json.NewEncoder(w).Encode(result); err != nil {
 				log.Printf("[handler] encode %T: %v", result, err)
 			}
