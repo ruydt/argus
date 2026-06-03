@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import type { SetStateAction } from 'react'
 import { PanelLeft } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,43 @@ const SIDEBAR_COLLAPSED_STORAGE_KEY = 'events_sidebar_collapsed'
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 const MOBILE_SIDEBAR_ID = 'mobile-sidebar'
 const DESKTOP_MEDIA_QUERY = '(min-width: 768px)'
+
+type LayoutState = {
+  mobileDrawerLocationKey: string | null
+  sidebarCollapsed: boolean
+  collapsedSessions: Set<string>
+  searchQuery: string
+  isDesktopViewport: boolean
+}
+
+type LayoutAction =
+  | { type: 'SET_MOBILE_DRAWER'; key: string | null }
+  | { type: 'TOGGLE_SIDEBAR_COLLAPSED' }
+  | { type: 'SET_SIDEBAR_COLLAPSED'; collapsed: boolean }
+  | { type: 'SET_COLLAPSED_SESSIONS'; sessions: Set<string> }
+  | { type: 'SET_SEARCH_QUERY'; query: string }
+  | { type: 'SET_DESKTOP_VIEWPORT'; isDesktop: boolean }
+
+function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
+  switch (action.type) {
+    case 'SET_MOBILE_DRAWER':
+      return { ...state, mobileDrawerLocationKey: action.key }
+    case 'TOGGLE_SIDEBAR_COLLAPSED':
+      return { ...state, sidebarCollapsed: !state.sidebarCollapsed }
+    case 'SET_SIDEBAR_COLLAPSED':
+      return { ...state, sidebarCollapsed: action.collapsed }
+    case 'SET_COLLAPSED_SESSIONS':
+      return { ...state, collapsedSessions: action.sessions }
+    case 'SET_SEARCH_QUERY':
+      return { ...state, searchQuery: action.query }
+    case 'SET_DESKTOP_VIEWPORT':
+      return {
+        ...state,
+        isDesktopViewport: action.isDesktop,
+        mobileDrawerLocationKey: action.isDesktop ? null : state.mobileDrawerLocationKey,
+      }
+  }
+}
 
 function loadSidebarCollapsed(): boolean {
   try {
@@ -36,15 +74,16 @@ function loadCollapsedSessions(): Set<string> {
 }
 
 export function Layout() {
-  const [mobileDrawerLocationKey, setMobileDrawerLocationKey] = useState<string | null>(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(loadSidebarCollapsed)
-  const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(loadCollapsedSessions)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [state, dispatch] = useReducer(layoutReducer, undefined, () => ({
+    mobileDrawerLocationKey: null,
+    sidebarCollapsed: loadSidebarCollapsed(),
+    collapsedSessions: loadCollapsedSessions(),
+    searchQuery: '',
+    isDesktopViewport: window.matchMedia(DESKTOP_MEDIA_QUERY).matches,
+  }))
+  const { mobileDrawerLocationKey, sidebarCollapsed, collapsedSessions, searchQuery, isDesktopViewport } = state
   const [now, setNow] = useState(() => new Date())
   const location = useLocation()
-  const [isDesktopViewport, setIsDesktopViewport] = useState(
-    () => window.matchMedia(DESKTOP_MEDIA_QUERY).matches
-  )
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null)
   const mobileSidebarRef = useRef<HTMLElement | null>(null)
   const shellContentRef = useRef<HTMLDivElement | null>(null)
@@ -60,6 +99,13 @@ export function Layout() {
     [sessions]
   )
 
+  const setCollapsedSessions = (update: SetStateAction<Set<string>>) =>
+    dispatch({
+      type: 'SET_COLLAPSED_SESSIONS',
+      sessions: typeof update === 'function' ? update(collapsedSessions) : update,
+    })
+  const setSearchQuery = (query: string) => dispatch({ type: 'SET_SEARCH_QUERY', query })
+
   const outletContext: LayoutOutletContext = {
     collapsedSessions,
     setCollapsedSessions,
@@ -70,9 +116,9 @@ export function Layout() {
 
   useEffect(() => {
     if (!location.pathname.startsWith('/events')) {
-      queueMicrotask(() => setSearchQuery(''))
+      queueMicrotask(() => dispatch({ type: 'SET_SEARCH_QUERY', query: '' }))
     }
-  }, [location.pathname])
+  }, [location])
 
   useEffect(() => {
     localStorage.setItem(
@@ -93,11 +139,7 @@ export function Layout() {
   useEffect(() => {
     const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
     const handleViewportChange = (event: MediaQueryListEvent) => {
-      if (event.matches) {
-        setMobileDrawerLocationKey(null)
-      }
-
-      setIsDesktopViewport(event.matches)
+      dispatch({ type: 'SET_DESKTOP_VIEWPORT', isDesktop: event.matches })
     }
 
     mediaQuery.addEventListener('change', handleViewportChange)
@@ -124,7 +166,7 @@ export function Layout() {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
           event.preventDefault()
-          setMobileDrawerLocationKey(null)
+          dispatch({ type: 'SET_MOBILE_DRAWER', key: null })
           return
         }
 
@@ -194,17 +236,20 @@ export function Layout() {
     >
       <Sidebar
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+        onToggleCollapse={() => dispatch({ type: 'TOGGLE_SIDEBAR_COLLAPSED' })}
         mode="desktop"
         className="hidden md:flex"
       />
 
-      <div
+      <button
+        type="button"
         className={cn(
           'fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 md:hidden shell-fade',
           mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         )}
-        onClick={() => setMobileDrawerLocationKey(null)}
+        tabIndex={mobileOpen ? 0 : -1}
+        aria-label="Close sidebar"
+        onClick={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: null })}
       />
 
       <Sidebar
@@ -212,8 +257,8 @@ export function Layout() {
         collapsed={false}
         mode="mobile"
         open={mobileOpen}
-        onNavigate={() => setMobileDrawerLocationKey(null)}
-        onClose={() => setMobileDrawerLocationKey(null)}
+        onNavigate={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: null })}
+        onClose={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: null })}
         containerRef={mobileSidebarRef}
         className="fixed inset-y-0 left-0 z-50 flex w-[240px] max-w-[calc(100vw-2rem)] md:hidden"
       />
@@ -230,7 +275,7 @@ export function Layout() {
               variant="ghost"
               size="icon-lg"
               className="md:hidden text-[#666] hover:text-[#ccc] hover:bg-white/[0.05]"
-              onClick={() => setMobileDrawerLocationKey(location.key)}
+              onClick={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: location.key })}
               aria-label="Open sidebar"
               aria-controls={MOBILE_SIDEBAR_ID}
               aria-expanded={mobileOpen}

@@ -143,7 +143,7 @@ function TooltipRow({
   return (
     <div className="flex items-center justify-between gap-4 text-sm">
       <span className="flex items-center gap-2 text-muted-foreground">
-        <div className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+        <div className="size-2 rounded-full" style={{ backgroundColor: color }} />
         {label}
       </span>
       <span className="font-medium text-foreground">{value}</span>
@@ -161,7 +161,7 @@ function LegendContent({ payload }: LegendContentProps) {
     <div className="mb-4 flex flex-wrap justify-center gap-3 text-xs sm:text-sm">
       {payload.map((entry) => (
         <div key={entry.value} className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />
+          <div className="size-3 rounded-sm" style={{ backgroundColor: entry.color }} />
           <span className="text-muted-foreground">{entry.value}</span>
         </div>
       ))}

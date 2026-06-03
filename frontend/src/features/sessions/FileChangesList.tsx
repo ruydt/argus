@@ -65,7 +65,7 @@ function fileIconClass(tool = ''): string {
 }
 
 function FileIcon({ tool }: { tool?: string }) {
-  const className = `h-4 w-4 shrink-0 ${fileIconClass(tool)}`
+  const className = `size-4 shrink-0 ${fileIconClass(tool)}`
   switch (toolTone(tool)) {
     case 'write':
       return <FileText className={className} />
@@ -135,7 +135,7 @@ export function FileChangesList({
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="text-sm text-white/45">Loading file changes...</div>
+        <div className="text-sm text-white/45">Loading file changes…</div>
         {Array.from({ length: 6 }).map((_, index) => (
           <Skeleton key={index} className="h-14 border border-white/10 bg-white/[0.05]" />
         ))}
@@ -152,7 +152,7 @@ export function FileChangesList({
       <Empty className="min-h-[18rem] border border-white/10 bg-white/[0.02] text-white">
         <EmptyHeader>
           <EmptyMedia variant="icon" className="bg-white/[0.05] text-white/60">
-            <FileText className="h-4 w-4" />
+            <FileText className="size-4" />
           </EmptyMedia>
           <EmptyTitle>No file changes recorded for this session.</EmptyTitle>
           <EmptyDescription className="text-white/45">
@@ -282,7 +282,7 @@ function FileChangeRow({ group, sessionStartedAt, expanded, onToggle }: FileChan
       <Button
         type="button"
         variant="ghost"
-        className="h-auto w-full justify-start gap-3 rounded-none px-3 py-3 text-left hover:bg-white/[0.04]"
+        className="h-auto w-full justify-start gap-3 rounded-none p-3 text-left hover:bg-white/[0.04]"
         onClick={onToggle}
         aria-expanded={expanded}
       >
@@ -305,14 +305,14 @@ function FileChangeRow({ group, sessionStartedAt, expanded, onToggle }: FileChan
           </span>
         )}
         {expanded ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-white/45" />
+          <ChevronDown className="size-4 shrink-0 text-white/45" />
         ) : (
-          <ChevronRight className="h-4 w-4 shrink-0 text-white/45" />
+          <ChevronRight className="size-4 shrink-0 text-white/45" />
         )}
       </Button>
 
       {expanded && (
-        <div className="space-y-2 border-t border-white/10 px-3 py-3">
+        <div className="space-y-2 border-t border-white/10 p-3">
           {group.changes.map((change, index) => (
             <ChangeEntry
               key={`${change.time}-${change.tool}-${change.start_line ?? 'line'}-${index}`}

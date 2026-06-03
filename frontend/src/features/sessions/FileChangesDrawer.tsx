@@ -39,10 +39,10 @@ function toolLabel(tool: string): string {
 function FileIcon({ tool }: { tool: string }) {
   const t = tool.toLowerCase()
   if (t === 'write' || t === 'create_file' || t === 'new_file')
-    return <FileText className="h-3.5 w-3.5 shrink-0 text-emerald-400/70" />
+    return <FileText className="size-3.5 shrink-0 text-emerald-400/70" />
   if (t === 'multiedit' || t === 'notebook_edit')
-    return <FileCode2 className="h-3.5 w-3.5 shrink-0 text-purple-400/70" />
-  return <FilePen className="h-3.5 w-3.5 shrink-0 text-sky-400/70" />
+    return <FileCode2 className="size-3.5 shrink-0 text-purple-400/70" />
+  return <FilePen className="size-3.5 shrink-0 text-sky-400/70" />
 }
 
 function shortenPath(path: string): string {
@@ -88,9 +88,9 @@ function FileRow({ group, sessionStart }: FileRowProps) {
           {group.count}×
         </span>
         {open ? (
-          <ChevronDown className="h-3 w-3 shrink-0 text-white/35" />
+          <ChevronDown className="size-3 shrink-0 text-white/35" />
         ) : (
-          <ChevronRight className="h-3 w-3 shrink-0 text-white/35" />
+          <ChevronRight className="size-3 shrink-0 text-white/35" />
         )}
       </button>
 
@@ -135,13 +135,15 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
 
   return (
     <div>
-      <div
+      <button
+        type="button"
         className={cn(
-          'flex items-center gap-2 py-0.5',
+          'flex w-full items-center gap-2 py-0.5 text-left',
           canExpand && 'cursor-pointer hover:bg-white/[0.03] rounded'
         )}
         onClick={canExpand ? () => setExpanded((v) => !v) : undefined}
-        role={canExpand ? 'button' : undefined}
+        disabled={!canExpand}
+        style={!canExpand ? { cursor: 'default', background: 'none', border: 'none', padding: 0 } : undefined}
       >
         <span
           className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
@@ -156,9 +158,9 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
         {canExpand && (
           <span className="ml-auto">
             {expanded ? (
-              <ChevronDown className="h-3 w-3 shrink-0 text-white/35" />
+              <ChevronDown className="size-3 shrink-0 text-white/35" />
             ) : (
-              <ChevronRight className="h-3 w-3 shrink-0 text-white/35" />
+              <ChevronRight className="size-3 shrink-0 text-white/35" />
             )}
           </span>
         )}
@@ -167,7 +169,7 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
             {diffLines} {diffLines === 1 ? 'line' : 'lines'}
           </span>
         )}
-      </div>
+      </button>
 
       {expanded && canExpand && (
         <pre className="mt-1 overflow-x-auto rounded bg-black/30 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-blue-100/80">
@@ -217,10 +219,10 @@ export function FileChangesDrawer({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 text-white/45 hover:text-white hover:bg-white/10"
+          className="size-7 shrink-0 text-white/45 hover:text-white hover:bg-white/10"
           onClick={onClose}
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </Button>
       </div>
 
@@ -229,7 +231,7 @@ export function FileChangesDrawer({
       {/* Body */}
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden w-full [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
         <div className="p-4 w-full overflow-x-hidden">
-          {loading && <div className="text-sm text-white/45">Loading file changes...</div>}
+          {loading && <div className="text-sm text-white/45">Loading file changes…</div>}
           {error && <div className="text-sm text-red-400/80">Failed to load: {error}</div>}
           {!loading && !error && groups.length === 0 && (
             <div className="text-sm text-white/40">No file changes recorded for this session.</div>

@@ -128,11 +128,11 @@ export function EventRow({
                 type="button"
                 data-event-drag-ignore
                 onClick={() => setRawModalOpen(true)}
-                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[#8f8f8f] transition hover:bg-white/[0.08] hover:text-[#d0d0d0]"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded text-[#8f8f8f] transition hover:bg-white/[0.08] hover:text-[#d0d0d0]"
                 aria-label="View raw payload"
                 title="Raw payload"
               >
-                <Braces className="h-3.5 w-3.5" />
+                <Braces className="size-3.5" />
               </button>
             )}
           </div>

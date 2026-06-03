@@ -78,6 +78,7 @@ const CODEX_EVENT_TYPES = [
 
 function emptyEntry(): HookEntry {
   return {
+    id: crypto.randomUUID(),
     type: 'command',
     command: "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
     statusMessage: HOOKER_STATUS_MESSAGE,
@@ -85,7 +86,7 @@ function emptyEntry(): HookEntry {
 }
 
 function emptyGroup(): HookGroup {
-  return { hooks: [emptyEntry()] }
+  return { id: crypto.randomUUID(), hooks: [emptyEntry()] }
 }
 
 type StructuredEditorProps = {
@@ -105,9 +106,8 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
     setCollapsed((prev) => ({ ...prev, [eventType]: !(prev[eventType] ?? true) }))
   }
 
-  function setEventGroups(eventType: string, groups: HookGroup[]) {
+  const setEventGroups = (eventType: string, groups: HookGroup[]) =>
     onChange({ hooks: { ...config.hooks, [eventType]: groups } })
-  }
 
   function removeEventType(eventType: string) {
     const next = { ...config.hooks }
@@ -203,7 +203,7 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
               <SelectItem key={key} value={key} className="text-[13px]">
                 <span className="font-medium">{PRESET_LABELS[key].label}</span>
                 <span className="ml-1.5 text-muted-foreground text-[12px]">
-                  — {PRESET_LABELS[key].description}
+                  , {PRESET_LABELS[key].description}
                 </span>
               </SelectItem>
             ))}
@@ -273,7 +273,7 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
               <div className="flex flex-col gap-3 p-4">
                 {groups.map((group, groupIdx) => (
                   <div
-                    key={groupIdx}
+                    key={group.id}
                     className="border border-border/60 rounded-md p-3 flex flex-col gap-2 bg-background"
                   >
                     <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
 
                     {group.hooks.map((entry, entryIdx) => (
                       <div
-                        key={entryIdx}
+                        key={entry.id}
                         className="flex flex-col gap-1.5 pl-4 border-l border-border/40"
                       >
                         <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { Fragment, forwardRef, useEffect, type AnchorHTMLAttributes, type RefObject } from 'react'
+import { Fragment, useEffect, type AnchorHTMLAttributes, type Ref, type RefObject } from 'react'
 import {
   FishingHook,
   GitFork,
@@ -38,25 +38,24 @@ interface NavItem {
 
 type NavButtonProps = NavItem &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'onClick' | 'className' | 'aria-label'> & {
+    ref?: Ref<HTMLAnchorElement>
     onNavigate?: () => void
     desktopNavLabelClassName: string
     navButtonClassNameFn: (isActive: boolean) => string
   }
 
-const NavButton = forwardRef<HTMLAnchorElement, NavButtonProps>(function NavButton(
-  {
-    to,
-    label,
-    ariaLabel,
-    icon: Icon,
-    end,
-    onNavigate,
-    desktopNavLabelClassName,
-    navButtonClassNameFn,
-    ...rest
-  },
-  ref
-) {
+function NavButton({
+  to,
+  label,
+  ariaLabel,
+  icon: Icon,
+  end,
+  ref,
+  onNavigate,
+  desktopNavLabelClassName,
+  navButtonClassNameFn,
+  ...rest
+}: NavButtonProps) {
   const match = useMatch({ path: to, end })
   const isActive = match !== null
 
@@ -84,8 +83,7 @@ const NavButton = forwardRef<HTMLAnchorElement, NavButtonProps>(function NavButt
       </NavLink>
     </Button>
   )
-})
-NavButton.displayName = 'NavButton'
+}
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -202,7 +200,7 @@ export function Sidebar({
     >
       {/* Header: logo + app name + toggle — all in one row */}
       {isMobile ? (
-        <div className="flex min-h-12 items-center px-2 py-2">
+        <div className="flex min-h-12 items-center p-2">
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="flex size-6 items-center justify-center">
@@ -237,7 +235,9 @@ export function Sidebar({
               'flex items-center gap-2',
               collapsed ? 'pointer-events-none w-0 overflow-hidden opacity-0' : 'opacity-100'
             )}
-            style={{ transition: 'opacity 180ms ease, width 240ms cubic-bezier(0.22,1,0.36,1)' }}
+            style={{
+              transition: 'opacity 180ms ease',
+            }}
           >
             <div className="flex size-6 shrink-0 items-center justify-center">
               <FishingHook className="size-3.5 text-[#9a9a9a]" />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,12 +38,20 @@ export function UsagePanel({ title = 'OpenAI Usage', dashboardRange = '7d' }: Us
   const currentApiKey = isOpenAI ? apiKey : anthropicApiKey
   const setCurrentApiKey = isOpenAI ? setApiKey : setAnthropicApiKey
 
+  const fetchUsageRef = useRef(fetchUsage)
   useEffect(() => {
+    fetchUsageRef.current = fetchUsage
+  }, [fetchUsage])
+
+  const fetchUsageIfKeyPresent = useCallback(() => {
     if (currentApiKey) {
-      fetchUsage()
+      fetchUsageRef.current()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashboardRange])
+  }, [currentApiKey])
+
+  useEffect(() => {
+    fetchUsageIfKeyPresent()
+  }, [dashboardRange, fetchUsageIfKeyPresent])
 
   useEffect(() => {
     localStorage.setItem('anthropic_admin_key', anthropicApiKey)
@@ -109,7 +117,7 @@ export function UsagePanel({ title = 'OpenAI Usage', dashboardRange = '7d' }: Us
         <div className="flex h-[300px] items-center justify-center rounded-lg border border-border bg-card">
           <div className="flex flex-col items-center gap-3 text-muted-foreground">
             <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <p className="text-sm font-medium animate-pulse">Loading usage data...</p>
+            <p className="text-sm font-medium animate-pulse">Loading usage data…</p>
           </div>
         </div>
       ) : stats ? (

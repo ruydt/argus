@@ -24,6 +24,17 @@ import type { Diagnostics, DiagnosticsAgent } from './types'
 
 const PRESET_AGENT_IDS = new Set<string>(['claudecode', 'codex'])
 
+async function fetchHookConfigLabel(agentId: string): Promise<[string, string]> {
+  try {
+    const r = await fetch(`/api/hooks-config?agent=${agentId}`)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    const config = (await r.json()) as HooksConfig
+    return [agentId, detectHookConfigLabel(agentId as AgentKey, config)]
+  } catch {
+    return [agentId, 'Configured']
+  }
+}
+
 function useHookConfigLabels(agents: DiagnosticsAgent[] | undefined): Record<string, string> {
   const [labels, setLabels] = useState<Record<string, string>>({})
 
@@ -35,17 +46,7 @@ function useHookConfigLabels(agents: DiagnosticsAgent[] | undefined): Record<str
     if (targets.length === 0) return
 
     let cancelled = false
-    Promise.all(
-      targets.map((a) =>
-        fetch(`/api/hooks-config?agent=${a.id}`)
-          .then((r) => {
-            if (!r.ok) throw new Error(`HTTP ${r.status}`)
-            return r.json() as Promise<HooksConfig>
-          })
-          .then((config) => [a.id, detectHookConfigLabel(a.id as AgentKey, config)] as const)
-          .catch(() => [a.id, 'Configured'] as const)
-      )
-    ).then((entries) => {
+    Promise.all(targets.map((a) => fetchHookConfigLabel(a.id))).then((entries) => {
       if (!cancelled) setLabels(Object.fromEntries(entries))
     })
 
@@ -152,6 +153,76 @@ function HookConfigCell({
     )
   }
   return <span className="text-[12px] text-muted-foreground">{hookConfigStatus}</span>
+}
+
+function PrivacySecurityCard({ data }: { data: Diagnostics }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Privacy &amp; Security</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-0">
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">Ignore File</span>
+          <span className="flex items-center gap-1">
+            <MonoPath path={data.privacy.ignoreFile.path} ariaLabel="Copy ignore file path" />
+            {data.privacy.ignoreFile.status === 'loaded' && (
+              <Badge variant="outline" className={BADGE_GREEN}>Active</Badge>
+            )}
+            {data.privacy.ignoreFile.status === 'missing_ok' && (
+              <span className="text-[12px] text-muted-foreground">Not configured</span>
+            )}
+            {data.privacy.ignoreFile.status === 'missing' && (
+              <Badge variant="outline" className={BADGE_AMBER}>Missing</Badge>
+            )}
+            {data.privacy.ignoreFile.status === 'error' && (
+              <Badge variant="outline" className={BADGE_RED}>Error</Badge>
+            )}
+          </span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">Active Rules</span>
+          <span>{data.privacy.ignoreFile.activePatternCount.toLocaleString()}</span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">Bind Posture</span>
+          <span className="flex items-center gap-1">
+            <span className="text-[13px]">{data.security.remoteBind.addr}</span>
+            {data.security.remoteBind.status === 'loopback' && !data.security.remoteBind.allowRemote ? (
+              <Badge variant="outline" className={BADGE_GREEN}>Loopback only</Badge>
+            ) : data.security.remoteBind.status === 'remote' || data.security.remoteBind.allowRemote ? (
+              <Badge variant="outline" className={BADGE_RED}>Remote enabled</Badge>
+            ) : (
+              <span className="text-[12px] text-muted-foreground">{data.security.remoteBind.status}</span>
+            )}
+          </span>
+        </div>
+        <Separator />
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">CORS Origins</span>
+          <span className="flex items-center gap-1">
+            <span className="text-[13px]">
+              {data.security.cors.totalOrigins} total, {data.security.cors.localOrigins} local
+            </span>
+            {data.security.cors.extraOrigins === 0 ? (
+              <Badge variant="outline" className={BADGE_GREEN}>Local only</Badge>
+            ) : (
+              <Badge variant="outline" className={BADGE_AMBER}>
+                {data.security.cors.extraOrigins} extra origin{data.security.cors.extraOrigins === 1 ? '' : 's'}
+              </Badge>
+            )}
+          </span>
+        </div>
+        <Alert className="mt-4 border-[var(--border)] bg-[var(--secondary)]">
+          <AlertDescription className="text-xs text-muted-foreground">
+            {data.privacy.exportWarning}
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  )
 }
 
 function LoadedContent({ data }: { data: Diagnostics }) {
@@ -397,88 +468,7 @@ function LoadedContent({ data }: { data: Diagnostics }) {
           </Card>
 
           {/* Privacy & Security */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Privacy &amp; Security</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-0">
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Ignore File</span>
-                <span className="flex items-center gap-1">
-                  <MonoPath path={data.privacy.ignoreFile.path} ariaLabel="Copy ignore file path" />
-                  {data.privacy.ignoreFile.status === 'loaded' && (
-                    <Badge variant="outline" className={BADGE_GREEN}>
-                      Active
-                    </Badge>
-                  )}
-                  {data.privacy.ignoreFile.status === 'missing_ok' && (
-                    <span className="text-[12px] text-muted-foreground">Not configured</span>
-                  )}
-                  {data.privacy.ignoreFile.status === 'missing' && (
-                    <Badge variant="outline" className={BADGE_AMBER}>
-                      Missing
-                    </Badge>
-                  )}
-                  {data.privacy.ignoreFile.status === 'error' && (
-                    <Badge variant="outline" className={BADGE_RED}>
-                      Error
-                    </Badge>
-                  )}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Active Rules</span>
-                <span>{data.privacy.ignoreFile.activePatternCount.toLocaleString()}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Bind Posture</span>
-                <span className="flex items-center gap-1">
-                  <span className="text-[13px]">{data.security.remoteBind.addr}</span>
-                  {data.security.remoteBind.status === 'loopback' &&
-                  !data.security.remoteBind.allowRemote ? (
-                    <Badge variant="outline" className={BADGE_GREEN}>
-                      Loopback only
-                    </Badge>
-                  ) : data.security.remoteBind.status === 'remote' ||
-                    data.security.remoteBind.allowRemote ? (
-                    <Badge variant="outline" className={BADGE_RED}>
-                      Remote enabled
-                    </Badge>
-                  ) : (
-                    <span className="text-[12px] text-muted-foreground">
-                      {data.security.remoteBind.status}
-                    </span>
-                  )}
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">CORS Origins</span>
-                <span className="flex items-center gap-1">
-                  <span className="text-[13px]">
-                    {data.security.cors.totalOrigins} total, {data.security.cors.localOrigins} local
-                  </span>
-                  {data.security.cors.extraOrigins === 0 ? (
-                    <Badge variant="outline" className={BADGE_GREEN}>
-                      Local only
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className={BADGE_AMBER}>
-                      {data.security.cors.extraOrigins} extra origin
-                      {data.security.cors.extraOrigins === 1 ? '' : 's'}
-                    </Badge>
-                  )}
-                </span>
-              </div>
-              <Alert className="mt-4 border-[var(--border)] bg-[var(--secondary)]">
-                <AlertDescription className="text-xs text-muted-foreground">
-                  {data.privacy.exportWarning}
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
+          <PrivacySecurityCard data={data} />
         </div>
       </div>
     </>

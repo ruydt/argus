@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { indentWithTab } from '@codemirror/commands'
 import { json } from '@codemirror/lang-json'
-import { EditorView, keymap } from '@codemirror/view'
 import CodeMirror from '@uiw/react-codemirror'
 import { AppWindowIcon, Check, CodeIcon, Copy, ExternalLink, RefreshCw, Save } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -10,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { hookerEditorTheme, hookerHighlighting } from '@/lib/editorTheme'
+import { hookerEditorTheme, hookerHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { StructuredEditor } from './StructuredEditor'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import type { AgentKey, HooksConfig, HooksConfigState } from './types'
@@ -73,12 +71,12 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
 
       {viewMode === 'json' && (
         <div className="flex flex-col gap-1">
-          <div
+          <section
             className={cn('relative rounded-md border overflow-hidden', !jsonIsValid && 'border-destructive')}
-            role="region"
             aria-label="Hooks config JSON"
           >
             <button
+              type="button"
               onClick={handleCopy}
               className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10 transition-colors"
               aria-label="Copy JSON"
@@ -89,7 +87,7 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
             <CodeMirror
               value={draftJSON}
               onChange={(value) => setDraftJSON(value)}
-              extensions={[json(), keymap.of([indentWithTab]), hookerEditorTheme, hookerHighlighting, EditorView.lineWrapping]}
+              extensions={[json(), hookerEditorTheme, hookerHighlighting, ...editableExtensions]}
               theme="none"
               height="calc(100dvh - 220px)"
               minHeight="320px"
@@ -101,7 +99,7 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
                 foldGutter: true,
               }}
             />
-          </div>
+          </section>
           {!jsonIsValid && <p className="text-[12px] text-destructive mt-0.5">Invalid JSON</p>}
         </div>
       )}

@@ -53,7 +53,7 @@ export function SessionList({
     })
 
     const list = Array.from(grouped.values()).map((session) => {
-      const sortedEvents = [...session.events].sort((a, b) =>
+      const sortedEvents = session.events.toSorted((a, b) =>
         sortOrder === 'newest'
           ? new Date(b.time).getTime() - new Date(a.time).getTime()
           : new Date(a.time).getTime() - new Date(b.time).getTime()

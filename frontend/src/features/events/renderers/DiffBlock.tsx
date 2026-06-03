@@ -1,5 +1,7 @@
 import type { CtxLine } from '@/types/events'
 
+const EMPTY_CTX: CtxLine[] = []
+
 function extractPatchStartLine(text: string): number {
   if (!text) return 0
   const m = text.match(/@@\s*-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s*@@/)
@@ -19,8 +21,8 @@ export function DiffBlock({
   oldStr,
   newStr,
   startLine,
-  ctxBefore = [],
-  ctxAfter = [],
+  ctxBefore = EMPTY_CTX,
+  ctxAfter = EMPTY_CTX,
   patchText,
 }: DiffBlockProps) {
   const oldLines = oldStr ? oldStr.split('\n') : []
@@ -39,20 +41,20 @@ export function DiffBlock({
           <span className="diff-content">{l.text}</span>
         </div>
       ))}
-      {oldLines.map((line, i) => {
+      {oldLines.map((line) => {
         const n = oldLine++
         return (
-          <div key={`rm-${i}`} className="diff-line diff-removed">
+          <div key={`rm-${n}`} className="diff-line diff-removed">
             <span className="diff-ln">{n}</span>
             <span className="diff-marker">-</span>
             <span className="diff-content">{line}</span>
           </div>
         )
       })}
-      {newLines.map((line, i) => {
+      {newLines.map((line) => {
         const n = newLine++
         return (
-          <div key={`add-${i}`} className="diff-line diff-added">
+          <div key={`add-${n}`} className="diff-line diff-added">
             <span className="diff-ln">{n}</span>
             <span className="diff-marker">+</span>
             <span className="diff-content">{line}</span>

@@ -1,4 +1,5 @@
 export type HookEntry = {
+  id: string
   type: string
   command: string
   timeout?: number
@@ -6,6 +7,7 @@ export type HookEntry = {
 }
 
 export type HookGroup = {
+  id: string
   matcher?: string
   hooks: HookEntry[]
 }
