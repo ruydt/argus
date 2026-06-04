@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useEvents } from '@/features/events/hooks/useEvents'
+import { useLiveEvents } from '@/features/events/hooks/useLiveEvents'
 
 let latestES: MockES
 let searchParams = new URLSearchParams()
@@ -48,17 +48,17 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('useEvents', () => {
+describe('useLiveEvents', () => {
   it('opens session-scoped EventSource url when session query exists', async () => {
     searchParams = new URLSearchParams('session=sess-1')
-    renderHook(() => useEvents())
+    renderHook(() => useLiveEvents())
 
     await waitFor(() => expect(latestES.url).toBe('/api/events/stream?session=sess-1'))
   })
 
   it('clears accumulated events when session query changes', async () => {
     searchParams = new URLSearchParams('session=old')
-    const { result, rerender } = renderHook(() => useEvents())
+    const { result, rerender } = renderHook(() => useLiveEvents())
 
     await waitFor(() => expect(latestES.url).toBe('/api/events/stream?session=old'))
 
@@ -77,18 +77,5 @@ describe('useEvents', () => {
     rerender()
     await waitFor(() => expect(latestES.url).toBe('/api/events/stream?session=new'))
     await waitFor(() => expect(result.current.events).toHaveLength(0))
-  })
-
-  it('fetches historical session events when session override provided', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ events: [] }),
-    })
-    vi.stubGlobal('fetch', fetchMock)
-
-    renderHook(() => useEvents('sess-override'))
-
-    await waitFor(() => expect(latestES.url).toBe('/api/events/stream?session=sess-override'))
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/events?session=sess-override'))
   })
 })

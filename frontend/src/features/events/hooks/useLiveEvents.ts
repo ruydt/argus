@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import type { EventRecord, EventsResponse } from '@/types'
+import type { EventRecord } from '@/types'
 import { buildEventKey } from '../eventKey'
 
-export function useEvents(sessionFilterOverride = '') {
+export function useLiveEvents(sessionFilterOverride = '', { enabled = true }: { enabled?: boolean } = {}) {
   const [searchParams] = useSearchParams()
   const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
   const [events, setEvents] = useState<EventRecord[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     queueMicrotask(() => setEvents([]))
@@ -28,30 +27,9 @@ export function useEvents(sessionFilterOverride = '') {
     })
   }, [])
 
-  const reload = useCallback(async () => {
-    setRefreshing(true)
-    try {
-      const params = new URLSearchParams()
-      if (sessionFilter) params.set('session', sessionFilter)
-      const qs = params.toString()
-      const res = await fetch(`/api/events${qs ? `?${qs}` : ''}`)
-      if (!res.ok) throw new Error(`Failed to reload events: ${res.status}`)
-      const data = (await res.json()) as EventsResponse
-      mergeEvents(data.events ?? [])
-      setError(null)
-    } catch {
-      setError('Failed to reload events.')
-    } finally {
-      setRefreshing(false)
-    }
-  }, [mergeEvents, sessionFilter])
-
   useEffect(() => {
-    if (!sessionFilter) return
-    queueMicrotask(() => void reload())
-  }, [reload, sessionFilter])
+    if (!enabled) return
 
-  useEffect(() => {
     const seen = new Set<string>()
     const buffer: EventRecord[] = []
     let rafId: number | undefined
@@ -96,7 +74,7 @@ export function useEvents(sessionFilterOverride = '') {
       es.close()
       if (rafId !== undefined) cancelAnimationFrame(rafId)
     }
-  }, [mergeEvents, sessionFilter])
+  }, [mergeEvents, sessionFilter, enabled])
 
-  return { events, error, refreshing, reload }
+  return { events, error }
 }

@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { cn } from '@/lib/utils'
-import { useEvents } from './hooks/useEvents'
+import { useLiveEvents } from './hooks/useLiveEvents'
 import { useEventFilters } from './hooks/useEventFilters'
 import { buildEventKey } from './eventKey'
 import { EventFilters } from './EventFilters'
@@ -24,7 +24,7 @@ export function EventsPage() {
   const { collapsedSessions, setCollapsedSessions, sessionUsage, searchQuery, setSearchQuery } =
     useOutletContext<LayoutOutletContext>()
   const sessionFilterOverride = pendingEventLink?.sessionId ?? ''
-  const { events, refreshing, error, reload } = useEvents(sessionFilterOverride)
+  const { events, error } = useLiveEvents(sessionFilterOverride, { enabled: true })
 
   const {
     actionFilter,
@@ -282,7 +282,7 @@ export function EventsPage() {
               onDragLeave={handleDragLeave}
               onDrop={handleDropToPanel(1)}
             >
-              {events.length === 0 && !refreshing && !error ? (
+              {events.length === 0 && !error ? (
                 <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
                   No events found. Start a session to see events stream here.
                 </div>
@@ -352,16 +352,11 @@ export function EventsPage() {
           {error && (
             <Alert variant="destructive" className="mb-4 bg-red-950/50 border-red-900">
               <AlertTitle>Connection Error</AlertTitle>
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <Button variant="outline" size="sm" onClick={reload}>
-                  Retry Connection
-                </Button>
-              </AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          {events.length === 0 && !refreshing && !error ? (
+          {events.length === 0 && !error ? (
             <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
               No events found. Start a session to see events stream here.
             </div>
