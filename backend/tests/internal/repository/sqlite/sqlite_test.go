@@ -819,6 +819,134 @@ func TestDiagnosticsAgentStatsAggregatesSessionsAndEvents(t *testing.T) {
 	}
 }
 
+func addTestEvent(t *testing.T, db *sqlite.DB, ts time.Time) {
+	t.Helper()
+	err := db.Add(domain.NormalizedEvent{
+		Time:          ts.UTC().Format(time.RFC3339),
+		Agent:         "codex",
+		Session:       "test-session",
+		HookEventName: "PreToolUse",
+		Action:        "READ",
+		Path:          "/tmp/file",
+		RawPayload:    []byte(`{}`),
+	})
+	if err != nil {
+		t.Fatalf("addTestEvent: %v", err)
+	}
+}
+
+func TestListByTimeRange_sinceFilter(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+
+	base := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < 5; i++ {
+		addTestEvent(t, db, base.Add(time.Duration(i)*time.Hour))
+	}
+
+	since := base.Add(2 * time.Hour).Format(time.RFC3339)
+	events, _, _, err := db.ListByTimeRange(since, "", "", 0, 100)
+	if err != nil {
+		t.Fatalf("ListByTimeRange: %v", err)
+	}
+	// events at +2h, +3h, +4h = 3 events
+	if len(events) != 3 {
+		t.Errorf("got %d events, want 3", len(events))
+	}
+}
+
+func TestListByTimeRange_untilFilter(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+
+	base := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < 5; i++ {
+		addTestEvent(t, db, base.Add(time.Duration(i)*time.Hour))
+	}
+
+	until := base.Add(3 * time.Hour).Format(time.RFC3339)
+	events, _, _, err := db.ListByTimeRange("", until, "", 0, 100)
+	if err != nil {
+		t.Fatalf("ListByTimeRange: %v", err)
+	}
+	// events at +0h, +1h, +2h = 3 events (until is exclusive)
+	if len(events) != 3 {
+		t.Errorf("got %d events, want 3", len(events))
+	}
+}
+
+func TestListByTimeRange_beforeID(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+
+	base := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < 5; i++ {
+		addTestEvent(t, db, base.Add(time.Duration(i)*time.Hour))
+	}
+
+	// First page — newest 2
+	page1, minID, hasMore, err := db.ListByTimeRange("", "", "", 0, 2)
+	if err != nil {
+		t.Fatalf("page1: %v", err)
+	}
+	if len(page1) != 2 {
+		t.Fatalf("page1 got %d, want 2", len(page1))
+	}
+	if !hasMore {
+		t.Error("page1 hasMore = false, want true")
+	}
+
+	// Second page — next 2 using cursor
+	page2, _, _, err := db.ListByTimeRange("", "", "", minID, 2)
+	if err != nil {
+		t.Fatalf("page2: %v", err)
+	}
+	if len(page2) != 2 {
+		t.Fatalf("page2 got %d, want 2", len(page2))
+	}
+
+	// Page1 events are newer than page2 events (ORDER BY id DESC)
+	t1 := page1[len(page1)-1].Time
+	t2 := page2[0].Time
+	if t1 <= t2 {
+		t.Errorf("page1 tail (%s) should be newer than page2 head (%s)", t1, t2)
+	}
+}
+
+func TestListByTimeRange_hasMore(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("sqlite.New: %v", err)
+	}
+
+	base := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+	for i := 0; i < 3; i++ {
+		addTestEvent(t, db, base.Add(time.Duration(i)*time.Hour))
+	}
+
+	_, _, hasMore, err := db.ListByTimeRange("", "", "", 0, 2)
+	if err != nil {
+		t.Fatalf("ListByTimeRange: %v", err)
+	}
+	if !hasMore {
+		t.Error("hasMore = false, want true when rows remain")
+	}
+
+	_, _, hasMore2, err := db.ListByTimeRange("", "", "", 0, 10)
+	if err != nil {
+		t.Fatalf("ListByTimeRange exact: %v", err)
+	}
+	if hasMore2 {
+		t.Error("hasMore = true, want false when all rows fit in limit")
+	}
+}
+
 func addEvent(t *testing.T, db *sqlite.DB, e domain.NormalizedEvent) {
 	t.Helper()
 	e.RawPayload = []byte(`{}`)

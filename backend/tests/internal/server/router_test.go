@@ -61,6 +61,10 @@ func (noopRepo) ExportSnapshot(_ context.Context, _ string) error { return nil }
 
 func (noopRepo) GetRawPayload(_ string) ([]byte, error) { return nil, nil }
 
+func (noopRepo) ListByTimeRange(_, _, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
+	return nil, 0, false, nil
+}
+
 func (noopRepo) Ready() bool { return true }
 
 var testCORSOrigins = []string{

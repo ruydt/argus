@@ -141,6 +141,10 @@ func (m *mockRepo) ExportSnapshot(_ context.Context, _ string) error { return ni
 
 func (m *mockRepo) GetRawPayload(_ string) ([]byte, error) { return nil, nil }
 
+func (m *mockRepo) ListByTimeRange(_, _, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
+	return nil, 0, false, nil
+}
+
 func (m *mockRepo) Ready() bool { return true }
 
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {

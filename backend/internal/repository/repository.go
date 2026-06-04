@@ -13,6 +13,7 @@ type EventRepository interface {
 	Add(e domain.NormalizedEvent) error
 	List(limit int) ([]domain.NormalizedEvent, error)
 	ListBySession(sessionID string, limit int) ([]domain.NormalizedEvent, error)
+	ListByTimeRange(since, until, sessionID string, beforeID int64, limit int) (events []domain.NormalizedEvent, minID int64, hasMore bool, err error)
 	SessionModel(sessionID string) (string, error)
 	ListProjects() ([]domain.Project, error)
 	ListSessions() ([]domain.Session, error)

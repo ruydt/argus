@@ -188,6 +188,59 @@ func (d *DB) ListBySession(sessionID string, limit int) ([]domain.NormalizedEven
 	return d.listWithWhere("WHERE session_id = ?", []any{sessionID}, limit, 0)
 }
 
+func (d *DB) ListByTimeRange(since, until, sessionID string, beforeID int64, limit int) ([]domain.NormalizedEvent, int64, bool, error) {
+	var conditions []string
+	var args []any
+
+	if sessionID != "" {
+		conditions = append(conditions, "session_id = ?")
+		args = append(args, sessionID)
+	}
+	if since != "" {
+		conditions = append(conditions, "created_at >= ?")
+		args = append(args, since)
+	}
+	if until != "" {
+		conditions = append(conditions, "created_at < ?")
+		args = append(args, until)
+	}
+	if beforeID > 0 {
+		conditions = append(conditions, "id < ?")
+		args = append(args, beforeID)
+	}
+
+	where := ""
+	if len(conditions) > 0 {
+		where = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// Fetch limit+1 to detect hasMore without a separate COUNT query.
+	fetchLimit := limit + 1
+	events, err := d.listWithWhere(where, args, fetchLimit, 0)
+	if err != nil {
+		return nil, 0, false, err
+	}
+
+	hasMore := len(events) > limit
+	if hasMore {
+		events = events[:limit]
+	}
+
+	var minID int64
+	if len(events) > 0 {
+		// Retrieve the DB id of the oldest event in the page for cursor use.
+		// listWithWhere returns events ORDER BY id DESC, so last element is oldest.
+		oldest := events[len(events)-1]
+		row := d.db.QueryRow("SELECT id FROM hook_events WHERE dedup_key = ? LIMIT 1", oldest.DedupKey)
+		if err := row.Scan(&minID); err != nil {
+			// Non-fatal: cursor is best-effort; hasMore already computed.
+			minID = 0
+		}
+	}
+
+	return events, minID, hasMore, nil
+}
+
 func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domain.NormalizedEvent, error) {
 	query := `
 		SELECT created_at, agent, session_id, hook_event_name,
