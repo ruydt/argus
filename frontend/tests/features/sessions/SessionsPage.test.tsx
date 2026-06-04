@@ -111,10 +111,14 @@ describe('SessionListPage', () => {
     await waitFor(() => expect(screen.getByText('project')).toBeInTheDocument())
   })
 
-  it('renders Running for sessions without ended_at', async () => {
+  it('shows green dot for active session (last_seen_at within 10s)', async () => {
+    const lastSeen = new Date('2026-05-14T09:10:02Z').getTime()
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(lastSeen + 3_000)
+
     const runningSession: Session = {
       ...SESSION,
       session_id: 'sess-running-xyz',
+      last_seen_at: '2026-05-14T09:10:02Z',
       ended_at: undefined,
     }
     vi.stubGlobal(
@@ -127,6 +131,51 @@ describe('SessionListPage', () => {
 
     renderSessionList('/Users/dev/project')
 
-    expect(await screen.findByText('Running')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('sess-running')).toBeInTheDocument())
+    expect(document.querySelector('.bg-green-400')).toBeInTheDocument()
+
+    dateSpy.mockRestore()
+  })
+
+  it('uses the current time for running session duration', async () => {
+    const now = new Date('2026-05-14T09:10:05Z').getTime()
+    const dateSpy = vi.spyOn(Date, 'now').mockReturnValue(now)
+
+    const runningSession: Session = {
+      ...SESSION,
+      session_id: 'sess-running-xyz',
+      started_at: '2026-05-14T09:00:00Z',
+      last_seen_at: '2026-05-14T09:10:02Z',
+      ended_at: undefined,
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ sessions: [runningSession], has_more: false }),
+      })
+    )
+
+    renderSessionList('/Users/dev/project')
+
+    await waitFor(() => expect(screen.getByText('sess-running')).toBeInTheDocument())
+    expect(screen.getByText('10m 5s')).toBeInTheDocument()
+
+    dateSpy.mockRestore()
+  })
+
+  it('shows last_seen_at in Last Updated column for all sessions', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ sessions: [SESSION], has_more: false }),
+      })
+    )
+
+    renderSessionList('/Users/dev/project')
+
+    await waitFor(() => expect(screen.getByText('Last Updated')).toBeInTheDocument())
+    expect(screen.queryByText('Ended')).not.toBeInTheDocument()
   })
 })

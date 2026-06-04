@@ -113,6 +113,28 @@ func run() int {
 		}
 	}()
 
+	// Stale session sweep: sessions with no ended_at whose last_seen_at is >30m ago get ended_at = last_seen_at.
+	// Handles sessions that end via cancel/config/prompt events which emit no terminal hook.
+	go func() {
+		const staleness = 30 * time.Minute
+		sweep := func() {
+			if err := svc.SweepStaleSessions(time.Now().Add(-staleness)); err != nil {
+				slog.Warn("stale session sweep", "err", err)
+			}
+		}
+		sweep()
+		t := time.NewTicker(time.Hour)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				sweep()
+			}
+		}
+	}()
+
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		if isAddrInUse(err) {
 			stop()

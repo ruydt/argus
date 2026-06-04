@@ -98,3 +98,40 @@ func TestDegradedEventDedup(t *testing.T) {
 		}
 	})
 }
+
+// TestDedupKeyDifferentPromptProducesTwoRows verifies that two UserPromptSubmit
+// events with the same session/turn/time but different Prompt values are stored
+// as separate rows. This prevents live-vs-historical count mismatch where
+// broadcast fires for both events but INSERT OR IGNORE silently drops the second.
+func TestDedupKeyDifferentPromptProducesTwoRows(t *testing.T) {
+	db := newTestDB(t)
+
+	base := domain.NormalizedEvent{
+		Time:                "2025-01-01T00:00:00Z",
+		Agent:               "claudecode",
+		Session:             "sess-prompt-01",
+		HookEventName:       "UserPromptSubmit",
+		TurnID:              "turn-1",
+		ToolUseID:           "",
+		RawPayload:          []byte(`{}`),
+		NormalizationStatus: "ok",
+		NormalizerVersion:   "claudecode/1",
+	}
+
+	e1 := base
+	e1.Prompt = "first prompt"
+
+	e2 := base
+	e2.Prompt = "second prompt"
+
+	addEvent(t, db, e1)
+	addEvent(t, db, e2)
+
+	events, err := db.List(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 2 {
+		t.Fatalf("expected 2 events for different prompts, got %d", len(events))
+	}
+}

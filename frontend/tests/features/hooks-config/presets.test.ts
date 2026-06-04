@@ -30,18 +30,18 @@ describe('applyPreset', () => {
     expect(keys).toContain('UserPromptSubmit')
   })
 
-  it('skips event that already has a hooker-marked entry', () => {
+  it('replaces event that already has a hooker-marked entry', () => {
     const current: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [hookerEntry()] }],
+        SessionStart: [{ hooks: [{ ...hookerEntry(), command: 'echo old hooker hook' }] }],
       },
     }
     const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
-    // Should still have exactly 1 group for SessionStart (not doubled)
     expect(result.hooks['SessionStart']).toHaveLength(1)
+    expect(result.hooks['SessionStart'][0].hooks[0].command).not.toBe('echo old hooker hook')
   })
 
-  it('appends preset groups alongside existing non-hooker entries', () => {
+  it('preserves existing non-hooker entries alongside the preset', () => {
     const current: HooksConfig = {
       hooks: {
         SessionStart: [{ hooks: [userEntry()] }],
@@ -55,18 +55,49 @@ describe('applyPreset', () => {
     expect(allEntries.some((e) => e.statusMessage === undefined)).toBe(true)
   })
 
+  it('replaces prior hooker-managed preset coverage when applying a new preset', () => {
+    const afterMedium = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.medium)
+    const afterBaseline = applyPreset(afterMedium, HOOK_PRESETS.claudecode.baseline)
+
+    expect(afterBaseline.hooks['PreToolUse']).toBeUndefined()
+    expect(afterBaseline.hooks['SubagentStart']).toBeUndefined()
+    expect(afterBaseline.hooks['SessionStart']).toHaveLength(1)
+    expect(
+      afterBaseline.hooks['SessionStart'][0].hooks.every(
+        (entry) => entry.statusMessage === HOOKER_STATUS_MESSAGE
+      )
+    ).toBe(true)
+  })
+
   it('does not mutate the current config', () => {
     const current: HooksConfig = { hooks: {} }
     applyPreset(current, HOOK_PRESETS.claudecode.baseline)
     expect(Object.keys(current.hooks)).toHaveLength(0)
   })
 
-  it('medium applied over baseline adds new events without touching existing hooker entries', () => {
+  it('keeps unrelated manual hooks when replacing hooker-managed entries', () => {
+    const current: HooksConfig = {
+      hooks: {
+        SessionStart: [{ hooks: [userEntry(), hookerEntry()] }],
+        PreToolUse: [{ hooks: [hookerEntry()] }],
+      },
+    }
+    const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
+
+    expect(result.hooks['PreToolUse']).toBeUndefined()
+    expect(result.hooks['SessionStart']).toHaveLength(2)
+    const sessionStartEntries = result.hooks['SessionStart'].flatMap((group) => group.hooks)
+    expect(sessionStartEntries.some((entry) => entry.command === 'echo user')).toBe(true)
+    expect(
+      sessionStartEntries.some((entry) => entry.statusMessage === HOOKER_STATUS_MESSAGE)
+    ).toBe(true)
+  })
+
+  it('medium applied over baseline replaces baseline coverage with medium coverage', () => {
     const afterBaseline = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.baseline)
     const afterMedium = applyPreset(afterBaseline, HOOK_PRESETS.claudecode.medium)
-    // All baseline events still present (one group each, not doubled)
+
     expect(afterMedium.hooks['SessionStart']).toHaveLength(1)
-    // Medium-only events added
     expect(afterMedium.hooks['PreToolUse']).toBeDefined()
     expect(afterMedium.hooks['SubagentStart']).toBeDefined()
   })

@@ -67,6 +67,13 @@ describe('HooksConfigPage', () => {
     })
   })
 
+  it('shows a discard changes action in the structured editor toolbar', async () => {
+    renderPage()
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /discard changes/i })).toBeTruthy()
+    })
+  })
+
   it('renders CodeMirror editor region in JSON mode', async () => {
     const user = userEvent.setup()
     renderPage()

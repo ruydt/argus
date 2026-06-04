@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"hooker/internal/domain"
 	"hooker/internal/server"
@@ -68,6 +69,8 @@ func (noopRepo) ListByTimeRange(_, _, _ string, _ int64, _ int) ([]domain.Normal
 func (noopRepo) ListBySessionsTimeRange(_, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
 	return nil, 0, false, nil
 }
+
+func (noopRepo) MarkStaleSessions(_ time.Time) (int64, error) { return 0, nil }
 
 func (noopRepo) Ready() bool { return true }
 

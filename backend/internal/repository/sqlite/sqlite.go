@@ -197,11 +197,11 @@ func (d *DB) ListByTimeRange(since, until, sessionID string, beforeID int64, lim
 		args = append(args, sessionID)
 	}
 	if since != "" {
-		conditions = append(conditions, "created_at >= ?")
+		conditions = append(conditions, "datetime(created_at) >= datetime(?)")
 		args = append(args, since)
 	}
 	if until != "" {
-		conditions = append(conditions, "created_at < ?")
+		conditions = append(conditions, "datetime(created_at) < datetime(?)")
 		args = append(args, until)
 	}
 	if beforeID > 0 {
@@ -326,11 +326,11 @@ func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, se
 
 	sb.WriteString(`SELECT session_id, MAX(id) as max_id FROM hook_events WHERE 1=1`)
 	if since != "" {
-		sb.WriteString(" AND created_at >= ?")
+		sb.WriteString(" AND datetime(created_at) >= datetime(?)")
 		sessionArgs = append(sessionArgs, since)
 	}
 	if until != "" {
-		sb.WriteString(" AND created_at < ?")
+		sb.WriteString(" AND datetime(created_at) < datetime(?)")
 		sessionArgs = append(sessionArgs, until)
 	}
 	sb.WriteString(" GROUP BY session_id")
@@ -383,11 +383,11 @@ func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, se
 		eventArgs = append(eventArgs, s.sessionID)
 	}
 	if since != "" {
-		conditions = append(conditions, "created_at >= ?")
+		conditions = append(conditions, "datetime(created_at) >= datetime(?)")
 		eventArgs = append(eventArgs, since)
 	}
 	if until != "" {
-		conditions = append(conditions, "created_at < ?")
+		conditions = append(conditions, "datetime(created_at) < datetime(?)")
 		eventArgs = append(eventArgs, until)
 	}
 
@@ -850,6 +850,20 @@ func (d *DB) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath,
 		usage.InputTokens, usage.OutputTokens, usage.CacheCreationTokens, usage.CacheReadTokens, usage.Turns,
 	)
 	return err
+}
+
+func (d *DB) MarkStaleSessions(cutoff time.Time) (int64, error) {
+	res, err := d.db.Exec(`
+		UPDATE sessions
+		SET ended_at = last_seen_at
+		WHERE (ended_at IS NULL OR ended_at = '')
+		  AND datetime(last_seen_at) < datetime(?)`,
+		cutoff.UTC().Format(time.RFC3339),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, error) {

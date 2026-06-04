@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { EventRecord } from '@/types/events'
 import type { Session } from '@/types/sessions'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { formatDuration, sessionDurationMs } from './utils'
+import { formatDuration, isRunning, sessionDurationMs } from './utils'
 
 const PAGE_SIZE = 20
 
@@ -22,6 +22,7 @@ export function SessionListPage() {
   const cwdBasename = cwd.split('/').filter(Boolean).at(-1) || cwd
   const navigate = useNavigate()
   const [refreshKey, setRefreshKey] = useState(0)
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   const fetchPage = useCallback(
     async (page: number) => {
@@ -59,6 +60,11 @@ export function SessionListPage() {
     return () => es.close()
   }, [cwd])
 
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
   return (
     <div className="flex h-full flex-col bg-[#0a0a0a] text-white">
       <header className="border-b border-white/10 bg-black/40 px-6 py-4">
@@ -90,11 +96,12 @@ export function SessionListPage() {
                     <th className="px-4 py-3 font-medium">Duration</th>
                     <th className="px-4 py-3 font-medium">Tokens</th>
                     <th className="px-4 py-3 font-medium">Started</th>
-                    <th className="px-4 py-3 font-medium">Ended</th>
+                    <th className="px-4 py-3 font-medium">Last Updated</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sessions.map((session) => {
+                    const running = isRunning(session, nowMs)
                     return (
                       <tr
                         key={session.session_id}
@@ -104,7 +111,10 @@ export function SessionListPage() {
                         }
                       >
                         <td className="px-4 py-3 font-mono text-[12px] text-white/75">
-                          {session.session_id.slice(0, 12)}
+                          <span className="flex items-center gap-2">
+                            {running && <span className="h-1.5 w-1.5 rounded-full bg-green-400" />}
+                            {session.session_id.slice(0, 12)}
+                          </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="rounded border border-white/10 bg-white/[0.04] px-2 py-1 text-[12px]">
@@ -112,9 +122,7 @@ export function SessionListPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-white/70">
-                          {formatDuration(
-                            sessionDurationMs(session, new Date(session.last_seen_at).getTime())
-                          )}
+                          {formatDuration(sessionDurationMs(session, nowMs))}
                         </td>
                         <td className="px-4 py-3 text-white/70">
                           {totalTokens(session).toLocaleString()}
@@ -123,9 +131,7 @@ export function SessionListPage() {
                           {new Date(session.started_at).toLocaleString()}
                         </td>
                         <td className="px-4 py-3 text-white/55">
-                          {session.ended_at
-                            ? new Date(session.ended_at).toLocaleString()
-                            : 'Running'}
+                          {new Date(session.last_seen_at).toLocaleString()}
                         </td>
                       </tr>
                     )

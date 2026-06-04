@@ -70,9 +70,12 @@ type NormalizedEvent struct {
 
 // ComputeDedupKey returns the SHA-256-based dedup key for an event.
 // Used by both the repository (insert) and service (broadcast).
+// Prompt and Response are included so events with the same session/turn/time
+// but different content (e.g. consecutive UserPromptSubmit or Stop events)
+// get distinct keys and are not silently dropped by INSERT OR IGNORE.
 func ComputeDedupKey(e NormalizedEvent) string {
 	h := sha256.Sum256([]byte(
-		e.Session + "|" + e.TurnID + "|" + e.ToolUseID + "|" + e.HookEventName + "|" + e.Time,
+		e.Session + "|" + e.TurnID + "|" + e.ToolUseID + "|" + e.HookEventName + "|" + e.Time + "|" + e.Prompt + "|" + e.Response,
 	))
 	return fmt.Sprintf("%x", h)
 }

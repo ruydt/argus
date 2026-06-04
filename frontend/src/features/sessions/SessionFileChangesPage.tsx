@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { ArrowUpRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import type { Session } from '@/types/sessions'
 import { FileChangesList } from './FileChangesList'
 import { useFileChanges } from './hooks/useFileChanges'
@@ -96,12 +98,25 @@ export function SessionFileChangesPage() {
             </div>
           </div>
 
-          <Badge
-            variant="outline"
-            className="shrink-0 border-white/15 bg-white/[0.04] font-mono text-[11px] text-white/70"
-          >
-            {fileCount} {fileCount === 1 ? 'file' : 'files'} changed
-          </Badge>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="border-white/15 bg-white/[0.04] text-[12px] text-white/70 hover:bg-white/[0.08] hover:text-white"
+            >
+              <Link to={`/?session=${sessionId}`}>
+                <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
+                View Events
+              </Link>
+            </Button>
+            <Badge
+              variant="outline"
+              className="border-white/15 bg-white/[0.04] font-mono text-[11px] text-white/70"
+            >
+              {fileCount} {fileCount === 1 ? 'file' : 'files'} changed
+            </Badge>
+          </div>
         </div>
       </header>
 

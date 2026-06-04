@@ -149,6 +149,8 @@ func (m *mockRepo) ListBySessionsTimeRange(_, _ string, _ int64, _ int) ([]domai
 	return nil, 0, false, nil
 }
 
+func (m *mockRepo) MarkStaleSessions(_ time.Time) (int64, error) { return 0, nil }
+
 func (m *mockRepo) Ready() bool { return true }
 
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {

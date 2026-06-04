@@ -45,10 +45,6 @@ export function useHistoricalEvents(
 
   const fetchPage = useCallback(
     async (cursor: number, replace: boolean) => {
-      if (replace) {
-        setEvents([])
-        setHasMore(false)
-      }
       setLoading(true)
       setError(null)
       try {

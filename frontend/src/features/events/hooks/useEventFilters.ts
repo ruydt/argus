@@ -26,13 +26,17 @@ export function useEventFilters(
 
   const [projectFilter, setProjectFilter] = useState('all')
 
-  const availableAgents = useMemo(() => {
+  const computedAgents = useMemo(() => {
     const agents = new Set<string>()
     for (const e of events) {
       if (e.agent) agents.add(e.agent)
     }
     return Array.from(agents).sort()
   }, [events])
+
+  const lastAgentsRef = useRef<string[]>([])
+  if (computedAgents.length > 0) lastAgentsRef.current = computedAgents
+  const availableAgents = computedAgents.length > 0 ? computedAgents : lastAgentsRef.current
 
   const [availableProjects, setAvailableProjects] = useState<string[]>([])
   const projectsMountedRef = useRef(true)

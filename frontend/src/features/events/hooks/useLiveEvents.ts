@@ -5,7 +5,7 @@ import { buildEventKey } from '../eventKey'
 
 export function useLiveEvents(
   sessionFilterOverride = '',
-  { enabled = true }: { enabled?: boolean } = {}
+  { enabled = true, since = '', until = '' }: { enabled?: boolean; since?: string; until?: string } = {}
 ) {
   const [searchParams] = useSearchParams()
   const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
@@ -39,6 +39,8 @@ export function useLiveEvents(
 
     const params = new URLSearchParams()
     if (sessionFilter) params.set('session', sessionFilter)
+    if (since) params.set('since', since)
+    if (until) params.set('until', until)
     const qs = params.toString()
     const es = new EventSource(`/api/events/stream${qs ? `?${qs}` : ''}`)
 
@@ -77,7 +79,7 @@ export function useLiveEvents(
       es.close()
       if (rafId !== undefined) cancelAnimationFrame(rafId)
     }
-  }, [mergeEvents, sessionFilter, enabled])
+  }, [mergeEvents, sessionFilter, enabled, since, until])
 
   return { events, error }
 }

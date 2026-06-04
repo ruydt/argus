@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"io"
+	"time"
 
 	"hooker/internal/domain"
 )
@@ -30,5 +31,6 @@ type EventRepository interface {
 	ExportEvents(ctx context.Context, w io.Writer) error
 	ExportSnapshot(ctx context.Context, destPath string) error
 	GetRawPayload(dedupKey string) ([]byte, error)
+	MarkStaleSessions(cutoff time.Time) (int64, error)
 	Ready() bool
 }

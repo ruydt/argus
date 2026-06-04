@@ -66,6 +66,26 @@ describe('useHooksConfig', () => {
     expect(result.current.isDirty).toBe(false)
   })
 
+  it('discardChanges resets unsaved edits back to the last saved config', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => populatedConfig })
+    )
+    const { result } = renderHook(() => useHooksConfig('claudecode'))
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const savedJSON = result.current.draftJSON
+
+    act(() => result.current.setDraftJSON('{"hooks":{"Stop":[]}}'))
+    expect(result.current.isDirty).toBe(true)
+
+    act(() => result.current.discardChanges())
+
+    expect(result.current.isDirty).toBe(false)
+    expect(result.current.draftJSON).toBe(savedJSON)
+    expect(stripIds(result.current.config)).toEqual(populatedConfig)
+  })
+
   it('save calls PUT and clears isDirty on success', async () => {
     const fetchMock = vi
       .fn()

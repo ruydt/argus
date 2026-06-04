@@ -1,10 +1,12 @@
 package handler_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -274,5 +276,65 @@ func TestEventsHandler_limitClamped(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}
+
+func TestEventsStream_backfillHonorsTimeRange(t *testing.T) {
+	svc := newTestService(t)
+	base := time.Now().UTC().Add(-2 * time.Hour)
+
+	oldEvent := domain.NormalizedEvent{
+		Time:          base.Format(time.RFC3339),
+		Agent:         "codex",
+		Session:       "old-session",
+		HookEventName: "PreToolUse",
+		Action:        "READ",
+		Path:          "/tmp/old",
+		RawPayload:    []byte(`{}`),
+	}
+	recentEvent := domain.NormalizedEvent{
+		Time:          base.Add(90 * time.Minute).Format(time.RFC3339),
+		Agent:         "codex",
+		Session:       "recent-session",
+		HookEventName: "PreToolUse",
+		Action:        "READ",
+		Path:          "/tmp/recent",
+		RawPayload:    []byte(`{}`),
+	}
+
+	if err := svc.AddEvent(oldEvent); err != nil {
+		t.Fatalf("AddEvent old: %v", err)
+	}
+	if err := svc.AddEvent(recentEvent); err != nil {
+		t.Fatalf("AddEvent recent: %v", err)
+	}
+
+	h := handler.EventsStream(svc)
+	since := base.Add(60 * time.Minute).Format(time.RFC3339)
+	ctx, cancel := context.WithCancel(context.Background())
+	req := httptest.NewRequest(http.MethodGet, "/api/events/stream?since="+since, nil).WithContext(ctx)
+	rec := httptest.NewRecorder()
+
+	done := make(chan struct{})
+	go func() {
+		h.ServeHTTP(rec, req)
+		close(done)
+	}()
+
+	time.Sleep(20 * time.Millisecond)
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		t.Fatal("stream handler did not exit after context cancel")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "recent-session") {
+		t.Fatalf("expected recent session in SSE backfill, body = %q", body)
+	}
+	if strings.Contains(body, "old-session") {
+		t.Fatalf("expected old session to be excluded from SSE backfill, body = %q", body)
 	}
 }

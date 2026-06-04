@@ -66,7 +66,13 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
   return (
     <div className="flex flex-col gap-4 mt-4">
       {viewMode === 'structured' && config !== null && (
-        <StructuredEditor config={config} agent={agent} onChange={setConfig} />
+        <StructuredEditor
+          config={config}
+          agent={agent}
+          isDirty={state.isDirty}
+          onDiscardChanges={state.discardChanges}
+          onChange={setConfig}
+        />
       )}
 
       {viewMode === 'json' && (

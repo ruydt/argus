@@ -157,7 +157,7 @@ describe('project scoped sessions pages', () => {
         `/api/sessions?cwd=${encodeURIComponent(cwd)}&page=1&size=20`
       )
     )
-    expect(await screen.findByText('Ended')).toBeInTheDocument()
+    expect(await screen.findByText('Last Updated')).toBeInTheDocument()
     expect(await screen.findByText('sess-1234567')).toBeInTheDocument()
     expect(screen.getAllByText('codex')).toHaveLength(2)
     expect(screen.getByText('15')).toBeInTheDocument()

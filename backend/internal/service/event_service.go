@@ -42,7 +42,9 @@ func New(repo repository.EventRepository) *EventService {
 
 func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 	if e.Time == "" {
-		e.Time = time.Now().Format(time.RFC3339)
+		e.Time = time.Now().UTC().Format(time.RFC3339)
+	} else if t, err := time.Parse(time.RFC3339, e.Time); err == nil {
+		e.Time = t.UTC().Format(time.RFC3339)
 	}
 	if e.DedupKey == "" {
 		e.DedupKey = domain.ComputeDedupKey(e)
@@ -545,6 +547,17 @@ func endedAtForEvent(e domain.NormalizedEvent) string {
 	default:
 		return ""
 	}
+}
+
+func (s *EventService) SweepStaleSessions(cutoff time.Time) error {
+	n, err := s.repo.MarkStaleSessions(cutoff)
+	if err != nil {
+		return err
+	}
+	if n > 0 {
+		slog.Info("stale session sweep", "marked", n)
+	}
+	return nil
 }
 
 func (s *EventService) Subscribe() <-chan domain.NormalizedEvent {

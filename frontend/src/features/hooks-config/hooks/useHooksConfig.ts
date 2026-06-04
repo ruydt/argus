@@ -8,6 +8,7 @@ function configToJSON(c: HooksConfig): string {
 
 export function useHooksConfig(agent: AgentKey): HooksConfigState {
   const [config, setConfigState] = useState<HooksConfig | null>(null)
+  const [savedConfig, setSavedConfig] = useState<HooksConfig | null>(null)
   const [draftJSON, setDraftJSONState] = useState<string>('')
   const [savedJSON, setSavedJSON] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -51,6 +52,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
         const normalized = normalizeConfig(data)
         const json = configToJSON(normalized)
         setConfigState(normalized)
+        setSavedConfig(normalized)
         setDraftJSONState(json)
         setSavedJSON(json)
       })
@@ -90,6 +92,13 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
     [normalizeConfig]
   )
 
+  const discardChanges = useCallback(() => {
+    if (savedConfig === null) return
+    setSaveError(null)
+    setConfigState(savedConfig)
+    setDraftJSONState(savedJSON)
+  }, [savedConfig, savedJSON])
+
   const save = useCallback(async () => {
     setSaveError(null)
     setSaving(true)
@@ -107,6 +116,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
       const saved = normalizeConfig((await res.json()) as HooksConfig)
       const json = configToJSON(saved)
       setConfigState(saved)
+      setSavedConfig(saved)
       setDraftJSONState(json)
       setSavedJSON(json)
     } catch (err: unknown) {
@@ -126,6 +136,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
     isDirty: draftJSON !== savedJSON,
     setDraftJSON,
     setConfig,
+    discardChanges,
     save,
     reload,
   }

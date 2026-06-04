@@ -146,16 +146,9 @@ export const PRESET_LABELS: Record<PresetKey, { label: string; description: stri
 
 export const PRESET_KEYS: PresetKey[] = ['baseline', 'medium', 'full']
 
-function hasHookerEntry(config: HooksConfig, eventType: string): boolean {
-  return (config.hooks[eventType] ?? []).some((g) =>
-    g.hooks.some((e) => e.statusMessage === HOOKER_STATUS_MESSAGE)
-  )
-}
-
 export function applyPreset(current: HooksConfig, preset: HooksConfig): HooksConfig {
-  const merged: HooksConfig = { hooks: { ...current.hooks } }
+  const merged = removeHookerHooks(current)
   for (const [eventType, presetGroups] of Object.entries(preset.hooks)) {
-    if (hasHookerEntry(merged, eventType)) continue
     const existing = merged.hooks[eventType] ?? []
     merged.hooks[eventType] = [...existing, ...presetGroups]
   }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -93,10 +93,18 @@ function emptyGroup(): HookGroup {
 type StructuredEditorProps = {
   config: HooksConfig
   agent: AgentKey
+  isDirty: boolean
+  onDiscardChanges: () => void
   onChange: (config: HooksConfig) => void
 }
 
-export function StructuredEditor({ config, agent, onChange }: StructuredEditorProps) {
+export function StructuredEditor({
+  config,
+  agent,
+  isDirty,
+  onDiscardChanges,
+  onChange,
+}: StructuredEditorProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
   const knownEvents = agent === 'claudecode' ? CLAUDE_EVENT_TYPES : CODEX_EVENT_TYPES
@@ -204,12 +212,26 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
               <SelectItem key={key} value={key} className="text-[13px]">
                 <span className="font-medium">{PRESET_LABELS[key].label}</span>
                 <span className="ml-1.5 text-muted-foreground text-[12px]">
-                  , {PRESET_LABELS[key].description}
+                  , overwrites current Hooker config with {PRESET_LABELS[key].description}
                 </span>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 text-[13px] text-muted-foreground"
+          disabled={!isDirty}
+          onClick={onDiscardChanges}
+          aria-label="Discard changes"
+          title="Discard unsaved changes and restore the last saved config"
+        >
+          <RotateCcw className="size-3.5 mr-1.5" />
+          Discard changes
+        </Button>
 
         <Button
           type="button"
