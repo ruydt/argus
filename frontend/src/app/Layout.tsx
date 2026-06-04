@@ -49,7 +49,8 @@ export function Layout() {
   const mobileSidebarRef = useRef<HTMLElement | null>(null)
   const shellContentRef = useRef<HTMLDivElement | null>(null)
   const lastFocusedElementRef = useRef<HTMLElement | null>(null)
-  const { sessions } = useSessions()
+  const [isLive, setIsLive] = useState(false)
+  const { sessions, refresh: refreshSessionUsage } = useSessions({ enabled: isLive })
   const mobileOpen = !isDesktopViewport && mobileDrawerLocationKey === location.key
   const sessionUsage = useMemo(
     () =>
@@ -66,6 +67,9 @@ export function Layout() {
     sessionUsage,
     searchQuery,
     setSearchQuery,
+    isLive,
+    setIsLive,
+    refreshSessionUsage,
   }
 
   useEffect(() => {

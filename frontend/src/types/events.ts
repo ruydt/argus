@@ -80,6 +80,9 @@ export interface LayoutOutletContext {
   sessionUsage: Record<string, SessionUsage>
   searchQuery: string
   setSearchQuery: Dispatch<SetStateAction<string>>
+  isLive: boolean
+  setIsLive: Dispatch<SetStateAction<boolean>>
+  refreshSessionUsage: () => void
 }
 
 export interface EventsResponse {

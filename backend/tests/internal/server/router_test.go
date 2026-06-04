@@ -65,6 +65,10 @@ func (noopRepo) ListByTimeRange(_, _, _ string, _ int64, _ int) ([]domain.Normal
 	return nil, 0, false, nil
 }
 
+func (noopRepo) ListBySessionsTimeRange(_, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
+	return nil, 0, false, nil
+}
+
 func (noopRepo) Ready() bool { return true }
 
 var testCORSOrigins = []string{

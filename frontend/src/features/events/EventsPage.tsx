@@ -22,11 +22,17 @@ export function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [pendingEventLink, setPendingEventLink] = useState<PendingEventLink | null>(null)
   const [highlightedEventKey, setHighlightedEventKey] = useState<string | null>(null)
-  const { collapsedSessions, setCollapsedSessions, sessionUsage, searchQuery, setSearchQuery } =
-    useOutletContext<LayoutOutletContext>()
+  const {
+    collapsedSessions,
+    setCollapsedSessions,
+    sessionUsage,
+    searchQuery,
+    setSearchQuery,
+    isLive,
+    setIsLive,
+    refreshSessionUsage,
+  } = useOutletContext<LayoutOutletContext>()
   const sessionFilterOverride = pendingEventLink?.sessionId ?? ''
-
-  const [isLive, setIsLive] = useState(true)
 
   const [timeRange, setTimeRange] = useState(
     () => localStorage.getItem('events_time_range') ?? '15m'
@@ -48,10 +54,10 @@ export function EventsPage() {
 
   const [nowMs, setNowMs] = useState(() => Date.now())
   useEffect(() => {
-    if (timeRange === 'custom') return
+    if (timeRange === 'custom' || !isLive) return
     const id = window.setInterval(() => setNowMs(Date.now()), 1000)
     return () => window.clearInterval(id)
-  }, [timeRange])
+  }, [timeRange, isLive])
 
   const sinceISO = useMemo(() => {
     if (timeRange === 'custom')
@@ -92,6 +98,7 @@ export function EventsPage() {
     sortOrder,
     setSortOrder,
     filteredEvents,
+    refreshProjects,
   } = useEventFilters(
     activeEvents,
     searchQuery,
@@ -102,7 +109,8 @@ export function EventsPage() {
     customStart,
     setCustomStart,
     customEnd,
-    setCustomEnd
+    setCustomEnd,
+    isLive
   )
 
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
@@ -319,7 +327,11 @@ export function EventsPage() {
         setCustomEnd={handleCustomEndChange}
         isLive={isLive}
         onToggleLive={setIsLive}
-        onRefresh={histState.refresh}
+        onRefresh={() => {
+          histState.refresh()
+          refreshSessionUsage()
+          refreshProjects()
+        }}
         histLoading={histState.loading}
         splitView={splitView}
         onToggleSplit={() => {

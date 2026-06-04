@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 type EventFiltersProps = {
   actionFilter: string
@@ -73,27 +72,6 @@ export function EventFilters({
         className
       )}
     >
-      {onToggleLive && (
-        <ToggleGroup
-          type="single"
-          value={isLive ? 'live' : 'historical'}
-          onValueChange={(v) => {
-            if (v === 'live' || v === 'historical') onToggleLive(v === 'live')
-          }}
-          className="shrink-0"
-        >
-          <ToggleGroupItem value="live" className="gap-1.5 text-xs">
-            <span
-              className={`size-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`}
-            />
-            Live
-          </ToggleGroupItem>
-          <ToggleGroupItem value="historical" className="text-xs">
-            Historical
-          </ToggleGroupItem>
-        </ToggleGroup>
-      )}
-
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <span className="text-[0.7rem] text-[#666]">Action</span>
         <Select value={actionFilter} onValueChange={setActionFilter}>
@@ -185,8 +163,8 @@ export function EventFilters({
         </Select>
       </div>
 
-      <div className={isLive ? 'pointer-events-none opacity-40' : ''}>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
+      <div className={cn('flex items-center gap-3', isLive && 'pointer-events-none opacity-40')}>
+        <div className="flex items-center gap-2">
           <span className="text-[0.7rem] text-[#666]">Time</span>
           <Select value={timeRange} onValueChange={setTimeRange} disabled={isLive}>
             <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[160px] focus:ring-0 focus:ring-offset-0">
@@ -209,20 +187,20 @@ export function EventFilters({
 
         {timeRange === 'custom' && (
           <>
-            <div className="flex w-full items-center gap-2 sm:w-auto mt-3">
+            <div className="flex items-center gap-2">
               <span className="text-[0.7rem] uppercase text-[#666]">Start</span>
               <Input
-                className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 sm:w-[160px]"
+                className="h-auto px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 w-[160px]"
                 placeholder="2026-05-05 10:00:00"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
                 disabled={isLive}
               />
             </div>
-            <div className="flex w-full items-center gap-2 sm:w-auto mt-3">
+            <div className="flex items-center gap-2">
               <span className="text-[0.7rem] uppercase text-[#666]">End</span>
               <Input
-                className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 sm:w-[160px]"
+                className="h-auto px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 w-[160px]"
                 placeholder="2026-05-05 12:00:00"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
@@ -233,34 +211,53 @@ export function EventFilters({
         )}
       </div>
 
-      {!isLive && onRefresh && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRefresh}
-          disabled={histLoading}
-          className="gap-1 shrink-0"
-        >
-          <RefreshCw className={`size-3 ${histLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      )}
-
-      {onToggleSplit && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onToggleSplit}
-          className={cn(
-            'hidden sm:ml-auto sm:inline-flex h-auto shrink-0 gap-1.5 px-2 py-1 text-[0.8rem] border-[#333] bg-black text-[#666] hover:bg-white/[0.03] hover:text-[#cccccc]',
-            splitView && 'border-[#555] text-[#cccccc]'
-          )}
-          title={splitView ? 'Close split view' : 'Open split view'}
-          aria-label={splitView ? 'Close split view' : 'Open split view'}
-        >
-          <Columns2 />
-        </Button>
-      )}
+      <div className="hidden sm:ml-auto sm:flex sm:items-center sm:gap-1.5 shrink-0">
+        {!isLive && onRefresh && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRefresh}
+            disabled={histLoading}
+            className="h-auto gap-1 px-2 py-1 text-[0.8rem] text-[#666] hover:text-[#cccccc]"
+          >
+            <RefreshCw className={`size-3 ${histLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        )}
+        {onToggleLive && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onToggleLive(!isLive)}
+            className={cn(
+              'h-auto gap-1.5 px-2 py-1 text-[0.8rem] border-[#333] bg-black hover:bg-white/[0.03]',
+              isLive
+                ? 'border-green-700 text-green-400 hover:text-green-300'
+                : 'text-[#666] hover:text-[#cccccc]'
+            )}
+          >
+            <span
+              className={`size-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-[#555]'}`}
+            />
+            Live
+          </Button>
+        )}
+        {onToggleSplit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleSplit}
+            className={cn(
+              'h-auto shrink-0 gap-1.5 px-2 py-1 text-[0.8rem] border-[#333] bg-black text-[#666] hover:bg-white/[0.03] hover:text-[#cccccc]',
+              splitView && 'border-[#555] text-[#cccccc]'
+            )}
+            title={splitView ? 'Close split view' : 'Open split view'}
+            aria-label={splitView ? 'Close split view' : 'Open split view'}
+          >
+            <Columns2 />
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

@@ -320,6 +320,84 @@ func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domai
 	return events, nil
 }
 
+func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, sessionLimit int) ([]domain.NormalizedEvent, int64, bool, error) {
+	var sb strings.Builder
+	var sessionArgs []any
+
+	sb.WriteString(`SELECT session_id, MAX(id) as max_id FROM hook_events WHERE 1=1`)
+	if since != "" {
+		sb.WriteString(" AND created_at >= ?")
+		sessionArgs = append(sessionArgs, since)
+	}
+	if until != "" {
+		sb.WriteString(" AND created_at < ?")
+		sessionArgs = append(sessionArgs, until)
+	}
+	sb.WriteString(" GROUP BY session_id")
+	if beforeCursor > 0 {
+		sb.WriteString(" HAVING MAX(id) < ?")
+		sessionArgs = append(sessionArgs, beforeCursor)
+	}
+	sb.WriteString(" ORDER BY MAX(id) DESC LIMIT ?")
+	sessionArgs = append(sessionArgs, sessionLimit+1)
+
+	rows, err := d.db.Query(sb.String(), sessionArgs...)
+	if err != nil {
+		return nil, 0, false, err
+	}
+
+	type entry struct {
+		sessionID string
+		maxID     int64
+	}
+	var sessions []entry
+	for rows.Next() {
+		var e entry
+		if err := rows.Scan(&e.sessionID, &e.maxID); err != nil {
+			rows.Close()
+			return nil, 0, false, err
+		}
+		sessions = append(sessions, e)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, 0, false, err
+	}
+
+	hasMore := len(sessions) > sessionLimit
+	if hasMore {
+		sessions = sessions[:sessionLimit]
+	}
+	if len(sessions) == 0 {
+		return nil, 0, false, nil
+	}
+
+	// Cursor = max_id of oldest session (last in DESC-ordered result).
+	cursor := sessions[len(sessions)-1].maxID
+
+	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(sessions)), ",")
+	var conditions []string
+	var eventArgs []any
+
+	conditions = append(conditions, fmt.Sprintf("session_id IN (%s)", placeholders))
+	for _, s := range sessions {
+		eventArgs = append(eventArgs, s.sessionID)
+	}
+	if since != "" {
+		conditions = append(conditions, "created_at >= ?")
+		eventArgs = append(eventArgs, since)
+	}
+	if until != "" {
+		conditions = append(conditions, "created_at < ?")
+		eventArgs = append(eventArgs, until)
+	}
+
+	events, err := d.listWithWhere("WHERE "+strings.Join(conditions, " AND "), eventArgs, 0, 0)
+	if err != nil {
+		return nil, 0, false, err
+	}
+	return events, cursor, hasMore, nil
+}
+
 func (d *DB) SessionModel(sessionID string) (string, error) {
 	var model string
 	err := d.db.QueryRow(

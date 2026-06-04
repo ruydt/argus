@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Dispatch, SetStateAction } from 'react'
 import type { EventRecord } from '@/types/events'
@@ -15,6 +15,7 @@ export function useEventFilters(
   setCustomStart: Dispatch<SetStateAction<string>>,
   customEnd: string,
   setCustomEnd: Dispatch<SetStateAction<string>>,
+  isLive = true,
 ) {
   const [searchParams] = useSearchParams()
   const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
@@ -70,26 +71,33 @@ export function useEventFilters(
   }, [events])
 
   const [availableProjects, setAvailableProjects] = useState<string[]>([])
+  const projectsMountedRef = useRef(true)
 
   useEffect(() => {
-    let mounted = true
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch('/api/projects')
-        if (!res.ok || !mounted) return
-        const data = (await res.json()) as { projects?: Project[] }
-        if (mounted) setAvailableProjects((data.projects ?? []).map((p) => p.cwd).filter(Boolean))
-      } catch {
-        // non-fatal — dropdown stays with last known list
-      }
-    }
-    fetchProjects()
-    const interval = window.setInterval(fetchProjects, 15_000)
+    projectsMountedRef.current = true
     return () => {
-      mounted = false
-      window.clearInterval(interval)
+      projectsMountedRef.current = false
     }
   }, [])
+
+  const refreshProjects = useCallback(async () => {
+    try {
+      const res = await fetch('/api/projects')
+      if (!res.ok || !projectsMountedRef.current) return
+      const data = (await res.json()) as { projects?: Project[] }
+      if (projectsMountedRef.current)
+        setAvailableProjects((data.projects ?? []).map((p) => p.cwd).filter(Boolean))
+    } catch {
+      // non-fatal — dropdown stays with last known list
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshProjects()
+    if (!isLive) return
+    const interval = window.setInterval(refreshProjects, 15_000)
+    return () => window.clearInterval(interval)
+  }, [isLive, refreshProjects])
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {
@@ -149,5 +157,6 @@ export function useEventFilters(
     setCustomEnd,
     filteredEvents,
     sessionFilter,
+    refreshProjects,
   }
 }

@@ -12,11 +12,13 @@ import (
 )
 
 const (
-	defaultEventsLimit = 1000
-	sessionEventsLimit = 5000
-	sseBackfillLimit   = 100
-	maxEventsPageLimit = 500
-	defaultEventsPage  = 200
+	defaultEventsLimit    = 1000
+	sessionEventsLimit    = 5000
+	sseBackfillLimit      = 100
+	maxEventsPageLimit    = 500
+	defaultEventsPage     = 200
+	defaultSessionPage    = 20
+	maxSessionPageLimit   = 50
 )
 
 func Events(svc *service.EventService) http.Handler {
@@ -25,6 +27,16 @@ func Events(svc *service.EventService) http.Handler {
 		since := q.Get("since")
 		until := q.Get("until")
 		sessionID := q.Get("session")
+
+		sessionLimit := defaultSessionPage
+		if s := q.Get("session_limit"); s != "" {
+			if v, err := strconv.Atoi(s); err == nil && v > 0 {
+				sessionLimit = v
+			}
+		}
+		if sessionLimit > maxSessionPageLimit {
+			sessionLimit = maxSessionPageLimit
+		}
 
 		beforeID := int64(0)
 		if s := q.Get("before_id"); s != "" {
@@ -46,8 +58,8 @@ func Events(svc *service.EventService) http.Handler {
 			limit = maxEventsPageLimit
 		}
 
-		// No time params and no cursor = backward-compat path.
-		if since == "" && until == "" && beforeID == 0 {
+		// No time params and no session cursor = backward-compat path.
+		if since == "" && until == "" && beforeID == 0 && q.Get("before_session_cursor") == "" && q.Get("session_limit") == "" {
 			events, err := listEvents(svc, sessionID)
 			if err != nil {
 				http.Error(w, "list events", http.StatusInternalServerError)
@@ -61,6 +73,28 @@ func Events(svc *service.EventService) http.Handler {
 			return
 		}
 
+		// Session-paginated path: group results by session, N sessions per page.
+		if sessionID == "" {
+			beforeCursor := int64(0)
+			if s := q.Get("before_session_cursor"); s != "" {
+				if v, err := strconv.ParseInt(s, 10, 64); err == nil {
+					beforeCursor = v
+				}
+			}
+			events, cursor, hasMore, err := svc.ListEventsBySessionsTimeRange(since, until, beforeCursor, sessionLimit)
+			if err != nil {
+				http.Error(w, "list events", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			resp := map[string]any{"events": events, "has_more": hasMore, "next_cursor": cursor}
+			if err := json.NewEncoder(w).Encode(resp); err != nil {
+				log.Printf("[handler] encode events: %v", err)
+			}
+			return
+		}
+
+		// Event-paginated path: single session, cursor by event id.
 		events, minID, hasMore, err := svc.ListEventsByTimeRange(since, until, sessionID, beforeID, limit)
 		if err != nil {
 			http.Error(w, "list events", http.StatusInternalServerError)

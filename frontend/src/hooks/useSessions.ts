@@ -1,36 +1,39 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Session } from '@/types/sessions'
 
 export type { Session }
 
-export function useSessions() {
+export function useSessions({ enabled = true }: { enabled?: boolean } = {}) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    let mounted = true
-    const fetchSessions = async () => {
-      try {
-        const res = await fetch('/api/sessions')
-        if (res.ok) {
-          const data = await res.json()
-          if (mounted) {
-            setSessions(data)
-            setLoading(false)
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch sessions', err)
-      }
-    }
-
-    fetchSessions()
-    const interval = setInterval(fetchSessions, 5000)
+    mountedRef.current = true
     return () => {
-      mounted = false
-      clearInterval(interval)
+      mountedRef.current = false
     }
   }, [])
 
-  return { sessions, loading }
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch('/api/sessions')
+      if (res.ok && mountedRef.current) {
+        const data = await res.json()
+        setSessions(data)
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('Failed to fetch sessions', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    refresh()
+    if (!enabled) return
+    const interval = setInterval(refresh, 5000)
+    return () => clearInterval(interval)
+  }, [enabled, refresh])
+
+  return { sessions, loading, refresh }
 }

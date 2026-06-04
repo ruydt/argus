@@ -23,13 +23,20 @@ export function useHistoricalEvents(
   const refreshCountRef = useRef(0)
 
   const buildUrl = useCallback(
-    (beforeID: number) => {
+    (cursor: number) => {
       const params = new URLSearchParams()
       if (since) params.set('since', since)
       if (until) params.set('until', until)
-      if (sessionFilter) params.set('session', sessionFilter)
-      if (beforeID > 0) params.set('before_id', String(beforeID))
-      params.set('limit', '200')
+      if (sessionFilter) {
+        // Single-session view: event-based pagination
+        params.set('session', sessionFilter)
+        if (cursor > 0) params.set('before_id', String(cursor))
+        params.set('limit', '200')
+      } else {
+        // Multi-session view: session-based pagination
+        params.set('session_limit', '20')
+        if (cursor > 0) params.set('before_session_cursor', String(cursor))
+      }
       const qs = params.toString()
       return `/api/events${qs ? `?${qs}` : ''}`
     },
@@ -37,10 +44,10 @@ export function useHistoricalEvents(
   )
 
   const fetchPage = useCallback(
-    async (beforeID: number, replace: boolean) => {
+    async (cursor: number, replace: boolean) => {
       setLoading(true)
       try {
-        const res = await fetch(buildUrl(beforeID))
+        const res = await fetch(buildUrl(cursor))
         if (!res.ok) throw new Error(`fetch failed: ${res.status}`)
         const data = (await res.json()) as EventsResponse
         const incoming = data.events ?? []

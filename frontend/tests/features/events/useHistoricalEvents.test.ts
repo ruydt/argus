@@ -50,6 +50,40 @@ describe('useHistoricalEvents', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('does not fetch when enabled=false even if since changes', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { rerender } = renderHook(
+      ({ since }) => useHistoricalEvents(since, '', '', false),
+      { initialProps: { since: '2026-06-01T00:00:00Z' } }
+    )
+
+    rerender({ since: '2026-06-01T00:00:01Z' })
+    rerender({ since: '2026-06-01T00:00:02Z' })
+
+    await new Promise((r) => setTimeout(r, 50))
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('does not fetch on rerender when enabled=true and since is constant', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ events: [], has_more: false, next_cursor: 0 }) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { rerender } = renderHook(
+      ({ since }) => useHistoricalEvents(since, '', '', true),
+      { initialProps: { since: '2026-06-01T00:00:00Z' } }
+    )
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+    rerender({ since: '2026-06-01T00:00:00Z' })
+    rerender({ since: '2026-06-01T00:00:00Z' })
+
+    await new Promise((r) => setTimeout(r, 50))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('loadMore appends next page using next_cursor', async () => {
     const page1 = [makeEvent({ dedup_key: 'a' }), makeEvent({ dedup_key: 'b' })]
     const page2 = [makeEvent({ dedup_key: 'c' })]
@@ -71,8 +105,8 @@ describe('useHistoricalEvents', () => {
     await waitFor(() => expect(result.current.events).toHaveLength(3))
     expect(result.current.hasMore).toBe(false)
 
-    // Second fetch must include before_id=42
-    expect(fetchMock.mock.calls[1][0]).toContain('before_id=42')
+    // Second fetch must include before_session_cursor=42 (session-paginated mode)
+    expect(fetchMock.mock.calls[1][0]).toContain('before_session_cursor=42')
   })
 
   it('refresh resets state and re-fetches from scratch', async () => {
