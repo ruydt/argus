@@ -1,4 +1,4 @@
-import { Columns2 } from 'lucide-react'
+import { Columns2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 type EventFiltersProps = {
   actionFilter: string
@@ -28,6 +29,10 @@ type EventFiltersProps = {
   setCustomStart: (v: string) => void
   customEnd: string
   setCustomEnd: (v: string) => void
+  isLive?: boolean
+  onToggleLive?: (live: boolean) => void
+  onRefresh?: () => void
+  histLoading?: boolean
   splitView?: boolean
   onToggleSplit?: () => void
   id?: string
@@ -51,6 +56,10 @@ export function EventFilters({
   setCustomStart,
   customEnd,
   setCustomEnd,
+  isLive = true,
+  onToggleLive,
+  onRefresh,
+  histLoading = false,
   splitView = false,
   onToggleSplit,
   id,
@@ -64,6 +73,27 @@ export function EventFilters({
         className
       )}
     >
+      {onToggleLive && (
+        <ToggleGroup
+          type="single"
+          value={isLive ? 'live' : 'historical'}
+          onValueChange={(v) => {
+            if (v === 'live' || v === 'historical') onToggleLive(v === 'live')
+          }}
+          className="shrink-0"
+        >
+          <ToggleGroupItem value="live" className="gap-1.5 text-xs">
+            <span
+              className={`size-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`}
+            />
+            Live
+          </ToggleGroupItem>
+          <ToggleGroupItem value="historical" className="text-xs">
+            Historical
+          </ToggleGroupItem>
+        </ToggleGroup>
+      )}
+
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <span className="text-[0.7rem] text-[#666]">Action</span>
         <Select value={actionFilter} onValueChange={setActionFilter}>
@@ -155,48 +185,65 @@ export function EventFilters({
         </Select>
       </div>
 
-      <div className="flex w-full items-center gap-2 sm:w-auto">
-        <span className="text-[0.7rem] text-[#666]">Time</span>
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[160px] focus:ring-0 focus:ring-offset-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
-            <SelectGroup>
-              <SelectItem value="5m">Last 5 minutes</SelectItem>
-              <SelectItem value="15m">Last 15 minutes</SelectItem>
-              <SelectItem value="1h">Last 1 hour</SelectItem>
-              <SelectItem value="6h">Last 6 hours</SelectItem>
-              <SelectItem value="24h">Last 24 hours</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="custom">Custom range</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+      <div className={isLive ? 'pointer-events-none opacity-40' : ''}>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <span className="text-[0.7rem] text-[#666]">Time</span>
+          <Select value={timeRange} onValueChange={setTimeRange} disabled={isLive}>
+            <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[160px] focus:ring-0 focus:ring-offset-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
+              <SelectGroup>
+                <SelectItem value="5m">Last 5 minutes</SelectItem>
+                <SelectItem value="15m">Last 15 minutes</SelectItem>
+                <SelectItem value="1h">Last 1 hour</SelectItem>
+                <SelectItem value="6h">Last 6 hours</SelectItem>
+                <SelectItem value="24h">Last 24 hours</SelectItem>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="custom">Custom range</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {timeRange === 'custom' && (
+          <>
+            <div className="flex w-full items-center gap-2 sm:w-auto mt-3">
+              <span className="text-[0.7rem] uppercase text-[#666]">Start</span>
+              <Input
+                className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 sm:w-[160px]"
+                placeholder="2026-05-05 10:00:00"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                disabled={isLive}
+              />
+            </div>
+            <div className="flex w-full items-center gap-2 sm:w-auto mt-3">
+              <span className="text-[0.7rem] uppercase text-[#666]">End</span>
+              <Input
+                className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 sm:w-[160px]"
+                placeholder="2026-05-05 12:00:00"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                disabled={isLive}
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      {timeRange === 'custom' && (
-        <>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <span className="text-[0.7rem] uppercase text-[#666]">Start</span>
-            <Input
-              className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 sm:w-[160px]"
-              placeholder="2026-05-05 10:00:00"
-              value={customStart}
-              onChange={(e) => setCustomStart(e.target.value)}
-            />
-          </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <span className="text-[0.7rem] uppercase text-[#666]">End</span>
-            <Input
-              className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 sm:w-[160px]"
-              placeholder="2026-05-05 12:00:00"
-              value={customEnd}
-              onChange={(e) => setCustomEnd(e.target.value)}
-            />
-          </div>
-        </>
+      {!isLive && onRefresh && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRefresh}
+          disabled={histLoading}
+          className="gap-1 shrink-0"
+        >
+          <RefreshCw className={`size-3 ${histLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       )}
 
       {onToggleSplit && (

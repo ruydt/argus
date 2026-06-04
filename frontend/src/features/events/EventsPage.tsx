@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Columns2, SlidersHorizontal } from 'lucide-react'
 import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { cn } from '@/lib/utils'
 import { useLiveEvents } from './hooks/useLiveEvents'
+import { useHistoricalEvents } from './hooks/useHistoricalEvents'
 import { useEventFilters } from './hooks/useEventFilters'
 import { buildEventKey } from './eventKey'
 import { EventFilters } from './EventFilters'
@@ -24,7 +25,60 @@ export function EventsPage() {
   const { collapsedSessions, setCollapsedSessions, sessionUsage, searchQuery, setSearchQuery } =
     useOutletContext<LayoutOutletContext>()
   const sessionFilterOverride = pendingEventLink?.sessionId ?? ''
-  const { events, error } = useLiveEvents(sessionFilterOverride, { enabled: true })
+
+  const [isLive, setIsLive] = useState(true)
+
+  const [timeRange, setTimeRange] = useState(
+    () => localStorage.getItem('events_time_range') ?? '15m'
+  )
+  const [customStart, setCustomStart] = useState(
+    () => localStorage.getItem('events_custom_start') ?? ''
+  )
+  const [customEnd, setCustomEnd] = useState(() => localStorage.getItem('events_custom_end') ?? '')
+
+  useEffect(() => {
+    localStorage.setItem('events_time_range', timeRange)
+  }, [timeRange])
+  useEffect(() => {
+    localStorage.setItem('events_custom_start', customStart)
+  }, [customStart])
+  useEffect(() => {
+    localStorage.setItem('events_custom_end', customEnd)
+  }, [customEnd])
+
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  useEffect(() => {
+    if (timeRange === 'custom') return
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => window.clearInterval(id)
+  }, [timeRange])
+
+  const sinceISO = useMemo(() => {
+    if (timeRange === 'custom')
+      return customStart ? new Date(customStart.replace(' ', 'T')).toISOString() : ''
+    const offsets: Record<string, number> = {
+      '5m': 5,
+      '15m': 15,
+      '1h': 60,
+      '6h': 360,
+      '24h': 1440,
+      '7d': 10080,
+      '30d': 43200,
+    }
+    const mins = offsets[timeRange]
+    return mins !== undefined ? new Date(nowMs - mins * 60 * 1000).toISOString() : ''
+  }, [timeRange, customStart, nowMs])
+
+  const untilISO = useMemo(() => {
+    if (timeRange === 'custom')
+      return customEnd ? new Date(customEnd.replace(' ', 'T')).toISOString() : ''
+    return ''
+  }, [timeRange, customEnd])
+
+  const liveState = useLiveEvents(sessionFilterOverride, { enabled: isLive })
+  const histState = useHistoricalEvents(sinceISO, untilISO, sessionFilterOverride, !isLive)
+  const activeEvents = isLive ? liveState.events : histState.events
+  const activeError = isLive ? liveState.error : histState.error
 
   const {
     actionFilter,
@@ -37,14 +91,19 @@ export function EventsPage() {
     availableProjects,
     sortOrder,
     setSortOrder,
+    filteredEvents,
+  } = useEventFilters(
+    activeEvents,
+    searchQuery,
+    setSearchQuery,
+    sessionFilterOverride,
     timeRange,
     setTimeRange,
     customStart,
     setCustomStart,
     customEnd,
-    setCustomEnd,
-    filteredEvents,
-  } = useEventFilters(events, searchQuery, setSearchQuery, sessionFilterOverride)
+    setCustomEnd
+  )
 
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
@@ -258,6 +317,10 @@ export function EventsPage() {
         setCustomStart={handleCustomStartChange}
         customEnd={customEnd}
         setCustomEnd={handleCustomEndChange}
+        isLive={isLive}
+        onToggleLive={setIsLive}
+        onRefresh={histState.refresh}
+        histLoading={histState.loading}
         splitView={splitView}
         onToggleSplit={() => {
           if (splitView) {
@@ -282,7 +345,7 @@ export function EventsPage() {
               onDragLeave={handleDragLeave}
               onDrop={handleDropToPanel(1)}
             >
-              {events.length === 0 && !error ? (
+              {activeEvents.length === 0 && !activeError ? (
                 <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
                   No events found. Start a session to see events stream here.
                 </div>
@@ -349,14 +412,14 @@ export function EventsPage() {
         </ResizablePanelGroup>
       ) : (
         <div className="relative min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
-          {error && (
+          {activeError && (
             <Alert variant="destructive" className="mb-4 bg-red-950/50 border-red-900">
               <AlertTitle>Connection Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{activeError}</AlertDescription>
             </Alert>
           )}
 
-          {events.length === 0 && !error ? (
+          {activeEvents.length === 0 && !activeError ? (
             <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
               No events found. Start a session to see events stream here.
             </div>
@@ -375,6 +438,19 @@ export function EventsPage() {
               highlightedEventKey={highlightedEventKey}
               onTargetVisible={handleTargetVisible}
             />
+          )}
+
+          {!isLive && histState.hasMore && (
+            <div className="flex justify-center py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={histState.loadMore}
+                disabled={histState.loading}
+              >
+                {histState.loading ? 'Loading...' : 'Load more'}
+              </Button>
+            </div>
           )}
         </div>
       )}
