@@ -1,6 +1,7 @@
 {
   "name": "hooker",
   "private": true,
+  "packageManager": "pnpm@10.23.0",
   "devDependencies": {
     "@playwright/test": "^1.48.0"
   }
