@@ -126,8 +126,7 @@ function EdgeDropZone({ edgeZoneHover, onDragEnter, onDragLeave, onDragOver, onD
 
 export function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [pendingEventLink, setPendingEventLink] = useState<PendingEventLink | null>(null)
-  const [highlightedEventKey, setHighlightedEventKey] = useState<string | null>(null)
+  const [eventLink, setEventLink] = useState<EventLinkState>({ pendingEventLink: null, highlightedEventKey: null })
   const {
     collapsedSessions,
     setCollapsedSessions,
@@ -138,7 +137,7 @@ export function EventsPage() {
     setIsLive,
     refreshSessionUsage,
   } = useOutletContext<LayoutOutletContext>()
-  const sessionFilterOverride = pendingEventLink?.sessionId ?? ''
+  const sessionFilterOverride = eventLink.pendingEventLink?.sessionId ?? ''
 
   const [timeRange, setTimeRange] = useState(
     () => localStorage.getItem('events_time_range') ?? '15m'
