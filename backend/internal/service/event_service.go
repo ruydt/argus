@@ -84,6 +84,10 @@ func (s *EventService) ListEventsBySession(sessionID string, limit int) ([]domai
 	return s.repo.ListBySession(sessionID, limit)
 }
 
+func (s *EventService) ListEventsByTimeRange(since, until, sessionID string, beforeID int64, limit int) ([]domain.NormalizedEvent, int64, bool, error) {
+	return s.repo.ListByTimeRange(since, until, sessionID, beforeID, limit)
+}
+
 func (s *EventService) GetRawPayload(dedupKey string) ([]byte, error) {
 	return s.repo.GetRawPayload(dedupKey)
 }
