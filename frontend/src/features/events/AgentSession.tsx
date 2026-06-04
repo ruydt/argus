@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -46,43 +46,36 @@ export function AgentSession({
   const agent = agentForEvent(firstEvent)
   const { Logo } = agent
 
-  const [page, setPage] = useState(0)
+  const [manualPage, setManualPage] = useState(0)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    if (!copied) return
-    const id = window.setTimeout(() => setCopied(false), 1500)
-    return () => window.clearTimeout(id)
-  }, [copied])
 
   const onCopySessionId = (e: React.MouseEvent) => {
     e.stopPropagation()
     navigator.clipboard
       .writeText(sessionId)
-      .then(() => setCopied(true))
+      .then(() => {
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1500)
+      })
       .catch(() => {})
   }
 
   const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
-  const clampedPage = Math.min(page, totalPages - 1)
-  const pageStart = clampedPage * pageSize
-  const pageEnd = Math.min(pageStart + pageSize, events.length)
-  const visibleEvents = events.slice(pageStart, pageEnd)
-  const needsPagination = events.length > pageSize
   const targetEventIndex =
     targetEventKey && targetSessionId === sessionId
       ? events.findIndex((event) => buildEventKey(event) === targetEventKey)
       : -1
 
-  useEffect(() => {
-    if (targetEventIndex < 0) return
-
-    const targetPage = Math.floor(targetEventIndex / pageSize)
-    if (clampedPage !== targetPage) {
-      queueMicrotask(() => setPage(targetPage))
-    }
-  }, [clampedPage, pageSize, targetEventIndex])
+  const page =
+    targetEventIndex >= 0
+      ? Math.min(Math.floor(targetEventIndex / pageSize), totalPages - 1)
+      : Math.min(manualPage, totalPages - 1)
+  const clampedPage = page
+  const pageStart = page * pageSize
+  const pageEnd = Math.min(pageStart + pageSize, events.length)
+  const visibleEvents = events.slice(pageStart, pageEnd)
+  const needsPagination = events.length > pageSize
 
   return (
     <Collapsible
@@ -113,10 +106,10 @@ export function AgentSession({
             <button
               type="button"
               onClick={onCopySessionId}
-              className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex h-4 w-4 items-center justify-center rounded text-[#666] hover:text-[#47ff9c]"
+              className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex size-4 items-center justify-center rounded text-[#666] hover:text-[#47ff9c]"
               aria-label={copied ? 'Copied session ID' : 'Copy session ID'}
             >
-              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
             </button>
           </div>
           <div className="inline-flex w-full flex-wrap items-center gap-2 text-[0.68rem] text-[#666] sm:w-auto sm:justify-end sm:text-right">
@@ -160,7 +153,7 @@ export function AgentSession({
             rangeStart={pageStart}
             rangeEnd={pageEnd}
             defaultPageSize={DEFAULT_PAGE_SIZE}
-            onPageChange={setPage}
+            onPageChange={setManualPage}
             onPageSizeChange={setPageSize}
           />
         )}
@@ -186,7 +179,7 @@ export function AgentSession({
             rangeStart={pageStart}
             rangeEnd={pageEnd}
             defaultPageSize={DEFAULT_PAGE_SIZE}
-            onPageChange={setPage}
+            onPageChange={setManualPage}
             onPageSizeChange={setPageSize}
           />
         )}

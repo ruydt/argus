@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AgentKey, HooksConfig, HooksConfigState } from '../types'
 
+/** Strip frontend-only `id` keys when serialising config to JSON. */
+function configToJSON(c: HooksConfig): string {
+  return JSON.stringify(c, (key, value: unknown) => (key === 'id' ? undefined : value), 2)
+}
+
 export function useHooksConfig(agent: AgentKey): HooksConfigState {
   const [config, setConfigState] = useState<HooksConfig | null>(null)
   const [draftJSON, setDraftJSONState] = useState<string>('')
@@ -11,6 +16,21 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
   const mountedRef = useRef(true)
+
+  const normalizeConfig = useCallback((c: HooksConfig): HooksConfig => {
+    const hooks: HooksConfig['hooks'] = {}
+    for (const [eventType, groups] of Object.entries(c.hooks ?? {})) {
+      hooks[eventType] = groups.map((g) => ({
+        ...g,
+        id: g.id || crypto.randomUUID(),
+        hooks: g.hooks.map((e) => ({
+          ...e,
+          id: e.id || crypto.randomUUID(),
+        })),
+      }))
+    }
+    return { hooks }
+  }, [])
 
   const reload = useCallback(() => {
     setLoading(true)
@@ -28,8 +48,9 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
       })
       .then((data) => {
         if (!mountedRef.current) return
-        const json = JSON.stringify(data, null, 2)
-        setConfigState(data)
+        const normalized = normalizeConfig(data)
+        const json = configToJSON(normalized)
+        setConfigState(normalized)
         setDraftJSONState(json)
         setSavedJSON(json)
       })
@@ -45,14 +66,12 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
     return () => {
       mountedRef.current = false
     }
-  }, [agent, reloadKey])
-
-  const normalizeConfig = useCallback((c: HooksConfig): HooksConfig => ({ hooks: c.hooks ?? {} }), [])
+  }, [agent, reloadKey, normalizeConfig])
 
   const setConfig = useCallback((c: HooksConfig) => {
     const normalized = normalizeConfig(c)
     setConfigState(normalized)
-    setDraftJSONState(JSON.stringify(normalized, null, 2))
+    setDraftJSONState(configToJSON(normalized))
   }, [normalizeConfig])
 
   const setDraftJSON = useCallback((json: string) => {
@@ -80,7 +99,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
         throw new Error(text.trim() || `HTTP ${res.status}`)
       }
       const saved = normalizeConfig((await res.json()) as HooksConfig)
-      const json = JSON.stringify(saved, null, 2)
+      const json = configToJSON(saved)
       setConfigState(saved)
       setDraftJSONState(json)
       setSavedJSON(json)

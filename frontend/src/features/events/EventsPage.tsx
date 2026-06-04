@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Columns2, SlidersHorizontal } from 'lucide-react'
 import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -18,8 +18,115 @@ type PendingEventLink = {
   eventKey: string
 }
 
+type EventLinkState = {
+  pendingEventLink: PendingEventLink | null
+  highlightedEventKey: string | null
+}
+
+type PanelDragState = {
+  splitView: boolean
+  panel2Sessions: Set<string>
+  panel2EventKeys: Set<string>
+  isDragging: boolean
+  dragOverPanel: 1 | 2 | null
+  edgeZoneHover: boolean
+}
+
+type PanelDragAction =
+  | { type: 'ADD_TO_PANEL2'; data: string }
+  | { type: 'REMOVE_FROM_PANEL2'; data: string }
+  | { type: 'CLEAR_PANEL2' }
+  | { type: 'ENABLE_SPLIT' }
+  | { type: 'DISABLE_SPLIT' }
+  | { type: 'SET_DRAG_OVER'; panel: 1 | 2 | null }
+  | { type: 'SET_DRAGGING'; isDragging: boolean }
+  | { type: 'SET_EDGE_HOVER'; hover: boolean }
+
+const initialPanelDragState: PanelDragState = {
+  splitView: false,
+  panel2Sessions: new Set(),
+  panel2EventKeys: new Set(),
+  isDragging: false,
+  dragOverPanel: null,
+  edgeZoneHover: false,
+}
+
+function panelDragReducer(state: PanelDragState, action: PanelDragAction): PanelDragState {
+  switch (action.type) {
+    case 'ADD_TO_PANEL2': {
+      if (action.data.startsWith('session:')) {
+        const id = action.data.slice('session:'.length)
+        return { ...state, panel2Sessions: new Set([...state.panel2Sessions, id]) }
+      }
+      return { ...state, panel2EventKeys: new Set([...state.panel2EventKeys, action.data]) }
+    }
+    case 'REMOVE_FROM_PANEL2': {
+      if (action.data.startsWith('session:')) {
+        const id = action.data.slice('session:'.length)
+        const next = new Set(state.panel2Sessions)
+        next.delete(id)
+        return { ...state, panel2Sessions: next }
+      }
+      const next = new Set(state.panel2EventKeys)
+      next.delete(action.data)
+      return { ...state, panel2EventKeys: next }
+    }
+    case 'CLEAR_PANEL2':
+      return { ...state, panel2Sessions: new Set(), panel2EventKeys: new Set() }
+    case 'ENABLE_SPLIT':
+      return { ...state, splitView: true }
+    case 'DISABLE_SPLIT':
+      return { ...state, splitView: false, panel2Sessions: new Set(), panel2EventKeys: new Set() }
+    case 'SET_DRAG_OVER':
+      return { ...state, dragOverPanel: action.panel }
+    case 'SET_DRAGGING':
+      return { ...state, isDragging: action.isDragging, edgeZoneHover: action.isDragging ? state.edgeZoneHover : false }
+    case 'SET_EDGE_HOVER':
+      return { ...state, edgeZoneHover: action.hover }
+  }
+}
+
+function getSessionId(event: Pick<EventRecord, 'session' | 'transcript_path'>) {
+  return event.session || event.transcript_path || 'ungrouped'
+}
+
+function handleTargetVisible() {}
+
+type EdgeDropZoneProps = {
+  edgeZoneHover: boolean
+  onDragEnter: () => void
+  onDragLeave: (e: React.DragEvent) => void
+  onDragOver: (e: React.DragEvent) => void
+  onDrop: (e: React.DragEvent) => void
+}
+
+function EdgeDropZone({ edgeZoneHover, onDragEnter, onDragLeave, onDragOver, onDrop }: EdgeDropZoneProps) {
+  return (
+    <div
+      className={cn(
+        'absolute right-0 top-0 bottom-0 z-[500] pointer-events-auto transition-all duration-150',
+        edgeZoneHover ? 'w-[38%]' : 'w-12'
+      )}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
+      {edgeZoneHover && (
+        <div className="h-full w-full bg-sky-500/10 border-l-2 border-sky-500/40 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-sky-400/90 select-none">
+            <Columns2 className="size-10 opacity-80" />
+            <span className="text-sm font-medium">Split here</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+<<<<<<< HEAD
   const [pendingEventLink, setPendingEventLink] = useState<PendingEventLink | null>(null)
   const [highlightedEventKey, setHighlightedEventKey] = useState<string | null>(null)
   const {
@@ -115,36 +222,8 @@ export function EventsPage() {
 
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const [splitView, setSplitView] = useState(false)
-  // session IDs whose entire session (including future events) lives in panel 2
-  const [panel2Sessions, setPanel2Sessions] = useState<Set<string>>(new Set())
-  // individual event keys pinned to panel 2
-  const [panel2EventKeys, setPanel2EventKeys] = useState<Set<string>>(new Set())
-  const [dragOverPanel, setDragOverPanel] = useState<1 | 2 | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [edgeZoneHover, setEdgeZoneHover] = useState(false)
-
-  const clearPanel2 = () => {
-    setPanel2Sessions(new Set())
-    setPanel2EventKeys(new Set())
-  }
-
-  useEffect(() => {
-    const onStart = () => setIsDragging(true)
-    const onEnd = () => {
-      setIsDragging(false)
-      setEdgeZoneHover(false)
-    }
-    document.addEventListener('dragstart', onStart)
-    document.addEventListener('dragend', onEnd)
-    return () => {
-      document.removeEventListener('dragstart', onStart)
-      document.removeEventListener('dragend', onEnd)
-    }
-  }, [])
-
-  const getSessionId = (event: Pick<EventRecord, 'session' | 'transcript_path'>) =>
-    event.session || event.transcript_path || 'ungrouped'
+  const [panelDrag, dispatchPanelDrag] = useReducer(panelDragReducer, initialPanelDragState)
+  const { splitView, panel2Sessions, panel2EventKeys, isDragging, dragOverPanel, edgeZoneHover } = panelDrag
 
   const inPanel2 = (event: EventRecord) =>
     panel2Sessions.has(getSessionId(event)) || panel2EventKeys.has(buildEventKey(event))
@@ -152,92 +231,37 @@ export function EventsPage() {
   const panel1Events = splitView ? filteredEvents.filter((e) => !inPanel2(e)) : filteredEvents
   const panel2Events = filteredEvents.filter((e) => inPanel2(e))
 
-  const addToPanel2 = (data: string) => {
-    if (data.startsWith('session:')) {
-      const sessionId = data.slice('session:'.length)
-      setPanel2Sessions((prev) => new Set([...prev, sessionId]))
-    } else {
-      setPanel2EventKeys((prev) => new Set([...prev, data]))
-    }
-  }
-
-  const removeFromPanel2 = (data: string) => {
-    if (data.startsWith('session:')) {
-      const sessionId = data.slice('session:'.length)
-      setPanel2Sessions((prev) => {
-        const next = new Set(prev)
-        next.delete(sessionId)
-        return next
-      })
-    } else {
-      setPanel2EventKeys((prev) => {
-        const next = new Set(prev)
-        next.delete(data)
-        return next
-      })
-    }
-  }
-
-  const handleDropToPanel = (targetPanel: 1 | 2) => (ev: React.DragEvent) => {
-    ev.preventDefault()
-    const data = ev.dataTransfer.getData('text/plain')
-    if (!data) return
-    if (targetPanel === 2) addToPanel2(data)
-    else removeFromPanel2(data)
-    setDragOverPanel(null)
-    setIsDragging(false)
-  }
-
-  const handleDragOver = (panel: 1 | 2) => (ev: React.DragEvent) => {
-    ev.preventDefault()
-    ev.dataTransfer.dropEffect = 'move'
-    setDragOverPanel(panel)
-  }
-
-  const handleDragLeave = (ev: React.DragEvent) => {
-    if (!ev.currentTarget.contains(ev.relatedTarget as Node)) {
-      setDragOverPanel(null)
-    }
-  }
-
-  const handleDropToEdge = (ev: React.DragEvent) => {
-    ev.preventDefault()
-    const data = ev.dataTransfer.getData('text/plain')
-    if (!data) return
-    if (!splitView) clearPanel2()
-    setSplitView(true)
-    addToPanel2(data)
-    setEdgeZoneHover(false)
-    setIsDragging(false)
-  }
+  const applyDeepLink = useCallback((sessionId: string, eventKey: string, nextParams: URLSearchParams) => {
+    setEventLink({ pendingEventLink: { sessionId, eventKey }, highlightedEventKey: eventKey })
+    setCollapsedSessions((prev) => {
+      if (!prev.has(sessionId)) return prev
+      const next = new Set(prev)
+      next.delete(sessionId)
+      return next
+    })
+    setSearchParams(nextParams, { replace: true })
+  }, [setCollapsedSessions, setSearchParams])
 
   useEffect(() => {
     const sessionId = searchParams.get('session') ?? ''
     const eventKey = searchParams.get('event') ?? ''
     if (!sessionId || !eventKey) return
-
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('session')
     nextParams.delete('event')
-    queueMicrotask(() => {
-      setPendingEventLink({ sessionId, eventKey })
-      setHighlightedEventKey(eventKey)
-      setCollapsedSessions((prev) => {
-        if (!prev.has(sessionId)) return prev
-        const next = new Set(prev)
-        next.delete(sessionId)
-        return next
-      })
-      setSearchParams(nextParams, { replace: true })
-    })
-  }, [searchParams, setCollapsedSessions, setSearchParams])
+    queueMicrotask(() => applyDeepLink(sessionId, eventKey, nextParams))
+  }, [searchParams, applyDeepLink])
 
   useEffect(() => {
-    if (!highlightedEventKey) return
-
-    const timeoutId = window.setTimeout(() => setHighlightedEventKey(null), 2500)
-    return () => window.clearTimeout(timeoutId)
-  }, [highlightedEventKey])
+    const onStart = () => dispatchPanelDrag({ type: 'SET_DRAGGING', isDragging: true })
+    const onEnd = () => dispatchPanelDrag({ type: 'SET_DRAGGING', isDragging: false })
+    document.addEventListener('dragstart', onStart)
+    document.addEventListener('dragend', onEnd)
+    return () => {
+      document.removeEventListener('dragstart', onStart)
+      document.removeEventListener('dragend', onEnd)
+    }
+  }, [])
 
   const toggleSession = (id: string) => {
     setCollapsedSessions((prev) => {
@@ -248,46 +272,39 @@ export function EventsPage() {
     })
   }
 
-  const clearPendingEventLink = () => {
-    setPendingEventLink(null)
+  const handleDropToPanel = (targetPanel: 1 | 2) => (ev: React.DragEvent) => {
+    ev.preventDefault()
+    const data = ev.dataTransfer.getData('text/plain')
+    if (!data) return
+    if (targetPanel === 2) dispatchPanelDrag({ type: 'ADD_TO_PANEL2', data })
+    else dispatchPanelDrag({ type: 'REMOVE_FROM_PANEL2', data })
+    dispatchPanelDrag({ type: 'SET_DRAG_OVER', panel: null })
+    dispatchPanelDrag({ type: 'SET_DRAGGING', isDragging: false })
   }
 
-  const handleActionFilterChange = (value: string) => {
-    clearPendingEventLink()
-    setActionFilter(value)
+  const handleDropToEdge = (ev: React.DragEvent) => {
+    ev.preventDefault()
+    const data = ev.dataTransfer.getData('text/plain')
+    if (!data) return
+    if (!splitView) dispatchPanelDrag({ type: 'CLEAR_PANEL2' })
+    dispatchPanelDrag({ type: 'ENABLE_SPLIT' })
+    dispatchPanelDrag({ type: 'ADD_TO_PANEL2', data })
+    dispatchPanelDrag({ type: 'SET_DRAGGING', isDragging: false })
   }
 
-  const handleAgentFilterChange = (value: string) => {
-    clearPendingEventLink()
-    setAgentFilter(value)
+  const handleDragOver = (panel: 1 | 2) => (ev: React.DragEvent) => {
+    ev.preventDefault()
+    ev.dataTransfer.dropEffect = 'move'
+    dispatchPanelDrag({ type: 'SET_DRAG_OVER', panel })
   }
 
-  const handleProjectFilterChange = (value: string) => {
-    clearPendingEventLink()
-    setProjectFilter(value)
+  const handleDragLeave = (ev: React.DragEvent) => {
+    if (!ev.currentTarget.contains(ev.relatedTarget as Node)) {
+      dispatchPanelDrag({ type: 'SET_DRAG_OVER', panel: null })
+    }
   }
 
-  const handleSortOrderChange = (value: string) => {
-    clearPendingEventLink()
-    setSortOrder(value)
-  }
-
-  const handleTimeRangeChange = (value: string) => {
-    clearPendingEventLink()
-    setTimeRange(value)
-  }
-
-  const handleCustomStartChange = (value: string) => {
-    clearPendingEventLink()
-    setCustomStart(value)
-  }
-
-  const handleCustomEndChange = (value: string) => {
-    clearPendingEventLink()
-    setCustomEnd(value)
-  }
-
-  const handleTargetVisible = () => {}
+  const clearLink = () => setEventLink((prev) => ({ ...prev, pendingEventLink: null }))
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#0c0c0c] relative">
@@ -295,7 +312,7 @@ export function EventsPage() {
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-between border-[#333] bg-black text-[#cccccc] hover:bg-white/[0.03] hover:text-[#cccccc]"
+          className="w-full justify-between border-[#333] bg-neutral-950 text-[#cccccc] hover:bg-white/[0.03] hover:text-[#cccccc]"
           onClick={() => setMobileFiltersOpen((open) => !open)}
           aria-expanded={mobileFiltersOpen}
           aria-controls="event-filters"
@@ -310,21 +327,21 @@ export function EventsPage() {
       <EventFilters
         id="event-filters"
         actionFilter={actionFilter}
-        setActionFilter={handleActionFilterChange}
+        setActionFilter={(v) => { clearLink(); setActionFilter(v) }}
         agentFilter={agentFilter}
-        setAgentFilter={handleAgentFilterChange}
+        setAgentFilter={(v) => { clearLink(); setAgentFilter(v) }}
         availableAgents={availableAgents}
         projectFilter={projectFilter}
-        setProjectFilter={handleProjectFilterChange}
+        setProjectFilter={(v) => { clearLink(); setProjectFilter(v) }}
         availableProjects={availableProjects}
         sortOrder={sortOrder}
-        setSortOrder={handleSortOrderChange}
+        setSortOrder={(v) => { clearLink(); setSortOrder(v) }}
         timeRange={timeRange}
-        setTimeRange={handleTimeRangeChange}
+        setTimeRange={(v) => { clearLink(); setTimeRange(v) }}
         customStart={customStart}
-        setCustomStart={handleCustomStartChange}
+        setCustomStart={(v) => { clearLink(); setCustomStart(v) }}
         customEnd={customEnd}
-        setCustomEnd={handleCustomEndChange}
+        setCustomEnd={(v) => { clearLink(); setCustomEnd(v) }}
         isLive={isLive}
         onToggleLive={setIsLive}
         onRefresh={() => {
@@ -335,12 +352,8 @@ export function EventsPage() {
         histLoading={histState.loading}
         splitView={splitView}
         onToggleSplit={() => {
-          if (splitView) {
-            setSplitView(false)
-            clearPanel2()
-          } else {
-            setSplitView(true)
-          }
+          if (splitView) dispatchPanelDrag({ type: 'DISABLE_SPLIT' })
+          else dispatchPanelDrag({ type: 'ENABLE_SPLIT' })
         }}
         className={mobileFiltersOpen ? 'sm:flex' : 'hidden sm:flex'}
       />
@@ -370,9 +383,9 @@ export function EventsPage() {
                   toggleSession={toggleSession}
                   sessionUsage={sessionUsage}
                   setTooltip={setTooltip}
-                  targetSessionId={pendingEventLink?.sessionId ?? null}
-                  targetEventKey={pendingEventLink?.eventKey ?? null}
-                  highlightedEventKey={highlightedEventKey}
+                  targetSessionId={eventLink.pendingEventLink?.sessionId ?? null}
+                  targetEventKey={eventLink.pendingEventLink?.eventKey ?? null}
+                  highlightedEventKey={eventLink.highlightedEventKey}
                   onTargetVisible={handleTargetVisible}
                   isEventDraggable
                 />
@@ -414,7 +427,7 @@ export function EventsPage() {
                   setTooltip={setTooltip}
                   targetSessionId={null}
                   targetEventKey={null}
-                  highlightedEventKey={highlightedEventKey}
+                  highlightedEventKey={eventLink.highlightedEventKey}
                   onTargetVisible={handleTargetVisible}
                   isEventDraggable
                 />
@@ -445,9 +458,9 @@ export function EventsPage() {
               toggleSession={toggleSession}
               sessionUsage={sessionUsage}
               setTooltip={setTooltip}
-              targetSessionId={pendingEventLink?.sessionId ?? null}
-              targetEventKey={pendingEventLink?.eventKey ?? null}
-              highlightedEventKey={highlightedEventKey}
+              targetSessionId={eventLink.pendingEventLink?.sessionId ?? null}
+              targetEventKey={eventLink.pendingEventLink?.eventKey ?? null}
+              highlightedEventKey={eventLink.highlightedEventKey}
               onTargetVisible={handleTargetVisible}
             />
           )}
@@ -469,7 +482,7 @@ export function EventsPage() {
 
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-[1000] bg-black text-[#ccc] px-2 py-1 text-[0.7rem] rounded border border-white/10"
+          className="fixed pointer-events-none z-[1000] bg-neutral-950 text-[#ccc] px-2 py-1 text-[0.7rem] rounded border border-white/10"
           style={{ top: tooltip.y + 10, left: tooltip.x + 10 }}
         >
           {tooltip.text}
@@ -477,30 +490,16 @@ export function EventsPage() {
       )}
 
       {isDragging && (
-        <div
-          className={cn(
-            'absolute right-0 top-0 bottom-0 z-[500] pointer-events-auto transition-all duration-150',
-            edgeZoneHover ? 'w-[38%]' : 'w-12'
-          )}
-          onDragEnter={() => setEdgeZoneHover(true)}
+        <EdgeDropZone
+          edgeZoneHover={edgeZoneHover}
+          onDragEnter={() => dispatchPanelDrag({ type: 'SET_EDGE_HOVER', hover: true })}
           onDragLeave={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) setEdgeZoneHover(false)
+            if (!e.currentTarget.contains(e.relatedTarget as Node))
+              dispatchPanelDrag({ type: 'SET_EDGE_HOVER', hover: false })
           }}
-          onDragOver={(e) => {
-            e.preventDefault()
-            e.dataTransfer.dropEffect = 'move'
-          }}
+          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
           onDrop={handleDropToEdge}
-        >
-          {edgeZoneHover && (
-            <div className="h-full w-full bg-sky-500/10 border-l-2 border-sky-500/40 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3 text-sky-400/90 select-none">
-                <Columns2 className="size-10 opacity-80" />
-                <span className="text-sm font-medium">Split here</span>
-              </div>
-            </div>
-          )}
-        </div>
+        />
       )}
     </div>
   )

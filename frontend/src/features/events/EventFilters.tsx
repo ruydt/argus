@@ -75,7 +75,7 @@ export function EventFilters({
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <span className="text-[0.7rem] text-[#666]">Action</span>
         <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[100px] focus:ring-0 focus:ring-offset-0">
+          <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[100px] focus:ring-0 focus:ring-offset-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
@@ -110,7 +110,7 @@ export function EventFilters({
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <span className="text-[0.7rem] text-[#666]">Agent</span>
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[120px] focus:ring-0 focus:ring-offset-0">
+            <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[120px] focus:ring-0 focus:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
@@ -131,7 +131,7 @@ export function EventFilters({
         <div className="flex w-full items-center gap-2 sm:w-auto">
           <span className="text-[0.7rem] text-[#666]">Project</span>
           <Select value={projectFilter} onValueChange={setProjectFilter}>
-            <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[140px] focus:ring-0 focus:ring-offset-0">
+            <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[140px] focus:ring-0 focus:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
@@ -151,7 +151,7 @@ export function EventFilters({
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <span className="text-[0.7rem] text-[#666]">Sort</span>
         <Select value={sortOrder} onValueChange={setSortOrder}>
-          <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[110px] focus:ring-0 focus:ring-offset-0">
+          <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[110px] focus:ring-0 focus:ring-offset-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">

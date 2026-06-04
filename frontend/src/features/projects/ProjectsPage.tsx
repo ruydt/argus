@@ -3,27 +3,26 @@ import { Link } from 'react-router-dom'
 import { FolderKanban } from 'lucide-react'
 import type { Project } from '@/types/sessions'
 
+async function loadProjects(signal: AbortSignal): Promise<Project[]> {
+  const res = await fetch('/api/projects', { signal })
+  if (!res.ok) return []
+  const data = (await res.json()) as { projects?: Project[] }
+  return data.projects || []
+}
+
 export function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
+  const [projects, setProjects] = useState<Project[] | null>(null)
 
   useEffect(() => {
-    let mounted = true
-    const fetchProjects = async () => {
-      try {
-        const res = await fetch('/api/projects')
-        if (!res.ok) return
-        const data = (await res.json()) as { projects?: Project[] }
-        if (mounted) setProjects(data.projects || [])
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-
-    fetchProjects()
-    const interval = window.setInterval(fetchProjects, 10_000)
+    const controller = new AbortController()
+    loadProjects(controller.signal)
+      .then(setProjects)
+      .catch((err: unknown) => { if ((err as Error).name !== 'AbortError') setProjects([]) })
+    const interval = window.setInterval(() => {
+      loadProjects(controller.signal).then(setProjects).catch(() => {})
+    }, 10_000)
     return () => {
-      mounted = false
+      controller.abort()
       window.clearInterval(interval)
     }
   }, [])
@@ -38,8 +37,8 @@ export function ProjectsPage() {
       </header>
 
       <main className="flex-1 overflow-auto p-6">
-        {loading ? (
-          <div className="text-sm text-white/45">Loading projects...</div>
+        {projects === null ? (
+          <div className="text-sm text-white/45">Loading projects…</div>
         ) : projects.length === 0 ? (
           <div className="text-sm text-white/55">
             No projects yet. Start a Claude Code or Codex session to see it here.
@@ -56,7 +55,7 @@ export function ProjectsPage() {
               >
                 <div className="flex items-start gap-3">
                   <div className="rounded-md border border-white/10 bg-black/30 p-2 text-white/70">
-                    <FolderKanban className="h-4 w-4" />
+                    <FolderKanban className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

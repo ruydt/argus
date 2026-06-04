@@ -38,7 +38,7 @@ export function CopyIconButton({ text, label, className }: CopyIconButtonProps) 
       aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
       title={copied ? 'Copied' : 'Copy'}
     >
-      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
     </button>
   )
 }

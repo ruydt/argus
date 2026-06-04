@@ -79,7 +79,7 @@ export function PatchBlock({ text, startLine = 1 }: PatchBlockProps) {
     <div className="diff-block">
       {rows.map((r, i) => (
         <div
-          key={`p-${i}`}
+          key={`p-${r.num > 0 ? r.num : 'sep'}-${r.kind}-${i}`}
           className={`diff-line ${r.kind === 'add' ? 'diff-added' : r.kind === 'del' ? 'diff-removed' : 'diff-ctx'} ${r.text === '...' ? 'diff-hunk-sep' : ''}`}
         >
           <span className="diff-ln">{r.num > 0 ? r.num : ''}</span>

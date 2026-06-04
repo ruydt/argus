@@ -40,12 +40,13 @@ export function PaginationBar({
               onPageSizeChange(v)
               onPageChange(0)
             }}
-            className="w-[60px] bg-black border border-white/[0.1] rounded px-1.5 py-0.5 text-[0.72rem] text-[#ccc] text-center focus:outline-none focus:border-white/20"
+            className="w-[60px] bg-neutral-950 border border-white/[0.1] rounded px-1.5 py-0.5 text-[0.72rem] text-[#ccc] text-center focus:outline-none focus:border-white/20"
           />
         </label>
       </div>
       <div className="flex items-center gap-1">
         <button
+          type="button"
           disabled={page <= 0}
           onClick={() => onPageChange(0)}
           className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
@@ -53,6 +54,7 @@ export function PaginationBar({
           ««
         </button>
         <button
+          type="button"
           disabled={page <= 0}
           onClick={() => onPageChange(page - 1)}
           className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
@@ -63,6 +65,7 @@ export function PaginationBar({
           {page + 1} / {totalPages}
         </span>
         <button
+          type="button"
           disabled={page >= totalPages - 1}
           onClick={() => onPageChange(page + 1)}
           className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
@@ -70,6 +73,7 @@ export function PaginationBar({
           »
         </button>
         <button
+          type="button"
           disabled={page >= totalPages - 1}
           onClick={() => onPageChange(totalPages - 1)}
           className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"

@@ -76,7 +76,7 @@ export function SessionListPage() {
 
       <main className="flex-1 overflow-auto p-6">
         {loading ? (
-          <div className="text-sm text-white/45">Loading sessions...</div>
+          <div className="text-sm text-white/45">Loading sessions…</div>
         ) : sessions.length === 0 ? (
           <div className="text-sm text-white/55">No sessions for this project.</div>
         ) : (
@@ -135,7 +135,7 @@ export function SessionListPage() {
             </div>
             {/* Infinite scroll sentinel */}
             <div ref={sentinelRef} className="flex justify-center py-4">
-              {loadingMore && <span className="text-xs text-white/40">Loading more...</span>}
+              {loadingMore && <span className="text-xs text-white/40">Loading more…</span>}
             </div>
           </>
         )}

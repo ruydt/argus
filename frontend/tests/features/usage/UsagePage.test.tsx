@@ -84,7 +84,7 @@ describe('UsagePage', () => {
     const btn = screen.getByRole('button', { name: 'Loading...' })
     expect(btn).toBeDisabled()
     // Loading spinner panel is rendered
-    expect(screen.getByText('Loading usage data...')).toBeInTheDocument()
+    expect(screen.getByText('Loading usage data…')).toBeInTheDocument()
     // Verify that the auto-fetch effect was actually triggered
     expect(fetchMock).toHaveBeenCalled()
   })

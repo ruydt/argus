@@ -80,7 +80,7 @@ export interface DashboardStats {
 
 const statsCache = new Map<string, DashboardStats>()
 
-export function normalizeDashboardStats(raw: Partial<DashboardStats>): DashboardStats {
+function normalizeDashboardStats(raw: Partial<DashboardStats>): DashboardStats {
   const agentUsage = Array.isArray(raw.agent_usage)
     ? raw.agent_usage.map((usage) => ({
         provider: usage.provider || providerForAgent(usage.agent),

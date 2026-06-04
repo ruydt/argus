@@ -12,6 +12,17 @@ function getSessions(payload: SessionsResponse): Session[] {
   return Array.isArray(payload) ? payload : (payload.sessions ?? [])
 }
 
+async function loadSession(
+  cwd: string,
+  sessionId: string,
+  signal: AbortSignal
+): Promise<Session | null> {
+  const res = await fetch(`/api/sessions?cwd=${encodeURIComponent(cwd)}`, { signal })
+  if (!res.ok) return null
+  const data = (await res.json()) as SessionsResponse
+  return getSessions(data).find((item) => item.session_id === sessionId) ?? null
+}
+
 function formatDateTime(value?: string): string {
   if (!value) return '-'
   const time = new Date(value).getTime()
@@ -32,30 +43,11 @@ export function SessionFileChangesPage() {
   const { groups: fileGroups, loading, error } = useFileChanges(sessionId)
 
   useEffect(() => {
-    let mounted = true
-
-    async function fetchSession() {
-      if (mounted) setSession(null)
-      try {
-        const res = await fetch(`/api/sessions?cwd=${encodeURIComponent(cwd)}`)
-        if (!res.ok) {
-          if (mounted) setSession(null)
-          return
-        }
-        const data = (await res.json()) as SessionsResponse
-        const sessions = getSessions(data)
-        if (mounted) {
-          setSession(sessions.find((item) => item.session_id === sessionId) || null)
-        }
-      } catch {
-        if (mounted) setSession(null)
-      }
-    }
-
-    fetchSession()
-    return () => {
-      mounted = false
-    }
+    const controller = new AbortController()
+    loadSession(cwd, sessionId, controller.signal)
+      .then(setSession)
+      .catch((err: unknown) => { if ((err as Error).name !== 'AbortError') setSession(null) })
+    return () => controller.abort()
   }, [cwd, sessionId])
 
   const fileCount = fileGroups.length

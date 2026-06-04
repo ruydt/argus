@@ -1,0 +1,21 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "files": ["src/components/ui/**"],
+    "overrides": [
+      {
+        "files": [
+          "src/features/dashboard/ActivityPanel.tsx",
+          "src/features/dashboard/TokenTimelineChart.tsx",
+          "src/features/dashboard/TokenUsageChart.tsx",
+          "src/features/usage/UsageCharts.tsx"
+        ],
+        "rules": ["react-doctor/prefer-dynamic-import"]
+      },
+      {
+        "files": ["src/features/events/EventsPage.tsx"],
+        "rules": ["react-doctor/prefer-use-effect-event"]
+      }
+    ]
+  }
+}
