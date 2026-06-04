@@ -38,20 +38,13 @@ describe('RawPayloadModal', () => {
   it('shows error message when fetch fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')))
     renderModal()
-    await waitFor(() =>
-      expect(screen.getByText(/failed to load raw payload/i)).toBeTruthy()
-    )
+    await waitFor(() => expect(screen.getByText(/failed to load raw payload/i)).toBeTruthy())
   })
 
   it('shows error message when fetch returns non-ok status', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 404 })
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }))
     renderModal()
-    await waitFor(() =>
-      expect(screen.getByText(/failed to load raw payload/i)).toBeTruthy()
-    )
+    await waitFor(() => expect(screen.getByText(/failed to load raw payload/i)).toBeTruthy())
   })
 
   it('does not fetch when modal is closed', () => {

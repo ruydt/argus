@@ -143,7 +143,11 @@ function ChangeRow({ ev, sessionStart }: ChangeRowProps) {
         )}
         onClick={canExpand ? () => setExpanded((v) => !v) : undefined}
         disabled={!canExpand}
-        style={!canExpand ? { cursor: 'default', background: 'none', border: 'none', padding: 0 } : undefined}
+        style={
+          !canExpand
+            ? { cursor: 'default', background: 'none', border: 'none', padding: 0 }
+            : undefined
+        }
       >
         <span
           className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium text-white"

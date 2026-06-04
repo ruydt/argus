@@ -81,7 +81,13 @@ export function Layout() {
     searchQuery: '',
     isDesktopViewport: window.matchMedia(DESKTOP_MEDIA_QUERY).matches,
   }))
-  const { mobileDrawerLocationKey, sidebarCollapsed, collapsedSessions, searchQuery, isDesktopViewport } = state
+  const {
+    mobileDrawerLocationKey,
+    sidebarCollapsed,
+    collapsedSessions,
+    searchQuery,
+    isDesktopViewport,
+  } = state
   const [now, setNow] = useState(() => new Date())
   const location = useLocation()
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null)

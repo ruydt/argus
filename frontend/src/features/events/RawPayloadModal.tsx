@@ -28,10 +28,9 @@ type RawPayloadModalProps = {
 }
 
 export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadModalProps) {
-  const [payload, setPayload] = useReducer(
-    (_: PayloadState, next: PayloadState) => next,
-    { status: 'idle' } as PayloadState
-  )
+  const [payload, setPayload] = useReducer((_: PayloadState, next: PayloadState) => next, {
+    status: 'idle',
+  } as PayloadState)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -60,7 +59,12 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose()
+      }}
+    >
       <DialogContent className="flex max-h-[80vh] w-[90vw] sm:max-w-4xl flex-col gap-3">
         <DialogHeader>
           <DialogTitle className="font-mono text-xs text-[#8b949e]">{label}</DialogTitle>
@@ -72,7 +76,10 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
           </Alert>
         )}
         {payload.status === 'ready' && (
-          <section className="relative rounded-md border flex-1 min-h-0 flex flex-col" aria-label="Raw payload JSON">
+          <section
+            className="relative rounded-md border flex-1 min-h-0 flex flex-col"
+            aria-label="Raw payload JSON"
+          >
             <button
               type="button"
               onClick={handleCopy}
@@ -80,26 +87,25 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
               aria-label="Copy JSON"
               title="Copy JSON"
             >
-              {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
+              {copied ? (
+                <Check className="size-3.5 text-green-400" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
             </button>
             <div className="overflow-y-auto flex-1 min-h-0">
-            <CodeMirror
-              value={payload.rawJson}
-              theme="none"
-              extensions={[
-                json(),
-                hookerEditorTheme,
-                hookerHighlighting,
-                ...readOnlyExtensions,
-              ]}
-              basicSetup={{
-                lineNumbers: true,
-                highlightActiveLine: true,
-                bracketMatching: true,
-                autocompletion: false,
-                foldGutter: true,
-              }}
-            />
+              <CodeMirror
+                value={payload.rawJson}
+                theme="none"
+                extensions={[json(), hookerEditorTheme, hookerHighlighting, ...readOnlyExtensions]}
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLine: true,
+                  bracketMatching: true,
+                  autocompletion: false,
+                  foldGutter: true,
+                }}
+              />
             </div>
           </section>
         )}

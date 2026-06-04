@@ -227,7 +227,10 @@ describe('DiagnosticsPage', () => {
         return Promise.resolve({ ok: true, json: async () => emptyHooksConfig })
       }
       // First diagnostics call resolves immediately; subsequent (refresh) hangs
-      if (fetchMock.mock.calls.filter((c: unknown[]) => !String(c[0]).includes('hooks-config')).length <= 1) {
+      if (
+        fetchMock.mock.calls.filter((c: unknown[]) => !String(c[0]).includes('hooks-config'))
+          .length <= 1
+      ) {
         return Promise.resolve({ ok: true, json: async () => healthyDiagnostics })
       }
       return refreshPromise

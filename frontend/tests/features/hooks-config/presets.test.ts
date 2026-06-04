@@ -101,7 +101,7 @@ describe('removeHookerHooks', () => {
     const config: HooksConfig = {
       hooks: {
         PostToolUse: [
-          { hooks: [hookerEntry()] },           // becomes empty → dropped
+          { hooks: [hookerEntry()] }, // becomes empty → dropped
           { hooks: [userEntry(), hookerEntry()] }, // one user entry remains
         ],
       },

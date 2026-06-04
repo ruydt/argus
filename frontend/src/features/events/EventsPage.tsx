@@ -80,7 +80,11 @@ function panelDragReducer(state: PanelDragState, action: PanelDragAction): Panel
     case 'SET_DRAG_OVER':
       return { ...state, dragOverPanel: action.panel }
     case 'SET_DRAGGING':
-      return { ...state, isDragging: action.isDragging, edgeZoneHover: action.isDragging ? state.edgeZoneHover : false }
+      return {
+        ...state,
+        isDragging: action.isDragging,
+        edgeZoneHover: action.isDragging ? state.edgeZoneHover : false,
+      }
     case 'SET_EDGE_HOVER':
       return { ...state, edgeZoneHover: action.hover }
   }
@@ -100,7 +104,13 @@ type EdgeDropZoneProps = {
   onDrop: (e: React.DragEvent) => void
 }
 
-function EdgeDropZone({ edgeZoneHover, onDragEnter, onDragLeave, onDragOver, onDrop }: EdgeDropZoneProps) {
+function EdgeDropZone({
+  edgeZoneHover,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
+  onDrop,
+}: EdgeDropZoneProps) {
   return (
     <div
       className={cn(
@@ -126,7 +136,10 @@ function EdgeDropZone({ edgeZoneHover, onDragEnter, onDragLeave, onDragOver, onD
 
 export function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [eventLink, setEventLink] = useState<EventLinkState>({ pendingEventLink: null, highlightedEventKey: null })
+  const [eventLink, setEventLink] = useState<EventLinkState>({
+    pendingEventLink: null,
+    highlightedEventKey: null,
+  })
   const {
     collapsedSessions,
     setCollapsedSessions,
@@ -221,7 +234,8 @@ export function EventsPage() {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [panelDrag, dispatchPanelDrag] = useReducer(panelDragReducer, initialPanelDragState)
-  const { splitView, panel2Sessions, panel2EventKeys, isDragging, dragOverPanel, edgeZoneHover } = panelDrag
+  const { splitView, panel2Sessions, panel2EventKeys, isDragging, dragOverPanel, edgeZoneHover } =
+    panelDrag
 
   const inPanel2 = (event: EventRecord) =>
     panel2Sessions.has(getSessionId(event)) || panel2EventKeys.has(buildEventKey(event))
@@ -229,16 +243,19 @@ export function EventsPage() {
   const panel1Events = splitView ? filteredEvents.filter((e) => !inPanel2(e)) : filteredEvents
   const panel2Events = filteredEvents.filter((e) => inPanel2(e))
 
-  const applyDeepLink = useCallback((sessionId: string, eventKey: string, nextParams: URLSearchParams) => {
-    setEventLink({ pendingEventLink: { sessionId, eventKey }, highlightedEventKey: eventKey })
-    setCollapsedSessions((prev) => {
-      if (!prev.has(sessionId)) return prev
-      const next = new Set(prev)
-      next.delete(sessionId)
-      return next
-    })
-    setSearchParams(nextParams, { replace: true })
-  }, [setCollapsedSessions, setSearchParams])
+  const applyDeepLink = useCallback(
+    (sessionId: string, eventKey: string, nextParams: URLSearchParams) => {
+      setEventLink({ pendingEventLink: { sessionId, eventKey }, highlightedEventKey: eventKey })
+      setCollapsedSessions((prev) => {
+        if (!prev.has(sessionId)) return prev
+        const next = new Set(prev)
+        next.delete(sessionId)
+        return next
+      })
+      setSearchParams(nextParams, { replace: true })
+    },
+    [setCollapsedSessions, setSearchParams]
+  )
 
   useEffect(() => {
     const sessionId = searchParams.get('session') ?? ''
@@ -325,21 +342,42 @@ export function EventsPage() {
       <EventFilters
         id="event-filters"
         actionFilter={actionFilter}
-        setActionFilter={(v) => { clearLink(); setActionFilter(v) }}
+        setActionFilter={(v) => {
+          clearLink()
+          setActionFilter(v)
+        }}
         agentFilter={agentFilter}
-        setAgentFilter={(v) => { clearLink(); setAgentFilter(v) }}
+        setAgentFilter={(v) => {
+          clearLink()
+          setAgentFilter(v)
+        }}
         availableAgents={availableAgents}
         projectFilter={projectFilter}
-        setProjectFilter={(v) => { clearLink(); setProjectFilter(v) }}
+        setProjectFilter={(v) => {
+          clearLink()
+          setProjectFilter(v)
+        }}
         availableProjects={availableProjects}
         sortOrder={sortOrder}
-        setSortOrder={(v) => { clearLink(); setSortOrder(v) }}
+        setSortOrder={(v) => {
+          clearLink()
+          setSortOrder(v)
+        }}
         timeRange={timeRange}
-        setTimeRange={(v) => { clearLink(); setTimeRange(v) }}
+        setTimeRange={(v) => {
+          clearLink()
+          setTimeRange(v)
+        }}
         customStart={customStart}
-        setCustomStart={(v) => { clearLink(); setCustomStart(v) }}
+        setCustomStart={(v) => {
+          clearLink()
+          setCustomStart(v)
+        }}
         customEnd={customEnd}
-        setCustomEnd={(v) => { clearLink(); setCustomEnd(v) }}
+        setCustomEnd={(v) => {
+          clearLink()
+          setCustomEnd(v)
+        }}
         isLive={isLive}
         onToggleLive={setIsLive}
         onRefresh={() => {
@@ -495,7 +533,10 @@ export function EventsPage() {
             if (!e.currentTarget.contains(e.relatedTarget as Node))
               dispatchPanelDrag({ type: 'SET_EDGE_HOVER', hover: false })
           }}
-          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+          onDragOver={(e) => {
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+          }}
           onDrop={handleDropToEdge}
         />
       )}

@@ -72,7 +72,10 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
       {viewMode === 'json' && (
         <div className="flex flex-col gap-1">
           <section
-            className={cn('relative rounded-md border overflow-hidden', !jsonIsValid && 'border-destructive')}
+            className={cn(
+              'relative rounded-md border overflow-hidden',
+              !jsonIsValid && 'border-destructive'
+            )}
             aria-label="Hooks config JSON"
           >
             <button
@@ -82,7 +85,11 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
               aria-label="Copy JSON"
               title="Copy JSON"
             >
-              {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
+              {copied ? (
+                <Check className="size-3.5 text-green-400" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
             </button>
             <CodeMirror
               value={draftJSON}

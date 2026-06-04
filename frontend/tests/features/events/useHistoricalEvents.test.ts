@@ -28,7 +28,12 @@ describe('useHistoricalEvents', () => {
     const events = [makeEvent(), makeEvent()]
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ events, has_more: false, next_cursor: 0 }) })
+      vi
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ events, has_more: false, next_cursor: 0 }),
+        })
     )
 
     const { result } = renderHook(() =>
@@ -54,10 +59,9 @@ describe('useHistoricalEvents', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    const { rerender } = renderHook(
-      ({ since }) => useHistoricalEvents(since, '', '', false),
-      { initialProps: { since: '2026-06-01T00:00:00Z' } }
-    )
+    const { rerender } = renderHook(({ since }) => useHistoricalEvents(since, '', '', false), {
+      initialProps: { since: '2026-06-01T00:00:00Z' },
+    })
 
     rerender({ since: '2026-06-01T00:00:01Z' })
     rerender({ since: '2026-06-01T00:00:02Z' })
@@ -67,13 +71,17 @@ describe('useHistoricalEvents', () => {
   })
 
   it('does not fetch on rerender when enabled=true and since is constant', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ events: [], has_more: false, next_cursor: 0 }) })
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ events: [], has_more: false, next_cursor: 0 }),
+      })
     vi.stubGlobal('fetch', fetchMock)
 
-    const { rerender } = renderHook(
-      ({ since }) => useHistoricalEvents(since, '', '', true),
-      { initialProps: { since: '2026-06-01T00:00:00Z' } }
-    )
+    const { rerender } = renderHook(({ since }) => useHistoricalEvents(since, '', '', true), {
+      initialProps: { since: '2026-06-01T00:00:00Z' },
+    })
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
 
@@ -89,13 +97,17 @@ describe('useHistoricalEvents', () => {
     const page2 = [makeEvent({ dedup_key: 'c' })]
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ events: page1, has_more: true, next_cursor: 42 }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ events: page2, has_more: false, next_cursor: 0 }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ events: page1, has_more: true, next_cursor: 42 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ events: page2, has_more: false, next_cursor: 0 }),
+      })
     vi.stubGlobal('fetch', fetchMock)
 
-    const { result } = renderHook(() =>
-      useHistoricalEvents('2026-06-01T00:00:00Z', '', '', true)
-    )
+    const { result } = renderHook(() => useHistoricalEvents('2026-06-01T00:00:00Z', '', '', true))
 
     await waitFor(() => expect(result.current.events).toHaveLength(2))
     expect(result.current.hasMore).toBe(true)
@@ -112,12 +124,13 @@ describe('useHistoricalEvents', () => {
   it('refresh resets state and re-fetches from scratch', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue({ ok: true, json: async () => ({ events: [makeEvent()], has_more: false, next_cursor: 0 }) })
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ events: [makeEvent()], has_more: false, next_cursor: 0 }),
+      })
     vi.stubGlobal('fetch', fetchMock)
 
-    const { result } = renderHook(() =>
-      useHistoricalEvents('2026-06-01T00:00:00Z', '', '', true)
-    )
+    const { result } = renderHook(() => useHistoricalEvents('2026-06-01T00:00:00Z', '', '', true))
 
     await waitFor(() => expect(result.current.events).toHaveLength(1))
 
@@ -129,14 +142,9 @@ describe('useHistoricalEvents', () => {
   })
 
   it('sets error on fetch failure', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({ ok: false, status: 500 })
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
 
-    const { result } = renderHook(() =>
-      useHistoricalEvents('', '', '', true)
-    )
+    const { result } = renderHook(() => useHistoricalEvents('', '', '', true))
 
     await waitFor(() => expect(result.current.error).not.toBeNull())
     expect(result.current.loading).toBe(false)

@@ -13,4 +13,3 @@ export function OpenAILogo({ size = 14 }: { size?: number }) {
     </svg>
   )
 }
-

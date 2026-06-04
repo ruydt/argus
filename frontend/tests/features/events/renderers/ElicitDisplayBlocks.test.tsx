@@ -5,22 +5,13 @@ import { DisplayBlock } from '@/features/events/renderers/DisplayBlock'
 
 describe('ElicitBlock', () => {
   it('renders server name and prompt', () => {
-    render(
-      <ElicitBlock serverName="memory" prompt="Should I delete these files?" searchQuery="" />
-    )
+    render(<ElicitBlock serverName="memory" prompt="Should I delete these files?" searchQuery="" />)
     expect(screen.getByText('memory')).toBeTruthy()
     expect(screen.getByText('Should I delete these files?')).toBeTruthy()
   })
 
   it('renders response when present', () => {
-    render(
-      <ElicitBlock
-        serverName="memory"
-        prompt="Delete files?"
-        response="No"
-        searchQuery=""
-      />
-    )
+    render(<ElicitBlock serverName="memory" prompt="Delete files?" response="No" searchQuery="" />)
     expect(screen.getByText('No')).toBeTruthy()
   })
 

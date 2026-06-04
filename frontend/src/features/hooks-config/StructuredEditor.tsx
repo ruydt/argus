@@ -80,7 +80,8 @@ function emptyEntry(): HookEntry {
   return {
     id: crypto.randomUUID(),
     type: 'command',
-    command: "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+    command:
+      "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
     statusMessage: HOOKER_STATUS_MESSAGE,
   }
 }
@@ -391,7 +392,6 @@ export function StructuredEditor({ config, agent, onChange }: StructuredEditorPr
           </div>
         )
       })}
-
     </div>
   )
 }

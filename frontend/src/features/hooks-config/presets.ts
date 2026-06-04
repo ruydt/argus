@@ -9,7 +9,14 @@ function hookerGroup(matcher?: string): HookGroup {
   return {
     id: crypto.randomUUID(),
     ...(matcher !== undefined ? { matcher } : {}),
-    hooks: [{ id: crypto.randomUUID(), type: 'command', command: HOOK_CMD, statusMessage: HOOKER_STATUS_MESSAGE }],
+    hooks: [
+      {
+        id: crypto.randomUUID(),
+        type: 'command',
+        command: HOOK_CMD,
+        statusMessage: HOOKER_STATUS_MESSAGE,
+      },
+    ],
   }
 }
 

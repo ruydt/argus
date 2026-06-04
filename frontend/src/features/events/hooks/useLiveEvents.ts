@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router-dom'
 import type { EventRecord } from '@/types'
 import { buildEventKey } from '../eventKey'
 
-export function useLiveEvents(sessionFilterOverride = '', { enabled = true }: { enabled?: boolean } = {}) {
+export function useLiveEvents(
+  sessionFilterOverride = '',
+  { enabled = true }: { enabled?: boolean } = {}
+) {
   const [searchParams] = useSearchParams()
   const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
   const [events, setEvents] = useState<EventRecord[]>([])

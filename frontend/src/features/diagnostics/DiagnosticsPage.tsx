@@ -123,13 +123,7 @@ function AgentStatusCell({ status }: { status: string }) {
   }
 }
 
-function HookConfigCell({
-  hookConfigStatus,
-  label,
-}: {
-  hookConfigStatus: string
-  label?: string
-}) {
+function HookConfigCell({ hookConfigStatus, label }: { hookConfigStatus: string; label?: string }) {
   if (hookConfigStatus === 'missing') {
     return (
       <Badge variant="outline" className={BADGE_RED}>
@@ -167,16 +161,22 @@ function PrivacySecurityCard({ data }: { data: Diagnostics }) {
           <span className="flex items-center gap-1">
             <MonoPath path={data.privacy.ignoreFile.path} ariaLabel="Copy ignore file path" />
             {data.privacy.ignoreFile.status === 'loaded' && (
-              <Badge variant="outline" className={BADGE_GREEN}>Active</Badge>
+              <Badge variant="outline" className={BADGE_GREEN}>
+                Active
+              </Badge>
             )}
             {data.privacy.ignoreFile.status === 'missing_ok' && (
               <span className="text-[12px] text-muted-foreground">Not configured</span>
             )}
             {data.privacy.ignoreFile.status === 'missing' && (
-              <Badge variant="outline" className={BADGE_AMBER}>Missing</Badge>
+              <Badge variant="outline" className={BADGE_AMBER}>
+                Missing
+              </Badge>
             )}
             {data.privacy.ignoreFile.status === 'error' && (
-              <Badge variant="outline" className={BADGE_RED}>Error</Badge>
+              <Badge variant="outline" className={BADGE_RED}>
+                Error
+              </Badge>
             )}
           </span>
         </div>
@@ -190,12 +190,20 @@ function PrivacySecurityCard({ data }: { data: Diagnostics }) {
           <span className="text-muted-foreground">Bind Posture</span>
           <span className="flex items-center gap-1">
             <span className="text-[13px]">{data.security.remoteBind.addr}</span>
-            {data.security.remoteBind.status === 'loopback' && !data.security.remoteBind.allowRemote ? (
-              <Badge variant="outline" className={BADGE_GREEN}>Loopback only</Badge>
-            ) : data.security.remoteBind.status === 'remote' || data.security.remoteBind.allowRemote ? (
-              <Badge variant="outline" className={BADGE_RED}>Remote enabled</Badge>
+            {data.security.remoteBind.status === 'loopback' &&
+            !data.security.remoteBind.allowRemote ? (
+              <Badge variant="outline" className={BADGE_GREEN}>
+                Loopback only
+              </Badge>
+            ) : data.security.remoteBind.status === 'remote' ||
+              data.security.remoteBind.allowRemote ? (
+              <Badge variant="outline" className={BADGE_RED}>
+                Remote enabled
+              </Badge>
             ) : (
-              <span className="text-[12px] text-muted-foreground">{data.security.remoteBind.status}</span>
+              <span className="text-[12px] text-muted-foreground">
+                {data.security.remoteBind.status}
+              </span>
             )}
           </span>
         </div>
@@ -207,10 +215,13 @@ function PrivacySecurityCard({ data }: { data: Diagnostics }) {
               {data.security.cors.totalOrigins} total, {data.security.cors.localOrigins} local
             </span>
             {data.security.cors.extraOrigins === 0 ? (
-              <Badge variant="outline" className={BADGE_GREEN}>Local only</Badge>
+              <Badge variant="outline" className={BADGE_GREEN}>
+                Local only
+              </Badge>
             ) : (
               <Badge variant="outline" className={BADGE_AMBER}>
-                {data.security.cors.extraOrigins} extra origin{data.security.cors.extraOrigins === 1 ? '' : 's'}
+                {data.security.cors.extraOrigins} extra origin
+                {data.security.cors.extraOrigins === 1 ? '' : 's'}
               </Badge>
             )}
           </span>

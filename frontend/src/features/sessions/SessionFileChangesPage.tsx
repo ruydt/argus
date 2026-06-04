@@ -46,7 +46,9 @@ export function SessionFileChangesPage() {
     const controller = new AbortController()
     loadSession(cwd, sessionId, controller.signal)
       .then(setSession)
-      .catch((err: unknown) => { if ((err as Error).name !== 'AbortError') setSession(null) })
+      .catch((err: unknown) => {
+        if ((err as Error).name !== 'AbortError') setSession(null)
+      })
     return () => controller.abort()
   }, [cwd, sessionId])
 

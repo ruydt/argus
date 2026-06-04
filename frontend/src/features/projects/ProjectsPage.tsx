@@ -17,9 +17,13 @@ export function ProjectsPage() {
     const controller = new AbortController()
     loadProjects(controller.signal)
       .then(setProjects)
-      .catch((err: unknown) => { if ((err as Error).name !== 'AbortError') setProjects([]) })
+      .catch((err: unknown) => {
+        if ((err as Error).name !== 'AbortError') setProjects([])
+      })
     const interval = window.setInterval(() => {
-      loadProjects(controller.signal).then(setProjects).catch(() => {})
+      loadProjects(controller.signal)
+        .then(setProjects)
+        .catch(() => {})
     }, 10_000)
     return () => {
       controller.abort()

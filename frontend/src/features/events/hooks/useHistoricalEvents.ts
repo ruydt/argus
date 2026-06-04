@@ -13,7 +13,7 @@ export function useHistoricalEvents(
   since: string,
   until: string,
   sessionFilter: string,
-  enabled: boolean,
+  enabled: boolean
 ) {
   const [events, setEvents] = useState<EventRecord[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -40,7 +40,7 @@ export function useHistoricalEvents(
       const qs = params.toString()
       return `/api/events${qs ? `?${qs}` : ''}`
     },
-    [since, until, sessionFilter],
+    [since, until, sessionFilter]
   )
 
   const fetchPage = useCallback(
@@ -80,7 +80,7 @@ export function useHistoricalEvents(
         setLoading(false)
       }
     },
-    [buildUrl],
+    [buildUrl]
   )
 
   // Re-fetch from scratch whenever params or enabled change.

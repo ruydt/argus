@@ -44,7 +44,7 @@ describe('useEventFilters — sessionFilter', () => {
 
     const { result } = renderHook(
       () => useEventFilters(events, '', vi.fn(), '', '15m', vi.fn(), '', vi.fn(), '', vi.fn()),
-      { wrapper: makeWrapper('?session=target-session') },
+      { wrapper: makeWrapper('?session=target-session') }
     )
 
     expect(result.current.filteredEvents).toHaveLength(1)
@@ -71,7 +71,7 @@ describe('useEventFilters — sessionFilter', () => {
 
     const { result } = renderHook(
       () => useEventFilters(events, '', vi.fn(), '', '15m', vi.fn(), '', vi.fn(), '', vi.fn()),
-      { wrapper: makeWrapper() },
+      { wrapper: makeWrapper() }
     )
 
     expect(result.current.filteredEvents).toHaveLength(2)
@@ -98,7 +98,7 @@ describe('useEventFilters — sessionFilter', () => {
 
     const { result } = renderHook(
       () => useEventFilters(events, '', vi.fn(), '', '15m', vi.fn(), '', vi.fn(), '', vi.fn()),
-      { wrapper: makeWrapper('?session=target-session') },
+      { wrapper: makeWrapper('?session=target-session') }
     )
 
     expect(result.current.filteredEvents).toHaveLength(1)
@@ -125,8 +125,19 @@ describe('useEventFilters — sessionFilter', () => {
 
     const { result } = renderHook(
       () =>
-        useEventFilters(events, '', vi.fn(), 'target-session', '15m', vi.fn(), '', vi.fn(), '', vi.fn()),
-      { wrapper: makeWrapper() },
+        useEventFilters(
+          events,
+          '',
+          vi.fn(),
+          'target-session',
+          '15m',
+          vi.fn(),
+          '',
+          vi.fn(),
+          '',
+          vi.fn()
+        ),
+      { wrapper: makeWrapper() }
     )
 
     expect(result.current.filteredEvents).toHaveLength(1)
@@ -163,7 +174,7 @@ describe('useEventFilters — sessionFilter', () => {
     const { rerender } = renderHook(
       ({ events }) =>
         useEventFilters(events, '', vi.fn(), '', '15m', vi.fn(), '', vi.fn(), '', vi.fn()),
-      { initialProps: { events: firstEvents }, wrapper: makeWrapper() },
+      { initialProps: { events: firstEvents }, wrapper: makeWrapper() }
     )
 
     await waitFor(() => expect(fetchProjects).toHaveBeenCalledTimes(1))
