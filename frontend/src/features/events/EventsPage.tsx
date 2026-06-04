@@ -126,7 +126,6 @@ function EdgeDropZone({ edgeZoneHover, onDragEnter, onDragLeave, onDragOver, onD
 
 export function EventsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-<<<<<<< HEAD
   const [pendingEventLink, setPendingEventLink] = useState<PendingEventLink | null>(null)
   const [highlightedEventKey, setHighlightedEventKey] = useState<string | null>(null)
   const {
