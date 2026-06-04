@@ -179,3 +179,100 @@ func TestEventRawPayloadHandler_unknownKeyReturns404(t *testing.T) {
 		t.Fatalf("status = %d, want 404", rec.Code)
 	}
 }
+
+func TestEventsHandler_timeRangeParams(t *testing.T) {
+	svc := newTestService(t)
+
+	base := time.Now().UTC()
+	for i := 0; i < 5; i++ {
+		if err := svc.AddEvent(domain.NormalizedEvent{
+			Time:          base.Add(time.Duration(i) * time.Hour).Format(time.RFC3339),
+			Agent:         "codex",
+			Session:       "s1",
+			HookEventName: "PreToolUse",
+			Action:        "READ",
+			Path:          "/tmp/f",
+			RawPayload:    []byte(`{}`),
+		}); err != nil {
+			t.Fatalf("AddEvent: %v", err)
+		}
+	}
+
+	since := base.Add(2 * time.Hour).Format(time.RFC3339)
+	h := handler.Events(svc)
+	req := httptest.NewRequest(http.MethodGet, "/api/events?since="+since, nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	var payload struct {
+		Events  []domain.NormalizedEvent `json:"events"`
+		HasMore bool                     `json:"has_more"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	// events at +2h, +3h, +4h = 3 events
+	if len(payload.Events) != 3 {
+		t.Errorf("got %d events, want 3", len(payload.Events))
+	}
+}
+
+func TestEventsHandler_backwardCompat(t *testing.T) {
+	svc := newTestService(t)
+
+	// Insert fewer than defaultEventsLimit events.
+	for i := 0; i < 5; i++ {
+		if err := svc.AddEvent(domain.NormalizedEvent{
+			Time:          time.Now().UTC().Add(time.Duration(i) * time.Second).Format(time.RFC3339),
+			Agent:         "codex",
+			Session:       "s1",
+			HookEventName: "PreToolUse",
+			Action:        "READ",
+			Path:          "/tmp/f",
+			RawPayload:    []byte(`{}`),
+		}); err != nil {
+			t.Fatalf("AddEvent: %v", err)
+		}
+	}
+
+	h := handler.Events(svc)
+	req := httptest.NewRequest(http.MethodGet, "/api/events", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	var payload struct {
+		Events  []domain.NormalizedEvent `json:"events"`
+		HasMore bool                     `json:"has_more"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(payload.Events) != 5 {
+		t.Errorf("got %d events, want 5", len(payload.Events))
+	}
+	if payload.HasMore {
+		t.Error("has_more = true, want false")
+	}
+}
+
+func TestEventsHandler_limitClamped(t *testing.T) {
+	svc := newTestService(t)
+
+	h := handler.Events(svc)
+	// Request limit=9999, should be clamped to 500.
+	req := httptest.NewRequest(http.MethodGet, "/api/events?limit=9999", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}

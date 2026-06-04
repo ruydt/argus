@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"hooker/internal/domain"
 	"hooker/internal/service"
@@ -13,21 +14,63 @@ import (
 const (
 	defaultEventsLimit = 1000
 	sessionEventsLimit = 5000
+	sseBackfillLimit   = 100
+	maxEventsPageLimit = 500
+	defaultEventsPage  = 200
 )
 
 func Events(svc *service.EventService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionID := r.URL.Query().Get("session")
-		events, err := listEvents(svc, sessionID)
+		q := r.URL.Query()
+		since := q.Get("since")
+		until := q.Get("until")
+		sessionID := q.Get("session")
+
+		beforeID := int64(0)
+		if s := q.Get("before_id"); s != "" {
+			if v, err := strconv.ParseInt(s, 10, 64); err == nil {
+				beforeID = v
+			}
+		}
+
+		limit := defaultEventsPage
+		if s := q.Get("limit"); s != "" {
+			if v, err := strconv.Atoi(s); err == nil {
+				limit = v
+			}
+		}
+		if limit < 1 {
+			limit = 1
+		}
+		if limit > maxEventsPageLimit {
+			limit = maxEventsPageLimit
+		}
+
+		// No time params and no cursor = backward-compat path.
+		if since == "" && until == "" && beforeID == 0 {
+			events, err := listEvents(svc, sessionID)
+			if err != nil {
+				http.Error(w, "list events", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			resp := map[string]any{"events": events, "has_more": false, "next_cursor": int64(0)}
+			if err := json.NewEncoder(w).Encode(resp); err != nil {
+				log.Printf("[handler] encode events: %v", err)
+			}
+			return
+		}
+
+		events, minID, hasMore, err := svc.ListEventsByTimeRange(since, until, sessionID, beforeID, limit)
 		if err != nil {
 			http.Error(w, "list events", http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		resp := map[string]any{"events": events}
+		resp := map[string]any{"events": events, "has_more": hasMore, "next_cursor": minID}
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
-			log.Printf("[handler] encode %T: %v", resp, err)
+			log.Printf("[handler] encode events: %v", err)
 		}
 	})
 }
@@ -49,8 +92,8 @@ func EventsStream(svc *service.EventService) http.Handler {
 		defer svc.Unsubscribe(ch)
 
 		sessionID := r.URL.Query().Get("session")
-		if existing, err := listEvents(svc, sessionID); err == nil {
-			for _, e := range existing {
+		if backfill, _, _, err := svc.ListEventsByTimeRange("", "", sessionID, 0, sseBackfillLimit); err == nil {
+			for _, e := range backfill {
 				sendSSE(w, e)
 			}
 			flusher.Flush()
