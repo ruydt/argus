@@ -58,6 +58,8 @@ export interface EventRecord {
   load_reason?: string
   branch?: string
   server_name?: string
+  tool_input_questions_json?: string
+  permission_suggestions_json?: string
 }
 
 export interface SessionUsage {
