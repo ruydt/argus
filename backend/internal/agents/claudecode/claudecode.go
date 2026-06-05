@@ -154,7 +154,9 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		CWD:                 p.CWD,
 		TranscriptPath:      p.TranscriptPath,
 		Prompt:              p.Prompt,
-		Description:         p.ToolInput.Description,
+		Description:               p.ToolInput.Description,
+		ToolInputQuestionsJSON:    marshalRawJSON(p.ToolInput.Questions),
+		PermissionSuggestionsJSON: marshalRawJSON(p.PermissionSuggestions),
 		Action:              action,
 		Path:                displayPath,
 		Command:             cmd,
@@ -190,4 +192,13 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		NormalizerVersion:   claudecodeNormalizerVersion,
 		NormalizationStatus: "ok",
 	}, nil
+}
+
+// marshalRawJSON converts a json.RawMessage to its string representation.
+// Returns "" for nil or empty input so callers can use the zero value check.
+func marshalRawJSON(b json.RawMessage) string {
+	if len(b) == 0 {
+		return ""
+	}
+	return string(b)
 }
