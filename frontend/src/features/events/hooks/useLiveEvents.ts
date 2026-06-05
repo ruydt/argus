@@ -18,7 +18,7 @@ export function useLiveEvents(
 
   useEffect(() => {
     queueMicrotask(() => setEvents([]))
-  }, [sessionFilter])
+  }, [sessionFilter, since, until])
 
   const mergeEvents = useCallback((incoming: EventRecord[]) => {
     setEvents((prev) => {

@@ -409,7 +409,13 @@ export function EventsPage() {
           setCustomEnd(value)
         }}
         isLive={isLive}
-        onToggleLive={setIsLive}
+        onToggleLive={(value) => {
+          if (value) {
+            clearLink()
+            if (urlSession) setSearchParams({})
+          }
+          setIsLive(value)
+        }}
         onRefresh={() => {
           if (urlSession) {
             setSearchParams({})

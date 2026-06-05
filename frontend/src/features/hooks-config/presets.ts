@@ -73,10 +73,12 @@ const CLAUDE_PRESETS: Record<PresetKey, HooksConfig> = {
       TaskCreated: [hookerGroup()],
       TaskCompleted: [hookerGroup()],
       // File & config
+      FileChanged: [hookerGroup()],
       CwdChanged: [hookerGroup()],
       ConfigChange: [hookerGroup()],
       InstructionsLoaded: [hookerGroup()],
-      // Notifications
+      // Context & display
+      MessageDisplay: [hookerGroup()],
       Notification: [hookerGroup()],
       // Compaction
       PreCompact: [hookerGroup()],
@@ -87,8 +89,6 @@ const CLAUDE_PRESETS: Record<PresetKey, HooksConfig> = {
       // MCP elicitation
       Elicitation: [hookerGroup()],
       ElicitationResult: [hookerGroup()],
-      // Excluded: MessageDisplay (fires per streaming token — floods DB)
-      // Excluded: FileChanged (requires watchPaths setup in SessionStart — dead without it)
     },
   },
 }
