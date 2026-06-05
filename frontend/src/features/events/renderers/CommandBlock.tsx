@@ -10,7 +10,13 @@ type CommandBlockProps = {
   searchQuery?: string
 }
 
-export function CommandBlock({ prompt, command, path, description, searchQuery = '' }: CommandBlockProps) {
+export function CommandBlock({
+  prompt,
+  command,
+  path,
+  description,
+  searchQuery = '',
+}: CommandBlockProps) {
   const label = prompt ? 'Prompt' : command ? 'Command' : path ? 'File' : 'Shell'
   const textToCopy = prompt || command || path || ''
 

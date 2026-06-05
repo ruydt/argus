@@ -33,9 +33,7 @@ export function PermissionBlock({
   permissionSuggestionsJson,
 }: PermissionBlockProps) {
   const questions =
-    toolName === 'AskUserQuestion'
-      ? parseJSON<Question[]>(toolInputQuestionsJson)
-      : null
+    toolName === 'AskUserQuestion' ? parseJSON<Question[]>(toolInputQuestionsJson) : null
 
   const suggestions = parseJSON<PermissionSuggestion[]>(permissionSuggestionsJson)
 
@@ -78,11 +76,7 @@ export function PermissionBlock({
                 key={`${si}-${ri}`}
                 className="inline-flex items-center gap-1 rounded-full border border-white/[0.08] bg-black/20 px-2 py-0.5 text-[0.68rem]"
               >
-                <span
-                  className={
-                    s.behavior === 'allow' ? 'text-[#4ade80]' : 'text-[#f87171]'
-                  }
-                >
+                <span className={s.behavior === 'allow' ? 'text-[#4ade80]' : 'text-[#f87171]'}>
                   {s.behavior}
                 </span>
                 <span className="text-[#888]">
