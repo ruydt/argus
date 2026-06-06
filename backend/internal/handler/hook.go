@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -135,8 +136,12 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher, notifier notify.Noti
 
 		// Permission intercept: hold response open while user decides in native dialog.
 		// Falls through (writes {}) on timeout, dismiss, or nil notifier.
+		// Background context: decouples dialog lifetime from the HTTP request context so
+		// the osascript process isn't killed if Claude Code's hook client times out first.
 		if e.HookEventName == "PermissionRequest" && notifier != nil {
-			decision, notifyErr := notifier.ShowPermissionDialog(r.Context(), e)
+			notifyCtx, notifyCancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer notifyCancel()
+			decision, notifyErr := notifier.ShowPermissionDialog(notifyCtx, e)
 			if notifyErr == nil && decision.Action != "" {
 				w.Header().Set("Content-Type", "application/json")
 				if err := json.NewEncoder(w).Encode(permissionResponse{
