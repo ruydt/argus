@@ -70,7 +70,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 
 	mux.Handle("GET /healthz", handler.Healthz())
 	mux.Handle("GET /readyz", handler.Readyz(ready))
-	mux.Handle("POST /api/hook", handler.Hook(svc, m))
+	mux.Handle("POST /api/hook", handler.Hook(svc, m, nil))
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
 	mux.Handle("GET /api/events/raw", handler.EventRawPayload(svc))

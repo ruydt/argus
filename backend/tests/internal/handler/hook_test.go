@@ -12,6 +12,7 @@ import (
 
 	"hooker/internal/domain"
 	"hooker/internal/handler"
+	"hooker/internal/notify"
 	"hooker/internal/repository/sqlite"
 	"hooker/internal/service"
 )
@@ -30,6 +31,21 @@ func (matchNoneMatcher) MatchEvent(_ domain.NormalizedEvent) (bool, string) {
 	return false, ""
 }
 
+type mockNotifier struct {
+	decision notify.Decision
+	err      error
+	called   bool
+}
+
+func (m *mockNotifier) ShowPermissionDialog(_ context.Context, _ domain.NormalizedEvent) (notify.Decision, error) {
+	m.called = true
+	return m.decision, m.err
+}
+
+func newHookWithNotifier(svc *service.EventService, notifier notify.Notifier) http.Handler {
+	return handler.Hook(svc, matchNoneMatcher{}, notifier)
+}
+
 func newTestService(t *testing.T) *service.EventService {
 	t.Helper()
 	db, err := sqlite.New(":memory:")
@@ -42,7 +58,7 @@ func newTestService(t *testing.T) *service.EventService {
 // newHook creates a hook handler with the allow-none (matchNoneMatcher) matcher,
 // matching normal production behaviour where no events are ignored by default.
 func newHook(svc *service.EventService) http.Handler {
-	return handler.Hook(svc, matchNoneMatcher{})
+	return handler.Hook(svc, matchNoneMatcher{}, nil)
 }
 
 func TestHookHandlerRejectsGET(t *testing.T) {
@@ -242,7 +258,7 @@ func TestHookHandlerAcknowledgesWhenStoreIsTemporarilyLocked(t *testing.T) {
 		_, _ = conn.ExecContext(context.Background(), `ROLLBACK`)
 	}()
 
-	h := handler.Hook(service.New(db), matchNoneMatcher{})
+	h := handler.Hook(service.New(db), matchNoneMatcher{}, nil)
 	body := []byte(`{
 		"session_id": "s-locked",
 		"hook_event_name": "PreToolUse",
@@ -268,7 +284,7 @@ func TestHookHandlerAcknowledgesWhenStoreIsTemporarilyLocked(t *testing.T) {
 // with an empty JSON body {} (D-03).
 func TestHookIgnoredEventReturns200(t *testing.T) {
 	svc := newTestService(t)
-	h := handler.Hook(svc, matchAllMatcher{})
+	h := handler.Hook(svc, matchAllMatcher{}, nil)
 
 	body := []byte(`{
 		"session_id": "s-ignored",
@@ -297,7 +313,7 @@ func TestHookIgnoredEventReturns200(t *testing.T) {
 // TestHookIgnoredEventStoresNoRows verifies a matched event produces no DB row (D-03).
 func TestHookIgnoredEventStoresNoRows(t *testing.T) {
 	svc := newTestService(t)
-	h := handler.Hook(svc, matchAllMatcher{})
+	h := handler.Hook(svc, matchAllMatcher{}, nil)
 
 	body := []byte(`{
 		"session_id": "s-ignored-db",
@@ -334,7 +350,7 @@ func TestHookIgnoredEventNoSSEBroadcast(t *testing.T) {
 	ch := svc.Subscribe()
 	defer svc.Unsubscribe(ch)
 
-	h := handler.Hook(svc, matchAllMatcher{})
+	h := handler.Hook(svc, matchAllMatcher{}, nil)
 
 	body := []byte(`{
 		"session_id": "s-ignored-sse",
@@ -485,5 +501,155 @@ func TestHookHandlerEmptyFieldsWhenMissing(t *testing.T) {
 	}
 	if e.Description != "List files" {
 		t.Errorf("Description = %q, want %q", e.Description, "List files")
+	}
+}
+
+func TestHookHandlerPermissionRequestApprove(t *testing.T) {
+	svc := newTestService(t)
+	n := &mockNotifier{decision: notify.Decision{Action: "approve"}}
+	h := newHookWithNotifier(svc, n)
+
+	body := []byte(`{
+		"session_id": "s-perm",
+		"transcript_path": "/home/user/.claude/sessions/perm.jsonl",
+		"hook_event_name": "PermissionRequest",
+		"tool_name": "Bash",
+		"cwd": "/tmp"
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	var resp map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp["decision"] != "approve" {
+		t.Errorf("decision = %q, want %q", resp["decision"], "approve")
+	}
+	if !n.called {
+		t.Error("notifier was not called")
+	}
+
+	events, err := svc.ListEvents(10)
+	if err != nil {
+		t.Fatalf("ListEvents: %v", err)
+	}
+	if len(events) != 1 {
+		t.Errorf("stored events = %d, want 1", len(events))
+	}
+}
+
+func TestHookHandlerPermissionRequestBlock(t *testing.T) {
+	svc := newTestService(t)
+	n := &mockNotifier{decision: notify.Decision{Action: "block", Reason: "Denied via notification"}}
+	h := newHookWithNotifier(svc, n)
+
+	body := []byte(`{
+		"session_id": "s-deny",
+		"transcript_path": "/home/user/.claude/sessions/deny.jsonl",
+		"hook_event_name": "PermissionRequest",
+		"tool_name": "Write",
+		"cwd": "/tmp"
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	var resp map[string]string
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if resp["decision"] != "block" {
+		t.Errorf("decision = %q, want %q", resp["decision"], "block")
+	}
+	if resp["reason"] != "Denied via notification" {
+		t.Errorf("reason = %q, want %q", resp["reason"], "Denied via notification")
+	}
+}
+
+func TestHookHandlerPermissionRequestFallThrough(t *testing.T) {
+	svc := newTestService(t)
+	n := &mockNotifier{decision: notify.Decision{}}
+	h := newHookWithNotifier(svc, n)
+
+	body := []byte(`{
+		"session_id": "s-timeout",
+		"transcript_path": "/home/user/.claude/sessions/timeout.jsonl",
+		"hook_event_name": "PermissionRequest",
+		"tool_name": "Bash",
+		"cwd": "/tmp"
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+
+	body2 := rec.Body.Bytes()
+	if string(bytes.TrimSpace(body2)) != "{}" {
+		t.Errorf("body = %q, want %q", string(body2), "{}")
+	}
+}
+
+func TestHookHandlerPermissionRequestNilNotifier(t *testing.T) {
+	svc := newTestService(t)
+	h := newHookWithNotifier(svc, nil)
+
+	body := []byte(`{
+		"session_id": "s-nil",
+		"transcript_path": "/home/user/.claude/sessions/nil.jsonl",
+		"hook_event_name": "PermissionRequest",
+		"tool_name": "Bash",
+		"cwd": "/tmp"
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	if string(bytes.TrimSpace(rec.Body.Bytes())) != "{}" {
+		t.Errorf("body = %q, want {}", rec.Body.String())
+	}
+}
+
+func TestHookHandlerNonPermissionEventSkipsNotifier(t *testing.T) {
+	svc := newTestService(t)
+	n := &mockNotifier{decision: notify.Decision{Action: "approve"}}
+	h := newHookWithNotifier(svc, n)
+
+	body := []byte(`{
+		"session_id": "s-bash",
+		"transcript_path": "/home/user/.claude/sessions/bash.jsonl",
+		"hook_event_name": "PreToolUse",
+		"tool_name": "Bash",
+		"cwd": "/tmp"
+	}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if n.called {
+		t.Error("notifier was called for non-PermissionRequest event, want not called")
+	}
+	if string(bytes.TrimSpace(rec.Body.Bytes())) != "{}" {
+		t.Errorf("body = %q, want {}", rec.Body.String())
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"hooker/internal/agents/codex"
 	"hooker/internal/domain"
 	"hooker/internal/fileutil"
+	"hooker/internal/notify"
 	"hooker/internal/service"
 )
 
@@ -24,7 +25,12 @@ type IgnoreMatcher interface {
 	MatchEvent(e domain.NormalizedEvent) (bool, string)
 }
 
-func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
+type permissionResponse struct {
+	Decision string `json:"decision"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+func Hook(svc *service.EventService, matcher IgnoreMatcher, notifier notify.Notifier) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -125,6 +131,22 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 			w.WriteHeader(http.StatusAccepted)
 			_, _ = w.Write([]byte(`{}`))
 			return
+		}
+
+		// Permission intercept: hold response open while user decides in native dialog.
+		// Falls through (writes {}) on timeout, dismiss, or nil notifier.
+		if e.HookEventName == "PermissionRequest" && notifier != nil {
+			decision, notifyErr := notifier.ShowPermissionDialog(r.Context(), e)
+			if notifyErr == nil && decision.Action != "" {
+				w.Header().Set("Content-Type", "application/json")
+				if err := json.NewEncoder(w).Encode(permissionResponse{
+					Decision: decision.Action,
+					Reason:   decision.Reason,
+				}); err != nil {
+					slog.Error("hook encode permission response", "err", err)
+				}
+				return
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
