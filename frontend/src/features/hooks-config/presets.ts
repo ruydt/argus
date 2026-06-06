@@ -183,6 +183,12 @@ const AGENT_EVENT_TOTALS: Record<AgentKey, number> = {
   codex: 10,
 }
 
+function setsEqual(a: Set<string>, b: Set<string>): boolean {
+  if (a.size !== b.size) return false
+  for (const item of a) if (!b.has(item)) return false
+  return true
+}
+
 /**
  * Returns a human-readable label for the hook config status of an agent.
  * - Preset name when hooker-marked events exactly equal a preset's event set.
@@ -207,6 +213,13 @@ export function detectHookConfigLabel(agent: AgentKey, config: HooksConfig): str
 
   if (hookerEventTypes.size === 0) return 'Configured'
 
+  for (const presetKey of PRESET_KEYS) {
+    const presetEventTypes = new Set(Object.keys(HOOK_PRESETS[agent][presetKey].hooks))
+    if (setsEqual(hookerEventTypes, presetEventTypes)) {
+      return PRESET_LABELS[presetKey].label
+    }
+  }
+
   const total = AGENT_EVENT_TOTALS[agent]
-  return `Configured (${hookerEventTypes.size}/${total})`
+  return `Custom (${hookerEventTypes.size}/${total})`
 }

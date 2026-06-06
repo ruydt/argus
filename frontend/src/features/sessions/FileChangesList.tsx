@@ -357,6 +357,11 @@ function ChangeEntry({ change, sessionStartedAt }: ChangeEntryProps) {
 
       {hasOld || hasNew ? (
         <div className="mt-2 overflow-x-auto rounded-md">
+          <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/45">
+            {hasOld && <span>Before</span>}
+            {hasOld && hasNew && <span className="text-white/20">/</span>}
+            {hasNew && <span>After</span>}
+          </div>
           <DiffBlock
             oldStr={change.old_string ?? ''}
             newStr={change.new_string ?? ''}
