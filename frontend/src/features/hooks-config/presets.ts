@@ -183,12 +183,6 @@ const AGENT_EVENT_TOTALS: Record<AgentKey, number> = {
   codex: 10,
 }
 
-function setsEqual(a: Set<string>, b: Set<string>): boolean {
-  if (a.size !== b.size) return false
-  for (const item of a) if (!b.has(item)) return false
-  return true
-}
-
 /**
  * Returns a human-readable label for the hook config status of an agent.
  * - Preset name when hooker-marked events exactly equal a preset's event set.
