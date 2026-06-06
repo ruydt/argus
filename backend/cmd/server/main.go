@@ -15,6 +15,7 @@ import (
 
 	"hooker/internal/config"
 	"hooker/internal/domain"
+	"hooker/internal/notify"
 	"hooker/internal/privacy/ignore"
 	"hooker/internal/repository/sqlite"
 	"hooker/internal/server"
@@ -87,6 +88,7 @@ func run() int {
 		AllowRemote:        cfg.AllowRemote,
 		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
 		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
+		Notifier:           notify.NewPlatformNotifier(),
 	})
 
 	slog.Info("hooker", "version", version.Version, "commit", version.Commit)
