@@ -525,12 +525,22 @@ func TestHookHandlerPermissionRequestApprove(t *testing.T) {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
 
-	var resp map[string]string
+	var resp struct {
+		HookSpecificOutput struct {
+			HookEventName string `json:"hookEventName"`
+			Decision      struct {
+				Behavior string `json:"behavior"`
+			} `json:"decision"`
+		} `json:"hookSpecificOutput"`
+	}
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if resp["decision"] != "approve" {
-		t.Errorf("decision = %q, want %q", resp["decision"], "approve")
+	if resp.HookSpecificOutput.Decision.Behavior != "allow" {
+		t.Errorf("behavior = %q, want %q", resp.HookSpecificOutput.Decision.Behavior, "allow")
+	}
+	if resp.HookSpecificOutput.HookEventName != "PermissionRequest" {
+		t.Errorf("hookEventName = %q, want %q", resp.HookSpecificOutput.HookEventName, "PermissionRequest")
 	}
 	if !n.called {
 		t.Error("notifier was not called")
@@ -566,15 +576,22 @@ func TestHookHandlerPermissionRequestBlock(t *testing.T) {
 		t.Fatalf("status = %d, want 200", rec.Code)
 	}
 
-	var resp map[string]string
+	var resp struct {
+		HookSpecificOutput struct {
+			Decision struct {
+				Behavior string `json:"behavior"`
+				Message  string `json:"message"`
+			} `json:"decision"`
+		} `json:"hookSpecificOutput"`
+	}
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if resp["decision"] != "block" {
-		t.Errorf("decision = %q, want %q", resp["decision"], "block")
+	if resp.HookSpecificOutput.Decision.Behavior != "deny" {
+		t.Errorf("behavior = %q, want %q", resp.HookSpecificOutput.Decision.Behavior, "deny")
 	}
-	if resp["reason"] != "Denied via notification" {
-		t.Errorf("reason = %q, want %q", resp["reason"], "Denied via notification")
+	if resp.HookSpecificOutput.Decision.Message != "Denied via notification" {
+		t.Errorf("message = %q, want %q", resp.HookSpecificOutput.Decision.Message, "Denied via notification")
 	}
 }
 

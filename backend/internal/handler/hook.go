@@ -26,9 +26,20 @@ type IgnoreMatcher interface {
 	MatchEvent(e domain.NormalizedEvent) (bool, string)
 }
 
+// permissionDecision is the inner decision payload for PermissionRequest hook responses.
+type permissionDecision struct {
+	Behavior string `json:"behavior"`           // "allow" or "deny"
+	Message  string `json:"message,omitempty"`  // human-readable reason when behavior == "deny"
+}
+
+type permissionHookOutput struct {
+	HookEventName string             `json:"hookEventName"`
+	Decision      permissionDecision `json:"decision"`
+}
+
+// permissionResponse is the envelope both Claude Code and Codex accept for PermissionRequest.
 type permissionResponse struct {
-	Decision string `json:"decision"`
-	Reason   string `json:"reason,omitempty"`
+	HookSpecificOutput permissionHookOutput `json:"hookSpecificOutput"`
 }
 
 func Hook(svc *service.EventService, matcher IgnoreMatcher, notifier notify.Notifier) http.Handler {
@@ -143,11 +154,21 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher, notifier notify.Noti
 			defer notifyCancel()
 			decision, notifyErr := notifier.ShowPermissionDialog(notifyCtx, e)
 			if notifyErr == nil && decision.Action != "" {
+				behavior := "allow"
+				if decision.Action == "block" {
+					behavior = "deny"
+				}
+				resp := permissionResponse{
+					HookSpecificOutput: permissionHookOutput{
+						HookEventName: "PermissionRequest",
+						Decision: permissionDecision{
+							Behavior: behavior,
+							Message:  decision.Reason,
+						},
+					},
+				}
 				w.Header().Set("Content-Type", "application/json")
-				if err := json.NewEncoder(w).Encode(permissionResponse{
-					Decision: decision.Action,
-					Reason:   decision.Reason,
-				}); err != nil {
+				if err := json.NewEncoder(w).Encode(resp); err != nil {
 					slog.Error("hook encode permission response", "err", err)
 				}
 				return
