@@ -42,15 +42,15 @@ export default defineConfig({
     ],
     proxy: {
       '/api/events/stream': {
-        target: 'http://127.0.0.1:8765',
+        target: 'http://127.0.0.1:10804',
         changeOrigin: true,
         timeout: 0,
         proxyTimeout: 0,
       },
       '/api': {
-        target: 'http://127.0.0.1:8765',
+        target: 'http://127.0.0.1:10804',
         changeOrigin: true,
-        headers: { origin: 'http://127.0.0.1:8765' },
+        headers: { origin: 'http://127.0.0.1:10804' },
       },
     },
   },

@@ -19,7 +19,7 @@ type Options struct {
 	Matcher handler.IgnoreMatcher
 
 	// CORSOrigins is the explicit set of allowed CORS origins.
-	// If empty, the default loopback origins for port 8765 are used.
+	// If empty, the default loopback origins for port 10804 are used.
 	CORSOrigins []string
 
 	// DBPath is reported by the read-only diagnostics endpoint.
@@ -60,9 +60,9 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	corsOrigins := opts.CORSOrigins
 	if len(corsOrigins) == 0 {
 		corsOrigins = []string{
-			"http://localhost:8765",
-			"http://127.0.0.1:8765",
-			"http://[::1]:8765",
+			"http://localhost:10804",
+			"http://127.0.0.1:10804",
+			"http://[::1]:10804",
 		}
 	}
 

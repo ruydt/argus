@@ -27,7 +27,7 @@ const codexFixture = {
 }
 
 test.beforeAll(async () => {
-  const api = await request.newContext({ baseURL: 'http://127.0.0.1:8765' })
+  const api = await request.newContext({ baseURL: 'http://127.0.0.1:10804' })
   const r1 = await api.post('/api/hook', { data: claudeCodeFixture })
   if (!r1.ok()) {
     throw new Error(`Failed to POST claudecode fixture: ${r1.status()}`)

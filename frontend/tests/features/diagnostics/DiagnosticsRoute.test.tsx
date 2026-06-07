@@ -20,7 +20,7 @@ const minimalDiagnostics: Diagnostics = {
     exportWarning: 'Exported data may contain sensitive content.',
   },
   security: {
-    remoteBind: { addr: '127.0.0.1:8765', status: 'loopback', allowRemote: false },
+    remoteBind: { addr: '127.0.0.1:10804', status: 'loopback', allowRemote: false },
     cors: { totalOrigins: 1, localOrigins: 1, extraOrigins: 0 },
   },
 }

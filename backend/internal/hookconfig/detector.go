@@ -10,7 +10,7 @@ import (
 	"hooker/internal/domain"
 )
 
-const defaultEndpointSubstring = "8765/api/hook"
+const defaultEndpointSubstring = "10804/api/hook"
 
 type Result = domain.DiagnosticsHookConfig
 

@@ -36,8 +36,8 @@ func TestLoad_defaults(t *testing.T) {
 	t.Setenv("ADDR", "")
 	t.Setenv("DB_PATH", "")
 	cfg := config.Load()
-	if cfg.Addr != "127.0.0.1:8765" {
-		t.Errorf("Addr = %q, want 127.0.0.1:8765", cfg.Addr)
+	if cfg.Addr != "127.0.0.1:10804" {
+		t.Errorf("Addr = %q, want 127.0.0.1:10804", cfg.Addr)
 	}
 	if !strings.HasSuffix(filepath.ToSlash(cfg.DBPath), "backend/hooker.db") {
 		t.Errorf("DBPath = %q, want suffix backend/hooker.db", cfg.DBPath)
@@ -57,13 +57,13 @@ func TestLoad_env(t *testing.T) {
 }
 
 func TestLoad_CORSOrigins_DefaultFromAddr(t *testing.T) {
-	t.Setenv("ADDR", "127.0.0.1:8765")
+	t.Setenv("ADDR", "127.0.0.1:10804")
 	t.Setenv("HOOKER_CORS_ORIGINS", "")
 	cfg := config.Load()
 	want := []string{
-		"http://localhost:8765",
-		"http://127.0.0.1:8765",
-		"http://[::1]:8765",
+		"http://localhost:10804",
+		"http://127.0.0.1:10804",
+		"http://[::1]:10804",
 	}
 	if len(cfg.CORSOrigins) < len(want) {
 		t.Fatalf("CORSOrigins len = %d, want >= %d; got %v", len(cfg.CORSOrigins), len(want), cfg.CORSOrigins)

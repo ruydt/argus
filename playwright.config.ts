@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   timeout: 30000,
   use: {
-    baseURL: 'http://127.0.0.1:8765',
+    baseURL: 'http://127.0.0.1:10804',
     headless: true,
   },
   projects: [
@@ -20,7 +20,7 @@ export default defineConfig({
   webServer: {
     command:
       'cd backend && DB_PATH=/tmp/hooker-playwright-dev.db go run ./cmd/server',
-    url: 'http://127.0.0.1:8765/healthz',
+    url: 'http://127.0.0.1:10804/healthz',
     reuseExistingServer: true,
     timeout: 60000,
   },

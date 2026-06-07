@@ -20,7 +20,7 @@ scope, but it means network exposure changes the risk model immediately.
 
 Hooker uses multiple local-first guards:
 
-- loopback bind default: `127.0.0.1:8765`
+- loopback bind default: `127.0.0.1:10804`
 - Host header guard for local hosts
 - CORS allowlist for local browser origins
 - existing export endpoint browser checks
@@ -28,7 +28,7 @@ Hooker uses multiple local-first guards:
 Remote bind is an explicit opt-in:
 
 ```bash
-HOOKER_ALLOW_REMOTE=1 ADDR=0.0.0.0:8765 ./hooker
+HOOKER_ALLOW_REMOTE=1 ADDR=0.0.0.0:10804 ./hooker
 ```
 
 Using `HOOKER_ALLOW_REMOTE=1` means you accept that hooker may be reachable

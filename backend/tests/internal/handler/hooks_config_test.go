@@ -90,7 +90,7 @@ func TestHooksConfigClaudeCodeRoundtrip(t *testing.T) {
 	settingsPath := filepath.Join(dir, "settings.json")
 	h := handler.HooksConfig(settingsPath, filepath.Join(dir, "hooks.json"))
 
-	putBody := `{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"curl http://localhost:8765/api/hook","timeout":5}]}]}}`
+	putBody := `{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"curl http://localhost:10804/api/hook","timeout":5}]}]}}`
 	putReq := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=claudecode",
 		bytes.NewBufferString(putBody))
 	putRec := httptest.NewRecorder()
@@ -154,7 +154,7 @@ func TestHooksConfigCodexRoundtrip(t *testing.T) {
 	hooksPath := filepath.Join(dir, "hooks.json")
 	h := handler.HooksConfig(filepath.Join(dir, "settings.json"), hooksPath)
 
-	putBody := `{"hooks":{"PreToolUse":[{"matcher":".*","hooks":[{"type":"command","command":"curl http://localhost:8765/api/hook"}]}]}}`
+	putBody := `{"hooks":{"PreToolUse":[{"matcher":".*","hooks":[{"type":"command","command":"curl http://localhost:10804/api/hook"}]}]}}`
 	putReq := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=codex",
 		bytes.NewBufferString(putBody))
 	putRec := httptest.NewRecorder()

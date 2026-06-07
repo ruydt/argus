@@ -122,7 +122,7 @@ func TestDiagnosticsHandlerDoesNotExposeCapturedContent(t *testing.T) {
 			Status:             "loaded",
 			ActivePatternCount: 1,
 		},
-		CORSOrigins: []string{"http://localhost:8765", "https://sensitive-origin.example"},
+		CORSOrigins: []string{"http://localhost:10804", "https://sensitive-origin.example"},
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics", nil)

@@ -13,7 +13,7 @@ also receives local agent hook payloads at `POST /api/hook`.
 
 Keep proxy behavior local and development-focused. The supported proxy scope is the Vite dev
 proxy from `localhost:5173` to the local backend and local hook forwarding into
-`127.0.0.1:8765`. The proxy is not a cloud gateway, remote sharing layer, or public ingress
+`127.0.0.1:10804`. The proxy is not a cloud gateway, remote sharing layer, or public ingress
 feature.
 
 ## Consequences

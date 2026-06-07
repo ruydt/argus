@@ -31,7 +31,7 @@ Create or update `~/.codex/hooks.json`. The Baseline equivalent:
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
@@ -42,7 +42,7 @@ Create or update `~/.codex/hooks.json`. The Baseline equivalent:
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
@@ -54,7 +54,7 @@ Create or update `~/.codex/hooks.json`. The Baseline equivalent:
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]
@@ -65,7 +65,7 @@ Create or update `~/.codex/hooks.json`. The Baseline equivalent:
         "hooks": [
           {
             "type": "command",
-            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+            "command": "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true",
             "timeout": 5
           }
         ]

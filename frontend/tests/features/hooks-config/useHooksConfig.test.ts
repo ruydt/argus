@@ -6,7 +6,7 @@ const emptyConfig = { hooks: {} }
 const populatedConfig = {
   hooks: {
     SessionStart: [
-      { hooks: [{ type: 'command', command: 'curl http://localhost:8765/api/hook' }] },
+      { hooks: [{ type: 'command', command: 'curl http://localhost:10804/api/hook' }] },
     ],
   },
 }

@@ -59,7 +59,7 @@ pnpm run dev
 
 Dashboard: <http://localhost:5173>
 
-Hook endpoint: `http://127.0.0.1:8765/api/hook`
+Hook endpoint: `http://127.0.0.1:10804/api/hook`
 
 ## Configuration
 
@@ -67,7 +67,7 @@ Backend environment variables:
 
 | Variable               | Default                          | Purpose                                                                       |
 | ---------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
-| `ADDR`                 | `127.0.0.1:8765`                 | Backend listen address                                                        |
+| `ADDR`                 | `127.0.0.1:10804`                 | Backend listen address                                                        |
 | `DB_PATH`              | `backend/hooker.db`              | SQLite database path                                                          |
 | `HOOKER_IGNORE`        | `~/.config/hooker/ignore`        | Path to gitignore-style privacy exclusion file                                |
 | `HOOKER_CORS_ORIGINS`  | _(derived from ADDR)_            | Extra comma-separated CORS origins allowed beyond the loopback defaults       |
@@ -107,7 +107,7 @@ Docker runs the backend only. Use source frontend commands for local UI work.
 docker compose up --build
 ```
 
-The compose file publishes the backend on `127.0.0.1:8765`.
+The compose file publishes the backend on `127.0.0.1:10804`.
 
 ## Common failures
 
@@ -125,7 +125,7 @@ corepack prepare pnpm@10.23.0 --activate
 1. Confirm backend is running:
 
    ```bash
-   curl -fsS http://127.0.0.1:8765/api/version
+   curl -fsS http://127.0.0.1:10804/api/version
    ```
 
 2. Confirm frontend is proxying to backend by opening <http://localhost:5173>.

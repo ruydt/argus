@@ -81,7 +81,7 @@ function emptyEntry(): HookEntry {
     id: crypto.randomUUID(),
     type: 'command',
     command:
-      "curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true",
+      "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true",
     statusMessage: HOOKER_STATUS_MESSAGE,
   }
 }
@@ -339,7 +339,7 @@ export function StructuredEditor({
                             onChange={(e) =>
                               patchEntry(eventType, groupIdx, entryIdx, { command: e.target.value })
                             }
-                            placeholder="curl -s -X POST http://127.0.0.1:8765/api/hook ..."
+                            placeholder="curl -s -X POST http://127.0.0.1:10804/api/hook ..."
                             className="h-7 text-[13px] font-mono flex-1"
                           />
                           <Button

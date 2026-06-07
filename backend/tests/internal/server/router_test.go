@@ -75,9 +75,9 @@ func (noopRepo) MarkStaleSessions(_ time.Time) (int64, error) { return 0, nil }
 func (noopRepo) Ready() bool { return true }
 
 var testCORSOrigins = []string{
-	"http://localhost:8765",
-	"http://127.0.0.1:8765",
-	"http://[::1]:8765",
+	"http://localhost:10804",
+	"http://127.0.0.1:10804",
+	"http://[::1]:10804",
 }
 
 func newTestRouter() http.Handler {
@@ -90,7 +90,7 @@ func newTestRouter() http.Handler {
 			Status:             "missing_ok",
 			ActivePatternCount: 0,
 		},
-		Addr:        "127.0.0.1:8765",
+		Addr:        "127.0.0.1:10804",
 		AllowRemote: false,
 		HookConfigDetector: func() []domain.DiagnosticsHookConfig {
 			return []domain.DiagnosticsHookConfig{
@@ -103,13 +103,13 @@ func newTestRouter() http.Handler {
 
 func localRequest(method, target string) *http.Request {
 	req := httptest.NewRequest(method, target, nil)
-	req.Host = "127.0.0.1:8765"
+	req.Host = "127.0.0.1:10804"
 	return req
 }
 
 func TestNewRouterCORSAllowsLocalhost(t *testing.T) {
 	req := localRequest(http.MethodOptions, "/api/hook")
-	req.Header.Set("Origin", "http://localhost:8765")
+	req.Header.Set("Origin", "http://localhost:10804")
 	rec := httptest.NewRecorder()
 
 	newTestRouter().ServeHTTP(rec, req)
@@ -117,8 +117,8 @@ func TestNewRouterCORSAllowsLocalhost(t *testing.T) {
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want 204", rec.Code)
 	}
-	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:8765" {
-		t.Fatalf("allow-origin = %q, want http://localhost:8765", got)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://localhost:10804" {
+		t.Fatalf("allow-origin = %q, want http://localhost:10804", got)
 	}
 	if rec.Header().Get("Vary") != "Origin" {
 		t.Fatalf("Vary = %q, want Origin", rec.Header().Get("Vary"))
@@ -127,7 +127,7 @@ func TestNewRouterCORSAllowsLocalhost(t *testing.T) {
 
 func TestNewRouterCORSAllows127(t *testing.T) {
 	req := localRequest(http.MethodOptions, "/api/hook")
-	req.Header.Set("Origin", "http://127.0.0.1:8765")
+	req.Header.Set("Origin", "http://127.0.0.1:10804")
 	rec := httptest.NewRecorder()
 
 	newTestRouter().ServeHTTP(rec, req)
@@ -135,8 +135,8 @@ func TestNewRouterCORSAllows127(t *testing.T) {
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want 204", rec.Code)
 	}
-	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://127.0.0.1:8765" {
-		t.Fatalf("allow-origin = %q, want http://127.0.0.1:8765", got)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://127.0.0.1:10804" {
+		t.Fatalf("allow-origin = %q, want http://127.0.0.1:10804", got)
 	}
 }
 
@@ -310,10 +310,10 @@ func TestNewRouterDiagnosticsReturnsJSON(t *testing.T) {
 
 func TestHostHeaderAllowsIPv6Loopback(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/version", nil)
-	req.Host = "[::1]:8765"
+	req.Host = "[::1]:10804"
 	rec := httptest.NewRecorder()
 	newTestRouter().ServeHTTP(rec, req)
 	if rec.Code == http.StatusForbidden {
-		t.Fatalf("status = %d, want 200 for [::1]:8765", rec.Code)
+		t.Fatalf("status = %d, want 200 for [::1]:10804", rec.Code)
 	}
 }

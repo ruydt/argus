@@ -11,8 +11,8 @@ import (
 
 func TestDetectReportsConfiguredClaudeAndCodex(t *testing.T) {
 	home := t.TempDir()
-	writeFile(t, home, ".claude/settings.json", `{"hooks":{"PreToolUse":[{"hooks":[{"command":"curl http://127.0.0.1:8765/api/hook"}]}]}}`)
-	writeFile(t, home, ".codex/hooks.json", `{"hooks":{"SessionStart":[{"hooks":[{"command":"curl http://127.0.0.1:8765/api/hook"}]}]}}`)
+	writeFile(t, home, ".claude/settings.json", `{"hooks":{"PreToolUse":[{"hooks":[{"command":"curl http://127.0.0.1:10804/api/hook"}]}]}}`)
+	writeFile(t, home, ".codex/hooks.json", `{"hooks":{"SessionStart":[{"hooks":[{"command":"curl http://127.0.0.1:10804/api/hook"}]}]}}`)
 
 	got := hookconfig.Detector{HomeDir: home}.Detect()
 

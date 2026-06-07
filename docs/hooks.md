@@ -3,7 +3,7 @@
 Hooker receives agent events at:
 
 ```text
-http://127.0.0.1:8765/api/hook
+http://127.0.0.1:10804/api/hook
 ```
 
 Start the backend before configuring hooks. Hook delivery fails while the backend is offline.
@@ -46,7 +46,7 @@ If you prefer editing config files directly, see the per-agent guides:
 The curl command used by all presets:
 
 ```bash
-curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook \
+curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook \
   -H 'Content-Type: application/json' -d @- || true
 ```
 
@@ -59,7 +59,7 @@ curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook \
 With backend running:
 
 ```bash
-curl -fsS http://127.0.0.1:8765/api/version
+curl -fsS http://127.0.0.1:10804/api/version
 ```
 
 Then trigger one prompt in your configured agent and confirm an event appears in the dashboard.

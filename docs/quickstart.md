@@ -39,8 +39,8 @@ Expected startup output includes:
 
 ```text
 hooker version -> 0.0.0-dev (none)
-hook endpoint -> POST http://127.0.0.1:8765/api/hook
-events SSE -> GET http://127.0.0.1:8765/api/events/stream
+hook endpoint -> POST http://127.0.0.1:10804/api/hook
+events SSE -> GET http://127.0.0.1:10804/api/events/stream
 db -> .../backend/hooker.db
 ```
 
@@ -79,6 +79,6 @@ Or configure manually using the hook guide for your agent:
 If no event appears, run:
 
 ```bash
-curl -fsS http://127.0.0.1:8765/api/version
+curl -fsS http://127.0.0.1:10804/api/version
 ./scripts/hooker doctor
 ```

@@ -87,7 +87,7 @@ func corsAllowlist(origins []string) func(http.Handler) http.Handler {
 
 // hostHeader rejects requests whose Host header is not an explicit localhost
 // value. This prevents DNS rebinding attacks regardless of bind address.
-// Port is stripped before comparison: "localhost:8765" → "localhost".
+// Port is stripped before comparison: "localhost:10804" → "localhost".
 func hostHeader(next http.Handler) http.Handler {
 	allowed := map[string]bool{
 		"localhost": true,

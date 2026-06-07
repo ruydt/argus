@@ -290,7 +290,7 @@ hooker is a local-first monitoring dashboard for AI coding agent activity. It re
 
 - Go 1.25.0+, Node.js 18+, pnpm 10.x, curl (`README.md`)
 - macOS/Linux/WSL preferred (`README.md`)
-- Local-first single-binary backend serving API + UI on `127.0.0.1:8765` (`README.md`, `backend/cmd/server/main.go`)
+- Local-first single-binary backend serving API + UI on `127.0.0.1:10804` (`README.md`, `backend/cmd/server/main.go`)
 - Optional container runtime via `Dockerfile` + `docker-compose.yml`
 <!-- GSD:stack-end -->
 

@@ -11,9 +11,9 @@ func TestValidateBind_LoopbackPasses(t *testing.T) {
 	cases := []struct {
 		addr string
 	}{
-		{"127.0.0.1:8765"},
-		{"localhost:8765"},
-		{"[::1]:8765"},
+		{"127.0.0.1:10804"},
+		{"localhost:10804"},
+		{"[::1]:10804"},
 	}
 	for _, tc := range cases {
 		cfg := config.Config{Addr: tc.addr}
@@ -27,9 +27,9 @@ func TestValidateBind_RemoteWithoutFlagFails(t *testing.T) {
 	cases := []struct {
 		addr string
 	}{
-		{"0.0.0.0:8765"},
-		{":8765"},
-		{"192.168.1.1:8765"},
+		{"0.0.0.0:10804"},
+		{":10804"},
+		{"192.168.1.1:10804"},
 	}
 	for _, tc := range cases {
 		cfg := config.Config{Addr: tc.addr, AllowRemote: false}
@@ -48,9 +48,9 @@ func TestValidateBind_RemoteWithoutFlagFails(t *testing.T) {
 }
 
 func TestValidateBind_RemoteWithFlagPasses(t *testing.T) {
-	cfg := config.Config{Addr: "0.0.0.0:8765", AllowRemote: true}
+	cfg := config.Config{Addr: "0.0.0.0:10804", AllowRemote: true}
 	if err := validateBind(cfg); err != nil {
-		t.Errorf("validateBind(0.0.0.0:8765, AllowRemote=true) = %v, want nil", err)
+		t.Errorf("validateBind(0.0.0.0:10804, AllowRemote=true) = %v, want nil", err)
 	}
 }
 

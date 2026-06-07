@@ -339,11 +339,11 @@ func TestDiagnosticsIncludesPrivacyAndSecurityPosture(t *testing.T) {
 			Status:             "loaded",
 			ActivePatternCount: 2,
 		},
-		Addr:        "0.0.0.0:8765",
+		Addr:        "0.0.0.0:10804",
 		AllowRemote: true,
 		CORSOrigins: []string{
-			"http://localhost:8765",
-			"http://127.0.0.1:8765",
+			"http://localhost:10804",
+			"http://127.0.0.1:10804",
 			"https://ops.example.test",
 		},
 	}, true)
@@ -364,8 +364,8 @@ func TestDiagnosticsIncludesPrivacyAndSecurityPosture(t *testing.T) {
 			t.Fatalf("export warning %q missing %q", got.Privacy.ExportWarning, want)
 		}
 	}
-	if got.Security.RemoteBind.Addr != "0.0.0.0:8765" {
-		t.Fatalf("remote bind addr = %q, want 0.0.0.0:8765", got.Security.RemoteBind.Addr)
+	if got.Security.RemoteBind.Addr != "0.0.0.0:10804" {
+		t.Fatalf("remote bind addr = %q, want 0.0.0.0:10804", got.Security.RemoteBind.Addr)
 	}
 	if !got.Security.RemoteBind.AllowRemote || got.Security.RemoteBind.Status != "remote_enabled" {
 		t.Fatalf("remote bind = %+v, want remote enabled", got.Security.RemoteBind)
@@ -384,7 +384,7 @@ func TestDiagnosticsDefaultsMissingIgnoreAndLoopbackPosture(t *testing.T) {
 			Path:   "/tmp/missing-ignore",
 			Status: "missing_ok",
 		},
-		Addr:        "127.0.0.1:8765",
+		Addr:        "127.0.0.1:10804",
 		AllowRemote: false,
 		CORSOrigins: nil,
 	}, true)

@@ -16,7 +16,7 @@ type Config struct {
 }
 
 func Load() Config {
-	addr := envOr("ADDR", "127.0.0.1:8765")
+	addr := envOr("ADDR", "127.0.0.1:10804")
 	origins := defaultCORSOrigins(addr)
 	if extra := parseCORSOrigins(os.Getenv("HOOKER_CORS_ORIGINS")); len(extra) > 0 {
 		origins = append(origins, extra...)
@@ -34,7 +34,7 @@ func Load() Config {
 func defaultCORSOrigins(addr string) []string {
 	_, port, err := net.SplitHostPort(addr)
 	if err != nil || port == "" {
-		port = "8765"
+		port = "10804"
 	}
 	return []string{
 		"http://localhost:" + port,

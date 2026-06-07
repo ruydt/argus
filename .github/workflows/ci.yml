@@ -153,7 +153,7 @@ jobs:
       - name: Start hooker server
         run: |
           DB_PATH=/tmp/hooker-playwright-ci.db ./backend/hooker &
-          until curl -sf http://127.0.0.1:8765/healthz; do sleep 1; done
+          until curl -sf http://127.0.0.1:10804/healthz; do sleep 1; done
         timeout-minutes: 1
 
       - name: Run Playwright smoke tests

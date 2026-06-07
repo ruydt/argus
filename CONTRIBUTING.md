@@ -25,7 +25,7 @@ cd backend
 go run ./cmd/server/main.go
 ```
 
-By default, the backend listens on `127.0.0.1:8765` and stores SQLite data in
+By default, the backend listens on `127.0.0.1:10804` and stores SQLite data in
 `backend/hooker.db`. Use `DB_PATH=/absolute/path/to/my.db` when you need a separate
 database.
 
@@ -182,7 +182,7 @@ not persisted or broadcast.
 
 ## Hook Data Troubleshooting
 
-Dashboard data depends on hook events being sent to `http://127.0.0.1:8765/api/hook`.
+Dashboard data depends on hook events being sent to `http://127.0.0.1:10804/api/hook`.
 
 If the dashboard looks empty, verify:
 
