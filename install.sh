@@ -127,22 +127,43 @@ mkdir -p "$HOOKS_DIR"
 cat > "$ACTIVATE_SCRIPT" << 'EOF'
 #!/usr/bin/env node
 const { execSync } = require('child_process');
+const net = require('net');
 const os = require('os');
 const path = require('path');
 const db = path.join(os.homedir(), '.hooker', 'hooker.db');
 const url = 'http://127.0.0.1:10804';
-let output;
-try {
-  const result = execSync(
-    `sqlite3 "${db}" "SELECT COUNT(*), COUNT(DISTINCT session_id) FROM events"`,
-    { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'ignore'] }
-  ).trim();
-  const [events, sessions] = result.split('|');
-  output = `HOOKER live @ ${url} | ${parseInt(events, 10).toLocaleString()} events · ${sessions.trim()} sessions`;
-} catch (_) {
-  output = `HOOKER live @ ${url}`;
+
+function isServerUp() {
+  return new Promise(resolve => {
+    const sock = net.createConnection({ host: '127.0.0.1', port: 10804 });
+    sock.setTimeout(500);
+    sock.on('connect', () => { sock.destroy(); resolve(true); });
+    sock.on('error', () => resolve(false));
+    sock.on('timeout', () => { sock.destroy(); resolve(false); });
+  });
 }
-process.stdout.write(output);
+
+async function main() {
+  const up = await isServerUp();
+  if (!up) {
+    process.stdout.write(`HOOKER offline — run: ~/.hooker/bin/start-hooker.sh`);
+    return;
+  }
+  let output;
+  try {
+    const result = execSync(
+      `sqlite3 "${db}" "SELECT COUNT(*), COUNT(DISTINCT session_id) FROM hook_events"`,
+      { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'ignore'] }
+    ).trim();
+    const [events, sessions] = result.split('|');
+    output = `HOOKER live @ ${url} | ${parseInt(events, 10).toLocaleString()} events · ${sessions.trim()} sessions`;
+  } catch (_) {
+    output = `HOOKER live @ ${url}`;
+  }
+  process.stdout.write(output);
+}
+
+main();
 EOF
 chmod +x "$ACTIVATE_SCRIPT"
 echo "  → $ACTIVATE_SCRIPT"
