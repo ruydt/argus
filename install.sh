@@ -124,14 +124,16 @@ echo "  → $STOP_SCRIPT"
 # ── 7. Write hooker-activate.js ────────────────────────────────────────────
 
 mkdir -p "$HOOKS_DIR"
-cat > "$ACTIVATE_SCRIPT" << 'EOF'
+# Write activate script with START_SCRIPT path interpolated, rest heredoc-quoted
+cat > "$ACTIVATE_SCRIPT" << SCRIPTEOF
 #!/usr/bin/env node
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const net = require('net');
 const os = require('os');
 const path = require('path');
 const db = path.join(os.homedir(), '.hooker', 'hooker.db');
 const url = 'http://127.0.0.1:10804';
+const startScript = '${START_SCRIPT}';
 
 function isServerUp() {
   return new Promise(resolve => {
@@ -143,42 +145,50 @@ function isServerUp() {
   });
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function main() {
-  const up = await isServerUp();
+  let up = await isServerUp();
   if (!up) {
-    process.stdout.write(`HOOKER offline — run: ~/.hooker/bin/start-hooker.sh`);
+    spawnSync('bash', [startScript], { stdio: 'ignore' });
+    await sleep(1200);
+    up = await isServerUp();
+  }
+  if (!up) {
+    process.stdout.write('HOOKER offline');
     return;
   }
   let output;
   try {
     const result = execSync(
-      `sqlite3 "${db}" "SELECT COUNT(*), COUNT(DISTINCT session_id) FROM hook_events"`,
+      \`sqlite3 "\${db}" "SELECT COUNT(*), COUNT(DISTINCT session_id) FROM hook_events"\`,
       { encoding: 'utf8', timeout: 3000, stdio: ['pipe', 'pipe', 'ignore'] }
     ).trim();
     const [events, sessions] = result.split('|');
-    output = `HOOKER live @ ${url} | ${parseInt(events, 10).toLocaleString()} events · ${sessions.trim()} sessions`;
+    output = \`HOOKER live @ \${url} | \${parseInt(events, 10).toLocaleString()} events · \${sessions.trim()} sessions\`;
   } catch (_) {
-    output = `HOOKER live @ ${url}`;
+    output = \`HOOKER live @ \${url}\`;
   }
   process.stdout.write(output);
 }
 
 main();
-EOF
+SCRIPTEOF
 chmod +x "$ACTIVATE_SCRIPT"
 echo "  → $ACTIVATE_SCRIPT"
 
 # ── 8. Wire SessionStart hooks in ~/.claude/settings.json ───────────────────
 
 if ! command -v python3 &>/dev/null; then
-  echo "warning: python3 not found — add hooks manually to ~/.claude/settings.json"
-  echo "  start: $START_SCRIPT"
-  echo "  notify: node $ACTIVATE_SCRIPT"
+  echo "warning: python3 not found — add hook manually to ~/.claude/settings.json"
+  echo "  node \"$ACTIVATE_SCRIPT\""
 else
-  python3 - "$SETTINGS" "$START_SCRIPT" "$ACTIVATE_SCRIPT" << 'PYEOF'
+  python3 - "$SETTINGS" "$ACTIVATE_SCRIPT" << 'PYEOF'
 import json, sys, os
 
-settings_path, start_script, activate_script = sys.argv[1], sys.argv[2], sys.argv[3]
+settings_path, activate_script = sys.argv[1], sys.argv[2]
 
 settings = {}
 if os.path.exists(settings_path):
@@ -193,6 +203,8 @@ if os.path.exists(settings_path):
 hooks = settings.setdefault("hooks", {})
 session_start = hooks.setdefault("SessionStart", [])
 
+activate_cmd = f'node "{activate_script}"'
+
 def already_registered(cmd):
     for entry in session_start:
         for h in entry.get("hooks", []):
@@ -200,21 +212,12 @@ def already_registered(cmd):
                 return True
     return False
 
-added = []
-if not already_registered(start_script):
-    session_start.append({"hooks": [{"type": "command", "command": start_script}]})
-    added.append("start")
-
-activate_cmd = f'node "{activate_script}"'
 if not already_registered(activate_cmd):
     session_start.append({"hooks": [{"type": "command", "command": activate_cmd}]})
-    added.append("notify")
-
-if added:
     os.makedirs(os.path.dirname(settings_path), exist_ok=True)
     with open(settings_path, "w") as f:
         json.dump(settings, f, indent=2)
-    print(f"  → hooks registered in {settings_path}: {', '.join(added)}")
+    print(f"  → hook registered in {settings_path}")
 else:
     print(f"  → hooks already registered in {settings_path}")
 PYEOF

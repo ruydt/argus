@@ -56,6 +56,7 @@ session_start = hooks.get("SessionStart", [])
 def matches(entry):
     for h in entry.get("hooks", []):
         cmd = h.get("command", "")
+        # remove both old start hook and activate hook (either install layout)
         if cmd == start_script or cmd == activate_cmd:
             return True
     return False
