@@ -2,11 +2,12 @@
 set -e
 
 REPO="duytrandt04-afk/hooker"
-BINARY_DIR="$HOME/.local/bin"
+HOOKER_DIR="$HOME/.hooker"
+BINARY_DIR="$HOOKER_DIR/bin"
 BINARY="$BINARY_DIR/hooker"
 START_SCRIPT="$BINARY_DIR/start-hooker.sh"
 STOP_SCRIPT="$BINARY_DIR/hooker-stop.sh"
-HOOKS_DIR="$HOME/.hooker/hooks"
+HOOKS_DIR="$HOOKER_DIR/hooks"
 ACTIVATE_SCRIPT="$HOOKS_DIR/hooker-activate.js"
 SETTINGS="$HOME/.claude/settings.json"
 HOOKER_PORT=10804
@@ -198,13 +199,22 @@ else:
 PYEOF
 fi
 
-# ── 9. PATH warning + completion message ──────────────────────────────────
+# ── 9. Add ~/.hooker/bin to PATH in shell rc ──────────────────────────────
 
-if ! echo "$PATH" | grep -qF "$BINARY_DIR"; then
-  echo ""
-  echo "warning: $BINARY_DIR is not in your PATH."
-  echo "  Add to your shell profile (~/.zshrc or ~/.bashrc):"
-  echo "  export PATH=\"$BINARY_DIR:\$PATH\""
+PATH_LINE="export PATH=\"\$HOME/.hooker/bin:\$PATH\""
+SHELL_RC=""
+if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
+  SHELL_RC="$HOME/.zshrc"
+elif [ -n "$BASH_VERSION" ] || [ "$(basename "$SHELL")" = "bash" ]; then
+  SHELL_RC="$HOME/.bashrc"
+fi
+
+if [ -n "$SHELL_RC" ] && ! grep -qF '.hooker/bin' "$SHELL_RC" 2>/dev/null; then
+  echo "" >> "$SHELL_RC"
+  echo "# hooker" >> "$SHELL_RC"
+  echo "$PATH_LINE" >> "$SHELL_RC"
+  echo "  → added ~/.hooker/bin to PATH in $SHELL_RC"
+  echo "    (run: source $SHELL_RC)"
 fi
 
 echo ""

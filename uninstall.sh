@@ -1,13 +1,14 @@
 #!/bin/bash
 set -e
 
-BINARY_DIR="$HOME/.local/bin"
+HOOKER_DIR="$HOME/.hooker"
+BINARY_DIR="$HOOKER_DIR/bin"
 BINARY="$BINARY_DIR/hooker"
 START_SCRIPT="$BINARY_DIR/start-hooker.sh"
 STOP_SCRIPT="$BINARY_DIR/hooker-stop.sh"
-HOOKS_DIR="$HOME/.hooker/hooks"
+HOOKS_DIR="$HOOKER_DIR/hooks"
 ACTIVATE_SCRIPT="$HOOKS_DIR/hooker-activate.js"
-DATA_DIR="$HOME/.hooker"
+DATA_DIR="$HOOKER_DIR"
 SETTINGS="$HOME/.claude/settings.json"
 HOOKER_PORT=10804
 
@@ -71,13 +72,22 @@ if removed:
 PYEOF
 fi
 
-# ── 4. data directory ─────────────────────────────────────────────────────────
+# ── 4. remove PATH line from shell rc ────────────────────────────────────────
+
+for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+  if [ -f "$rc" ] && grep -q '.hooker/bin' "$rc" 2>/dev/null; then
+    grep -v '.hooker/bin' "$rc" | grep -v '^# hooker$' > "${rc}.tmp" && mv "${rc}.tmp" "$rc"
+    echo "  → removed PATH entry from $rc"
+  fi
+done
+
+# ── 5. data directory ─────────────────────────────────────────────────────────
 
 if [ -d "$DATA_DIR" ]; then
   echo ""
   echo "Data directory: $DATA_DIR"
-  echo "  Contains: hooker.db (events), hooker.log"
-  printf "  Remove data? [y/N] "
+  echo "  Contains: hooker.db (events), hooker.log, bin/, hooks/"
+  printf "  Remove all data? [y/N] "
   read -r answer
   if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
     rm -rf "$DATA_DIR"
