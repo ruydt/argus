@@ -48,6 +48,33 @@ const healthyDiagnostics: Diagnostics = {
     remoteBind: { addr: '127.0.0.1:10804', status: 'loopback', allowRemote: false },
     cors: { totalOrigins: 1, localOrigins: 1, extraOrigins: 0 },
   },
+  fileSystem: {
+    hookerDir: '/home/user/.hooker',
+    binary: {
+      name: 'hooker',
+      path: '/home/user/.hooker/bin/hooker',
+      sizeBytes: 18700000,
+      lastModified: '2026-06-08T10:00:00Z',
+      exists: true,
+    },
+    logs: [
+      {
+        name: 'hooker.log',
+        path: '/home/user/.hooker/hooker.log',
+        sizeBytes: 2900000,
+        lastModified: '2026-06-08T10:00:00Z',
+        exists: true,
+      },
+      {
+        name: 'build.log',
+        path: '/home/user/.hooker/build.log',
+        sizeBytes: null,
+        lastModified: null,
+        exists: false,
+      },
+    ],
+    hooks: [],
+  },
 }
 
 const warningDiagnostics: Diagnostics = {

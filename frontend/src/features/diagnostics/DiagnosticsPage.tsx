@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { Activity, AlertTriangle, Copy, RefreshCw, Shield, Zap } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -20,6 +20,7 @@ import { detectHookConfigLabel } from '@/features/hooks-config/presets'
 import type { HooksConfig } from '@/features/hooks-config/types'
 import type { AgentKey } from '@/features/hooks-config/types'
 import { useDiagnostics } from './hooks/useDiagnostics'
+import { FileSystemCard } from './FileSystemCard'
 import type { Diagnostics, DiagnosticsAgent } from './types'
 import { formatBytes } from './utils'
 
@@ -425,14 +426,33 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               <CardTitle>System Facts</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-0">
+              {/* Version */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Version</span>
+                <span>{data.version.version}</span>
+              </div>
+              <Separator />
+              {/* Commit */}
+              <div className="flex items-center justify-between py-2 text-[13px]">
+                <span className="text-muted-foreground">Commit</span>
+                <code className="font-mono text-[12px] text-[var(--edit)]">
+                  {data.version.commit.slice(0, 8)}
+                </code>
+              </div>
+              <Separator />
+              {/* Built */}
+              <div className="flex items-center justify-between py-2 text-[13px]">
+                <span className="text-muted-foreground">Built</span>
                 <span>
-                  {data.version.version}{' '}
-                  <code className="font-mono text-[12px] text-[var(--edit)]">
-                    {data.version.commit.slice(0, 8)}
-                  </code>{' '}
-                  {data.version.buildDate}
+                  {data.version.buildDate
+                    ? (() => {
+                        try {
+                          return format(new Date(data.version.buildDate), 'MMM d, yyyy')
+                        } catch {
+                          return data.version.buildDate
+                        }
+                      })()
+                    : '—'}
                 </span>
               </div>
               <Separator />
@@ -475,6 +495,9 @@ function LoadedContent({ data }: { data: Diagnostics }) {
           <PrivacySecurityCard data={data} />
         </div>
       </div>
+
+      {/* File System — full width */}
+      <FileSystemCard fileSystem={data.fileSystem} />
     </>
   )
 }

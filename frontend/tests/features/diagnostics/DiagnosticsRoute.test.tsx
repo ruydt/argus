@@ -23,6 +23,15 @@ const minimalDiagnostics: Diagnostics = {
     remoteBind: { addr: '127.0.0.1:10804', status: 'loopback', allowRemote: false },
     cors: { totalOrigins: 1, localOrigins: 1, extraOrigins: 0 },
   },
+  fileSystem: {
+    hookerDir: '/home/user/.hooker',
+    binary: { name: 'hooker', path: '/home/user/.hooker/bin/hooker', sizeBytes: null, lastModified: null, exists: false },
+    logs: [
+      { name: 'hooker.log', path: '/home/user/.hooker/hooker.log', sizeBytes: null, lastModified: null, exists: false },
+      { name: 'build.log', path: '/home/user/.hooker/build.log', sizeBytes: null, lastModified: null, exists: false },
+    ],
+    hooks: [],
+  },
 }
 
 beforeEach(() => {
