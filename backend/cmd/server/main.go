@@ -87,6 +87,7 @@ func run() int {
 		AllowRemote:        cfg.AllowRemote,
 		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
 		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
+		HookerDir:          filepath.Join(home, ".hooker"),
 	})
 
 	slog.Info("hooker", "version", version.Version, "commit", version.Commit)

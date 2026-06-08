@@ -43,6 +43,10 @@ type Options struct {
 	// CodexHooksPath is the full path to the Codex hooks config file.
 	// Defaults to ~/.codex/hooks.json if empty.
 	CodexHooksPath string
+
+	// HookerDir is the path to the hooker home directory (typically ~/.hooker).
+	// Used by diagnostics and log-tail endpoints.
+	HookerDir string
 }
 
 // allowNone is the default matcher used when Options.Matcher is nil.
@@ -86,6 +90,10 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 		Addr:               opts.Addr,
 		AllowRemote:        opts.AllowRemote,
 		CORSOrigins:        corsOrigins,
+		HookerDir:          opts.HookerDir,
+	}))
+	mux.Handle("GET /api/diagnostics/log-tail", handler.LogTail(handler.LogTailOptions{
+		HookerDir: opts.HookerDir,
 	}))
 	mux.Handle("GET /api/session-usage", handler.Usage())
 	mux.Handle("GET /api/projects", handler.Projects(svc))
