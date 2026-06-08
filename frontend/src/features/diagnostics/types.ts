@@ -60,6 +60,21 @@ export interface DiagnosticsSecurity {
   cors: DiagnosticsCORS
 }
 
+export interface DiagnosticsFileEntry {
+  name: string
+  path: string
+  sizeBytes: number | null
+  lastModified: string | null
+  exists: boolean
+}
+
+export interface DiagnosticsFileSystem {
+  hookerDir: string
+  binary: DiagnosticsFileEntry
+  logs: DiagnosticsFileEntry[]
+  hooks: DiagnosticsFileEntry[]
+}
+
 export interface Diagnostics {
   version: DiagnosticsVersion
   health: DiagnosticsHealth
@@ -67,4 +82,5 @@ export interface Diagnostics {
   agents: DiagnosticsAgent[]
   privacy: DiagnosticsPrivacy
   security: DiagnosticsSecurity
+  fileSystem: DiagnosticsFileSystem
 }
