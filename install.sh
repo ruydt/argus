@@ -94,9 +94,16 @@ LOG_PATH="\$DB_DIR/hooker.log"
 
 mkdir -p "\$DB_DIR"
 
-if lsof -ti:"\$HOOKER_PORT" > /dev/null 2>&1; then
-  echo '{"continue":true,"suppressOutput":true}'
-  exit 0
+RUNNING_PID=\$(lsof -ti:"\$HOOKER_PORT" 2>/dev/null)
+if [ -n "\$RUNNING_PID" ]; then
+  RUNNING_BIN=\$(lsof -p "\$RUNNING_PID" 2>/dev/null | awk '\$4=="txt" {print \$NF}' | head -1)
+  if [ "\$RUNNING_BIN" = "\$BINARY_PATH" ]; then
+    echo '{"continue":true,"suppressOutput":true}'
+    exit 0
+  fi
+  # Different binary on port (dev build or old version) — replace with installed binary
+  kill "\$RUNNING_PID"
+  sleep 0.5
 fi
 
 DB_PATH="\$DB_PATH" ADDR="127.0.0.1:\$HOOKER_PORT" \\
