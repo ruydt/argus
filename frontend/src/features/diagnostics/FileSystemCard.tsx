@@ -1,0 +1,255 @@
+import { format } from 'date-fns'
+import { Copy, RefreshCw } from 'lucide-react'
+import { useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
+import { formatBytes } from './utils'
+import { useLogTail } from './hooks/useLogTail'
+import type { DiagnosticsFileEntry, DiagnosticsFileSystem } from './types'
+
+type FileSystemCardProps = {
+  fileSystem: DiagnosticsFileSystem
+}
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      onClick={() => navigator.clipboard.writeText(value).catch(() => {})}
+      className="h-auto p-0 opacity-40 hover:opacity-100 transition-opacity"
+      aria-label={label}
+    >
+      <Copy className="size-3" />
+    </Button>
+  )
+}
+
+function FileSize({ entry }: { entry: DiagnosticsFileEntry }) {
+  if (!entry.exists) {
+    return <span className="text-[12px] text-muted-foreground">Not found</span>
+  }
+  return (
+    <span className="text-[13px]">
+      {entry.sizeBytes !== null ? formatBytes(entry.sizeBytes) : 'Unknown'}
+    </span>
+  )
+}
+
+function FileModified({ entry }: { entry: DiagnosticsFileEntry }) {
+  if (!entry.exists || !entry.lastModified) return null
+  try {
+    return (
+      <span className="text-[12px] text-muted-foreground">
+        {format(new Date(entry.lastModified), 'MMM d')}
+      </span>
+    )
+  } catch {
+    return null
+  }
+}
+
+type TailPanelProps = {
+  lines: string[]
+  loading: boolean
+  error: string | null
+  onRefresh: () => void
+}
+
+function TailPanel({ lines, loading, error, onRefresh }: TailPanelProps) {
+  return (
+    <div className="mt-2 rounded border border-border bg-[var(--secondary)] p-3">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] text-muted-foreground">Last 50 lines</span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRefresh}
+          disabled={loading}
+          aria-label="Refresh log"
+        >
+          <RefreshCw className={cn('size-3', loading && 'animate-spin')} />
+        </Button>
+      </div>
+      {error && <p className="text-[12px] text-destructive">{error}</p>}
+      {!error && lines.length === 0 && !loading && (
+        <p className="text-[12px] text-muted-foreground">Log file is empty or not found</p>
+      )}
+      {lines.length > 0 && (
+        <pre className="font-mono text-[11px] leading-relaxed overflow-y-auto max-h-[320px] whitespace-pre-wrap break-all">
+          {lines.map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
+        </pre>
+      )}
+    </div>
+  )
+}
+
+type LogRowProps = {
+  entry: DiagnosticsFileEntry
+  open: boolean
+  onToggle: () => void
+  tailState: { lines: string[]; loading: boolean; error: string | null }
+  onRefresh: () => void
+}
+
+function LogRow({ entry, open, onToggle, tailState, onRefresh }: LogRowProps) {
+  return (
+    <div>
+      <div className="flex items-center justify-between py-2 text-[13px]">
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[12px]">{entry.name}</span>
+          <span
+            className="font-mono text-[12px] text-muted-foreground truncate max-w-[180px]"
+            title={entry.path}
+          >
+            {entry.path}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <FileSize entry={entry} />
+          <FileModified entry={entry} />
+          {entry.exists && <CopyButton value={entry.path} label={`Copy ${entry.name} path`} />}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-6 px-2 text-[11px]"
+            onClick={onToggle}
+            aria-label={`Tail ${entry.name}`}
+          >
+            {open ? 'Close' : 'Tail'}
+          </Button>
+        </div>
+      </div>
+      {open && <TailPanel {...tailState} onRefresh={onRefresh} />}
+    </div>
+  )
+}
+
+export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
+  const hookerTail = useLogTail('hooker', 50)
+  const buildTail = useLogTail('build', 50)
+  const [openLog, setOpenLog] = useState<string | null>(null)
+
+  function toggleLog(name: string) {
+    const opening = openLog !== name
+    setOpenLog(opening ? name : null)
+    if (opening) {
+      if (name === 'hooker.log') hookerTail.fetch()
+      else if (name === 'build.log') buildTail.fetch()
+    }
+  }
+
+  function tailStateFor(name: string) {
+    const t = name === 'hooker.log' ? hookerTail : buildTail
+    return { lines: t.lines, loading: t.loading, error: t.error }
+  }
+
+  function refreshFor(name: string) {
+    return name === 'hooker.log' ? hookerTail.fetch : buildTail.fetch
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>File System</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-0">
+        {/* Root dir */}
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">~/.hooker</span>
+          <span className="flex items-center gap-1">
+            <span
+              className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
+              title={fileSystem.hookerDir}
+            >
+              {fileSystem.hookerDir}
+            </span>
+            <CopyButton value={fileSystem.hookerDir} label="Copy .hooker path" />
+          </span>
+        </div>
+        <Separator />
+
+        {/* Binary */}
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">Binary</span>
+          <div className="flex items-center gap-2">
+            <span
+              className="font-mono text-[12px] text-foreground truncate max-w-[200px]"
+              title={fileSystem.binary.path}
+            >
+              {fileSystem.binary.path}
+            </span>
+            <FileSize entry={fileSystem.binary} />
+            <FileModified entry={fileSystem.binary} />
+            {fileSystem.binary.exists && (
+              <CopyButton value={fileSystem.binary.path} label="Copy binary path" />
+            )}
+          </div>
+        </div>
+        <Separator />
+
+        {/* Logs */}
+        <div className="py-1">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide py-1">Logs</p>
+          {fileSystem.logs.map((entry, i) => (
+            <div key={entry.name}>
+              {i > 0 && <Separator />}
+              <LogRow
+                entry={entry}
+                open={openLog === entry.name}
+                onToggle={() => toggleLog(entry.name)}
+                tailState={tailStateFor(entry.name)}
+                onRefresh={refreshFor(entry.name)}
+              />
+            </div>
+          ))}
+        </div>
+        <Separator />
+
+        {/* Hooks */}
+        <div className="py-1">
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide py-1">
+            Hooks ({fileSystem.hooks.length})
+          </p>
+          {fileSystem.hooks.length === 0 ? (
+            <p className="text-[12px] text-muted-foreground py-2">No hook scripts found</p>
+          ) : (
+            fileSystem.hooks.map((entry, i) => (
+              <div key={entry.name}>
+                {i > 0 && <Separator />}
+                <div className="flex items-center justify-between py-2 text-[13px]">
+                  <span className="font-mono text-[12px]">{entry.name}</span>
+                  <div className="flex items-center gap-2">
+                    <FileSize entry={entry} />
+                    <FileModified entry={entry} />
+                    <CopyButton value={entry.path} label={`Copy ${entry.name} path`} />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Warning for missing binary */}
+        {!fileSystem.binary.exists && (
+          <div className="mt-2">
+            <Badge
+              variant="outline"
+              className="border-[var(--cwd)] text-[var(--cwd)] bg-transparent"
+            >
+              Binary not installed
+            </Badge>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
