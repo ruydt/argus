@@ -1,7 +1,16 @@
 import { useState } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
-import { AppWindowIcon, Check, CodeIcon, Copy, ExternalLink, RefreshCw, Save } from 'lucide-react'
+import {
+  AppWindowIcon,
+  Check,
+  CodeIcon,
+  Copy,
+  ExternalLink,
+  RefreshCw,
+  Save,
+  Terminal,
+} from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -10,10 +19,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { hookerEditorTheme, hookerHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { StructuredEditor } from './StructuredEditor'
+import { SimulatorTab } from './SimulatorTab'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import type { AgentKey, HooksConfig, HooksConfigState } from './types'
 
-type ViewMode = 'structured' | 'json'
+type ViewMode = 'structured' | 'json' | 'simulator'
 
 type AgentTabContentProps = {
   agent: AgentKey
@@ -117,6 +127,8 @@ function AgentTabContent({ agent, state, viewMode }: AgentTabContentProps) {
         </div>
       )}
 
+      {viewMode === 'simulator' && <SimulatorTab agent={agent} config={config} />}
+
       {saveError !== null && (
         <Alert className="border-destructive bg-[rgba(255,95,86,0.08)]">
           <AlertDescription className="text-[13px] text-destructive">{saveError}</AlertDescription>
@@ -181,26 +193,31 @@ export function HooksConfigPage() {
             </a>
           </div>
           <div className="flex items-center gap-2">
-            {activeState.isDirty && !activeState.loading && (
+            {viewMode !== 'simulator' && activeState.isDirty && !activeState.loading && (
               <span className="text-[12px] text-[var(--cwd)]">Unsaved changes</span>
             )}
-            {!activeState.isDirty && !activeState.loading && activeState.error === null && (
-              <span className="text-[12px] text-muted-foreground">Saved</span>
-            )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => void activeState.save()}
-              disabled={!canSave}
-              aria-label="Save hooks config"
-            >
-              {activeState.saving ? (
-                <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Save className="size-3.5 mr-1.5" />
+            {viewMode !== 'simulator' &&
+              !activeState.isDirty &&
+              !activeState.loading &&
+              activeState.error === null && (
+                <span className="text-[12px] text-muted-foreground">Saved</span>
               )}
-              Save
-            </Button>
+            {viewMode !== 'simulator' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => void activeState.save()}
+                disabled={!canSave}
+                aria-label="Save hooks config"
+              >
+                {activeState.saving ? (
+                  <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Save className="size-3.5 mr-1.5" />
+                )}
+                Save
+              </Button>
+            )}
           </div>
         </div>
 
@@ -230,6 +247,9 @@ export function HooksConfigPage() {
                 </TabsTrigger>
                 <TabsTrigger value="json" aria-label="JSON">
                   <CodeIcon />
+                </TabsTrigger>
+                <TabsTrigger value="simulator" aria-label="Simulator">
+                  <Terminal />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
