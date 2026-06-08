@@ -15,7 +15,6 @@ LDFLAGS   := -X hooker/internal/version.Version=$(VERSION) \
 
 build:
 	cd frontend && $(PNPM) run build
-	rm -f $(DIST)/.gitkeep
 	cp -r frontend/dist/. $(DIST)/
 	cd backend && $(GO) build -o $(BINARY) ./cmd/server
 
@@ -25,7 +24,6 @@ install: build
 # Build with version ldflags and hot-swap the running local service
 build-local:
 	cd frontend && $(PNPM) run build
-	rm -f $(DIST)/.gitkeep
 	cp -r frontend/dist/. $(DIST)/
 	cd backend && $(GO) build -ldflags "$(LDFLAGS)" -o $(LOCAL_BINARY) ./cmd/server
 	@echo "Built $(VERSION) → $(LOCAL_BINARY)"
