@@ -99,6 +99,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
 	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
 	mux.Handle("PUT /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
+	mux.Handle("POST /api/hooks/simulate", handler.HooksSimulate())
 	mux.Handle("GET /", ui.Handler())
 
 	return panicRecovery(hostHeader(corsAllowlist(corsOrigins)(logging(mux))))
