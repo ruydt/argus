@@ -3,6 +3,7 @@ package service
 import (
 	"log/slog"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -32,6 +33,7 @@ type DiagnosticsOptions struct {
 	Addr               string
 	AllowRemote        bool
 	CORSOrigins        []string
+	HookerDir          string
 }
 
 const exportSensitivityWarning = "Exports may include prompts, diffs, file paths, tool outputs, raw payloads, and exports; handle exported data as sensitive."
@@ -175,6 +177,7 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 			RemoteBind: diagnosticsRemoteBind(opts),
 			CORS:       diagnosticsCORS(opts.CORSOrigins),
 		},
+		FileSystem: scanFileSystem(opts.HookerDir),
 	}
 
 	s.diagMu.Lock()
@@ -612,4 +615,54 @@ func (s *EventService) ListSessionsByCWDPage(cwd, since string, page, size int) 
 
 func (s *EventService) GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error) {
 	return s.repo.GetFileChanges(sessionID)
+}
+
+func scanFileSystem(hookerDir string) domain.DiagnosticsFileSystem {
+	fs := domain.DiagnosticsFileSystem{
+		HookerDir: hookerDir,
+		Binary:    statEntry("hooker", filepath.Join(hookerDir, "bin", "hooker")),
+		Logs: []domain.DiagnosticsFileEntry{
+			statEntry("hooker.log", filepath.Join(hookerDir, "hooker.log")),
+			statEntry("build.log", filepath.Join(hookerDir, "build.log")),
+		},
+		Hooks: []domain.DiagnosticsFileEntry{},
+	}
+	entries, err := os.ReadDir(filepath.Join(hookerDir, "hooks"))
+	if err == nil {
+		for _, e := range entries {
+			if e.IsDir() {
+				continue
+			}
+			info, err := e.Info()
+			if err != nil {
+				continue
+			}
+			size := info.Size()
+			mod := info.ModTime().UTC().Format(time.RFC3339)
+			fs.Hooks = append(fs.Hooks, domain.DiagnosticsFileEntry{
+				Name:         e.Name(),
+				Path:         filepath.Join(hookerDir, "hooks", e.Name()),
+				SizeBytes:    &size,
+				LastModified: &mod,
+				Exists:       true,
+			})
+		}
+	}
+	return fs
+}
+
+func statEntry(name, path string) domain.DiagnosticsFileEntry {
+	info, err := os.Stat(path)
+	if err != nil {
+		return domain.DiagnosticsFileEntry{Name: name, Path: path, Exists: false}
+	}
+	size := info.Size()
+	mod := info.ModTime().UTC().Format(time.RFC3339)
+	return domain.DiagnosticsFileEntry{
+		Name:         name,
+		Path:         path,
+		SizeBytes:    &size,
+		LastModified: &mod,
+		Exists:       true,
+	}
 }
