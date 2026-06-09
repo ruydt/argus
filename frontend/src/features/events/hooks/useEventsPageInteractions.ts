@@ -196,6 +196,26 @@ export function useEventLinkState({ setCollapsedSessions }: UseEventLinkStateOpt
   }
 }
 
+function loadSplitState(): PanelDragState {
+  try {
+    const splitView = sessionStorage.getItem('events_split_enabled') === 'true'
+    const sessions = JSON.parse(
+      sessionStorage.getItem('events_split_panel2_sessions') ?? '[]'
+    ) as string[]
+    const eventKeys = JSON.parse(
+      sessionStorage.getItem('events_split_panel2_event_keys') ?? '[]'
+    ) as string[]
+    return {
+      ...initialPanelDragState,
+      splitView,
+      panel2Sessions: new Set(sessions),
+      panel2EventKeys: new Set(eventKeys),
+    }
+  } catch {
+    return initialPanelDragState
+  }
+}
+
 type UseSplitViewInteractionsOptions = {
   filteredEvents: EventRecord[]
   sortOrder: string
@@ -205,7 +225,7 @@ export function useSplitViewInteractions({
   filteredEvents,
   sortOrder,
 }: UseSplitViewInteractionsOptions) {
-  const [panelDrag, dispatchPanelDrag] = useReducer(panelDragReducer, initialPanelDragState)
+  const [panelDrag, dispatchPanelDrag] = useReducer(panelDragReducer, undefined, loadSplitState)
   const lastDragOverPanelRef = useRef<1 | 2 | null>(null)
   const { splitView, panel2Sessions, panel2EventKeys, isDragging, dragOverPanel, edgeZoneHover } =
     panelDrag
@@ -237,6 +257,22 @@ export function useSplitViewInteractions({
       document.removeEventListener('dragend', onEnd)
     }
   }, [])
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('events_split_enabled', String(panelDrag.splitView))
+      sessionStorage.setItem(
+        'events_split_panel2_sessions',
+        JSON.stringify(Array.from(panelDrag.panel2Sessions))
+      )
+      sessionStorage.setItem(
+        'events_split_panel2_event_keys',
+        JSON.stringify(Array.from(panelDrag.panel2EventKeys))
+      )
+    } catch {
+      // sessionStorage unavailable — silently ignore
+    }
+  }, [panelDrag.splitView, panelDrag.panel2Sessions, panelDrag.panel2EventKeys])
 
   const handleDropToPanel = useCallback(
     (targetPanel: 1 | 2) => (ev: React.DragEvent) => {
