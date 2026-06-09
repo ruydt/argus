@@ -1324,3 +1324,71 @@ func TestGetRawPayload_unknownKeyReturnsNil(t *testing.T) {
 		t.Errorf("expected nil for unknown key, got %q", got)
 	}
 }
+
+func TestDBHealth(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	defer db.Close()
+
+	h, err := db.DBHealth()
+	if err != nil {
+		t.Fatalf("DBHealth: %v", err)
+	}
+	if h.JournalMode == "" {
+		t.Error("want non-empty JournalMode")
+	}
+	if h.PageCount <= 0 {
+		t.Errorf("want PageCount > 0, got %d", h.PageCount)
+	}
+	if h.PageSizeBytes <= 0 {
+		t.Errorf("want PageSizeBytes > 0, got %d", h.PageSizeBytes)
+	}
+	if h.MigrationVersion <= 0 {
+		t.Errorf("want MigrationVersion > 0, got %d", h.MigrationVersion)
+	}
+	if h.WALSizeBytes != nil {
+		t.Errorf("want nil WALSizeBytes for :memory:, got %v", *h.WALSizeBytes)
+	}
+}
+
+func TestDiagnosticsAgentStatsEventRates(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	defer db.Close()
+
+	e := domain.NormalizedEvent{
+		Agent:    "claudecode",
+		Session:  "s1",
+		Action:   "PreToolUse",
+		Time:     time.Now().UTC().Format(time.RFC3339),
+		DedupKey: "k1",
+	}
+	if err := db.Add(e); err != nil {
+		t.Fatalf("add event: %v", err)
+	}
+
+	stats, err := db.DiagnosticsAgentStats()
+	if err != nil {
+		t.Fatalf("DiagnosticsAgentStats: %v", err)
+	}
+
+	var cc *domain.DiagnosticsAgentStats
+	for i := range stats {
+		if stats[i].Agent == "claudecode" {
+			cc = &stats[i]
+		}
+	}
+	if cc == nil {
+		t.Fatal("no claudecode entry in stats")
+	}
+	if cc.EventsLastHour != 1 {
+		t.Errorf("EventsLastHour: want 1, got %d", cc.EventsLastHour)
+	}
+	if cc.EventsLast24h != 1 {
+		t.Errorf("EventsLast24h: want 1, got %d", cc.EventsLast24h)
+	}
+}

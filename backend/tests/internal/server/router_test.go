@@ -74,6 +74,10 @@ func (noopRepo) MarkStaleSessions(_ time.Time) (int64, error) { return 0, nil }
 
 func (noopRepo) Ready() bool { return true }
 
+func (noopRepo) DBHealth() (domain.DiagnosticsDBHealth, error) {
+	return domain.DiagnosticsDBHealth{JournalMode: "wal", PageCount: 10, PageSizeBytes: 4096, MigrationVersion: 13}, nil
+}
+
 var testCORSOrigins = []string{
 	"http://localhost:10804",
 	"http://127.0.0.1:10804",

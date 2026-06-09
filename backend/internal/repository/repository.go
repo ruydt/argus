@@ -33,4 +33,5 @@ type EventRepository interface {
 	GetRawPayload(dedupKey string) ([]byte, error)
 	MarkStaleSessions(cutoff time.Time) (int64, error)
 	Ready() bool
+	DBHealth() (domain.DiagnosticsDBHealth, error)
 }

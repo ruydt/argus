@@ -153,6 +153,10 @@ func (m *mockRepo) MarkStaleSessions(_ time.Time) (int64, error) { return 0, nil
 
 func (m *mockRepo) Ready() bool { return true }
 
+func (m *mockRepo) DBHealth() (domain.DiagnosticsDBHealth, error) {
+	return domain.DiagnosticsDBHealth{JournalMode: "wal", PageCount: 10, PageSizeBytes: 4096, MigrationVersion: 13}, nil
+}
+
 func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {
 	if m.upsertErr != nil {
 		return m.upsertErr

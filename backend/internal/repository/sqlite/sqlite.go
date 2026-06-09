@@ -109,6 +109,15 @@ func (d *DB) Close() error {
 // Ready reports whether the database is open and migrations are complete.
 func (d *DB) Ready() bool { return d.ready.Load() }
 
+func (d *DB) DBHealth() (domain.DiagnosticsDBHealth, error) {
+	var h domain.DiagnosticsDBHealth
+	_ = d.db.QueryRow(`PRAGMA journal_mode`).Scan(&h.JournalMode)
+	_ = d.db.QueryRow(`PRAGMA page_count`).Scan(&h.PageCount)
+	_ = d.db.QueryRow(`PRAGMA page_size`).Scan(&h.PageSizeBytes)
+	_ = d.db.QueryRow(`SELECT COALESCE(MAX(version), 0) FROM schema_migrations`).Scan(&h.MigrationVersion)
+	return h, nil
+}
+
 func (d *DB) migrate() error {
 	if _, err := d.db.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)`); err != nil {
 		return fmt.Errorf("create migrations table: %w", err)
@@ -813,6 +822,33 @@ func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 	}
 	if err := versionRows.Err(); err != nil {
 		return nil, fmt.Errorf("diagnostics agent normalizer versions rows: %w", err)
+	}
+
+	rateRows, err := d.db.Query(`
+		SELECT agent,
+			SUM(CASE WHEN datetime(created_at) >= datetime('now', '-1 hour') THEN 1 ELSE 0 END),
+			SUM(CASE WHEN datetime(created_at) >= datetime('now', '-24 hours') THEN 1 ELSE 0 END)
+		FROM hook_events
+		WHERE agent IN ('claudecode', 'codex')
+		GROUP BY agent
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("diagnostics agent rates: %w", err)
+	}
+	defer rateRows.Close()
+	for rateRows.Next() {
+		var agent string
+		var h, d int
+		if err := rateRows.Scan(&agent, &h, &d); err != nil {
+			return nil, fmt.Errorf("diagnostics agent rates scan: %w", err)
+		}
+		if s, ok := stats[agent]; ok {
+			s.EventsLastHour = h
+			s.EventsLast24h = d
+		}
+	}
+	if err := rateRows.Err(); err != nil {
+		return nil, fmt.Errorf("diagnostics agent rates rows: %w", err)
 	}
 
 	out := make([]domain.DiagnosticsAgentStats, 0, 2)
