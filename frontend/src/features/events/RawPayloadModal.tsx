@@ -1,7 +1,7 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
-import { Check, Copy } from 'lucide-react'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,7 +31,6 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
   const [payload, setPayload] = useReducer((_: PayloadState, next: PayloadState) => next, {
     status: 'idle',
   } as PayloadState)
-  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     setPayload(open ? { status: 'loading' } : { status: 'idle' })
@@ -49,14 +48,6 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
       })
     return () => controller.abort()
   }, [payload.status, dedupKey])
-
-  function handleCopy() {
-    if (payload.status !== 'ready') return
-    void navigator.clipboard.writeText(payload.rawJson).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
-  }
 
   return (
     <Dialog
@@ -80,19 +71,11 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
             className="relative rounded-md border flex-1 min-h-0 flex flex-col"
             aria-label="Raw payload JSON"
           >
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10 transition-colors"
-              aria-label="Copy JSON"
-              title="Copy JSON"
-            >
-              {copied ? (
-                <Check className="size-3.5 text-green-400" />
-              ) : (
-                <Copy className="size-3.5" />
-              )}
-            </button>
+            <CopyIconButton
+              text={payload.rawJson}
+              label="JSON"
+              className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+            />
             <div className="overflow-y-auto flex-1 min-h-0">
               <CodeMirror
                 value={payload.rawJson}

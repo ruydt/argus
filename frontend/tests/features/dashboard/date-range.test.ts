@@ -3,7 +3,6 @@ import {
   formatRangeLabel,
   presetToDateRange,
   rangeToDashboardQuery,
-  rangeToUsageRange,
 } from '@/features/dashboard/date-range'
 
 describe('date-range helpers', () => {
@@ -26,34 +25,6 @@ describe('date-range helpers', () => {
         to: new Date('2026-05-03T00:00:00Z'),
       })
     ).toBe('05/01/26 - 05/03/26')
-  })
-
-  it('maps range span to usage buckets', () => {
-    expect(rangeToUsageRange({ from: undefined, to: undefined })).toBe('7d')
-    expect(
-      rangeToUsageRange({
-        from: new Date('2026-05-01T00:00:00Z'),
-        to: new Date('2026-05-01T00:00:00Z'),
-      })
-    ).toBe('24h')
-    expect(
-      rangeToUsageRange({
-        from: new Date('2026-05-01T00:00:00Z'),
-        to: new Date('2026-05-07T00:00:00Z'),
-      })
-    ).toBe('7d')
-    expect(
-      rangeToUsageRange({
-        from: new Date('2026-05-01T00:00:00Z'),
-        to: new Date('2026-05-20T00:00:00Z'),
-      })
-    ).toBe('30d')
-    expect(
-      rangeToUsageRange({
-        from: new Date('2026-05-01T00:00:00Z'),
-        to: new Date('2026-06-20T00:00:00Z'),
-      })
-    ).toBe('all')
   })
 
   it('builds dashboard query params with start and end', () => {

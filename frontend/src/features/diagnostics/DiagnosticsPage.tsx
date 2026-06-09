@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { Activity, AlertTriangle, Copy, RefreshCw, Shield, Zap } from 'lucide-react'
+import { Activity, AlertTriangle, RefreshCw, Shield, Zap } from 'lucide-react'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -74,18 +75,11 @@ function MonoPath({ path, ariaLabel }: { path: string; ariaLabel: string }) {
       >
         {path}
       </span>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => {
-          navigator.clipboard.writeText(path).catch(() => {})
-        }}
-        className="ml-1 h-auto p-0 opacity-40 hover:opacity-100 transition-opacity"
-        aria-label={ariaLabel}
-      >
-        <Copy className="size-3" />
-      </Button>
+      <CopyIconButton
+        text={path}
+        label={ariaLabel}
+        className="ml-1 size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
+      />
     </span>
   )
 }

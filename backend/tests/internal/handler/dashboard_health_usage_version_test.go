@@ -59,17 +59,6 @@ func TestReadyzReturns200WhenReady(t *testing.T) {
 	}
 }
 
-func TestUsageReturnsBadRequestWithoutPath(t *testing.T) {
-	h := handler.Usage()
-	req := httptest.NewRequest(http.MethodGet, "/api/usage", nil)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d, want 400; body: %s", rec.Code, rec.Body.String())
-	}
-}
-
 func TestVersionReturns200WithJSON(t *testing.T) {
 	h := handler.Version()
 	req := httptest.NewRequest(http.MethodGet, "/api/version", nil)

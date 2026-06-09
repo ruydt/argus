@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"os/exec"
+	"strconv"
 	"time"
 )
 
 type simulateRequest struct {
-	Command string          `json:"command"`
-	Payload json.RawMessage `json:"payload"`
+	Command        string          `json:"command"`
+	Payload        json.RawMessage `json:"payload"`
+	TimeoutSeconds *int            `json:"timeout_seconds,omitempty"`
 }
 
 type simulateResponse struct {
@@ -42,7 +44,12 @@ func HooksSimulate() http.Handler {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		timeoutSeconds := 10
+		if req.TimeoutSeconds != nil && *req.TimeoutSeconds > 0 {
+			timeoutSeconds = *req.TimeoutSeconds
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeoutSeconds)*time.Second)
 		defer cancel()
 
 		cmd := exec.CommandContext(ctx, "sh", "-c", req.Command)
@@ -58,13 +65,18 @@ func HooksSimulate() http.Handler {
 
 		exitCode := 0
 		if runErr != nil {
-			if exitErr, ok := runErr.(*exec.ExitError); ok {
+			if ctx.Err() == context.DeadlineExceeded {
+				exitCode = -1
+				if stderr.Len() == 0 {
+					stderr.WriteString("hook timed out after " + strconv.Itoa(timeoutSeconds) + "s")
+				}
+			} else if exitErr, ok := runErr.(*exec.ExitError); ok {
 				exitCode = exitErr.ExitCode()
 			} else {
 				// context deadline exceeded or OS-level failure
 				exitCode = -1
 				if stderr.Len() == 0 {
-					stderr.WriteString("hook timed out after 10s")
+					stderr.WriteString("hook timed out after " + strconv.Itoa(timeoutSeconds) + "s")
 				}
 			}
 		}

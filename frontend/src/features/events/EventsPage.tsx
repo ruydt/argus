@@ -18,6 +18,25 @@ import type { EventRecord, LayoutOutletContext, SessionUsage, TooltipState } fro
 
 function handleTargetVisible() {}
 
+const KNOWN_SESSIONS_KEY = 'events_known_sessions'
+
+function loadKnownSessions(): Set<string> {
+  try {
+    const raw = sessionStorage.getItem(KNOWN_SESSIONS_KEY)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw) as unknown
+    return Array.isArray(parsed) ? new Set(parsed.filter((v): v is string => typeof v === 'string')) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function saveKnownSessions(ids: Set<string>) {
+  try {
+    sessionStorage.setItem(KNOWN_SESSIONS_KEY, JSON.stringify(Array.from(ids)))
+  } catch { /* quota exceeded */ }
+}
+
 type EdgeDropZoneProps = {
   edgeZoneHover: boolean
   onDragEnter: () => void
@@ -302,11 +321,17 @@ export function EventsPage() {
   const histState = useHistoricalEvents(fetchSince, fetchUntil, sessionFilterOverride, true)
   useEffect(() => {
     if (histState.loadVersion === 0) return
-    setCollapsedSessions(
-      new Set(
-        histState.events.map((e) => e.session || e.transcript_path || 'ungrouped')
-      )
-    )
+    const allIds = histState.events.map((e) => e.session || e.transcript_path || 'ungrouped')
+    const known = loadKnownSessions()
+    const newIds = allIds.filter((id) => !known.has(id))
+    saveKnownSessions(new Set([...known, ...allIds]))
+    if (newIds.length > 0) {
+      setCollapsedSessions((prev) => {
+        const next = new Set(prev)
+        newIds.forEach((id) => next.add(id))
+        return next
+      })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [histState.loadVersion])
   const activeEvents = useMemo(

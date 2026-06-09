@@ -10,9 +10,6 @@ const DashboardPage = lazy(() =>
 const Events = lazy(() =>
   import('./features/events/EventsPage').then((module) => ({ default: module.EventsPage }))
 )
-const Usage = lazy(() =>
-  import('./features/usage/UsagePage').then((module) => ({ default: module.UsagePage }))
-)
 const ProjectsPage = lazy(() =>
   import('./features/projects/ProjectsPage').then((m) => ({ default: m.ProjectsPage }))
 )
@@ -49,14 +46,6 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <DashboardPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="usage"
-            element={
-              <Suspense fallback={null}>
-                <Usage />
               </Suspense>
             }
           />

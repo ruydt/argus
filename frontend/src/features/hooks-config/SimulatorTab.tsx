@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
 import { Check, RefreshCw, Terminal } from 'lucide-react'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,13 +30,15 @@ type SimulateResult = {
 export type SimulatorTabProps = {
   agent: AgentKey
   config: HooksConfig | null
-  // Lifted state — persists across tab switches
+  // Lifted state — persists across tab switches and page navigation (sessionStorage)
   eventType: string
   onEventTypeChange: (et: string) => void
   commandValue: string
   onCommandValueChange: (v: string) => void
   payloadJSON: string
   onPayloadJSONChange: (json: string) => void
+  customCommandText: string
+  onCustomCommandTextChange: (v: string) => void
   onApply: (eventType: string, command: string) => Promise<void>
   applying: boolean
 }
@@ -53,10 +56,11 @@ export function SimulatorTab({
   onCommandValueChange,
   payloadJSON,
   onPayloadJSONChange,
+  customCommandText,
+  onCustomCommandTextChange,
   onApply,
   applying,
 }: SimulatorTabProps) {
-  const [customCommandText, setCustomCommandText] = useState('')
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<SimulateResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -67,12 +71,13 @@ export function SimulatorTab({
   const commandOptions = (() => {
     if (!eventType) return []
     const groups = config?.hooks[eventType] ?? []
-    const opts: { label: string; value: string }[] = []
+    const opts: { label: string; value: string; timeout?: number }[] = []
     groups.forEach((g, gi) => {
       g.hooks.forEach((h, hi) => {
         opts.push({
           label: `group ${gi + 1} hook ${hi + 1} → ${truncate(h.command, 60)}`,
           value: h.command,
+          timeout: h.timeout,
         })
       })
     })
@@ -80,6 +85,8 @@ export function SimulatorTab({
   })()
 
   const effectiveCommand = commandValue === CUSTOM_VALUE ? customCommandText.trim() : commandValue
+  const selectedHookTimeout =
+    commandValue === CUSTOM_VALUE ? undefined : commandOptions.find((opt) => opt.value === commandValue)?.timeout
   const canRun = effectiveCommand.length > 0 && !running
   const canApply = commandValue === CUSTOM_VALUE && customCommandText.trim().length > 0 && !applying
 
@@ -113,7 +120,11 @@ export function SimulatorTab({
       const resp = await fetch('/api/hooks/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: effectiveCommand, payload }),
+        body: JSON.stringify({
+          command: effectiveCommand,
+          payload,
+          timeout_seconds: selectedHookTimeout,
+        }),
       })
       if (!resp.ok) {
         const msg = await resp.text()
@@ -170,14 +181,19 @@ export function SimulatorTab({
       {commandValue === CUSTOM_VALUE && (
         <Input
           value={customCommandText}
-          onChange={(e) => setCustomCommandText(e.target.value)}
+          onChange={(e) => onCustomCommandTextChange(e.target.value)}
           placeholder="Enter shell command, e.g. curl -s http://127.0.0.1:10804/api/hook -d @-"
           className="font-mono text-[13px]"
         />
       )}
 
       {eventType && (
-        <div className="rounded-md border overflow-hidden">
+        <div className="relative rounded-md border overflow-hidden">
+          <CopyIconButton
+            text={payloadJSON}
+            label="JSON"
+            className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+          />
           <CodeMirror
             value={payloadJSON}
             onChange={onPayloadJSONChange}
@@ -234,7 +250,14 @@ export function SimulatorTab({
             <span className="text-[12px] text-muted-foreground">{result.duration_ms}ms</span>
           </div>
 
-          <div className="rounded-md border overflow-hidden bg-[#0d1117]">
+          <div className="relative rounded-md border overflow-hidden bg-[#0d1117]">
+            {result.stdout && (
+              <CopyIconButton
+                text={result.stdout}
+                label="output"
+                className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+              />
+            )}
             <ScrollArea className="h-[180px]">
               <pre className="p-3 text-[12px] font-mono text-[#e6edf3] whitespace-pre-wrap break-all">
                 {result.stdout || <span className="text-[#8b949e]">(no output)</span>}
@@ -243,7 +266,12 @@ export function SimulatorTab({
           </div>
 
           {result.stderr && (
-            <div className="rounded-md border border-destructive/40 overflow-hidden bg-[rgba(255,95,86,0.05)]">
+            <div className="relative rounded-md border border-destructive/40 overflow-hidden bg-[rgba(255,95,86,0.05)]">
+              <CopyIconButton
+                text={result.stderr}
+                label="stderr"
+                className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[rgba(255,95,86,0.9)] hover:bg-white/5"
+              />
               <ScrollArea className="h-[120px]">
                 <pre className="p-3 text-[12px] font-mono text-destructive whitespace-pre-wrap break-all">
                   {result.stderr}

@@ -1,16 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
-import {
-  AppWindowIcon,
-  Check,
-  CodeIcon,
-  Copy,
-  ExternalLink,
-  RefreshCw,
-  Save,
-  Terminal,
-} from 'lucide-react'
+import { AppWindowIcon, CodeIcon, ExternalLink, RefreshCw, Save, Terminal } from 'lucide-react'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -25,6 +17,40 @@ import type { AgentKey, HookEntry, HookGroup, HooksConfig, HooksConfigState } fr
 
 type ViewMode = 'structured' | 'json' | 'simulator'
 
+const SIM_STORAGE_KEY = 'hooker:sim'
+const AGENT_TAB_KEY = 'hooker:hooks-agent'
+const VIEW_MODE_KEY = 'hooker:hooks-view'
+
+function readStorageString(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function writeStorageString(key: string, value: string) {
+  try {
+    sessionStorage.setItem(key, value)
+  } catch { /* quota exceeded */ }
+}
+
+type SimCache = {
+  eventType: string
+  commandValue: string
+  payloadJSON: string
+  customCommandText: string
+}
+
+function readSimCache(): SimCache | null {
+  try {
+    const raw = sessionStorage.getItem(SIM_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as SimCache) : null
+  } catch {
+    return null
+  }
+}
+
 type SimulatorCacheProps = {
   eventType: string
   onEventTypeChange: (et: string) => void
@@ -32,6 +58,8 @@ type SimulatorCacheProps = {
   onCommandValueChange: (v: string) => void
   payloadJSON: string
   onPayloadJSONChange: (json: string) => void
+  customCommandText: string
+  onCustomCommandTextChange: (v: string) => void
   onApply: (eventType: string, command: string) => Promise<void>
   applying: boolean
 }
@@ -44,15 +72,7 @@ type AgentTabContentProps = {
 }
 
 function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) {
-  const [copied, setCopied] = useState(false)
   const { config, draftJSON, loading, error, saveError, setDraftJSON, setConfig, reload } = state
-
-  function handleCopy() {
-    void navigator.clipboard.writeText(draftJSON).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
-  }
 
   const jsonIsValid = (() => {
     try {
@@ -106,19 +126,11 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
             )}
             aria-label="Hooks config JSON"
           >
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="absolute top-2 right-2 z-10 flex items-center justify-center size-7 rounded text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10 transition-colors"
-              aria-label="Copy JSON"
-              title="Copy JSON"
-            >
-              {copied ? (
-                <Check className="size-3.5 text-green-400" />
-              ) : (
-                <Copy className="size-3.5" />
-              )}
-            </button>
+            <CopyIconButton
+              text={draftJSON}
+              label="JSON"
+              className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+            />
             <CodeMirror
               value={draftJSON}
               onChange={(value) => setDraftJSON(value)}
@@ -149,6 +161,8 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
           onCommandValueChange={sim.onCommandValueChange}
           payloadJSON={sim.payloadJSON}
           onPayloadJSONChange={sim.onPayloadJSONChange}
+          customCommandText={sim.customCommandText}
+          onCustomCommandTextChange={sim.onCustomCommandTextChange}
           onApply={sim.onApply}
           applying={sim.applying}
         />
@@ -164,14 +178,32 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
 }
 
 export function HooksConfigPage() {
-  const [activeAgent, setActiveAgent] = useState<AgentKey>('claudecode')
-  const [viewMode, setViewMode] = useState<ViewMode>('structured')
+  const [activeAgent, setActiveAgent] = useState<AgentKey>(() => {
+    const stored = readStorageString(AGENT_TAB_KEY)
+    return stored === 'codex' ? 'codex' : 'claudecode'
+  })
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const stored = readStorageString(VIEW_MODE_KEY)
+    return stored === 'json' || stored === 'simulator' ? stored : 'structured'
+  })
 
-  // Simulator cached state — lifted so it survives tab switches
-  const [simEventType, setSimEventType] = useState<string>('')
-  const [simCommandValue, setSimCommandValue] = useState<string>('')
-  const [simPayloadJSON, setSimPayloadJSON] = useState<string>('')
+  // Simulator cached state — lifted + sessionStorage so it survives page navigation
+  const [simEventType, setSimEventType] = useState<string>(() => readSimCache()?.eventType ?? '')
+  const [simCommandValue, setSimCommandValue] = useState<string>(() => readSimCache()?.commandValue ?? '')
+  const [simPayloadJSON, setSimPayloadJSON] = useState<string>(() => readSimCache()?.payloadJSON ?? '')
+  const [simCustomCommandText, setSimCustomCommandText] = useState<string>(
+    () => readSimCache()?.customCommandText ?? ''
+  )
   const [applying, setApplying] = useState(false)
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        SIM_STORAGE_KEY,
+        JSON.stringify({ eventType: simEventType, commandValue: simCommandValue, payloadJSON: simPayloadJSON, customCommandText: simCustomCommandText })
+      )
+    } catch { /* quota exceeded */ }
+  }, [simEventType, simCommandValue, simPayloadJSON, simCustomCommandText])
 
   const claudeState = useHooksConfig('claudecode')
   const codexState = useHooksConfig('codex')
@@ -218,6 +250,8 @@ export function HooksConfigPage() {
     onCommandValueChange: setSimCommandValue,
     payloadJSON: simPayloadJSON,
     onPayloadJSONChange: setSimPayloadJSON,
+    customCommandText: simCustomCommandText,
+    onCustomCommandTextChange: setSimCustomCommandText,
     onApply: handleSimulatorApply,
     applying,
   }
@@ -245,6 +279,7 @@ export function HooksConfigPage() {
       }
     }
     setViewMode(mode)
+    writeStorageString(VIEW_MODE_KEY, mode)
   }
 
   return (
@@ -298,7 +333,11 @@ export function HooksConfigPage() {
 
         <Tabs
           value={activeAgent}
-          onValueChange={(v) => setActiveAgent(v as AgentKey)}
+          onValueChange={(v) => {
+            const agent = v as AgentKey
+            setActiveAgent(agent)
+            writeStorageString(AGENT_TAB_KEY, agent)
+          }}
           className="w-full"
         >
           <div className="flex items-center justify-between">

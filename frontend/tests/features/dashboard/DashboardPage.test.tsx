@@ -87,7 +87,6 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByText('Token usage')).toBeInTheDocument()
     expect(screen.getByText('Activity')).toBeInTheDocument()
-    expect(screen.getByText('API key usage')).toBeInTheDocument()
   })
 
   it('renders page heading regardless of loading state', () => {

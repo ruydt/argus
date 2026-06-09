@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { highlight } from '@/lib/format'
-import { CopyIconButton } from './CopyIconButton'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 
 type CommandBlockProps = {
   prompt?: string

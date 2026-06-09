@@ -10,20 +10,17 @@ import { TokenUsagePanel } from '@/features/dashboard/TokenUsagePanel'
 import {
   presetToDateRange,
   rangeToDashboardQuery,
-  rangeToUsageRange,
   type DashboardRangePreset,
 } from '@/features/dashboard/date-range'
 import { DashboardDateRangePicker } from '@/features/dashboard/date-range-picker'
 import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats'
-import { UsagePanel } from '@/features/usage/UsagePanel'
 import { cn } from '@/lib/utils'
 
 export function DashboardPage() {
   const [preset, setPreset] = useState<DashboardRangePreset>('14d')
   const [range, setRange] = useState<DateRange>(() => presetToDateRange('14d'))
-  const [view, setView] = useState<'activity' | 'tokens' | 'api-usage'>('tokens')
+  const [view, setView] = useState<'activity' | 'tokens'>('tokens')
   const query = rangeToDashboardQuery(range)
-  const usageRange = rangeToUsageRange(range)
   const { stats, loading, refreshing, reload } = useDashboardStats(query)
 
   return (
@@ -64,21 +61,17 @@ export function DashboardPage() {
             <SummaryStats stats={stats} />
             <Tabs
               value={view}
-              onValueChange={(value) => setView(value as 'activity' | 'tokens' | 'api-usage')}
+              onValueChange={(value) => setView(value as 'activity' | 'tokens')}
             >
               <TabsList variant="line" className="w-full flex-wrap justify-start sm:w-auto">
                 <TabsTrigger value="tokens">Token usage</TabsTrigger>
                 <TabsTrigger value="activity">Activity</TabsTrigger>
-                <TabsTrigger value="api-usage">API key usage</TabsTrigger>
               </TabsList>
               <TabsContent value="tokens">
                 <TokenUsagePanel stats={stats} query={query} />
               </TabsContent>
               <TabsContent value="activity">
                 <ActivityPanel stats={stats} query={query} />
-              </TabsContent>
-              <TabsContent value="api-usage">
-                <UsagePanel title="" dashboardRange={usageRange} />
               </TabsContent>
             </Tabs>
           </>

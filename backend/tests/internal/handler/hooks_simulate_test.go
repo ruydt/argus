@@ -159,3 +159,31 @@ func TestHooksSimulateStderrCaptured(t *testing.T) {
 		t.Fatalf("stderr = %q, want %q", resp.Stderr, "err-msg\n")
 	}
 }
+
+func TestHooksSimulateUsesRequestedTimeout(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("sh not available on Windows")
+	}
+	h := handler.HooksSimulate()
+	body := `{"command":"sleep 2","payload":{"hook_event_name":"PermissionRequest"},"timeout_seconds":1}`
+	req := httptest.NewRequest(http.MethodPost, "/api/hooks/simulate",
+		bytes.NewBufferString(body))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var resp struct {
+		Stderr   string `json:"stderr"`
+		ExitCode int    `json:"exit_code"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp.ExitCode != -1 {
+		t.Fatalf("exit_code = %d, want -1", resp.ExitCode)
+	}
+	if resp.Stderr != "hook timed out after 1s" {
+		t.Fatalf("stderr = %q, want requested timeout message", resp.Stderr)
+	}
+}

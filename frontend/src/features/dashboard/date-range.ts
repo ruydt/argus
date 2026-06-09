@@ -35,14 +35,3 @@ export function rangeToDashboardQuery(range: DateRange) {
   const params = new URLSearchParams({ start, end })
   return params.toString()
 }
-
-export function rangeToUsageRange(range: DateRange) {
-  if (!range.from) return '7d'
-  const end = range.to ?? range.from
-  const spanMs = endOfDay(end).getTime() - startOfDay(range.from).getTime()
-  const spanDays = Math.max(1, Math.ceil(spanMs / (24 * 60 * 60 * 1000)))
-  if (spanDays <= 1) return '24h'
-  if (spanDays <= 7) return '7d'
-  if (spanDays <= 30) return '30d'
-  return 'all'
-}

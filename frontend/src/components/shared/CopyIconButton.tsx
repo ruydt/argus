@@ -1,14 +1,16 @@
 import { Check, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import type { MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 type CopyIconButtonProps = {
   text: string
   label: string
   className?: string
+  onClick?: (e: MouseEvent<HTMLButtonElement>) => void
 }
 
-export function CopyIconButton({ text, label, className }: CopyIconButtonProps) {
+export function CopyIconButton({ text, label, className, onClick }: CopyIconButtonProps) {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function CopyIconButton({ text, label, className }: CopyIconButtonProps) 
   return (
     <button
       type="button"
-      onClick={() => void onCopy()}
+      onClick={(e) => { onClick?.(e); void onCopy() }}
       className={cn(
         'inline-flex h-5 w-5 items-center justify-center rounded text-[#8f8f8f] transition hover:bg-white/[0.08] hover:text-[#d0d0d0]',
         className

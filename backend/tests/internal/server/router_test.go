@@ -184,28 +184,6 @@ func TestNewRouterCORSNoOriginNonCORSRequest(t *testing.T) {
 	}
 }
 
-func TestNewRouterOpenAIRouteIsGETOnly(t *testing.T) {
-	req := localRequest(http.MethodPost, "/api/openai/models")
-	rec := httptest.NewRecorder()
-
-	newTestRouter().ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("status = %d, want 405", rec.Code)
-	}
-}
-
-func TestNewRouterAnthropicRouteIsGETOnly(t *testing.T) {
-	req := localRequest(http.MethodPost, "/api/anthropic/organizations/usage_report/messages")
-	rec := httptest.NewRecorder()
-
-	newTestRouter().ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("status = %d, want 405", rec.Code)
-	}
-}
-
 func TestNewRouterDiagnosticsIncludesHookConfig(t *testing.T) {
 	req := localRequest(http.MethodGet, "/api/diagnostics")
 	rec := httptest.NewRecorder()

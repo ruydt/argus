@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
-import { Copy, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,21 +13,6 @@ import type { DiagnosticsFileEntry, DiagnosticsFileSystem } from './types'
 
 type FileSystemCardProps = {
   fileSystem: DiagnosticsFileSystem
-}
-
-function CopyButton({ value, label }: { value: string; label: string }) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      onClick={() => navigator.clipboard.writeText(value).catch(() => {})}
-      className="h-auto p-0 opacity-40 hover:opacity-100 transition-opacity"
-      aria-label={label}
-    >
-      <Copy className="size-3" />
-    </Button>
-  )
 }
 
 function FileSize({ entry }: { entry: DiagnosticsFileEntry }) {
@@ -115,7 +101,7 @@ function LogRow({ entry, open, onToggle, tailState, onRefresh }: LogRowProps) {
         <div className="flex items-center gap-2 shrink-0">
           <FileSize entry={entry} />
           <FileModified entry={entry} />
-          {entry.exists && <CopyButton value={entry.path} label={`Copy ${entry.name} path`} />}
+          {entry.exists && <CopyIconButton text={entry.path} label={`Copy ${entry.name} path`} className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />}
           <Button
             type="button"
             variant="outline"
@@ -172,7 +158,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
             >
               {fileSystem.hookerDir}
             </span>
-            <CopyButton value={fileSystem.hookerDir} label="Copy .hooker path" />
+            <CopyIconButton text={fileSystem.hookerDir} label="Copy .hooker path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
           </span>
         </div>
         <Separator />
@@ -190,7 +176,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
             <FileSize entry={fileSystem.binary} />
             <FileModified entry={fileSystem.binary} />
             {fileSystem.binary.exists && (
-              <CopyButton value={fileSystem.binary.path} label="Copy binary path" />
+              <CopyIconButton text={fileSystem.binary.path} label="Copy binary path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
             )}
           </div>
         </div>
@@ -230,7 +216,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
                   <div className="flex items-center gap-2">
                     <FileSize entry={entry} />
                     <FileModified entry={entry} />
-                    <CopyButton value={entry.path} label={`Copy ${entry.name} path`} />
+                    <CopyIconButton text={entry.path} label={`Copy ${entry.name} path`} className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
                   </div>
                 </div>
               </div>

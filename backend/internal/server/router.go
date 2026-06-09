@@ -95,14 +95,11 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/diagnostics/log-tail", handler.LogTail(handler.LogTailOptions{
 		HookerDir: opts.HookerDir,
 	}))
-	mux.Handle("GET /api/session-usage", handler.Usage())
 	mux.Handle("GET /api/projects", handler.Projects(svc))
 	mux.Handle("GET /api/sessions", handler.Sessions(svc))
 	mux.Handle("GET /api/sessions/tree", handler.SessionsTree(svc))
 	mux.Handle("GET /api/file-changes", handler.FileChanges(svc))
 	mux.Handle("GET /api/dashboard/stats", handler.DashboardStats(svc))
-	mux.Handle("GET /api/openai/", handler.OpenAIProxy())
-	mux.Handle("GET /api/anthropic/", handler.AnthropicProxy())
 	mux.Handle("GET /api/export/events", secFetchSite(handler.ExportEvents(repo)))
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
 	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
