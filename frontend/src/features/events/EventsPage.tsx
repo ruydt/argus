@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Columns2, SlidersHorizontal } from 'lucide-react'
 import { useOutletContext } from 'react-router-dom'
@@ -300,6 +300,15 @@ export function EventsPage() {
     until: fetchUntil,
   })
   const histState = useHistoricalEvents(fetchSince, fetchUntil, sessionFilterOverride, true)
+  useEffect(() => {
+    if (histState.loadVersion === 0) return
+    setCollapsedSessions(
+      new Set(
+        histState.events.map((e) => e.session || e.transcript_path || 'ungrouped')
+      )
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [histState.loadVersion])
   const activeEvents = useMemo(
     () => (isLive ? mergeByKey(histState.events, liveState.events) : histState.events),
     [isLive, histState.events, liveState.events]
