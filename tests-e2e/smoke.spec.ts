@@ -41,6 +41,8 @@ test.beforeAll(async () => {
 
 test('events page shows at least one event row', async ({ page }) => {
   await page.goto('/')
+  await expect(page.getByText('smoke-cc-01')).toBeVisible()
+  await page.getByText('smoke-cc-01').click()
   await expect(page.locator('[data-testid="event-row"]').first()).toBeVisible()
 })
 
