@@ -78,6 +78,8 @@ const healthyDiagnostics: Diagnostics = {
       },
     ],
     hooks: [],
+    claudeDir: '/home/user/.claude',
+    claudeDirExists: true,
     claudeHooks: [],
     claudeHooksDirExists: true,
     claudeHistory: {
@@ -88,6 +90,8 @@ const healthyDiagnostics: Diagnostics = {
       exists: true,
       lineCount: 48231,
     },
+    codexDir: '/home/user/.codex',
+    codexDirExists: false,
     codexHooks: [],
     codexHooksDirExists: false,
     codexDBs: [],
@@ -204,8 +208,6 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText('Ready')).toBeInTheDocument()
     expect(screen.getByText('Hook requests')).toBeInTheDocument()
     expect(screen.getByText('Migration')).toBeInTheDocument()
-    expect(screen.getByText('1h')).toBeInTheDocument()
-    expect(screen.getByText('24h')).toBeInTheDocument()
   })
 
   it('shows Uninstalled badge when codexDBsDirExists is false', async () => {

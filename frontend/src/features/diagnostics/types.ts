@@ -91,9 +91,13 @@ export interface DiagnosticsFileSystem {
   binary: DiagnosticsFileEntry
   logs: DiagnosticsFileEntry[]
   hooks: DiagnosticsFileEntry[]
+  claudeDir: string
+  claudeDirExists: boolean
   claudeHooks: DiagnosticsFileEntry[]
   claudeHooksDirExists: boolean
   claudeHistory: DiagnosticsFileEntry
+  codexDir: string
+  codexDirExists: boolean
   codexHooks: DiagnosticsFileEntry[]
   codexHooksDirExists: boolean
   codexDBs: DiagnosticsFileEntry[]

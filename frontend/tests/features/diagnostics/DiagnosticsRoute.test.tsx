@@ -49,6 +49,8 @@ const minimalDiagnostics: Diagnostics = {
       },
     ],
     hooks: [],
+    claudeDir: '/home/user/.claude',
+    claudeDirExists: true,
     claudeHooks: [],
     claudeHooksDirExists: true,
     claudeHistory: {
@@ -59,6 +61,8 @@ const minimalDiagnostics: Diagnostics = {
       exists: true,
       lineCount: 48231,
     },
+    codexDir: '/home/user/.codex',
+    codexDirExists: false,
     codexHooks: [],
     codexHooksDirExists: false,
     codexDBs: [],

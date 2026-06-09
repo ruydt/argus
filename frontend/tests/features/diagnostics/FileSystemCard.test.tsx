@@ -37,6 +37,8 @@ const mockFS: DiagnosticsFileSystem = {
       exists: true,
     },
   ],
+  claudeDir: '/home/user/.claude',
+  claudeDirExists: true,
   claudeHooks: [],
   claudeHooksDirExists: true,
   claudeHistory: {
@@ -47,6 +49,8 @@ const mockFS: DiagnosticsFileSystem = {
     exists: true,
     lineCount: 48231,
   },
+  codexDir: '/home/user/.codex',
+  codexDirExists: true,
   codexHooks: [],
   codexHooksDirExists: false,
   codexDBs: [

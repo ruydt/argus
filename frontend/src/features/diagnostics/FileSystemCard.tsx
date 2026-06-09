@@ -96,16 +96,8 @@ type LogRowProps = {
 function LogRow({ entry, open, onToggle, tailState, onRefresh }: LogRowProps) {
   return (
     <div>
-      <div className="flex items-center justify-between py-2 text-[13px]">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[12px]">{entry.name}</span>
-          <span
-            className="font-mono text-[12px] text-muted-foreground truncate max-w-[180px]"
-            title={entry.path}
-          >
-            {entry.path}
-          </span>
-        </div>
+      <div className="flex items-center justify-between py-1.5 text-[13px]">
+        <span className="font-mono text-[12px]">{entry.name}</span>
         <div className="flex items-center gap-2 shrink-0">
           <FileSize entry={entry} />
           <FileModified entry={entry} />
@@ -129,6 +121,48 @@ function LogRow({ entry, open, onToggle, tailState, onRefresh }: LogRowProps) {
         </div>
       </div>
       {open && <TailPanel {...tailState} onRefresh={onRefresh} />}
+    </div>
+  )
+}
+
+type SubSectionProps = {
+  label: string
+  entries: DiagnosticsFileEntry[]
+  dirExists: boolean
+  emptyLabel?: string
+}
+
+function SubSection({ label, entries, dirExists, emptyLabel }: SubSectionProps) {
+  return (
+    <div className="mt-2">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-[11px] font-mono text-muted-foreground">{label}</span>
+        <span className="text-[11px] text-muted-foreground">({entries.length})</span>
+        {!dirExists && <UninstalledBadge />}
+      </div>
+      {entries.length === 0 && dirExists ? (
+        <p className="text-[12px] text-muted-foreground pl-3 py-1">{emptyLabel ?? 'No files found'}</p>
+      ) : (
+        <div className="border-l border-border pl-3">
+          {entries.map((entry, i) => (
+            <div key={entry.name}>
+              {i > 0 && <Separator />}
+              <div className="flex items-center justify-between py-1.5 text-[13px]">
+                <span className="font-mono text-[12px]">{entry.name}</span>
+                <div className="flex items-center gap-2">
+                  <FileSize entry={entry} />
+                  <FileModified entry={entry} />
+                  <CopyIconButton
+                    text={entry.path}
+                    label={`Copy ${entry.name} path`}
+                    className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -205,171 +239,84 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
         <Separator />
 
         {/* Logs */}
-        <div className="py-1">
-          <p className="text-[11px] text-muted-foreground py-1">logs</p>
-          {fileSystem.logs.map((entry, i) => (
-            <div key={entry.name}>
-              {i > 0 && <Separator />}
-              <LogRow
-                entry={entry}
-                open={openLog === entry.name}
-                onToggle={() => toggleLog(entry.name)}
-                tailState={tailStateFor(entry.name)}
-                onRefresh={refreshFor(entry.name)}
-              />
-            </div>
-          ))}
-        </div>
-        <Separator />
-
-        {/* Hooks */}
-        <div className="py-1">
-          <p className="text-[11px] text-muted-foreground py-1">
-            ~/.hooker/hooks ({fileSystem.hooks.length})
-          </p>
-          {fileSystem.hooks.length === 0 ? (
-            <p className="text-[12px] text-muted-foreground py-2">No hook scripts found</p>
-          ) : (
-            fileSystem.hooks.map((entry, i) => (
-              <div key={entry.name}>
-                {i > 0 && <Separator />}
-                <div className="flex items-center justify-between py-2 text-[13px]">
-                  <span className="font-mono text-[12px]">{entry.name}</span>
-                  <div className="flex items-center gap-2">
-                    <FileSize entry={entry} />
-                    <FileModified entry={entry} />
-                    <CopyIconButton
-                      text={entry.path}
-                      label={`Copy ${entry.name} path`}
-                      className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <Separator />
-
-        {/* Claude hooks */}
-        <div className="py-1">
-          <div className="flex items-center gap-2 py-1">
-            <p className="text-[11px] text-muted-foreground">
-              ~/.claude/hooks ({(fileSystem.claudeHooks ?? []).length})
-            </p>
-            {!fileSystem.claudeHooksDirExists && <UninstalledBadge />}
+        <div className="mt-2">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[11px] font-mono text-muted-foreground">logs</span>
+            <span className="text-[11px] text-muted-foreground">({fileSystem.logs.length})</span>
           </div>
-          {(fileSystem.claudeHooks ?? []).length === 0 && fileSystem.claudeHooksDirExists ? (
-            <p className="text-[12px] text-muted-foreground py-2">No hook scripts found</p>
-          ) : (
-            (fileSystem.claudeHooks ?? []).map((entry, i) => (
+          <div className="border-l border-border pl-3">
+            {fileSystem.logs.map((entry, i) => (
               <div key={entry.name}>
                 {i > 0 && <Separator />}
-                <div className="flex items-center justify-between py-2 text-[13px]">
-                  <span className="font-mono text-[12px]">{entry.name}</span>
-                  <div className="flex items-center gap-2">
-                    <FileSize entry={entry} />
-                    <FileModified entry={entry} />
-                    <CopyIconButton
-                      text={entry.path}
-                      label={`Copy ${entry.name} path`}
-                      className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-                    />
-                  </div>
-                </div>
+                <LogRow
+                  entry={entry}
+                  open={openLog === entry.name}
+                  onToggle={() => toggleLog(entry.name)}
+                  tailState={tailStateFor(entry.name)}
+                  onRefresh={refreshFor(entry.name)}
+                />
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
         <Separator />
 
-        {/* Claude history.jsonl */}
+        {/* ~/.hooker/hooks */}
+        <SubSection label="hooks" entries={fileSystem.hooks} dirExists={true} />
+
+        <Separator />
+
+        {/* ~/.claude */}
         <div className="flex items-center justify-between py-2 text-[13px]">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[12px]">~/.claude/history.jsonl</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <FileSize entry={fileSystem.claudeHistory} />
-            {fileSystem.claudeHistory.lineCount != null && (
-              <span className="text-[12px] text-muted-foreground">
-                {fileSystem.claudeHistory.lineCount.toLocaleString()} lines
-              </span>
+          <span className="text-muted-foreground">~/.claude</span>
+          <span className="flex items-center gap-1">
+            <span className="font-mono text-[12px] text-foreground truncate max-w-[300px]" title={fileSystem.claudeDir}>
+              {fileSystem.claudeDir}
+            </span>
+            {fileSystem.claudeDirExists ? (
+              <CopyIconButton text={fileSystem.claudeDir} label="Copy .claude path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
+            ) : (
+              <UninstalledBadge />
             )}
-            <FileModified entry={fileSystem.claudeHistory} />
-            {fileSystem.claudeHistory.exists && (
-              <CopyIconButton
-                text={fileSystem.claudeHistory.path}
-                label="Copy history.jsonl path"
-                className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-              />
-            )}
+          </span>
+        </div>
+        <SubSection label="hooks" entries={fileSystem.claudeHooks ?? []} dirExists={fileSystem.claudeHooksDirExists} />
+        <div className="mt-2 border-l border-border pl-3">
+          <div className="flex items-center justify-between py-1.5 text-[13px]">
+            <span className="font-mono text-[12px]">history.jsonl</span>
+            <div className="flex items-center gap-2">
+              <FileSize entry={fileSystem.claudeHistory} />
+              {fileSystem.claudeHistory.lineCount != null && (
+                <span className="text-[12px] text-muted-foreground">
+                  {fileSystem.claudeHistory.lineCount.toLocaleString()} lines
+                </span>
+              )}
+              <FileModified entry={fileSystem.claudeHistory} />
+              {fileSystem.claudeHistory.exists && (
+                <CopyIconButton text={fileSystem.claudeHistory.path} label="Copy history.jsonl path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
+              )}
+            </div>
           </div>
         </div>
+
         <Separator />
 
-        {/* Codex hooks */}
-        <div className="py-1">
-          <div className="flex items-center gap-2 py-1">
-            <p className="text-[11px] text-muted-foreground">
-              ~/.codex/hooks ({(fileSystem.codexHooks ?? []).length})
-            </p>
-            {!fileSystem.codexHooksDirExists && <UninstalledBadge />}
-          </div>
-          {(fileSystem.codexHooks ?? []).length === 0 && fileSystem.codexHooksDirExists ? (
-            <p className="text-[12px] text-muted-foreground py-2">No hook scripts found</p>
-          ) : (
-            (fileSystem.codexHooks ?? []).map((entry, i) => (
-              <div key={entry.name}>
-                {i > 0 && <Separator />}
-                <div className="flex items-center justify-between py-2 text-[13px]">
-                  <span className="font-mono text-[12px]">{entry.name}</span>
-                  <div className="flex items-center gap-2">
-                    <FileSize entry={entry} />
-                    <FileModified entry={entry} />
-                    <CopyIconButton
-                      text={entry.path}
-                      label={`Copy ${entry.name} path`}
-                      className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+        {/* ~/.codex */}
+        <div className="flex items-center justify-between py-2 text-[13px]">
+          <span className="text-muted-foreground">~/.codex</span>
+          <span className="flex items-center gap-1">
+            <span className="font-mono text-[12px] text-foreground truncate max-w-[300px]" title={fileSystem.codexDir}>
+              {fileSystem.codexDir}
+            </span>
+            {fileSystem.codexDirExists ? (
+              <CopyIconButton text={fileSystem.codexDir} label="Copy .codex path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
+            ) : (
+              <UninstalledBadge />
+            )}
+          </span>
         </div>
-        <Separator />
-
-        {/* Codex databases */}
-        <div className="py-1">
-          <div className="flex items-center gap-2 py-1">
-            <p className="text-[11px] text-muted-foreground">
-              ~/.codex databases ({(fileSystem.codexDBs ?? []).length})
-            </p>
-            {!fileSystem.codexDBsDirExists && <UninstalledBadge />}
-          </div>
-          {(fileSystem.codexDBs ?? []).length === 0 && fileSystem.codexDBsDirExists ? (
-            <p className="text-[12px] text-muted-foreground py-2">No databases found</p>
-          ) : (
-            (fileSystem.codexDBs ?? []).map((entry, i) => (
-              <div key={entry.name}>
-                {i > 0 && <Separator />}
-                <div className="flex items-center justify-between py-2 text-[13px]">
-                  <span className="font-mono text-[12px]">{entry.name}</span>
-                  <div className="flex items-center gap-2">
-                    <FileSize entry={entry} />
-                    <FileModified entry={entry} />
-                    <CopyIconButton
-                      text={entry.path}
-                      label={`Copy ${entry.name} path`}
-                      className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <SubSection label="hooks" entries={fileSystem.codexHooks ?? []} dirExists={fileSystem.codexHooksDirExists} />
+        <SubSection label="databases" entries={fileSystem.codexDBs ?? []} dirExists={fileSystem.codexDBsDirExists} emptyLabel="No databases found" />
 
         {/* Warning for missing binary */}
         {!fileSystem.binary.exists && (

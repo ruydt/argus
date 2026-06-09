@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { Activity, AlertTriangle, RefreshCw } from 'lucide-react'
+import { Activity, AlertTriangle, Clock, RefreshCw, Zap } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -153,7 +153,7 @@ function LoadedContent({ data }: { data: Diagnostics }) {
   return (
     <>
       {/* Summary tile row */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {/* Tile 1 — Readiness */}
         <Card>
           <CardContent className="p-4">
@@ -185,7 +185,44 @@ function LoadedContent({ data }: { data: Diagnostics }) {
           </CardContent>
         </Card>
 
-{/* Tile 3 — Agent Warnings */}
+        {/* Tile 2 — Uptime */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
+              <Clock className="inline size-4 mr-1 text-muted-foreground" />
+              Uptime
+            </div>
+            <div className="text-[20px] font-semibold">
+              {Math.floor(data.runtime.uptimeSeconds / 3600)}h{' '}
+              {Math.floor((data.runtime.uptimeSeconds % 3600) / 60)}m
+            </div>
+            <p className="text-[12px] text-muted-foreground mt-1">
+              {new Date(data.runtime.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Tile 3 — Hook requests */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
+              <Zap className="inline size-4 mr-1 text-muted-foreground" />
+              Hook requests
+            </div>
+            <div className="text-[20px] font-semibold">
+              {data.runtime.hookRequests.toLocaleString()}
+            </div>
+            <p className="text-[12px] text-muted-foreground mt-1">
+              {data.runtime.ingestionErrors > 0 ? (
+                <span className="text-[var(--destructive)]">{data.runtime.ingestionErrors} errors</span>
+              ) : (
+                'No errors'
+              )}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Tile 4 — Agent Warnings */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
@@ -221,14 +258,9 @@ function LoadedContent({ data }: { data: Diagnostics }) {
                   <TableHead scope="col" className="w-[100px]">
                     Status
                   </TableHead>
-                  <TableHead scope="col" className="w-[80px]">
-                    Events
-                  </TableHead>
                   <TableHead scope="col" className="w-[120px]">
                     Last Seen
                   </TableHead>
-                  <TableHead scope="col" className="w-[50px] text-right">1h</TableHead>
-                  <TableHead scope="col" className="w-[50px] text-right">24h</TableHead>
                   <TableHead scope="col" className="w-[120px]">
                     Hook Config
                   </TableHead>
@@ -242,17 +274,10 @@ function LoadedContent({ data }: { data: Diagnostics }) {
                     <TableCell>
                       <AgentStatusCell status={agent.status} />
                     </TableCell>
-                    <TableCell>{agent.eventCount.toLocaleString()}</TableCell>
                     <TableCell>
                       {agent.lastSeenAt
                         ? formatDistanceToNow(new Date(agent.lastSeenAt), { addSuffix: true })
                         : '—'}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {agent.eventsLastHour.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {agent.eventsLast24h.toLocaleString()}
                     </TableCell>
                     <TableCell>
                       <HookConfigCell
@@ -349,19 +374,6 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               </div>
               <Separator />
               <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Uptime</span>
-                <span>
-                  {Math.floor(data.runtime.uptimeSeconds / 3600)}h{' '}
-                  {Math.floor((data.runtime.uptimeSeconds % 3600) / 60)}m
-                </span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Hook requests</span>
-                <span>{data.runtime.hookRequests.toLocaleString()}</span>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Ingestion errors</span>
                 <span className={data.runtime.ingestionErrors > 0 ? 'text-[var(--destructive)]' : ''}>
                   {data.runtime.ingestionErrors.toLocaleString()}
@@ -434,7 +446,9 @@ export function DiagnosticsPage() {
         {/* Loading branch — skeleton only on first fetch, NOT on refresh (D-14, D-16) */}
         {loading && (
           <div aria-busy="true" className="flex flex-col gap-6">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Skeleton className="h-[80px] rounded-lg" />
+              <Skeleton className="h-[80px] rounded-lg" />
               <Skeleton className="h-[80px] rounded-lg" />
               <Skeleton className="h-[80px] rounded-lg" />
             </div>

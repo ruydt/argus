@@ -763,17 +763,20 @@ func scanFileSystem(hookerDir string) domain.DiagnosticsFileSystem {
 		return fs
 	}
 
-	claudeHooksDir := filepath.Join(homeDir, ".claude", "hooks")
+	claudeDir := filepath.Join(homeDir, ".claude")
+	fs.ClaudeDir = claudeDir
+	fs.ClaudeDirExists = pathExists(claudeDir)
+	claudeHooksDir := filepath.Join(claudeDir, "hooks")
 	fs.ClaudeHooksDirExists = pathExists(claudeHooksDir)
 	fs.ClaudeHooks = scanDir(claudeHooksDir)
-
-	fs.ClaudeHistory = statEntryWithLineCount("history.jsonl", filepath.Join(homeDir, ".claude", "history.jsonl"))
-
-	codexHooksDir := filepath.Join(homeDir, ".codex", "hooks")
-	fs.CodexHooksDirExists = pathExists(codexHooksDir)
-	fs.CodexHooks = scanDir(codexHooksDir)
+	fs.ClaudeHistory = statEntryWithLineCount("history.jsonl", filepath.Join(claudeDir, "history.jsonl"))
 
 	codexDir := filepath.Join(homeDir, ".codex")
+	fs.CodexDir = codexDir
+	fs.CodexDirExists = pathExists(codexDir)
+	codexHooksDir := filepath.Join(codexDir, "hooks")
+	fs.CodexHooksDirExists = pathExists(codexHooksDir)
+	fs.CodexHooks = scanDir(codexHooksDir)
 	fs.CodexDBsDirExists = pathExists(codexDir)
 	fs.CodexDBs = scanDirFiltered(codexDir, ".sqlite")
 
