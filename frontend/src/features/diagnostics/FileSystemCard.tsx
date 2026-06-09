@@ -172,6 +172,7 @@ function SubSection({ label, entries, dirExists, emptyLabel }: SubSectionProps) 
 export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
   const hookerTail = useLogTail('hooker', 50)
   const buildTail = useLogTail('build', 50)
+  const hookScriptsTail = useLogTail('hook-scripts', 50)
   const [openLog, setOpenLog] = useState<string | null>(null)
 
   function toggleLog(name: string) {
@@ -180,16 +181,20 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
     if (opening) {
       if (name === 'hooker.log') hookerTail.fetch()
       else if (name === 'build.log') buildTail.fetch()
+      else if (name === 'hook-scripts.log') hookScriptsTail.fetch()
     }
   }
 
   function tailStateFor(name: string) {
-    const t = name === 'hooker.log' ? hookerTail : buildTail
-    return { lines: t.lines, loading: t.loading, error: t.error }
+    if (name === 'hooker.log') return { lines: hookerTail.lines, loading: hookerTail.loading, error: hookerTail.error }
+    if (name === 'hook-scripts.log') return { lines: hookScriptsTail.lines, loading: hookScriptsTail.loading, error: hookScriptsTail.error }
+    return { lines: buildTail.lines, loading: buildTail.loading, error: buildTail.error }
   }
 
   function refreshFor(name: string) {
-    return name === 'hooker.log' ? hookerTail.fetch : buildTail.fetch
+    if (name === 'hooker.log') return hookerTail.fetch
+    if (name === 'hook-scripts.log') return hookScriptsTail.fetch
+    return buildTail.fetch
   }
 
   return (

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-type LogFile = 'hooker' | 'build'
+type LogFile = 'hooker' | 'build' | 'hook-scripts'
 
 type State = {
   lines: string[]

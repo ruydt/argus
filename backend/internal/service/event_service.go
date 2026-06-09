@@ -751,6 +751,7 @@ func scanFileSystem(hookerDir string) domain.DiagnosticsFileSystem {
 		Logs: []domain.DiagnosticsFileEntry{
 			statEntry("hooker.log", filepath.Join(hookerDir, "hooker.log")),
 			statEntry("build.log", filepath.Join(hookerDir, "build.log")),
+			statEntry("hook-scripts.log", filepath.Join(hookerDir, "hook-scripts.log")),
 		},
 		Hooks:       scanDir(filepath.Join(hookerDir, "hooks")),
 		ClaudeHooks: []domain.DiagnosticsFileEntry{},

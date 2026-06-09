@@ -25,8 +25,10 @@ func LogTail(opts LogTailOptions) http.Handler {
 			filename = "hooker.log"
 		case "build":
 			filename = "build.log"
+		case "hook-scripts":
+			filename = "hook-scripts.log"
 		default:
-			http.Error(w, "invalid file param: must be 'hooker' or 'build'", http.StatusBadRequest)
+			http.Error(w, "invalid file param: must be 'hooker', 'build', or 'hook-scripts'", http.StatusBadRequest)
 			return
 		}
 
