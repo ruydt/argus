@@ -141,7 +141,9 @@ function SubSection({ label, entries, dirExists, emptyLabel }: SubSectionProps) 
         {!dirExists && <UninstalledBadge />}
       </div>
       {entries.length === 0 && dirExists ? (
-        <p className="text-[12px] text-muted-foreground pl-3 py-1">{emptyLabel ?? 'No files found'}</p>
+        <p className="text-[12px] text-muted-foreground pl-3 py-1">
+          {emptyLabel ?? 'No files found'}
+        </p>
       ) : (
         <div className="border-l border-border pl-3">
           {entries.map((entry, i) => (
@@ -270,17 +272,28 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
         <div className="flex items-center justify-between py-2 text-[13px]">
           <span className="text-muted-foreground">~/.claude</span>
           <span className="flex items-center gap-1">
-            <span className="font-mono text-[12px] text-foreground truncate max-w-[300px]" title={fileSystem.claudeDir}>
+            <span
+              className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
+              title={fileSystem.claudeDir}
+            >
               {fileSystem.claudeDir}
             </span>
             {fileSystem.claudeDirExists ? (
-              <CopyIconButton text={fileSystem.claudeDir} label="Copy .claude path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
+              <CopyIconButton
+                text={fileSystem.claudeDir}
+                label="Copy .claude path"
+                className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
+              />
             ) : (
               <UninstalledBadge />
             )}
           </span>
         </div>
-        <SubSection label="hooks" entries={fileSystem.claudeHooks ?? []} dirExists={fileSystem.claudeHooksDirExists} />
+        <SubSection
+          label="hooks"
+          entries={fileSystem.claudeHooks ?? []}
+          dirExists={fileSystem.claudeHooksDirExists}
+        />
         <div className="mt-2 border-l border-border pl-3">
           <div className="flex items-center justify-between py-1.5 text-[13px]">
             <span className="font-mono text-[12px]">history.jsonl</span>
@@ -293,7 +306,11 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
               )}
               <FileModified entry={fileSystem.claudeHistory} />
               {fileSystem.claudeHistory.exists && (
-                <CopyIconButton text={fileSystem.claudeHistory.path} label="Copy history.jsonl path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
+                <CopyIconButton
+                  text={fileSystem.claudeHistory.path}
+                  label="Copy history.jsonl path"
+                  className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
+                />
               )}
             </div>
           </div>
@@ -305,18 +322,34 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
         <div className="flex items-center justify-between py-2 text-[13px]">
           <span className="text-muted-foreground">~/.codex</span>
           <span className="flex items-center gap-1">
-            <span className="font-mono text-[12px] text-foreground truncate max-w-[300px]" title={fileSystem.codexDir}>
+            <span
+              className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
+              title={fileSystem.codexDir}
+            >
               {fileSystem.codexDir}
             </span>
             {fileSystem.codexDirExists ? (
-              <CopyIconButton text={fileSystem.codexDir} label="Copy .codex path" className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent" />
+              <CopyIconButton
+                text={fileSystem.codexDir}
+                label="Copy .codex path"
+                className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
+              />
             ) : (
               <UninstalledBadge />
             )}
           </span>
         </div>
-        <SubSection label="hooks" entries={fileSystem.codexHooks ?? []} dirExists={fileSystem.codexHooksDirExists} />
-        <SubSection label="databases" entries={fileSystem.codexDBs ?? []} dirExists={fileSystem.codexDBsDirExists} emptyLabel="No databases found" />
+        <SubSection
+          label="hooks"
+          entries={fileSystem.codexHooks ?? []}
+          dirExists={fileSystem.codexHooksDirExists}
+        />
+        <SubSection
+          label="databases"
+          entries={fileSystem.codexDBs ?? []}
+          dirExists={fileSystem.codexDBsDirExists}
+          emptyLabel="No databases found"
+        />
 
         {/* Warning for missing binary */}
         {!fileSystem.binary.exists && (

@@ -1330,7 +1330,11 @@ func TestDBHealth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("close db: %v", err)
+		}
+	}()
 
 	h, err := db.DBHealth()
 	if err != nil {
@@ -1358,7 +1362,11 @@ func TestDiagnosticsAgentStatsEventRates(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("close db: %v", err)
+		}
+	}()
 
 	e := domain.NormalizedEvent{
 		Agent:    "claudecode",

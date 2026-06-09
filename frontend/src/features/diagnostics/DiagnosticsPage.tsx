@@ -136,7 +136,6 @@ function HookConfigCell({ hookConfigStatus, label }: { hookConfigStatus: string;
   return <span className="text-[12px] text-muted-foreground">{hookConfigStatus}</span>
 }
 
-
 function LoadedContent({ data }: { data: Diagnostics }) {
   const hookConfigLabels = useHookConfigLabels(data.agents)
   const agentWarningCount = data.agents.filter(
@@ -197,7 +196,10 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               {Math.floor((data.runtime.uptimeSeconds % 3600) / 60)}m
             </div>
             <p className="text-[12px] text-muted-foreground mt-1">
-              {new Date(data.runtime.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(data.runtime.startedAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </p>
           </CardContent>
         </Card>
@@ -214,7 +216,9 @@ function LoadedContent({ data }: { data: Diagnostics }) {
             </div>
             <p className="text-[12px] text-muted-foreground mt-1">
               {data.runtime.ingestionErrors > 0 ? (
-                <span className="text-[var(--destructive)]">{data.runtime.ingestionErrors} errors</span>
+                <span className="text-[var(--destructive)]">
+                  {data.runtime.ingestionErrors} errors
+                </span>
               ) : (
                 'No errors'
               )}
@@ -240,7 +244,6 @@ function LoadedContent({ data }: { data: Diagnostics }) {
             <p className="text-[12px] text-muted-foreground mt-1">{data.agents.length} agents</p>
           </CardContent>
         </Card>
-
       </div>
 
       {/* Two-column body */}
@@ -370,12 +373,16 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               {/* Runtime */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Started</span>
-                <span>{formatDistanceToNow(new Date(data.runtime.startedAt), { addSuffix: true })}</span>
+                <span>
+                  {formatDistanceToNow(new Date(data.runtime.startedAt), { addSuffix: true })}
+                </span>
               </div>
               <Separator />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Ingestion errors</span>
-                <span className={data.runtime.ingestionErrors > 0 ? 'text-[var(--destructive)]' : ''}>
+                <span
+                  className={data.runtime.ingestionErrors > 0 ? 'text-[var(--destructive)]' : ''}
+                >
                   {data.runtime.ingestionErrors.toLocaleString()}
                 </span>
               </div>
@@ -389,14 +396,17 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB pages</span>
                 <span>
-                  {data.dbHealth.pageCount.toLocaleString()} × {formatBytes(data.dbHealth.pageSizeBytes)}
+                  {data.dbHealth.pageCount.toLocaleString()} ×{' '}
+                  {formatBytes(data.dbHealth.pageSizeBytes)}
                 </span>
               </div>
               <Separator />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">WAL size</span>
                 <span>
-                  {data.dbHealth.walSizeBytes !== null ? formatBytes(data.dbHealth.walSizeBytes) : '—'}
+                  {data.dbHealth.walSizeBytes !== null
+                    ? formatBytes(data.dbHealth.walSizeBytes)
+                    : '—'}
                 </span>
               </div>
               <Separator />
@@ -406,7 +416,6 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               </div>
             </CardContent>
           </Card>
-
         </div>
       </div>
 
