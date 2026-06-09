@@ -32,7 +32,9 @@ function readStorageString(key: string): string | null {
 function writeStorageString(key: string, value: string) {
   try {
     sessionStorage.setItem(key, value)
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 type SimCache = {
@@ -189,8 +191,12 @@ export function HooksConfigPage() {
 
   // Simulator cached state — lifted + sessionStorage so it survives page navigation
   const [simEventType, setSimEventType] = useState<string>(() => readSimCache()?.eventType ?? '')
-  const [simCommandValue, setSimCommandValue] = useState<string>(() => readSimCache()?.commandValue ?? '')
-  const [simPayloadJSON, setSimPayloadJSON] = useState<string>(() => readSimCache()?.payloadJSON ?? '')
+  const [simCommandValue, setSimCommandValue] = useState<string>(
+    () => readSimCache()?.commandValue ?? ''
+  )
+  const [simPayloadJSON, setSimPayloadJSON] = useState<string>(
+    () => readSimCache()?.payloadJSON ?? ''
+  )
   const [simCustomCommandText, setSimCustomCommandText] = useState<string>(
     () => readSimCache()?.customCommandText ?? ''
   )
@@ -200,9 +206,16 @@ export function HooksConfigPage() {
     try {
       sessionStorage.setItem(
         SIM_STORAGE_KEY,
-        JSON.stringify({ eventType: simEventType, commandValue: simCommandValue, payloadJSON: simPayloadJSON, customCommandText: simCustomCommandText })
+        JSON.stringify({
+          eventType: simEventType,
+          commandValue: simCommandValue,
+          payloadJSON: simPayloadJSON,
+          customCommandText: simCustomCommandText,
+        })
       )
-    } catch { /* quota exceeded */ }
+    } catch {
+      /* quota exceeded */
+    }
   }, [simEventType, simCommandValue, simPayloadJSON, simCustomCommandText])
 
   const claudeState = useHooksConfig('claudecode')

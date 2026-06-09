@@ -59,10 +59,7 @@ export function DashboardPage() {
         ) : (
           <>
             <SummaryStats stats={stats} />
-            <Tabs
-              value={view}
-              onValueChange={(value) => setView(value as 'activity' | 'tokens')}
-            >
+            <Tabs value={view} onValueChange={(value) => setView(value as 'activity' | 'tokens')}>
               <TabsList variant="line" className="w-full flex-wrap justify-start sm:w-auto">
                 <TabsTrigger value="tokens">Token usage</TabsTrigger>
                 <TabsTrigger value="activity">Activity</TabsTrigger>

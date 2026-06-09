@@ -32,25 +32,10 @@ afterEach(() => {
 
 describe('useEventFilters — search debounce', () => {
   it('does not filter events before 150ms after searchQuery change', () => {
-    const events = [
-      makeEvent({ command: 'echo hello' }),
-      makeEvent({ command: 'cat file.txt' }),
-    ]
+    const events = [makeEvent({ command: 'echo hello' }), makeEvent({ command: 'cat file.txt' })]
     const { result, rerender } = renderHook(
       ({ q }) =>
-        useEventFilters(
-          events,
-          q,
-          vi.fn(),
-          '',
-          '5m',
-          vi.fn(),
-          '',
-          vi.fn(),
-          '',
-          vi.fn(),
-          false
-        ),
+        useEventFilters(events, q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
       { wrapper, initialProps: { q: '' } }
     )
 
@@ -72,19 +57,7 @@ describe('useEventFilters — search debounce', () => {
     const events = [makeEvent({ command: 'grep pattern file' })]
     const { result, rerender } = renderHook(
       ({ q }) =>
-        useEventFilters(
-          events,
-          q,
-          vi.fn(),
-          '',
-          '5m',
-          vi.fn(),
-          '',
-          vi.fn(),
-          '',
-          vi.fn(),
-          false
-        ),
+        useEventFilters(events, q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
       { wrapper, initialProps: { q: '' } }
     )
 
@@ -141,7 +114,9 @@ describe('useEventFilters — sessionStorage cache', () => {
         useEventFilters([], q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
       { wrapper, initialProps: { q: '' } }
     )
-    act(() => { result.current.setActionFilter('BASH') })
+    act(() => {
+      result.current.setActionFilter('BASH')
+    })
     // useEffect runs synchronously inside act
     expect(sessionStorage.getItem('events_action_filter')).toBe('BASH')
   })

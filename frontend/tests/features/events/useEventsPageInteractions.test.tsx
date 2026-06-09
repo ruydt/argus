@@ -119,7 +119,9 @@ describe('useSplitViewInteractions — sessionStorage restore', () => {
       { wrapper }
     )
 
-    act(() => { result.current.toggleSplitView() })
+    act(() => {
+      result.current.toggleSplitView()
+    })
     // useEffect runs synchronously inside act
     expect(sessionStorage.getItem('events_split_enabled')).toBe('true')
   })

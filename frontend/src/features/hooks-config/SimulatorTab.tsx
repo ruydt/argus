@@ -86,7 +86,9 @@ export function SimulatorTab({
 
   const effectiveCommand = commandValue === CUSTOM_VALUE ? customCommandText.trim() : commandValue
   const selectedHookTimeout =
-    commandValue === CUSTOM_VALUE ? undefined : commandOptions.find((opt) => opt.value === commandValue)?.timeout
+    commandValue === CUSTOM_VALUE
+      ? undefined
+      : commandOptions.find((opt) => opt.value === commandValue)?.timeout
   const canRun = effectiveCommand.length > 0 && !running
   const canApply = commandValue === CUSTOM_VALUE && customCommandText.trim().length > 0 && !applying
 

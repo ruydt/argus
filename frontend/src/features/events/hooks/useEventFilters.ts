@@ -86,10 +86,18 @@ export function useEventFilters(
     }
   }, [isLive, refreshProjects])
 
-  useEffect(() => { sessionStorage.setItem('events_action_filter', actionFilter) }, [actionFilter])
-  useEffect(() => { sessionStorage.setItem('events_agent_filter', agentFilter) }, [agentFilter])
-  useEffect(() => { sessionStorage.setItem('events_sort_order', sortOrder) }, [sortOrder])
-  useEffect(() => { sessionStorage.setItem('events_project_filter', projectFilter) }, [projectFilter])
+  useEffect(() => {
+    sessionStorage.setItem('events_action_filter', actionFilter)
+  }, [actionFilter])
+  useEffect(() => {
+    sessionStorage.setItem('events_agent_filter', agentFilter)
+  }, [agentFilter])
+  useEffect(() => {
+    sessionStorage.setItem('events_sort_order', sortOrder)
+  }, [sortOrder])
+  useEffect(() => {
+    sessionStorage.setItem('events_project_filter', projectFilter)
+  }, [projectFilter])
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {

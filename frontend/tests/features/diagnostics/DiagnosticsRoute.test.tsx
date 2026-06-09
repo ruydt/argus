@@ -25,10 +25,28 @@ const minimalDiagnostics: Diagnostics = {
   },
   fileSystem: {
     hookerDir: '/home/user/.hooker',
-    binary: { name: 'hooker', path: '/home/user/.hooker/bin/hooker', sizeBytes: null, lastModified: null, exists: false },
+    binary: {
+      name: 'hooker',
+      path: '/home/user/.hooker/bin/hooker',
+      sizeBytes: null,
+      lastModified: null,
+      exists: false,
+    },
     logs: [
-      { name: 'hooker.log', path: '/home/user/.hooker/hooker.log', sizeBytes: null, lastModified: null, exists: false },
-      { name: 'build.log', path: '/home/user/.hooker/build.log', sizeBytes: null, lastModified: null, exists: false },
+      {
+        name: 'hooker.log',
+        path: '/home/user/.hooker/hooker.log',
+        sizeBytes: null,
+        lastModified: null,
+        exists: false,
+      },
+      {
+        name: 'build.log',
+        path: '/home/user/.hooker/build.log',
+        sizeBytes: null,
+        lastModified: null,
+        exists: false,
+      },
     ],
     hooks: [],
   },

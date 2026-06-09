@@ -25,7 +25,9 @@ function loadKnownSessions(): Set<string> {
     const raw = sessionStorage.getItem(KNOWN_SESSIONS_KEY)
     if (!raw) return new Set()
     const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? new Set(parsed.filter((v): v is string => typeof v === 'string')) : new Set()
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((v): v is string => typeof v === 'string'))
+      : new Set()
   } catch {
     return new Set()
   }
@@ -34,7 +36,9 @@ function loadKnownSessions(): Set<string> {
 function saveKnownSessions(ids: Set<string>) {
   try {
     sessionStorage.setItem(KNOWN_SESSIONS_KEY, JSON.stringify(Array.from(ids)))
-  } catch { /* quota exceeded */ }
+  } catch {
+    /* quota exceeded */
+  }
 }
 
 type EdgeDropZoneProps = {
