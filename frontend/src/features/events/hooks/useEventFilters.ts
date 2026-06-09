@@ -4,6 +4,14 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { EventRecord } from '@/types/events'
 import type { Project } from '@/types/sessions'
 
+function readStr(key: string, fallback: string): string {
+  try {
+    return sessionStorage.getItem(key) ?? fallback
+  } catch {
+    return fallback
+  }
+}
+
 export function useEventFilters(
   events: EventRecord[],
   searchQuery: string,
@@ -20,9 +28,9 @@ export function useEventFilters(
   const [searchParams] = useSearchParams()
   const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''
 
-  const [actionFilter, setActionFilter] = useState('all')
-  const [agentFilter, setAgentFilter] = useState('all')
-  const [sortOrder, setSortOrder] = useState('newest')
+  const [actionFilter, setActionFilter] = useState(() => readStr('events_action_filter', 'all'))
+  const [agentFilter, setAgentFilter] = useState(() => readStr('events_agent_filter', 'all'))
+  const [sortOrder, setSortOrder] = useState(() => readStr('events_sort_order', 'newest'))
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
 
@@ -31,7 +39,7 @@ export function useEventFilters(
     return () => window.clearTimeout(t)
   }, [searchQuery])
 
-  const [projectFilter, setProjectFilter] = useState('all')
+  const [projectFilter, setProjectFilter] = useState(() => readStr('events_project_filter', 'all'))
 
   const computedAgents = useMemo(() => {
     const agents = new Set<string>()
@@ -77,6 +85,11 @@ export function useEventFilters(
       if (interval !== null) window.clearInterval(interval)
     }
   }, [isLive, refreshProjects])
+
+  useEffect(() => { sessionStorage.setItem('events_action_filter', actionFilter) }, [actionFilter])
+  useEffect(() => { sessionStorage.setItem('events_agent_filter', agentFilter) }, [agentFilter])
+  useEffect(() => { sessionStorage.setItem('events_sort_order', sortOrder) }, [sortOrder])
+  useEffect(() => { sessionStorage.setItem('events_project_filter', projectFilter) }, [projectFilter])
 
   const filteredEvents = useMemo(() => {
     return events.filter((e) => {

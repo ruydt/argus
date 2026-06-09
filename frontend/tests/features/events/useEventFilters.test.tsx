@@ -95,3 +95,54 @@ describe('useEventFilters — search debounce', () => {
     expect(result.current.filteredEvents).toHaveLength(0)
   })
 })
+
+describe('useEventFilters — sessionStorage cache', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    sessionStorage.clear()
+  })
+
+  it('initializes actionFilter from sessionStorage', () => {
+    sessionStorage.setItem('events_action_filter', 'EDIT')
+    const { result } = renderHook(
+      ({ q }) =>
+        useEventFilters([], q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
+      { wrapper, initialProps: { q: '' } }
+    )
+    expect(result.current.actionFilter).toBe('EDIT')
+  })
+
+  it('initializes agentFilter from sessionStorage', () => {
+    sessionStorage.setItem('events_agent_filter', 'codex')
+    const { result } = renderHook(
+      ({ q }) =>
+        useEventFilters([], q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
+      { wrapper, initialProps: { q: '' } }
+    )
+    expect(result.current.agentFilter).toBe('codex')
+  })
+
+  it('initializes sortOrder from sessionStorage', () => {
+    sessionStorage.setItem('events_sort_order', 'oldest')
+    const { result } = renderHook(
+      ({ q }) =>
+        useEventFilters([], q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
+      { wrapper, initialProps: { q: '' } }
+    )
+    expect(result.current.sortOrder).toBe('oldest')
+  })
+
+  it('writes actionFilter to sessionStorage when changed', () => {
+    const { result } = renderHook(
+      ({ q }) =>
+        useEventFilters([], q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
+      { wrapper, initialProps: { q: '' } }
+    )
+    act(() => { result.current.setActionFilter('BASH') })
+    // useEffect runs synchronously inside act
+    expect(sessionStorage.getItem('events_action_filter')).toBe('BASH')
+  })
+})
