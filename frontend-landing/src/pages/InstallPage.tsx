@@ -59,40 +59,40 @@ function Step({ num, title, children }: StepProps) {
 
 const CLONE_CODE = `git clone https://github.com/duytrandt04-afk/argus
 cd argus
-make build`
+make build-local`
 
-const RUN_CODE = `~/.local/bin/argus-monitor`
+const RUN_CODE = `~/.argus/bin/argus`
 
 const RUN_OUTPUT = `argus version -> 0.1.0
-hook endpoint  -> POST http://127.0.0.1:8765/api/hook
-events SSE     -> GET  http://127.0.0.1:8765/api/events/stream
-db             -> ~/.argus/events.db`
+hook endpoint  -> POST http://127.0.0.1:10804/api/hook
+events SSE     -> GET  http://127.0.0.1:10804/api/events/stream
+db             -> ~/.argus/argus.db`
 
 const CLAUDECODE_HOOKS = `{
   "hooks": {
     "PreToolUse": [{
       "hooks": [{
         "type": "command",
-        "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-"
+        "command": "curl -s -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @-"
       }]
     }],
     "PostToolUse": [{
       "hooks": [{
         "type": "command",
-        "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-"
+        "command": "curl -s -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @-"
       }]
     }],
     "Stop": [{
       "hooks": [{
         "type": "command",
-        "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-"
+        "command": "curl -s -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @-"
       }]
     }]
   }
 }`
 
 const CODEX_HOOKS = `# In your Codex settings or AGENTS.md:
-ARGUS_URL=http://127.0.0.1:8765/api/hook
+ARGUS_URL=http://127.0.0.1:10804/api/hook
 
 # Add to codex hooks config:
 {
@@ -100,11 +100,11 @@ ARGUS_URL=http://127.0.0.1:8765/api/hook
 }`
 
 const VERIFY_CODE = `# Check the hook endpoint is live
-curl http://127.0.0.1:8765/api/hook
+curl http://127.0.0.1:10804/api/hook
 
 # Send a test event manually
-echo '{"type":"Stop","session_id":"test"}' \\
-  | curl -s -X POST http://127.0.0.1:8765/api/hook \\
+echo '{"type":"Stop","session_id":"test"}' \
+  | curl -s -X POST http://127.0.0.1:10804/api/hook \
     -H 'Content-Type: application/json' -d @-`
 
 export function InstallPage() {
@@ -142,14 +142,14 @@ export function InstallPage() {
 
             <Step num="01" title="CLONE & BUILD">
               <p className="step-desc">
-                Clone the repo and run <code>make build</code>. This compiles the frontend, embeds the React SPA into the Go binary, and places <code>argus-monitor</code> in <code>~/.local/bin/</code>.
+                Clone the repo and run <code>make build-local</code>. This compiles the frontend, embeds the React SPA into the Go binary, and places <code>argus</code> in <code>~/.argus/bin/</code>.
               </p>
               <CodeBlock lang="bash" code={CLONE_CODE} />
             </Step>
 
             <Step num="02" title="START THE SERVER">
               <p className="step-desc">
-                Run the binary. It starts the hook endpoint on <code>:8765</code> and serves the dashboard on <code>:5173</code>.
+                Run the binary. It starts the hook endpoint and serves the dashboard on <code>:10804</code>.
               </p>
               <CodeBlock lang="bash" code={RUN_CODE} />
               <p className="step-desc" style={{ marginTop: '12px' }}>Expected output:</p>
@@ -158,7 +158,7 @@ export function InstallPage() {
 
             <Step num="03" title="CONFIGURE AGENT HOOKS">
               <p className="step-desc">
-                Add the hook commands to your agent config. argus accepts any JSON payload via <code>POST /api/hook</code> — it auto-detects the agent from the transcript path.
+                Add the hook commands to your agent config. Argus accepts any JSON payload via <code>POST /api/hook</code> — it auto-detects the agent from the transcript path.
               </p>
               <div className="tabs" style={{ marginBottom: '0' }}>
                 <span className="tab-label">Claude Code</span>
@@ -172,14 +172,14 @@ export function InstallPage() {
 
             <Step num="04" title="OPEN THE DASHBOARD">
               <p className="step-desc">
-                Open <strong style={{ color: 'var(--accent)' }}>http://localhost:5173</strong> in your browser. Start an agent session — events should appear within milliseconds of the first tool call.
+                Open <strong style={{ color: 'var(--accent)' }}>http://localhost:10804</strong> in your browser. Start an agent session — events should appear within milliseconds of the first tool call.
               </p>
               <div className="terminal-window" style={{ marginTop: '16px' }}>
                 <div className="terminal-chrome">
                   <span className="terminal-dot red" />
                   <span className="terminal-dot amber" />
                   <span className="terminal-dot green" />
-                  <span className="terminal-title">localhost:5173 — events</span>
+                  <span className="terminal-title">localhost:10804 — events</span>
                 </div>
                 <div className="terminal-body">
                   <div><span className="t-ok">✓</span> <span className="t-cmd">SSE stream connected</span></div>
@@ -253,16 +253,16 @@ export function InstallPage() {
 
 const TROUBLE_ITEMS = [
   {
-    problem: 'Port 8765 already in use',
-    fix: 'Set ADDR=:9000 (or any free port) before running argus-monitor. Update the curl commands in your hook config to match.',
+    problem: 'Port 10804 already in use',
+    fix: 'Set ADDR=:9000 (or any free port) before running argus. Update the curl commands in your hook config to match.',
   },
   {
-    problem: 'make build fails — pnpm not found',
-    fix: 'Install pnpm with: npm install -g pnpm@10. Then re-run make build.',
+    problem: 'make build-local fails — pnpm not found',
+    fix: 'Install pnpm with: npm install -g pnpm@10. Then re-run make build-local.',
   },
   {
     problem: 'Events not appearing in the dashboard',
-    fix: 'Confirm argus-monitor is running and the curl in your hook config points to the correct port. Send a test payload manually (step 5).',
+    fix: 'Confirm argus is running and the curl in your hook config points to the correct port. Send a test payload manually (step 5).',
   },
   {
     problem: 'go: command not found',
@@ -273,7 +273,7 @@ const TROUBLE_ITEMS = [
     fix: 'Hard-refresh the browser (Cmd+Shift+R). If on WSL, ensure localhost resolves to 127.0.0.1 in your browser.',
   },
   {
-    problem: 'Binary not found after make build',
-    fix: 'Check ~/.local/bin is in your PATH. Add: export PATH="$HOME/.local/bin:$PATH" to your shell profile.',
+    problem: 'Binary not found after make build-local',
+    fix: 'Check ~/.argus/bin is in your PATH. Add: export PATH="$HOME/.argus/bin:$PATH" to your shell profile.',
   },
 ]

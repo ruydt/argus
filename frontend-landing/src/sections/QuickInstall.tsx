@@ -40,8 +40,8 @@ function CodeBlock({ lang, code }: CodeBlockProps) {
 
 const CLONE_CODE = `git clone https://github.com/duytrandt04-afk/argus
 cd argus
-make build
-~/.local/bin/argus-monitor`
+make build-local
+~/.argus/bin/argus`
 
 const HOOKS_CODE = `# Add to ~/.claude/settings.json (Claude Code)
 {
@@ -49,17 +49,17 @@ const HOOKS_CODE = `# Add to ~/.claude/settings.json (Claude Code)
     "PostToolUse": [{
       "hooks": [{
         "type": "command",
-        "command": "curl -s -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @-"
+        "command": "curl -s -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @-"
       }]
     }]
   }
 }`
 
-const DASHBOARD_CODE = `# Open in your browser after starting argus-monitor
-http://localhost:5173
+const DASHBOARD_CODE = `# Open in your browser after starting argus
+http://localhost:10804
 
 # Verify the hook endpoint is live
-curl http://127.0.0.1:8765/api/hook`
+curl http://127.0.0.1:10804/api/hook`
 
 const TAB_CONTENT: Record<Tab, { label: string; lang: string; code: string }> = {
   clone:     { label: 'Clone & Build',    lang: 'bash', code: CLONE_CODE },

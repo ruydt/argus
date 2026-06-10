@@ -7,9 +7,9 @@
   --bg-card:     #160f0a;
   --border:      #2a1a12;
   --border-deep: #1a0f0a;
-  --accent:      #da7756;
-  --accent-mid:  #c4845a;
-  --accent-soft: #e8b89a;
+  --accent:      #d37636;
+  --accent-mid:  #b5652e;
+  --accent-soft: #e6a781;
   --shadow:      #7c2d12;
   --text-primary:#f5ede0;
   --text-muted:  #a16246;
@@ -112,8 +112,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--text-primary);
   flex-shrink: 0;
 }
-.navbar-wordmark-hook { color: var(--text-primary); }
-.navbar-wordmark-er   { color: var(--accent); }
+.navbar-wordmark-arg { color: var(--text-primary); }
+.navbar-wordmark-us   { color: var(--accent); }
 .navbar-links {
   display: flex;
   gap: 24px;

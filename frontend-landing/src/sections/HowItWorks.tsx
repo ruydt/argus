@@ -86,7 +86,7 @@ function PixelArrow() {
 
 const STEPS = [
   { icon: <RobotIcon />,    label: 'AI AGENT',  desc: 'Claude Code or Codex fires hooks' },
-  { icon: <AntennaIcon />,  label: 'POST HOOK', desc: 'curl POSTs JSON event to :8765' },
+  { icon: <AntennaIcon />,  label: 'POST HOOK', desc: 'curl POSTs JSON event to :10804' },
   { icon: <GearIcon />,     label: 'NORMALIZE', desc: 'Unified event model applied' },
   { icon: <DatabaseIcon />, label: 'SQLITE',    desc: 'Persisted locally, zero cloud' },
   { icon: <MonitorIcon />,  label: 'DASHBOARD', desc: 'Real-time SSE stream to UI' },

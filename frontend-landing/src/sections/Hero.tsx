@@ -2,7 +2,7 @@ import { Check, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { AnimateOnScroll } from '../components/AnimateOnScroll'
 
-const INSTALL_CMD = 'git clone https://github.com/duytrandt04-afk/argus && make build'
+const INSTALL_CMD = 'git clone https://github.com/duytrandt04-afk/argus && make build-local'
 
 function TerminalWindow() {
   return (
@@ -11,13 +11,13 @@ function TerminalWindow() {
         <span className="terminal-dot red" />
         <span className="terminal-dot amber" />
         <span className="terminal-dot green" />
-        <span className="terminal-title">argus-monitor — bash</span>
+        <span className="terminal-title">argus — bash</span>
       </div>
       <div className="terminal-body">
-        <div><span className="t-path">~/argus</span> <span className="t-dim">$</span> <span className="t-cmd">argus-monitor</span></div>
-        <div><span className="t-ok">✓</span> <span className="t-cmd">SQLite initialized</span> <span className="t-path">~/.argus/events.db</span></div>
-        <div><span className="t-ok">✓</span> <span className="t-cmd">SSE stream ready</span> <span className="t-sub">:8765</span></div>
-        <div><span className="t-ok">✓</span> <span className="t-cmd">Dashboard serving</span> <span className="t-sub">:5173</span></div>
+        <div><span className="t-path">~/argus</span> <span className="t-dim">$</span> <span className="t-cmd">argus</span></div>
+        <div><span className="t-ok">✓</span> <span className="t-cmd">SQLite initialized</span> <span className="t-path">~/.argus/argus.db</span></div>
+        <div><span className="t-ok">✓</span> <span className="t-cmd">SSE stream ready</span> <span className="t-sub">:10804</span></div>
+        <div><span className="t-ok">✓</span> <span className="t-cmd">Dashboard serving</span> <span className="t-sub">:10804</span></div>
         <div>&nbsp;</div>
         <div><span className="t-dim">── waiting for events ──</span></div>
         <div>&nbsp;</div>
@@ -53,7 +53,7 @@ export function Hero() {
           </h1>
 
           <p className="hero-sub">
-            argus captures every hook event from Claude Code and Codex,
+            Argus captures every hook event from Claude Code and Codex,
             normalizes them into a unified event model, and streams to a
             real-time dashboard. No cloud, no telemetry, your data stays local.
           </p>

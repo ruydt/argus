@@ -109,7 +109,7 @@ const FEATURES: FeatureDetail[] = [
   {
     eyebrow: '▸ LIVE EVENT FEED',
     title: 'EVERY TOOL CALL,\nIN REAL TIME',
-    desc: 'argus streams every agent action to your browser the instant it fires. No polling. No refresh.',
+    desc: 'Argus streams every agent action to your browser the instant it fires. No polling. No refresh.',
     bullets: [
       'SSE stream — sub-100ms latency from hook to browser',
       'Filter by tool type, agent, project, or time range',

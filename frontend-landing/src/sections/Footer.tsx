@@ -31,8 +31,8 @@ export function Footer() {
         <div className="footer-logo">
           <HookSVG />
           <span>
-            <span style={{ color: 'var(--text-primary)' }}>HOOK</span>
-            <span style={{ color: 'var(--accent)' }}>ER</span>
+            <span style={{ color: 'var(--text-primary)' }}>ARG</span>
+            <span style={{ color: 'var(--accent)' }}>US</span>
           </span>
         </div>
         <div className="footer-meta">MIT LICENSE · LOCAL-FIRST · NO TELEMETRY</div>

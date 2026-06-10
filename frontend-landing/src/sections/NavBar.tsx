@@ -47,8 +47,8 @@ export function NavBar() {
         <Link to="/" className="navbar-logo">
           <HookSVG />
           <span>
-            <span className="navbar-wordmark-hook">HOOK</span>
-            <span className="navbar-wordmark-er">ER</span>
+            <span className="navbar-wordmark-arg">ARG</span>
+            <span className="navbar-wordmark-us">US</span>
           </span>
         </Link>
         <div className="navbar-links">

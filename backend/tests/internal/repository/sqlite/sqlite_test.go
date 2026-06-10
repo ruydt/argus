@@ -1384,13 +1384,16 @@ func TestDiagnosticsAgentStatsEventRates(t *testing.T) {
 		t.Fatalf("DiagnosticsAgentStats: %v", err)
 	}
 
-	var cc *domain.DiagnosticsAgentStats
+	var cc domain.DiagnosticsAgentStats
+	found := false
 	for i := range stats {
 		if stats[i].Agent == "claudecode" {
-			cc = &stats[i]
+			cc = stats[i]
+			found = true
+			break
 		}
 	}
-	if cc == nil {
+	if !found {
 		t.Fatal("no claudecode entry in stats")
 	}
 	if cc.EventsLastHour != 1 {
