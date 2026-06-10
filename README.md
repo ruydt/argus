@@ -1,5 +1,7 @@
 # hooker
 
+[![Release](https://img.shields.io/github/v/release/duytrandt04-afk/hooker)](https://github.com/duytrandt04-afk/hooker/releases/latest)
+
 Local-first monitoring dashboard for AI coding agent activity. Receives hook payloads from
 Claude Code and Codex, normalizes them to a canonical event model, persists to
 SQLite, and streams to a React SPA in real time.
