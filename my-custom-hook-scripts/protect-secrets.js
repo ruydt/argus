@@ -13,11 +13,15 @@ const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
 const isClaudeCode = process.env.CLAUDECODE === '1';
 
 // Checked before PROTECTED — first match wins.
-const DEFAULT_ALLOW = [/\.env\.(example|sample|template)$/];
+const DEFAULT_ALLOW = [
+  /\.env\.(example|sample|template)$/,
+  /\bsecrets\.(test|spec)\.[a-z]+$/,
+];
 
 const PROTECTED = [
   { re: /(^|\/)\.env(\.[^/]*)?$/, why: '.env file' },
   { re: /\.pem$/, why: 'PEM certificate/key' },
+  // Intentionally broad: also blocks non-secret *.key files (e.g. license.key) — allowlist via config if needed.
   { re: /\.key$/, why: 'private key file' },
   { re: /(^|\/)id_rsa[^/]*$/, why: 'SSH RSA key' },
   { re: /(^|\/)id_ed25519[^/]*$/, why: 'SSH Ed25519 key' },
