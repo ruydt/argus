@@ -1,0 +1,313 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+.wrap { max-width: 860px; margin: 0 auto; }
+
+/* ── swatch strip ── */
+.swatch-strip {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border: 2px solid #2a1a12; box-shadow: 4px 4px 0 #0e0a08;
+  overflow: hidden;
+}
+.sw { flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; }
+.sw span { font-family: 'Press Start 2P', monospace; font-size: 6px; mix-blend-mode: difference; color: #fff; opacity: 0.7; }
+
+/* ── full page preview ── */
+.page-preview {
+  background: #0e0b08;
+  border: 3px solid #2a1a12;
+  box-shadow: 6px 6px 0 #08060404;
+  overflow: hidden;
+  font-family: 'Press Start 2P', monospace;
+}
+
+/* NAVBAR */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 52px;
+  background: #09070504;
+  border-bottom: 2px solid #da7756;
+  box-shadow: 0 2px 0 rgba(218,119,86,0.18);
+}
+.nav-logo { font-size: 12px; color: #f5ede0; }
+.nav-logo span { color: #da7756; }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a { font-size: 6px; color: #da7756; opacity: 0.65; text-decoration: none; }
+.nav-cta { font-size: 7px; color: #0e0b08; background: #da7756; padding: 7px 14px; box-shadow: 3px 3px 0 #7c2d12; cursor: pointer; }
+
+/* HERO */
+.hero {
+  padding: 48px 32px 36px;
+  position: relative; overflow: hidden;
+  background: #0e0b08;
+  display: flex; gap: 36px; align-items: flex-start;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(218,119,86,0.08) 1px, transparent 1px);
+  background-size: 20px 20px; pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute;
+  top: -40%; left: 30%; width: 60%; height: 70%;
+  background: radial-gradient(ellipse, rgba(218,119,86,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-left { flex: 1; position: relative; z-index: 1; }
+.hero-right { width: 40%; position: relative; z-index: 1; }
+
+.badge {
+  display: inline-block; font-size: 6px; color: #da7756;
+  border: 2px solid #da7756; padding: 4px 10px;
+  box-shadow: 2px 2px 0 #7c2d12; margin-bottom: 22px;
+}
+.h1 { font-size: 18px; color: #f5ede0; line-height: 1.85; margin: 0 0 14px; }
+.h1 em { color: #da7756; font-style: normal; text-shadow: 2px 2px 0 #7c2d12, 0 0 24px rgba(218,119,86,0.3); }
+.sub { font-family: 'VT323', monospace; font-size: 19px; color: #a16246; margin: 0 0 26px; line-height: 1.5; max-width: 400px; }
+
+.actions { display: flex; gap: 12px; align-items: center; }
+.btn-primary { font-size: 8px; color: #0e0b08; background: #da7756; padding: 10px 18px; box-shadow: 4px 4px 0 #7c2d12; cursor: pointer; }
+.btn-outline { font-size: 7px; color: #da7756; border: 2px solid #da7756; padding: 9px 14px; box-shadow: 3px 3px 0 #7c2d12; cursor: pointer; }
+
+/* window chrome */
+.window {
+  background: #09070504;
+  border: 2px solid #2a1a12; box-shadow: 4px 4px 0 #06040305;
+}
+.winbar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px; background: #160f0a; border-bottom: 2px solid #2a1a12;
+}
+.dot { width: 10px; height: 10px; }
+.wintitle { font-size: 6px; color: #3d2418; margin-left: 6px; }
+.winbody {
+  padding: 16px 18px;
+  font-family: 'VT323', monospace; font-size: 16px; line-height: 1.75;
+}
+.p  { color: rgba(218,119,86,0.45); }
+.fn { color: #da7756; }
+.st { color: #e8b89a; }
+.ok { color: #da7756; }
+.cm { color: #3d2418; }
+
+/* stats bar */
+.statsbar {
+  display: flex;
+  border-top: 2px solid #1a0f0a; border-bottom: 2px solid #1a0f0a;
+  background: #09070504;
+}
+.stat { flex: 1; padding: 16px; text-align: center; border-right: 2px solid #1a0f0a; }
+.stat:last-child { border-right: none; }
+.stat-v { font-size: 14px; color: #da7756; display: block; margin-bottom: 6px; text-shadow: 1px 1px 0 #7c2d12; }
+.stat-l { font-size: 5px; color: #3d2418; letter-spacing: 0.06em; }
+
+/* section */
+.section { padding: 36px 32px; }
+.section.alt { background: #09070504; }
+
+.section-eyebrow { font-size: 7px; color: #da7756; margin-bottom: 14px; }
+.section-eyebrow::before { content: '▸ '; }
+.section-title { font-size: 15px; color: #f5ede0; line-height: 1.75; margin: 0 0 10px; }
+.section-sub { font-family: 'VT323', monospace; font-size: 18px; color: #6b3d28; margin: 0 0 28px; }
+
+/* flow */
+.flow { display: flex; align-items: flex-start; }
+.flow-step { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 90px; }
+.flow-icon {
+  width: 46px; height: 46px;
+  background: rgba(218,119,86,0.07); border: 2px solid #da7756;
+  box-shadow: 3px 3px 0 #7c2d12;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #da7756; margin-bottom: 10px;
+}
+.flow-label { font-size: 6px; color: #f5ede0; margin-bottom: 4px; line-height: 1.6; }
+.flow-desc { font-family: 'VT323', monospace; font-size: 13px; color: #4a2515; line-height: 1.4; }
+.flow-arrow { flex-shrink: 0; margin-top: 18px; font-size: 11px; color: #2a1a12; padding: 0 4px; }
+
+/* cards */
+.cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.feat-card {
+  padding: 22px; border: 2px solid #2a1a12;
+  box-shadow: 3px 3px 0 #08050404;
+}
+.feat-card.v1 { background: rgba(218,119,86,0.04); }
+.feat-card.v2 { background: rgba(232,184,154,0.03); border-color: #2a1812; }
+.feat-card.v3 { background: rgba(161,98,70,0.04); border-color: #1e1510; }
+.feat-icon {
+  width: 34px; height: 34px; border: 2px solid #da7756;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #da7756;
+  margin-bottom: 12px; box-shadow: 2px 2px 0 #7c2d12;
+}
+.feat-card.v2 .feat-icon { border-color: #e8b89a; color: #e8b89a; box-shadow: 2px 2px 0 #5a2a10; }
+.feat-card.v3 .feat-icon { border-color: #c4845a; color: #c4845a; box-shadow: 2px 2px 0 #4a1e0a; }
+.feat-card h3 { font-size: 7px; color: #f5ede0; margin: 0 0 8px; line-height: 1.7; }
+.feat-card p { font-family: 'VT323', monospace; font-size: 15px; color: #4a2515; line-height: 1.5; }
+
+/* install */
+.tabs { display: flex; }
+.tab {
+  font-size: 6px; color: #3d2418; padding: 8px 16px;
+  border: 2px solid #2a1a12; border-bottom: none; cursor: pointer;
+  background: #120d09;
+}
+.tab.active { color: #da7756; background: #09070504; border-color: #da7756; border-bottom: 2px solid #09070504; position: relative; bottom: -2px; }
+.code-block {
+  background: #09070504; border: 2px solid #da7756;
+  box-shadow: 4px 4px 0 #7c2d12; padding: 20px 22px;
+  font-family: 'VT323', monospace; font-size: 17px; color: #6b3d28; line-height: 1.8;
+}
+
+/* footer */
+.footer {
+  padding: 28px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 2px solid #1a0f0a; background: #09070504;
+}
+.footer-logo { font-size: 11px; color: #f5ede0; }
+.footer-logo span { color: #da7756; }
+.footer-copy { font-family: 'VT323', monospace; font-size: 14px; color: #3d2418; }
+</style>
+
+<div class="wrap">
+
+  <!-- swatch strip -->
+  <div class="swatch-strip">
+    <div class="sw" style="background:#0e0b08"><span>#0e0b08</span></div>
+    <div class="sw" style="background:#160f0a"><span>#160f0a</span></div>
+    <div class="sw" style="background:#2a1a12"><span>#2a1a12</span></div>
+    <div class="sw" style="background:#7c2d12"><span>#7c2d12</span></div>
+    <div class="sw" style="background:#a16246"><span>#a16246</span></div>
+    <div class="sw" style="background:#da7756"><span>#da7756</span></div>
+    <div class="sw" style="background:#e8b89a"><span>#e8b89a</span></div>
+    <div class="sw" style="background:#f5ede0"><span>#f5ede0</span></div>
+  </div>
+
+  <div class="page-preview">
+
+    <!-- NAV -->
+    <div class="nav">
+      <div class="nav-logo"><span>//</span>hooker</div>
+      <div class="nav-links">
+        <a>HOW IT WORKS</a><a>FEATURES</a><a>INSTALL</a><a>PRIVACY</a>
+      </div>
+      <div class="nav-cta">GITHUB ▸</div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left">
+        <div class="badge">★ OPEN SOURCE · LOCAL-FIRST · ZERO CLOUD ★</div>
+        <div class="h1">FULL VISIBILITY<br>INTO YOUR<br><em>AI AGENTS</em></div>
+        <div class="sub">Captures every hook from Claude Code &amp; Codex. Normalized, streamed, searchable. No cloud, no telemetry.</div>
+        <div class="actions">
+          <div class="btn-primary">▶ VIEW ON GITHUB</div>
+          <div class="btn-outline">◈ READ DOCS</div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="window">
+          <div class="winbar">
+            <div class="dot" style="background:#ef4444"></div>
+            <div class="dot" style="background:#eab308"></div>
+            <div class="dot" style="background:#22c55e"></div>
+            <span class="wintitle">hooker-monitor — bash</span>
+          </div>
+          <div class="winbody">
+            <div><span class="p">$ </span><span class="fn">git clone</span> github.com/…/<span class="st">hooker</span></div>
+            <div><span class="p">$ </span><span class="fn">make</span> build</div>
+            <div><span class="p">$ </span><span class="fn">hooker-monitor</span></div>
+            <div>&nbsp;</div>
+            <div><span class="ok">✓</span> listening on 127.0.0.1:<span class="st">8765</span></div>
+            <div class="cm">│ SSE stream ready — 0 subscribers</div>
+            <div class="cm">│ SQLite → ~/.local/share/hooker.db</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="statsbar">
+      <div class="stat"><span class="stat-v">0ms</span><span class="stat-l">CLOUD LATENCY</span></div>
+      <div class="stat"><span class="stat-v">100%</span><span class="stat-l">LOCAL STORAGE</span></div>
+      <div class="stat"><span class="stat-v">SQLite</span><span class="stat-l">NO EXTERNAL DEPS</span></div>
+      <div class="stat"><span class="stat-v">SSE</span><span class="stat-l">REAL-TIME STREAM</span></div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section alt">
+      <div class="section-eyebrow">ARCHITECTURE</div>
+      <div class="section-title">HOW IT WORKS</div>
+      <div class="section-sub">From agent hook to browser dashboard in milliseconds — all on your local machine.</div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-icon">🤖</div><div class="flow-label">AI AGENT</div><div class="flow-desc">Claude Code / Codex session</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">📡</div><div class="flow-label">POST HOOK</div><div class="flow-desc">Raw payload to /api/hook</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">⚙</div><div class="flow-label">NORMALIZE</div><div class="flow-desc">Canonical event model</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">💾</div><div class="flow-label">SQLITE</div><div class="flow-desc">Persist + upsert session</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">📺</div><div class="flow-label">DASHBOARD</div><div class="flow-desc">Live feed in browser</div></div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="section">
+      <div class="section-title">EVERYTHING YOU NEED</div>
+      <div class="section-sub">Complete visibility into your AI coding agents — without the cloud overhead.</div>
+      <div class="cards-grid">
+        <div class="feat-card v1"><div class="feat-icon">⚡</div><h3>REAL-TIME FEED</h3><p>Live stream of every tool call, command, response. Events pushed via SSE the moment they land.</p></div>
+        <div class="feat-card v2"><div class="feat-icon">📊</div><h3>SESSION WATERFALL</h3><p>Visualize agent sessions as nested traces. Duration, cost, tool usage at a glance.</p></div>
+        <div class="feat-card v3"><div class="feat-icon">📈</div><h3>DASHBOARD STATS</h3><p>Aggregate metrics computed locally — events, sessions, token usage, error rates.</p></div>
+        <div class="feat-card v2"><div class="feat-icon">🤖</div><h3>MULTI-AGENT</h3><p>Normalizes Claude Code and Codex into one canonical model. Add agents without touching frontend.</p></div>
+        <div class="feat-card v1"><div class="feat-icon">🔒</div><h3>ZERO CLOUD</h3><p>SQLite only. No external services, no API keys. Works fully offline once installed.</p></div>
+        <div class="feat-card v3"><div class="feat-icon">💽</div><h3>CANONICAL MODEL</h3><p>Structured, versioned schema. Query the DB directly or consume the SSE stream.</p></div>
+      </div>
+    </div>
+
+    <!-- INSTALL -->
+    <div class="section alt">
+      <div class="section-title">UP AND RUNNING IN MINUTES</div>
+      <div class="section-sub">No accounts, no API keys. Clone, build, configure one hook line.</div>
+      <div class="tabs">
+        <div class="tab active">CLONE &amp; BUILD</div>
+        <div class="tab">CONFIGURE HOOKS</div>
+        <div class="tab">OPEN DASHBOARD</div>
+      </div>
+      <div class="code-block">
+        <div><span style="color:#3d2418"># clone the repo and build</span></div>
+        <div><span class="fn">git clone</span> https://github.com/…/<span class="st">hooker</span></div>
+        <div><span class="fn">cd</span> hooker &amp;&amp; <span class="fn">make</span> build</div>
+        <div>~/.local/bin/<span class="fn">hooker-monitor</span></div>
+        <div>&nbsp;</div>
+        <div><span class="ok">✓</span> dashboard at http://localhost:<span class="st">5173</span></div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="footer-logo"><span>//</span>hooker</div>
+      <div class="footer-copy">MIT LICENSE · LOCAL-FIRST · NO TELEMETRY</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 20px; display: flex; gap: 12px;">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)" style="flex: 1">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>This is it — build it</h3>
+        <p>Go to full spec and implementation plan</p>
+      </div>
+    </div>
+    <div class="option" data-choice="tweak" onclick="toggleSelect(this)" style="flex: 1">
+      <div class="letter">✎</div>
+      <div class="content">
+        <h3>Tweak before building</h3>
+        <p>Adjust something — font size, layout, section order</p>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,370 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+.wrap { max-width: 860px; margin: 0 auto; }
+
+.swatch-strip {
+  display: flex; gap: 0; margin-bottom: 20px;
+  border: 2px solid #2a1a12; box-shadow: 4px 4px 0 #0e0a08;
+  overflow: hidden;
+}
+.sw { flex: 1; height: 36px; display: flex; align-items: center; justify-content: center; }
+.sw span { font-family: 'Press Start 2P', monospace; font-size: 6px; mix-blend-mode: difference; color: #fff; opacity: 0.7; }
+
+.page-preview {
+  background: #0e0b08;
+  border: 3px solid #2a1a12;
+  box-shadow: 6px 6px 0 #040303;
+  overflow: hidden;
+  font-family: 'Press Start 2P', monospace;
+}
+
+/* NAVBAR */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; height: 52px;
+  background: #09060504;
+  border-bottom: 2px solid #da7756;
+  box-shadow: 0 2px 0 rgba(218,119,86,0.18);
+}
+.nav-logo { font-size: 12px; color: #f5ede0; }
+.nav-logo span { color: #da7756; }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a { font-size: 6px; color: #da7756; opacity: 0.65; text-decoration: none; }
+.nav-cta { font-size: 7px; color: #0e0b08; background: #da7756; padding: 7px 14px; box-shadow: 3px 3px 0 #7c2d12; }
+
+/* HERO */
+.hero {
+  padding: 48px 32px 36px;
+  position: relative; overflow: hidden;
+  background: #0e0b08;
+  display: flex; gap: 36px; align-items: flex-start;
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(218,119,86,0.08) 1px, transparent 1px);
+  background-size: 20px 20px; pointer-events: none;
+}
+.hero::after {
+  content: ''; position: absolute;
+  top: -40%; left: 30%; width: 60%; height: 70%;
+  background: radial-gradient(ellipse, rgba(218,119,86,0.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.hero-left { flex: 1; position: relative; z-index: 1; }
+.hero-right { width: 40%; position: relative; z-index: 1; }
+
+.badge {
+  display: inline-block; font-size: 6px; color: #da7756;
+  border: 2px solid #da7756; padding: 4px 10px;
+  box-shadow: 2px 2px 0 #7c2d12; margin-bottom: 22px;
+}
+.h1 { font-size: 18px; color: #f5ede0; line-height: 1.85; margin: 0 0 14px; }
+.h1 em { color: #da7756; font-style: normal; text-shadow: 2px 2px 0 #7c2d12, 0 0 24px rgba(218,119,86,0.3); }
+.sub { font-family: 'VT323', monospace; font-size: 19px; color: #a16246; margin: 0 0 26px; line-height: 1.5; max-width: 400px; }
+.actions { display: flex; gap: 12px; align-items: center; }
+.btn-primary { font-size: 8px; color: #0e0b08; background: #da7756; padding: 10px 18px; box-shadow: 4px 4px 0 #7c2d12; }
+.btn-outline { font-size: 7px; color: #da7756; border: 2px solid #da7756; padding: 9px 14px; box-shadow: 3px 3px 0 #7c2d12; }
+
+/* ─── WINDOW CHROME ─── */
+.window {
+  background: #0d0a08;
+  border: 2px solid #2a1a12;
+  box-shadow: 4px 4px 0 #050403;
+}
+.winbar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 13px;
+  background: #1a120d;
+  border-bottom: 2px solid #2a1a12;
+}
+.dot { width: 10px; height: 10px; }
+.wintitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px; color: #4a2e1e; margin-left: 6px;
+}
+
+/* ─── TERMINAL BODY ─── */
+.term {
+  padding: 18px 20px;
+  font-family: 'VT323', monospace;
+  font-size: 16px; line-height: 2;
+  background: #0d0a08;
+}
+.term-line { display: flex; align-items: baseline; gap: 0; }
+
+/* prompt $ */
+.t-prompt { color: #5a3a28; margin-right: 6px; }
+
+/* commands: git, make, hooker-monitor */
+.t-cmd { color: #e8d5c4; }
+
+/* subcommands: clone, build */
+.t-sub { color: #c4845a; }
+
+/* paths / repo names */
+.t-path { color: #a16246; }
+
+/* accent strings: hooker, port numbers */
+.t-accent { color: #da7756; font-weight: bold; }
+
+/* flags / options */
+.t-flag { color: #7c4a32; }
+
+/* separator / punctuation */
+.t-sep { color: #3d2418; }
+
+/* success tick */
+.t-ok { color: #5dbea3; }
+
+/* key label in output */
+.t-key { color: #7c4a32; }
+
+/* highlighted values in output */
+.t-val { color: #da7756; }
+
+/* dim output lines */
+.t-dim { color: #3d2418; }
+
+/* cursor blink */
+.t-cursor {
+  display: inline-block; width: 9px; height: 15px;
+  background: #da7756; vertical-align: middle;
+  animation: blink 1.1s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* STATS BAR */
+.statsbar {
+  display: flex;
+  border-top: 2px solid #1a0f0a; border-bottom: 2px solid #1a0f0a;
+  background: #09070504;
+}
+.stat { flex: 1; padding: 16px; text-align: center; border-right: 2px solid #1a0f0a; }
+.stat:last-child { border-right: none; }
+.stat-v { font-size: 14px; color: #da7756; display: block; margin-bottom: 6px; text-shadow: 1px 1px 0 #7c2d12; }
+.stat-l { font-size: 5px; color: #3d2418; letter-spacing: 0.06em; }
+
+/* SECTIONS */
+.section { padding: 36px 32px; }
+.section.alt { background: #09070504; }
+.section-eyebrow { font-size: 7px; color: #da7756; margin-bottom: 14px; }
+.section-eyebrow::before { content: '▸ '; }
+.section-title { font-size: 15px; color: #f5ede0; line-height: 1.75; margin: 0 0 10px; }
+.section-sub { font-family: 'VT323', monospace; font-size: 18px; color: #6b3d28; margin: 0 0 28px; }
+
+/* FLOW */
+.flow { display: flex; align-items: flex-start; }
+.flow-step { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 90px; }
+.flow-icon {
+  width: 46px; height: 46px;
+  background: rgba(218,119,86,0.07); border: 2px solid #da7756;
+  box-shadow: 3px 3px 0 #7c2d12;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; margin-bottom: 10px;
+}
+.flow-label { font-size: 6px; color: #f5ede0; margin-bottom: 4px; line-height: 1.6; }
+.flow-desc { font-family: 'VT323', monospace; font-size: 13px; color: #4a2515; line-height: 1.4; }
+.flow-arrow { flex-shrink: 0; margin-top: 18px; font-size: 11px; color: #2a1a12; padding: 0 4px; }
+
+/* CARDS */
+.cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.feat-card { padding: 22px; border: 2px solid #2a1a12; box-shadow: 3px 3px 0 #06040304; }
+.feat-card.v1 { background: rgba(218,119,86,0.04); }
+.feat-card.v2 { background: rgba(232,184,154,0.03); border-color: #2a1812; }
+.feat-card.v3 { background: rgba(161,98,70,0.04); border-color: #1e1510; }
+.feat-icon {
+  width: 34px; height: 34px; border: 2px solid #da7756;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; margin-bottom: 12px; box-shadow: 2px 2px 0 #7c2d12;
+}
+.feat-card.v2 .feat-icon { border-color: #e8b89a; box-shadow: 2px 2px 0 #5a2a10; }
+.feat-card.v3 .feat-icon { border-color: #c4845a; box-shadow: 2px 2px 0 #4a1e0a; }
+.feat-card h3 { font-size: 7px; color: #f5ede0; margin: 0 0 8px; line-height: 1.7; }
+.feat-card p { font-family: 'VT323', monospace; font-size: 15px; color: #4a2515; line-height: 1.5; }
+
+/* INSTALL */
+.tabs { display: flex; }
+.tab { font-size: 6px; color: #3d2418; padding: 8px 16px; border: 2px solid #2a1a12; border-bottom: none; background: #120d09; }
+.tab.active { color: #da7756; background: #09070504; border-color: #da7756; border-bottom: 2px solid #09060504; position: relative; bottom: -2px; }
+.code-block {
+  background: #09060504; border: 2px solid #da7756;
+  box-shadow: 4px 4px 0 #7c2d12; padding: 20px 22px;
+  font-family: 'VT323', monospace; font-size: 17px; color: #6b3d28; line-height: 1.8;
+}
+
+/* FOOTER */
+.footer {
+  padding: 28px 32px; display: flex; align-items: center; justify-content: space-between;
+  border-top: 2px solid #1a0f0a; background: #09070504;
+}
+.footer-logo { font-size: 11px; color: #f5ede0; }
+.footer-logo span { color: #da7756; }
+.footer-copy { font-family: 'VT323', monospace; font-size: 14px; color: #3d2418; }
+</style>
+
+<div class="wrap">
+
+  <div class="swatch-strip">
+    <div class="sw" style="background:#0e0b08"><span>#0e0b08</span></div>
+    <div class="sw" style="background:#1a120d"><span>#1a120d</span></div>
+    <div class="sw" style="background:#2a1a12"><span>#2a1a12</span></div>
+    <div class="sw" style="background:#7c2d12"><span>#7c2d12</span></div>
+    <div class="sw" style="background:#c4845a"><span>#c4845a</span></div>
+    <div class="sw" style="background:#da7756"><span>#da7756</span></div>
+    <div class="sw" style="background:#e8d5c4"><span>#e8d5c4</span></div>
+    <div class="sw" style="background:#f5ede0"><span>#f5ede0</span></div>
+  </div>
+
+  <div class="page-preview">
+
+    <!-- NAV -->
+    <div class="nav">
+      <div class="nav-logo"><span>//</span>hooker</div>
+      <div class="nav-links"><a>HOW IT WORKS</a><a>FEATURES</a><a>INSTALL</a><a>PRIVACY</a></div>
+      <div class="nav-cta">GITHUB ▸</div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left">
+        <div class="badge">★ OPEN SOURCE · LOCAL-FIRST · ZERO CLOUD ★</div>
+        <div class="h1">FULL VISIBILITY<br>INTO YOUR<br><em>AI AGENTS</em></div>
+        <div class="sub">Captures every hook from Claude Code &amp; Codex. Normalized, streamed, searchable. No cloud, no telemetry.</div>
+        <div class="actions">
+          <div class="btn-primary">▶ VIEW ON GITHUB</div>
+          <div class="btn-outline">◈ READ DOCS</div>
+        </div>
+      </div>
+
+      <!-- TERMINAL WINDOW -->
+      <div class="hero-right">
+        <div class="window">
+          <div class="winbar">
+            <div class="dot" style="background:#ef4444"></div>
+            <div class="dot" style="background:#eab308"></div>
+            <div class="dot" style="background:#22c55e"></div>
+            <span class="wintitle">hooker-monitor — bash</span>
+          </div>
+          <div class="term">
+
+            <div class="term-line">
+              <span class="t-prompt">$&nbsp;</span>
+              <span class="t-cmd">git</span>&nbsp;
+              <span class="t-sub">clone</span>&nbsp;
+              <span class="t-path">github.com/…/</span><span class="t-accent">hooker</span>
+            </div>
+
+            <div class="term-line">
+              <span class="t-prompt">$&nbsp;</span>
+              <span class="t-cmd">make</span>&nbsp;
+              <span class="t-sub">build</span>
+            </div>
+
+            <div class="term-line">
+              <span class="t-prompt">$&nbsp;</span>
+              <span class="t-cmd">hooker-monitor</span>
+              <span class="t-cursor"></span>
+            </div>
+
+            <div style="height:10px"></div>
+
+            <div class="term-line">
+              <span class="t-ok">✓</span>&nbsp;
+              <span class="t-key">listening on 127.0.0.1:</span><span class="t-val">8765</span>
+            </div>
+
+            <div class="term-line">
+              <span class="t-dim">│ SSE stream ready</span>&nbsp;
+              <span class="t-sep">—</span>&nbsp;
+              <span class="t-dim">0 subscribers</span>
+            </div>
+
+            <div class="term-line">
+              <span class="t-dim">│ SQLite → ~/.local/share/</span><span class="t-path">hooker.db</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="statsbar">
+      <div class="stat"><span class="stat-v">0ms</span><span class="stat-l">CLOUD LATENCY</span></div>
+      <div class="stat"><span class="stat-v">100%</span><span class="stat-l">LOCAL STORAGE</span></div>
+      <div class="stat"><span class="stat-v">SQLite</span><span class="stat-l">NO EXTERNAL DEPS</span></div>
+      <div class="stat"><span class="stat-v">SSE</span><span class="stat-l">REAL-TIME STREAM</span></div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section alt">
+      <div class="section-eyebrow">ARCHITECTURE</div>
+      <div class="section-title">HOW IT WORKS</div>
+      <div class="section-sub">From agent hook to browser dashboard in milliseconds — all local.</div>
+      <div class="flow">
+        <div class="flow-step"><div class="flow-icon">🤖</div><div class="flow-label">AI AGENT</div><div class="flow-desc">Claude Code or Codex</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">📡</div><div class="flow-label">POST HOOK</div><div class="flow-desc">Raw payload /api/hook</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">⚙</div><div class="flow-label">NORMALIZE</div><div class="flow-desc">Canonical event model</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">💾</div><div class="flow-label">SQLITE</div><div class="flow-desc">Persist + upsert</div></div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step"><div class="flow-icon">📺</div><div class="flow-label">DASHBOARD</div><div class="flow-desc">Live feed in browser</div></div>
+      </div>
+    </div>
+
+    <!-- FEATURES -->
+    <div class="section">
+      <div class="section-title">EVERYTHING YOU NEED</div>
+      <div class="section-sub">Complete visibility — without the cloud overhead.</div>
+      <div class="cards-grid">
+        <div class="feat-card v1"><div class="feat-icon">⚡</div><h3>REAL-TIME FEED</h3><p>Events pushed via SSE the moment they land. Zero polling.</p></div>
+        <div class="feat-card v2"><div class="feat-icon">📊</div><h3>SESSION WATERFALL</h3><p>Nested traces. Duration, cost, tool usage at a glance.</p></div>
+        <div class="feat-card v3"><div class="feat-icon">📈</div><h3>DASHBOARD STATS</h3><p>Events, sessions, token usage, error rates. All local.</p></div>
+        <div class="feat-card v2"><div class="feat-icon">🤖</div><h3>MULTI-AGENT</h3><p>Claude Code + Codex normalized into one canonical model.</p></div>
+        <div class="feat-card v1"><div class="feat-icon">🔒</div><h3>ZERO CLOUD</h3><p>SQLite only. No API keys. Fully offline once installed.</p></div>
+        <div class="feat-card v3"><div class="feat-icon">💽</div><h3>CANONICAL MODEL</h3><p>Versioned schema. Query DB directly or consume SSE.</p></div>
+      </div>
+    </div>
+
+    <!-- INSTALL -->
+    <div class="section alt">
+      <div class="section-title">UP AND RUNNING IN MINUTES</div>
+      <div class="section-sub">No accounts, no API keys. Clone, build, configure one hook line.</div>
+      <div class="tabs">
+        <div class="tab active">CLONE &amp; BUILD</div>
+        <div class="tab">CONFIGURE HOOKS</div>
+        <div class="tab">OPEN DASHBOARD</div>
+      </div>
+      <div class="code-block">
+        <div><span style="color:#3d2418"># clone and build</span></div>
+        <div><span style="color:#e8d5c4">git</span> <span style="color:#c4845a">clone</span> https://github.com/…/<span style="color:#da7756">hooker</span></div>
+        <div><span style="color:#e8d5c4">cd</span> hooker &amp;&amp; <span style="color:#e8d5c4">make</span> <span style="color:#c4845a">build</span></div>
+        <div>~/.local/bin/<span style="color:#e8d5c4">hooker-monitor</span></div>
+        <div>&nbsp;</div>
+        <div><span style="color:#5dbea3">✓</span> <span style="color:#7c4a32">dashboard at</span> http://localhost:<span style="color:#da7756">5173</span></div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="footer-logo"><span>//</span>hooker</div>
+      <div class="footer-copy">MIT LICENSE · LOCAL-FIRST · NO TELEMETRY</div>
+    </div>
+
+  </div>
+
+  <div style="margin-top: 20px; display: flex; gap: 12px;">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)" style="flex:1">
+      <div class="letter">✓</div>
+      <div class="content"><h3>Build this</h3><p>Proceed to spec and implementation plan</p></div>
+    </div>
+    <div class="option" data-choice="tweak" onclick="toggleSelect(this)" style="flex:1">
+      <div class="letter">✎</div>
+      <div class="content"><h3>Tweak first</h3><p>Adjust anything before building</p></div>
+    </div>
+  </div>
+
+</div>

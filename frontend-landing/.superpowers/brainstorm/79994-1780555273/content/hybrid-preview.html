@@ -1,0 +1,398 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+.preview-wrap {
+  background: #0d1117;
+  border: 3px solid #1e293b;
+  box-shadow: 6px 6px 0 #0a0f16;
+  border-radius: 0;
+  overflow: hidden;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── SECTIONS ── */
+.px-section { padding: 32px 36px; border-bottom: 2px solid #161b22; }
+.px-section:last-child { border-bottom: none; }
+
+/* ── NAVBAR ── */
+.px-navbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  height: 48px;
+  background: #010409;
+  border-bottom: 2px solid #4db6ac;
+  box-shadow: 0 2px 0 rgba(77,182,172,0.15);
+  font-family: 'Press Start 2P', monospace;
+}
+.px-logo { font-size: 11px; color: #f0f6fc; }
+.px-logo span { color: #4db6ac; }
+.px-navlinks { display: flex; gap: 24px; }
+.px-navlinks a { font-size: 6px; color: #4db6ac; text-decoration: none; opacity: 0.7; }
+.px-navlinks a:hover { opacity: 1; }
+.px-nav-cta {
+  font-size: 7px; color: #010409;
+  background: #4db6ac;
+  padding: 6px 12px;
+  box-shadow: 3px 3px 0 #00695c;
+}
+
+/* ── HERO ── */
+.px-hero {
+  padding: 40px 36px;
+  background: #0d1117;
+  position: relative;
+  overflow: hidden;
+}
+.px-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(77,182,172,0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+.px-hero-inner { position: relative; display: flex; gap: 32px; align-items: flex-start; }
+.px-hero-left { flex: 1; }
+.px-hero-right { width: 42%; }
+
+.px-badge {
+  display: inline-block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px; color: #4db6ac;
+  border: 2px solid #4db6ac;
+  padding: 4px 10px;
+  box-shadow: 2px 2px 0 #00695c;
+  margin-bottom: 20px;
+}
+
+.px-h1 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 16px; color: #e6edf3;
+  line-height: 1.9; margin: 0 0 12px;
+  letter-spacing: 0;
+}
+.px-h1 em {
+  color: #4db6ac;
+  font-style: normal;
+  text-shadow: 2px 2px 0 #00695c, 0 0 20px rgba(77,182,172,0.35);
+}
+
+.px-sub {
+  font-family: 'VT323', monospace;
+  font-size: 18px; color: #7d8590;
+  margin: 0 0 24px; line-height: 1.5; max-width: 420px;
+}
+
+.px-hero-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.px-btn-primary {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px; color: #010409;
+  background: #4db6ac;
+  padding: 10px 18px;
+  box-shadow: 4px 4px 0 #00695c;
+  cursor: pointer;
+}
+.px-btn-ghost {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px; color: #4db6ac;
+  border: 2px solid #4db6ac;
+  padding: 9px 14px;
+  box-shadow: 3px 3px 0 #00695c;
+}
+
+/* ── WINDOW CHROME (code panel) ── */
+.px-window {
+  background: #010409;
+  border: 2px solid #30363d;
+  box-shadow: 4px 4px 0 #090c12;
+}
+.px-win-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px;
+  background: #161b22;
+  border-bottom: 2px solid #30363d;
+}
+.px-dot { width: 9px; height: 9px; }
+.px-win-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px; color: #484f58;
+  margin-left: 6px;
+}
+.px-win-body {
+  padding: 14px 16px;
+  font-family: 'VT323', monospace;
+  font-size: 15px; line-height: 1.7; color: #7d8590;
+}
+.px-kw  { color: #ff7b72; }
+.px-str { color: #a5d6ff; }
+.px-fn  { color: #4db6ac; }
+.px-cm  { color: #484f58; }
+.px-ok  { color: #4db6ac; }
+.px-p   { color: #4db6ac; opacity: 0.6; }
+
+/* ── STATS BAR ── */
+.px-stats-bar {
+  display: flex;
+  border-top: 2px solid #161b22;
+  border-bottom: 2px solid #161b22;
+  background: #010409;
+  font-family: 'Press Start 2P', monospace;
+}
+.px-stat {
+  flex: 1; padding: 14px 16px; text-align: center;
+  border-right: 2px solid #161b22;
+}
+.px-stat:last-child { border-right: none; }
+.px-stat-v { font-size: 14px; color: #4db6ac; display: block; margin-bottom: 6px; text-shadow: 1px 1px 0 #00695c; }
+.px-stat-l { font-size: 5px; color: #484f58; letter-spacing: 0.05em; }
+
+/* ── SECTION: HOW IT WORKS ── */
+.px-section-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px; color: #4db6ac;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+}
+.px-section-label::before { content: '▸ '; }
+.px-section-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px; color: #e6edf3;
+  margin: 0 0 10px; line-height: 1.7;
+}
+.px-section-sub {
+  font-family: 'VT323', monospace;
+  font-size: 16px; color: #7d8590;
+  margin: 0 0 28px; max-width: 560px;
+}
+
+.px-flow {
+  display: flex; align-items: flex-start; gap: 0;
+  overflow-x: auto;
+}
+.px-flow-step {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; flex: 1; min-width: 100px;
+}
+.px-flow-icon {
+  width: 44px; height: 44px;
+  background: rgba(77,182,172,0.08);
+  border: 2px solid #4db6ac;
+  box-shadow: 3px 3px 0 #00695c;
+  display: flex; align-items: center; justify-content: center;
+  color: #4db6ac;
+  margin-bottom: 10px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+}
+.px-flow-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px; color: #e6edf3;
+  margin-bottom: 4px; line-height: 1.6;
+}
+.px-flow-desc {
+  font-family: 'VT323', monospace;
+  font-size: 12px; color: #484f58; line-height: 1.4;
+}
+.px-flow-arrow {
+  flex-shrink: 0; margin-top: 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px; color: #30363d;
+  padding: 0 4px;
+}
+
+/* ── FEATURE CARDS ── */
+.px-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.px-feat-card {
+  padding: 20px;
+  background: rgba(77,182,172,0.03);
+  border: 2px solid #21262d;
+  box-shadow: 3px 3px 0 #090c12;
+}
+.px-feat-card.variant-blue {
+  background: rgba(56,189,248,0.03);
+  border-color: #1d3044;
+  box-shadow: 3px 3px 0 #090c12;
+}
+.px-feat-card.variant-purple {
+  background: rgba(139,92,246,0.03);
+  border-color: #2d1e44;
+  box-shadow: 3px 3px 0 #090c12;
+}
+.px-feat-icon {
+  width: 32px; height: 32px;
+  border: 2px solid #4db6ac;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Press Start 2P', monospace; font-size: 10px;
+  color: #4db6ac;
+  margin-bottom: 12px;
+  box-shadow: 2px 2px 0 #00695c;
+}
+.px-feat-card.variant-blue .px-feat-icon { border-color: #38bdf8; color: #38bdf8; box-shadow: 2px 2px 0 #075985; }
+.px-feat-card.variant-purple .px-feat-icon { border-color: #8b5cf6; color: #8b5cf6; box-shadow: 2px 2px 0 #3b0764; }
+.px-feat-card h3 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px; color: #c9d1d9;
+  margin: 0 0 8px; line-height: 1.7;
+}
+.px-feat-card p {
+  font-family: 'VT323', monospace;
+  font-size: 14px; color: #7d8590; line-height: 1.5;
+}
+
+/* ── QUICK INSTALL ── */
+.px-install-wrap { background: #010409; }
+.px-tabs { display: flex; gap: 0; margin-bottom: 0; }
+.px-tab {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px; color: #484f58;
+  padding: 8px 16px;
+  border: 2px solid #21262d; border-bottom: none;
+  cursor: pointer;
+  background: #0d1117;
+  box-shadow: none;
+}
+.px-tab.active { color: #4db6ac; background: #010409; border-color: #4db6ac; border-bottom: 2px solid #010409; position: relative; bottom: -2px; }
+.px-code-block {
+  background: #010409;
+  border: 2px solid #4db6ac;
+  box-shadow: 4px 4px 0 #00695c;
+  padding: 20px;
+  font-family: 'VT323', monospace; font-size: 16px;
+  color: #7d8590; line-height: 1.7;
+}
+</style>
+
+<div class="mockup">
+  <div class="mockup-header">Hybrid Preview: Pixel Dev UI (C) × Material Docs Teal (A) — full page mockup</div>
+  <div class="mockup-body" style="padding: 0; background: #0d1117;">
+
+    <div class="preview-wrap">
+
+      <!-- NAVBAR -->
+      <div class="px-navbar">
+        <div class="px-logo"><span>//</span>hooker</div>
+        <div class="px-navlinks">
+          <a>HOW IT WORKS</a><a>FEATURES</a><a>INSTALL</a><a>PRIVACY</a>
+        </div>
+        <div class="px-nav-cta">GITHUB ▸</div>
+      </div>
+
+      <!-- HERO -->
+      <div class="px-hero">
+        <div class="px-hero-inner">
+          <div class="px-hero-left">
+            <div class="px-badge">★ OPEN SOURCE · LOCAL-FIRST · ZERO CLOUD ★</div>
+            <div class="px-h1">FULL VISIBILITY<br>INTO YOUR<br><em>AI AGENTS</em></div>
+            <div class="px-sub">Captures every hook from Claude Code &amp; Codex. Normalized events. Real-time dashboard. No cloud, no telemetry.</div>
+            <div class="px-hero-actions">
+              <div class="px-btn-primary">▶ VIEW ON GITHUB</div>
+              <div class="px-btn-ghost">◈ READ DOCS</div>
+            </div>
+          </div>
+          <div class="px-hero-right">
+            <div class="px-window">
+              <div class="px-win-bar">
+                <div class="px-dot" style="background:#ef4444"></div>
+                <div class="px-dot" style="background:#eab308"></div>
+                <div class="px-dot" style="background:#22c55e"></div>
+                <span class="px-win-title">hooker-monitor — bash</span>
+              </div>
+              <div class="px-win-body">
+                <div><span class="px-p">$ </span><span class="px-fn">git clone</span> github.com/…/<span class="px-str">hooker</span></div>
+                <div><span class="px-p">$ </span><span class="px-fn">make</span> <span class="px-kw">build</span></div>
+                <div><span class="px-p">$ </span><span class="px-fn">hooker-monitor</span></div>
+                <div>&nbsp;</div>
+                <div><span class="px-ok">✓</span> listening on 127.0.0.1:<span class="px-str">8765</span></div>
+                <div><span class="px-cm">│ SSE stream ready — 0 subscribers</span></div>
+                <div><span class="px-cm">│ SQLite → ~/.local/share/hooker.db</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS BAR -->
+      <div class="px-stats-bar">
+        <div class="px-stat"><span class="px-stat-v">0ms</span><span class="px-stat-l">CLOUD LATENCY</span></div>
+        <div class="px-stat"><span class="px-stat-v">100%</span><span class="px-stat-l">LOCAL STORAGE</span></div>
+        <div class="px-stat"><span class="px-stat-v">SQLite</span><span class="px-stat-l">NO EXTERNAL DEPS</span></div>
+        <div class="px-stat"><span class="px-stat-v">SSE</span><span class="px-stat-l">REAL-TIME STREAM</span></div>
+      </div>
+
+      <!-- HOW IT WORKS -->
+      <div class="px-section" style="background: #010409">
+        <div class="px-section-label">ARCHITECTURE</div>
+        <div class="px-section-title">HOW IT WORKS</div>
+        <div class="px-section-sub">From agent hook event to browser dashboard in milliseconds — all local.</div>
+        <div class="px-flow">
+          <div class="px-flow-step"><div class="px-flow-icon">🤖</div><div class="px-flow-label">AI AGENT</div><div class="px-flow-desc">Claude Code / Codex session</div></div>
+          <div class="px-flow-arrow">›</div>
+          <div class="px-flow-step"><div class="px-flow-icon">📡</div><div class="px-flow-label">POST HOOK</div><div class="px-flow-desc">Raw payload to /api/hook</div></div>
+          <div class="px-flow-arrow">›</div>
+          <div class="px-flow-step"><div class="px-flow-icon">⚙</div><div class="px-flow-label">NORMALIZE</div><div class="px-flow-desc">Canonical event model</div></div>
+          <div class="px-flow-arrow">›</div>
+          <div class="px-flow-step"><div class="px-flow-icon">💾</div><div class="px-flow-label">SQLITE</div><div class="px-flow-desc">Persist + session upsert</div></div>
+          <div class="px-flow-arrow">›</div>
+          <div class="px-flow-step"><div class="px-flow-icon">📺</div><div class="px-flow-label">DASHBOARD</div><div class="px-flow-desc">Live feed in browser</div></div>
+        </div>
+      </div>
+
+      <!-- FEATURES -->
+      <div class="px-section">
+        <div class="px-section-title">EVERYTHING YOU NEED</div>
+        <div class="px-section-sub">Complete visibility into your AI coding agents — without the cloud overhead.</div>
+        <div class="px-cards-grid">
+          <div class="px-feat-card"><div class="px-feat-icon">⚡</div><h3>REAL-TIME FEED</h3><p>Live stream of every tool call, command, response. Events pushed via SSE the moment they land.</p></div>
+          <div class="px-feat-card variant-blue"><div class="px-feat-icon">📊</div><h3>SESSION WATERFALL</h3><p>Visualize agent sessions as nested traces. Duration, cost, tool usage at a glance.</p></div>
+          <div class="px-feat-card variant-purple"><div class="px-feat-icon">📈</div><h3>DASHBOARD STATS</h3><p>Aggregate metrics — events, sessions, token usage, error rates. Computed locally.</p></div>
+          <div class="px-feat-card variant-blue"><div class="px-feat-icon">🤖</div><h3>MULTI-AGENT</h3><p>Normalizes Claude Code and Codex into one canonical event model. Add agents without touching frontend.</p></div>
+          <div class="px-feat-card"><div class="px-feat-icon">🔒</div><h3>ZERO CLOUD</h3><p>SQLite only. No external services, no API keys. Works fully offline once installed.</p></div>
+          <div class="px-feat-card variant-purple"><div class="px-feat-icon">💽</div><h3>CANONICAL MODEL</h3><p>Structured, versioned schema. Query the DB directly or consume the SSE stream.</p></div>
+        </div>
+      </div>
+
+      <!-- QUICK INSTALL -->
+      <div class="px-section" style="background: #010409">
+        <div class="px-section-title">UP AND RUNNING IN MINUTES</div>
+        <div class="px-section-sub">No accounts, no API keys. Clone, build, configure one hook line.</div>
+        <div class="px-install-wrap">
+          <div class="px-tabs">
+            <div class="px-tab active">CLONE &amp; BUILD</div>
+            <div class="px-tab">CONFIGURE HOOKS</div>
+            <div class="px-tab">OPEN DASHBOARD</div>
+          </div>
+          <div class="px-code-block">
+            <div><span class="px-cm"># clone the repo and build</span></div>
+            <div><span class="px-fn">git clone</span> https://github.com/…/<span class="px-str">hooker</span></div>
+            <div><span class="px-fn">cd</span> hooker</div>
+            <div><span class="px-fn">make</span> <span class="px-kw">build</span></div>
+            <div>~/.local/bin/<span class="px-fn">hooker-monitor</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div style="margin-top: 20px; display: flex; gap: 12px;">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)" style="flex: 1">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Looks good — go with this</h3>
+      <p>Proceed to full design spec and implementation plan</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)" style="flex: 1">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>Tweak something first</h3>
+      <p>Adjust colors, layout, font size, or specific sections</p>
+    </div>
+  </div>
+</div>

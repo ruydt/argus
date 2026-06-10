@@ -1,0 +1,607 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+/* ── pixel SVG icons ── */
+svg { display:block; image-rendering:pixelated; shape-rendering:crispEdges; }
+
+/* ── logo picker ── */
+.logo-row { display:flex; gap:16px; margin-bottom:24px; }
+.logo-opt {
+  flex:1; padding:18px 20px;
+  background:#160f0a; border:2px solid #2a1a12;
+  box-shadow:3px 3px 0 #08050404; cursor:pointer;
+  transition:border-color .15s;
+}
+.logo-opt:hover { border-color:#da7756; }
+.logo-opt.selected { border-color:#da7756 !important; box-shadow:3px 3px 0 #7c2d12; }
+.logo-opt-label { font-family:'Press Start 2P',monospace; font-size:6px; color:#3d2418; margin-top:10px; }
+.logo-opt-desc { font-family:system-ui; font-size:11px; color:#6b3d28; margin-top:4px; line-height:1.5; }
+
+/* logo A: hook glyph */
+.logo-a { display:flex; align-items:center; gap:10px; }
+.logo-a-text { font-family:'Press Start 2P',monospace; font-size:13px; color:#f5ede0; }
+.logo-a-text span { color:#da7756; }
+
+/* logo B: pixel eye */
+.logo-b { display:flex; align-items:center; gap:10px; }
+.logo-b-text { font-family:'Press Start 2P',monospace; font-size:13px; color:#f5ede0; }
+.logo-b-text em { color:#da7756; font-style:normal; }
+
+/* logo C: wordmark with pixel underline accent */
+.logo-c { display:flex; flex-direction:column; gap:4px; }
+.logo-c-word { font-family:'Press Start 2P',monospace; font-size:13px; color:#f5ede0; line-height:1; }
+.logo-c-word span { color:#da7756; }
+.logo-c-bar { display:flex; gap:2px; }
+.logo-c-px { height:3px; background:#da7756; }
+
+/* ── full page preview ── */
+.page {
+  background:#0e0b08;
+  border:3px solid #2a1a12;
+  box-shadow:6px 6px 0 #040303;
+  overflow:hidden;
+  font-family:'Press Start 2P',monospace;
+}
+
+/* NAV */
+.nav {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:52px;
+  background:#09060504; border-bottom:2px solid #da7756;
+  box-shadow:0 2px 0 rgba(218,119,86,.18);
+}
+.nav-links { display:flex; gap:28px; }
+.nav-links a { font-size:6px; color:#da7756; opacity:.65; text-decoration:none; }
+.nav-cta { font-size:7px; color:#0e0b08; background:#da7756; padding:7px 14px; box-shadow:3px 3px 0 #7c2d12; }
+
+/* HERO */
+.hero {
+  padding:48px 32px 36px; position:relative; overflow:hidden;
+  background:#0e0b08; display:flex; gap:36px; align-items:flex-start;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background-image:radial-gradient(rgba(218,119,86,.08) 1px, transparent 1px);
+  background-size:20px 20px; pointer-events:none;
+}
+.hero::after {
+  content:''; position:absolute;
+  top:-40%; left:30%; width:60%; height:70%;
+  background:radial-gradient(ellipse, rgba(218,119,86,.07) 0%, transparent 65%);
+  pointer-events:none;
+}
+.hero-left { flex:1; position:relative; z-index:1; }
+.hero-right { width:40%; position:relative; z-index:1; }
+.badge { display:inline-block; font-size:6px; color:#da7756; border:2px solid #da7756; padding:4px 10px; box-shadow:2px 2px 0 #7c2d12; margin-bottom:22px; }
+.h1 { font-size:18px; color:#f5ede0; line-height:1.85; margin:0 0 14px; }
+.h1 em { color:#da7756; font-style:normal; text-shadow:2px 2px 0 #7c2d12,0 0 24px rgba(218,119,86,.3); }
+.sub { font-family:'VT323',monospace; font-size:19px; color:#a16246; margin:0 0 26px; line-height:1.5; max-width:400px; }
+.actions { display:flex; gap:12px; align-items:center; }
+.btn-p { font-size:8px; color:#0e0b08; background:#da7756; padding:10px 18px; box-shadow:4px 4px 0 #7c2d12; }
+.btn-o { font-size:7px; color:#da7756; border:2px solid #da7756; padding:9px 14px; box-shadow:3px 3px 0 #7c2d12; }
+
+/* WINDOW */
+.window { background:#0d0a08; border:2px solid #2a1a12; box-shadow:4px 4px 0 #050403; }
+.winbar { display:flex; align-items:center; gap:7px; padding:8px 13px; background:#1a120d; border-bottom:2px solid #2a1a12; }
+.dot { width:10px; height:10px; }
+.wintitle { font-size:6px; color:#4a2e1e; margin-left:6px; }
+.term { padding:18px 20px; font-family:'VT323',monospace; font-size:16px; line-height:2; background:#0d0a08; }
+.t-prompt { color:#5a3a28; }
+.t-cmd { color:#e8d5c4; }
+.t-sub { color:#c4845a; }
+.t-path { color:#a16246; }
+.t-acc { color:#da7756; font-weight:bold; }
+.t-ok { color:#5dbea3; }
+.t-key { color:#7c4a32; }
+.t-val { color:#da7756; }
+.t-dim { color:#3d2418; }
+.t-cursor { display:inline-block; width:9px; height:15px; background:#da7756; vertical-align:middle; animation:blink 1.1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* STATS */
+.statsbar { display:flex; border-top:2px solid #1a0f0a; border-bottom:2px solid #1a0f0a; background:#09070504; }
+.stat { flex:1; padding:16px; text-align:center; border-right:2px solid #1a0f0a; }
+.stat:last-child { border-right:none; }
+.stat-v { font-size:14px; color:#da7756; display:block; margin-bottom:6px; text-shadow:1px 1px 0 #7c2d12; }
+.stat-l { font-size:5px; color:#3d2418; letter-spacing:.06em; }
+
+/* SECTIONS */
+.sec { padding:36px 32px; }
+.sec.alt { background:#09070504; }
+.sec-eye { font-size:7px; color:#da7756; margin-bottom:14px; }
+.sec-eye::before { content:'▸ '; }
+.sec-title { font-size:15px; color:#f5ede0; line-height:1.75; margin:0 0 10px; }
+.sec-sub { font-family:'VT323',monospace; font-size:18px; color:#6b3d28; margin:0 0 28px; }
+
+/* FLOW */
+.flow { display:flex; align-items:flex-start; }
+.fs { display:flex; flex-direction:column; align-items:center; text-align:center; flex:1; min-width:90px; }
+.fi {
+  width:46px; height:46px; background:rgba(218,119,86,.07);
+  border:2px solid #da7756; box-shadow:3px 3px 0 #7c2d12;
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:10px;
+}
+.fl { font-size:6px; color:#f5ede0; margin-bottom:4px; line-height:1.6; }
+.fd { font-family:'VT323',monospace; font-size:13px; color:#4a2515; line-height:1.4; }
+.fa { flex-shrink:0; margin-top:18px; font-size:11px; color:#2a1a12; padding:0 4px; }
+
+/* CARDS */
+.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.card { padding:22px; border:2px solid #2a1a12; box-shadow:3px 3px 0 #06040304; display:flex; flex-direction:column; gap:10px; }
+.card.v1 { background:rgba(218,119,86,.04); }
+.card.v2 { background:rgba(232,184,154,.03); border-color:#2a1812; }
+.card.v3 { background:rgba(161,98,70,.04); border-color:#1e1510; }
+.card-icon {
+  width:36px; height:36px; border:2px solid #da7756;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:2px 2px 0 #7c2d12; color:#da7756;
+}
+.card.v2 .card-icon { border-color:#e8b89a; color:#e8b89a; box-shadow:2px 2px 0 #5a2a10; }
+.card.v3 .card-icon { border-color:#c4845a; color:#c4845a; box-shadow:2px 2px 0 #4a1e0a; }
+.card h3 { font-size:7px; color:#f5ede0; margin:0; line-height:1.7; }
+.card p { font-family:'VT323',monospace; font-size:15px; color:#4a2515; margin:0; line-height:1.5; }
+
+/* INSTALL */
+.tabs { display:flex; }
+.tab { font-size:6px; color:#3d2418; padding:8px 16px; border:2px solid #2a1a12; border-bottom:none; background:#120d09; }
+.tab.on { color:#da7756; background:#09070504; border-color:#da7756; border-bottom:2px solid #09060504; position:relative; bottom:-2px; }
+.code-blk { background:#09060504; border:2px solid #da7756; box-shadow:4px 4px 0 #7c2d12; padding:20px 22px; font-family:'VT323',monospace; font-size:17px; color:#6b3d28; line-height:1.8; }
+
+/* FOOTER */
+.footer { padding:28px 32px; display:flex; align-items:center; justify-content:space-between; border-top:2px solid #1a0f0a; background:#09070504; }
+.footer-copy { font-family:'VT323',monospace; font-size:14px; color:#3d2418; }
+</style>
+
+<!-- ══════════ LOGO OPTIONS ══════════ -->
+<h2>Pick a logo</h2>
+<p class="subtitle">Three designs — all use Press Start 2P. Click to select.</p>
+
+<div class="logo-row">
+
+  <!-- A: Pixel Hook glyph + text -->
+  <div class="logo-opt" data-choice="logo-a" onclick="toggleSelect(this)">
+    <div class="logo-a">
+      <!-- pixel hook: 14x14 -->
+      <svg width="32" height="32" viewBox="0 0 14 14" fill="#da7756">
+        <!-- top curve of hook -->
+        <rect x="3" y="0" width="5" height="1"/>
+        <rect x="2" y="1" width="1" height="1"/> <rect x="8" y="1" width="1" height="1"/>
+        <rect x="1" y="2" width="1" height="2"/> <rect x="9" y="2" width="1" height="2"/>
+        <rect x="2" y="4" width="1" height="1"/> <rect x="9" y="4" width="1" height="1"/>
+        <rect x="3" y="5" width="6" height="1"/>
+        <!-- straight vertical -->
+        <rect x="9" y="6" width="1" height="3"/>
+        <!-- bottom curve -->
+        <rect x="8" y="9" width="1" height="1"/>
+        <rect x="5" y="10" width="4" height="1"/>
+        <rect x="4" y="11" width="1" height="1"/>
+        <!-- tip / point of hook -->
+        <rect x="3" y="11" width="2" height="1"/>
+        <rect x="4" y="12" width="1" height="1"/> <rect x="2" y="12" width="1" height="1"/>
+        <rect x="3" y="13" width="1" height="1"/>
+      </svg>
+      <div class="logo-a-text">HOOK<span>ER</span></div>
+    </div>
+    <div class="logo-opt-label">A — HOOK GLYPH</div>
+    <div class="logo-opt-desc">Pixel art hook icon preceding the wordmark. The literal shape of the product's function.</div>
+  </div>
+
+  <!-- B: Pixel Eye + text -->
+  <div class="logo-opt" data-choice="logo-b" onclick="toggleSelect(this)">
+    <div class="logo-b">
+      <!-- pixel eye: 16x10 -->
+      <svg width="36" height="24" viewBox="0 0 16 10" fill="#da7756">
+        <!-- outer eye shape -->
+        <rect x="2" y="0" width="12" height="1"/>
+        <rect x="1" y="1" width="2" height="1"/> <rect x="13" y="1" width="2" height="1"/>
+        <rect x="0" y="2" width="1" height="2"/> <rect x="15" y="2" width="1" height="2"/>
+        <rect x="1" y="4" width="2" height="1"/> <rect x="13" y="4" width="2" height="1"/>
+        <rect x="2" y="5" width="12" height="1"/>
+        <!-- iris -->
+        <rect x="5" y="1" width="6" height="1"/>
+        <rect x="4" y="2" width="8" height="2"/>
+        <rect x="5" y="4" width="6" height="1"/>
+        <!-- pupil -->
+        <rect x="6" y="2" width="4" height="1" fill="#0e0b08"/>
+        <rect x="5" y="3" width="6" height="1" fill="#0e0b08"/>
+        <rect x="6" y="4" width="4" height="0" fill="#0e0b08"/>
+        <!-- pupil dot -->
+        <rect x="7" y="2" width="2" height="2" fill="#0e0b08"/>
+        <!-- shine -->
+        <rect x="9" y="2" width="1" height="1" fill="#f5ede0"/>
+        <!-- lash hint -->
+        <rect x="5" y="6" width="1" height="1"/>  <rect x="8" y="6" width="1" height="1"/> <rect x="11" y="6" width="1" height="1"/>
+      </svg>
+      <div class="logo-b-text">HOOK<em>ER</em></div>
+    </div>
+    <div class="logo-opt-label">B — PIXEL EYE</div>
+    <div class="logo-opt-desc">Eye icon = watching your agents. Monitoring. Pairs with the "visibility" tagline.</div>
+  </div>
+
+  <!-- C: Wordmark with pixel accent bar -->
+  <div class="logo-opt" data-choice="logo-c" onclick="toggleSelect(this)">
+    <div class="logo-c">
+      <div class="logo-c-word">H<span>00</span>KER</div>
+      <div class="logo-c-bar">
+        <div class="logo-c-px" style="width:10px"></div>
+        <div class="logo-c-px" style="width:6px; background:#c4845a"></div>
+        <div class="logo-c-px" style="width:10px"></div>
+        <div class="logo-c-px" style="width:4px; background:#7c4a32"></div>
+        <div class="logo-c-px" style="width:8px"></div>
+        <div class="logo-c-px" style="width:4px; background:#c4845a"></div>
+        <div class="logo-c-px" style="width:10px"></div>
+      </div>
+    </div>
+    <div class="logo-opt-label">C — H00KER WORDMARK</div>
+    <div class="logo-opt-desc">l33t-style zeros in the name. Pixel gradient underbar accent. Pure text — no icon needed.</div>
+  </div>
+
+</div>
+
+<!-- ══════════ FULL PAGE PREVIEW (logo B default) ══════════ -->
+<h3 style="font-family:'Press Start 2P',monospace; font-size:8px; color:#da7756; margin-bottom:12px;">▸ FULL PAGE — LOGO B (EYE) SHOWN</h3>
+
+<div class="page">
+
+  <!-- NAV with eye logo -->
+  <div class="nav">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="22" height="14" viewBox="0 0 16 10" fill="#da7756" style="image-rendering:pixelated;shape-rendering:crispEdges">
+        <rect x="2" y="0" width="12" height="1"/>
+        <rect x="1" y="1" width="2" height="1"/><rect x="13" y="1" width="2" height="1"/>
+        <rect x="0" y="2" width="1" height="2"/><rect x="15" y="2" width="1" height="2"/>
+        <rect x="1" y="4" width="2" height="1"/><rect x="13" y="4" width="2" height="1"/>
+        <rect x="2" y="5" width="12" height="1"/>
+        <rect x="5" y="1" width="6" height="1"/>
+        <rect x="4" y="2" width="8" height="2"/>
+        <rect x="5" y="4" width="6" height="1"/>
+        <rect x="7" y="2" width="2" height="2" fill="#0e0b08"/>
+        <rect x="9" y="2" width="1" height="1" fill="#f5ede0"/>
+      </svg>
+      <span style="font-family:'Press Start 2P',monospace;font-size:11px;color:#f5ede0">HOOK<span style="color:#da7756">ER</span></span>
+    </div>
+    <div class="nav-links"><a>HOW IT WORKS</a><a>FEATURES</a><a>INSTALL</a><a>PRIVACY</a></div>
+    <div class="nav-cta">GITHUB ▸</div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="badge">★ OPEN SOURCE · LOCAL-FIRST · ZERO CLOUD ★</div>
+      <div class="h1">FULL VISIBILITY<br>INTO YOUR<br><em>AI AGENTS</em></div>
+      <div class="sub">Captures every hook from Claude Code &amp; Codex. Normalized, streamed. No cloud, no telemetry.</div>
+      <div class="actions">
+        <div class="btn-p">▶ VIEW ON GITHUB</div>
+        <div class="btn-o">◈ READ DOCS</div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="window">
+        <div class="winbar">
+          <div class="dot" style="background:#ef4444"></div>
+          <div class="dot" style="background:#eab308"></div>
+          <div class="dot" style="background:#22c55e"></div>
+          <span class="wintitle">hooker-monitor — bash</span>
+        </div>
+        <div class="term">
+          <div><span class="t-prompt">$&nbsp;</span><span class="t-cmd">git</span>&nbsp;<span class="t-sub">clone</span>&nbsp;<span class="t-path">github.com/…/</span><span class="t-acc">hooker</span></div>
+          <div><span class="t-prompt">$&nbsp;</span><span class="t-cmd">make</span>&nbsp;<span class="t-sub">build</span></div>
+          <div><span class="t-prompt">$&nbsp;</span><span class="t-cmd">hooker-monitor</span><span class="t-cursor"></span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-ok">✓</span>&nbsp;<span class="t-key">listening on 127.0.0.1:</span><span class="t-val">8765</span></div>
+          <div><span class="t-dim">│ SSE stream ready — 0 subscribers</span></div>
+          <div><span class="t-dim">│ SQLite → ~/.local/share/</span><span class="t-path">hooker.db</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="statsbar">
+    <div class="stat"><span class="stat-v">0ms</span><span class="stat-l">CLOUD LATENCY</span></div>
+    <div class="stat"><span class="stat-v">100%</span><span class="stat-l">LOCAL STORAGE</span></div>
+    <div class="stat"><span class="stat-v">SQLite</span><span class="stat-l">NO EXTERNAL DEPS</span></div>
+    <div class="stat"><span class="stat-v">SSE</span><span class="stat-l">REAL-TIME STREAM</span></div>
+  </div>
+
+  <!-- HOW IT WORKS — pixel flow icons -->
+  <div class="sec alt">
+    <div class="sec-eye">ARCHITECTURE</div>
+    <div class="sec-title">HOW IT WORKS</div>
+    <div class="sec-sub">From agent hook to browser dashboard in milliseconds — all local.</div>
+    <div class="flow">
+
+      <div class="fs">
+        <div class="fi">
+          <!-- ROBOT icon 8x8 -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="1" y="0" width="6" height="1"/>
+            <rect x="0" y="1" width="8" height="1"/>
+            <rect x="0" y="2" width="1" height="3"/> <rect x="7" y="2" width="1" height="3"/>
+            <rect x="2" y="2" width="1" height="2"/> <rect x="5" y="2" width="1" height="2"/><!-- eyes -->
+            <rect x="2" y="4" width="4" height="1"/><!-- mouth bar -->
+            <rect x="3" y="4" width="1" height="1" fill="#0e0b08"/><rect x="4" y="4" width="1" height="1" fill="#0e0b08"/><!-- gap in mouth -->
+            <rect x="1" y="5" width="6" height="1"/>
+            <rect x="2" y="6" width="1" height="2"/> <rect x="5" y="6" width="1" height="2"/><!-- legs -->
+          </svg>
+        </div>
+        <div class="fl">AI AGENT</div><div class="fd">Claude Code / Codex</div>
+      </div>
+
+      <div class="fa">
+        <!-- arrow pixel -->
+        <svg width="12" height="10" viewBox="0 0 6 5" fill="#2a1a12">
+          <rect x="0" y="2" width="4" height="1"/>
+          <rect x="3" y="1" width="1" height="1"/> <rect x="3" y="3" width="1" height="1"/>
+          <rect x="4" y="0" width="1" height="1"/> <rect x="4" y="4" width="1" height="1"/>
+          <rect x="5" y="1" width="1" height="3"/>
+        </svg>
+      </div>
+
+      <div class="fs">
+        <div class="fi">
+          <!-- ANTENNA / signal icon -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="3" y="0" width="2" height="1"/><!-- tip -->
+            <rect x="1" y="1" width="1" height="1"/> <rect x="6" y="1" width="1" height="1"/>
+            <rect x="0" y="2" width="1" height="1"/> <rect x="7" y="2" width="1" height="1"/>
+            <rect x="3" y="1" width="2" height="5"/><!-- mast -->
+            <rect x="2" y="6" width="4" height="1"/>
+            <rect x="1" y="7" width="6" height="1"/>
+          </svg>
+        </div>
+        <div class="fl">POST HOOK</div><div class="fd">Raw payload /api/hook</div>
+      </div>
+
+      <div class="fa">
+        <svg width="12" height="10" viewBox="0 0 6 5" fill="#2a1a12">
+          <rect x="0" y="2" width="4" height="1"/>
+          <rect x="3" y="1" width="1" height="1"/> <rect x="3" y="3" width="1" height="1"/>
+          <rect x="4" y="0" width="1" height="1"/> <rect x="4" y="4" width="1" height="1"/>
+          <rect x="5" y="1" width="1" height="3"/>
+        </svg>
+      </div>
+
+      <div class="fs">
+        <div class="fi">
+          <!-- GEAR icon -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="3" y="0" width="2" height="1"/>
+            <rect x="1" y="1" width="1" height="1"/> <rect x="6" y="1" width="1" height="1"/>
+            <rect x="0" y="2" width="2" height="1"/> <rect x="6" y="2" width="2" height="1"/>
+            <rect x="1" y="3" width="1" height="2"/> <rect x="6" y="3" width="1" height="2"/><!-- teeth side -->
+            <rect x="0" y="3" width="1" height="2"/>  <rect x="7" y="3" width="1" height="2"/>
+            <rect x="0" y="5" width="2" height="1"/> <rect x="6" y="5" width="2" height="1"/>
+            <rect x="1" y="6" width="1" height="1"/> <rect x="6" y="6" width="1" height="1"/>
+            <rect x="3" y="7" width="2" height="1"/>
+            <!-- center hole -->
+            <rect x="2" y="2" width="4" height="4" fill="#0e0b08"/>
+            <rect x="3" y="1" width="2" height="6"/>
+            <rect x="2" y="3" width="4" height="2"/>
+            <rect x="3" y="3" width="2" height="2" fill="#0e0b08"/>
+          </svg>
+        </div>
+        <div class="fl">NORMALIZE</div><div class="fd">Canonical event model</div>
+      </div>
+
+      <div class="fa">
+        <svg width="12" height="10" viewBox="0 0 6 5" fill="#2a1a12">
+          <rect x="0" y="2" width="4" height="1"/>
+          <rect x="3" y="1" width="1" height="1"/> <rect x="3" y="3" width="1" height="1"/>
+          <rect x="4" y="0" width="1" height="1"/> <rect x="4" y="4" width="1" height="1"/>
+          <rect x="5" y="1" width="1" height="3"/>
+        </svg>
+      </div>
+
+      <div class="fs">
+        <div class="fi">
+          <!-- DATABASE cylinder icon (pixel) -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="1" y="0" width="6" height="1"/>
+            <rect x="0" y="1" width="1" height="1"/> <rect x="7" y="1" width="1" height="1"/>
+            <rect x="1" y="2" width="6" height="1"/>
+            <rect x="0" y="3" width="1" height="3"/> <rect x="7" y="3" width="1" height="3"/>
+            <rect x="1" y="6" width="6" height="1"/>
+            <rect x="0" y="7" width="1" height="1"/> <rect x="7" y="7" width="1" height="1"/>
+            <!-- bottom cap -->
+            <rect x="1" y="7" width="6" height="1"/>
+          </svg>
+        </div>
+        <div class="fl">SQLITE</div><div class="fd">Persist + upsert session</div>
+      </div>
+
+      <div class="fa">
+        <svg width="12" height="10" viewBox="0 0 6 5" fill="#2a1a12">
+          <rect x="0" y="2" width="4" height="1"/>
+          <rect x="3" y="1" width="1" height="1"/> <rect x="3" y="3" width="1" height="1"/>
+          <rect x="4" y="0" width="1" height="1"/> <rect x="4" y="4" width="1" height="1"/>
+          <rect x="5" y="1" width="1" height="3"/>
+        </svg>
+      </div>
+
+      <div class="fs">
+        <div class="fi">
+          <!-- MONITOR icon -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="0" y="0" width="8" height="1"/>
+            <rect x="0" y="1" width="1" height="4"/> <rect x="7" y="1" width="1" height="4"/>
+            <!-- screen content -->
+            <rect x="2" y="2" width="4" height="1"/>
+            <rect x="1" y="3" width="6" height="1"/>
+            <rect x="2" y="4" width="3" height="1"/>
+            <rect x="0" y="5" width="8" height="1"/>
+            <rect x="3" y="6" width="2" height="1"/>
+            <rect x="2" y="7" width="4" height="1"/>
+          </svg>
+        </div>
+        <div class="fl">DASHBOARD</div><div class="fd">Live feed in browser</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FEATURES — pixel icons -->
+  <div class="sec">
+    <div class="sec-title">EVERYTHING YOU NEED</div>
+    <div class="sec-sub">Complete visibility — without the cloud overhead.</div>
+    <div class="cards">
+
+      <div class="card v1">
+        <div class="card-icon">
+          <!-- LIGHTNING / SSE -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="4" y="0" width="3" height="1"/>
+            <rect x="3" y="1" width="4" height="1"/>
+            <rect x="2" y="2" width="5" height="1"/>
+            <rect x="1" y="3" width="6" height="1"/>
+            <rect x="3" y="4" width="4" height="1"/>
+            <rect x="2" y="5" width="5" height="1"/>
+            <rect x="1" y="6" width="4" height="1"/>
+            <rect x="2" y="7" width="2" height="1"/>
+          </svg>
+        </div>
+        <h3>REAL-TIME FEED</h3>
+        <p>Events pushed via SSE the moment they land. Zero polling.</p>
+      </div>
+
+      <div class="card v2">
+        <div class="card-icon">
+          <!-- BAR CHART / sessions waterfall -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#e8b89a">
+            <rect x="0" y="7" width="8" height="1"/><!-- baseline -->
+            <rect x="1" y="2" width="1" height="5"/>
+            <rect x="3" y="4" width="1" height="3"/>
+            <rect x="5" y="1" width="1" height="6"/>
+            <rect x="7" y="3" width="1" height="4"/>
+          </svg>
+        </div>
+        <h3>SESSION WATERFALL</h3>
+        <p>Nested traces. Duration, cost, tool usage at a glance.</p>
+      </div>
+
+      <div class="card v3">
+        <div class="card-icon">
+          <!-- LINE CHART / stats -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#c4845a">
+            <rect x="0" y="7" width="8" height="1"/>
+            <rect x="0" y="0" width="1" height="7"/>
+            <rect x="1" y="5" width="1" height="1"/>
+            <rect x="2" y="4" width="1" height="1"/>
+            <rect x="3" y="4" width="1" height="1"/>
+            <rect x="4" y="3" width="1" height="1"/>
+            <rect x="5" y="2" width="1" height="1"/>
+            <rect x="6" y="1" width="1" height="1"/>
+            <rect x="7" y="1" width="1" height="1"/>
+          </svg>
+        </div>
+        <h3>DASHBOARD STATS</h3>
+        <p>Events, sessions, token usage, error rates — all local.</p>
+      </div>
+
+      <div class="card v2">
+        <div class="card-icon">
+          <!-- ROBOT / multi-agent -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#e8b89a">
+            <rect x="1" y="0" width="6" height="1"/>
+            <rect x="0" y="1" width="8" height="1"/>
+            <rect x="0" y="2" width="1" height="3"/><rect x="7" y="2" width="1" height="3"/>
+            <rect x="2" y="2" width="1" height="2"/><rect x="5" y="2" width="1" height="2"/>
+            <rect x="2" y="4" width="4" height="1"/>
+            <rect x="3" y="4" width="1" height="1" fill="#0e0b08"/><rect x="4" y="4" width="1" height="1" fill="#0e0b08"/>
+            <rect x="1" y="5" width="6" height="1"/>
+            <rect x="2" y="6" width="1" height="2"/><rect x="5" y="6" width="1" height="2"/>
+          </svg>
+        </div>
+        <h3>MULTI-AGENT</h3>
+        <p>Claude Code + Codex normalized into one canonical model.</p>
+      </div>
+
+      <div class="card v1">
+        <div class="card-icon">
+          <!-- PADLOCK / zero cloud -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#da7756">
+            <rect x="2" y="0" width="4" height="1"/>
+            <rect x="1" y="1" width="1" height="2"/><rect x="6" y="1" width="1" height="2"/>
+            <rect x="0" y="3" width="8" height="5"/>
+            <rect x="1" y="1" width="6" height="1" fill="#0e0b08"/><!-- shackle gap -->
+            <rect x="2" y="2" width="4" height="1" fill="#0e0b08"/>
+            <rect x="3" y="5" width="2" height="1" fill="#0e0b08"/><!-- keyhole top -->
+            <rect x="3" y="6" width="2" height="1" fill="#0e0b08"/>
+          </svg>
+        </div>
+        <h3>ZERO CLOUD</h3>
+        <p>SQLite only. No API keys. Fully offline once installed.</p>
+      </div>
+
+      <div class="card v3">
+        <div class="card-icon">
+          <!-- DATABASE / canonical model -->
+          <svg width="20" height="20" viewBox="0 0 8 8" fill="#c4845a">
+            <rect x="1" y="0" width="6" height="1"/>
+            <rect x="0" y="1" width="8" height="1"/>
+            <rect x="1" y="2" width="6" height="1"/>
+            <rect x="0" y="3" width="1" height="2"/><rect x="7" y="3" width="1" height="2"/>
+            <rect x="1" y="5" width="6" height="1"/>
+            <rect x="0" y="6" width="8" height="1"/>
+            <rect x="1" y="7" width="6" height="1"/>
+          </svg>
+        </div>
+        <h3>CANONICAL MODEL</h3>
+        <p>Versioned schema. Query DB directly or consume SSE stream.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INSTALL -->
+  <div class="sec alt">
+    <div class="sec-title">UP AND RUNNING IN MINUTES</div>
+    <div class="sec-sub">No accounts, no API keys. Clone, build, configure one hook line.</div>
+    <div class="tabs">
+      <div class="tab on">CLONE &amp; BUILD</div>
+      <div class="tab">CONFIGURE HOOKS</div>
+      <div class="tab">OPEN DASHBOARD</div>
+    </div>
+    <div class="code-blk">
+      <div><span style="color:#3d2418"># clone and build</span></div>
+      <div><span style="color:#e8d5c4">git</span> <span style="color:#c4845a">clone</span> https://github.com/…/<span style="color:#da7756">hooker</span></div>
+      <div><span style="color:#e8d5c4">cd</span> hooker &amp;&amp; <span style="color:#e8d5c4">make</span> <span style="color:#c4845a">build</span></div>
+      <div>~/.local/bin/<span style="color:#e8d5c4">hooker-monitor</span></div>
+      <div>&nbsp;</div>
+      <div><span style="color:#5dbea3">✓</span> <span style="color:#7c4a32">dashboard at</span> http://localhost:<span style="color:#da7756">5173</span></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div style="display:flex;align-items:center;gap:8px">
+      <svg width="18" height="11" viewBox="0 0 16 10" fill="#da7756" style="image-rendering:pixelated;shape-rendering:crispEdges">
+        <rect x="2" y="0" width="12" height="1"/>
+        <rect x="1" y="1" width="2" height="1"/><rect x="13" y="1" width="2" height="1"/>
+        <rect x="0" y="2" width="1" height="2"/><rect x="15" y="2" width="1" height="2"/>
+        <rect x="1" y="4" width="2" height="1"/><rect x="13" y="4" width="2" height="1"/>
+        <rect x="2" y="5" width="12" height="1"/>
+        <rect x="5" y="1" width="6" height="1"/>
+        <rect x="4" y="2" width="8" height="2"/>
+        <rect x="5" y="4" width="6" height="1"/>
+        <rect x="7" y="2" width="2" height="2" fill="#0e0b08"/>
+        <rect x="9" y="2" width="1" height="1" fill="#f5ede0"/>
+      </svg>
+      <span style="font-family:'Press Start 2P',monospace;font-size:10px;color:#f5ede0">HOOK<span style="color:#da7756">ER</span></span>
+    </div>
+    <div class="footer-copy">MIT LICENSE · LOCAL-FIRST · NO TELEMETRY</div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px;display:flex;gap:12px">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✓</div>
+    <div class="content"><h3>Build this</h3><p>This is the design — go to spec + implementation plan</p></div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)" style="flex:1">
+    <div class="letter">✎</div>
+    <div class="content"><h3>Tweak first</h3><p>Adjust logo choice, icon style, or anything else</p></div>
+  </div>
+</div>
