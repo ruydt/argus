@@ -1,0 +1,6 @@
+{
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": { "command": "ls -la && git status" },
+  "transcript_path": "/Users/duytran/.claude/projects/test/session.jsonl"
+}
