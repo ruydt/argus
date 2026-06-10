@@ -24,7 +24,7 @@ describe('QuickInstall', () => {
   it('switches to Open Dashboard tab', async () => {
     render(<QuickInstall />)
     await userEvent.click(screen.getByRole('button', { name: /open dashboard/i }))
-    expect(screen.getByText(/localhost:5173/i)).toBeInTheDocument()
+    expect(screen.getByText(/localhost:10804/i)).toBeInTheDocument()
   })
 
   it('Clone & Build tab is active by default', () => {
