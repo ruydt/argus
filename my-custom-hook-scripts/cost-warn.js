@@ -60,6 +60,8 @@ function main() {
 
   // Epoch comparison: argus stores RFC3339 ("...T...Z"), datetime() emits space-separated —
   // naive string comparison would match the whole day instead of the 5-hour window.
+  // cache_read_tokens is intentionally excluded: cache reads dominate raw token volume at a
+  // fraction of the price, so including them would swamp the cost signal.
   const query =
     "SELECT COALESCE(SUM(input_tokens + output_tokens + cache_creation_tokens), 0), COUNT(*) " +
     "FROM sessions WHERE strftime('%s', last_seen_at) >= strftime('%s', 'now', '-5 hours')";
