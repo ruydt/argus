@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"hooker/internal/agents/codex"
+	"argus/internal/agents/codex"
 )
 
 func TestComputeUsageBreakdownTracksModelSwitches(t *testing.T) {

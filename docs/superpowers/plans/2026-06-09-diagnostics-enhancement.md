@@ -155,7 +155,7 @@ type DiagnosticsFileEntry struct {
 }
 
 type DiagnosticsFileSystem struct {
-	HookerDir            string                 `json:"hookerDir"`
+	ArgusDir            string                 `json:"argusDir"`
 	Binary               DiagnosticsFileEntry   `json:"binary"`
 	Logs                 []DiagnosticsFileEntry `json:"logs"`
 	Hooks                []DiagnosticsFileEntry `json:"hooks"`
@@ -630,15 +630,15 @@ func scanDirFiltered(dir string, suffix string) []domain.DiagnosticsFileEntry {
 	return result
 }
 
-func scanFileSystem(hookerDir string) domain.DiagnosticsFileSystem {
+func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 	fs := domain.DiagnosticsFileSystem{
-		HookerDir: hookerDir,
-		Binary:    statEntry("hooker", filepath.Join(hookerDir, "bin", "hooker")),
+		ArgusDir: argusDir,
+		Binary:    statEntry("argus", filepath.Join(argusDir, "bin", "argus")),
 		Logs: []domain.DiagnosticsFileEntry{
-			statEntry("hooker.log", filepath.Join(hookerDir, "hooker.log")),
-			statEntry("build.log", filepath.Join(hookerDir, "build.log")),
+			statEntry("argus.log", filepath.Join(argusDir, "argus.log")),
+			statEntry("build.log", filepath.Join(argusDir, "build.log")),
 		},
-		Hooks:       scanDir(filepath.Join(hookerDir, "hooks")),
+		Hooks:       scanDir(filepath.Join(argusDir, "hooks")),
 		ClaudeHooks: []domain.DiagnosticsFileEntry{},
 		CodexHooks:  []domain.DiagnosticsFileEntry{},
 		CodexDBs:    []domain.DiagnosticsFileEntry{},
@@ -684,7 +684,7 @@ func TestDiagnosticsFilesystemHasCodexAndClaudeFields(t *testing.T) {
 	svc := service.New(&mockRepo{})
 	diag, err := svc.DiagnosticsWithOptions(service.DiagnosticsOptions{
 		DBPath:    ":memory:",
-		HookerDir: t.TempDir(),
+		ArgusDir: t.TempDir(),
 	}, true)
 	if err != nil {
 		t.Fatalf("DiagnosticsWithOptions: %v", err)
@@ -766,7 +766,7 @@ result := domain.Diagnostics{
     Agents:  diagnosticsAgents(agentStats, hookConfigs),
     Privacy: domain.DiagnosticsPrivacy{ ... },
     Security: domain.DiagnosticsSecurity{ ... },
-    FileSystem: scanFileSystem(opts.HookerDir),
+    FileSystem: scanFileSystem(opts.ArgusDir),
     Runtime:  s.buildRuntime(),
     DBHealth: dbHealth,
 }
@@ -972,7 +972,7 @@ export interface DiagnosticsFileEntry {
 }
 
 export interface DiagnosticsFileSystem {
-  hookerDir: string
+  argusDir: string
   binary: DiagnosticsFileEntry
   logs: DiagnosticsFileEntry[]
   hooks: DiagnosticsFileEntry[]

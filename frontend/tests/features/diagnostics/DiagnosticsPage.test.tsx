@@ -10,7 +10,7 @@ const healthyDiagnostics: Diagnostics = {
   version: { version: '1.1.0', commit: 'abc12345', buildDate: '2026-05-28' },
   health: { live: true, ready: true },
   storage: {
-    dbPath: '/home/user/.hooker/hooker.db',
+    dbPath: '/home/user/.argus/argus.db',
     dbSizeBytes: 1024000,
     totalEvents: 42,
     totalSessions: 5,
@@ -45,7 +45,7 @@ const healthyDiagnostics: Diagnostics = {
     },
   ],
   privacy: {
-    ignoreFile: { path: '/home/user/.hooker/.ignore', status: 'loaded', activePatternCount: 3 },
+    ignoreFile: { path: '/home/user/.argus/.ignore', status: 'loaded', activePatternCount: 3 },
     exportWarning: 'Exported data may contain prompts, diffs, file paths, and tool outputs.',
   },
   security: {
@@ -53,32 +53,32 @@ const healthyDiagnostics: Diagnostics = {
     cors: { totalOrigins: 1, localOrigins: 1, extraOrigins: 0 },
   },
   fileSystem: {
-    hookerDir: '/home/user/.hooker',
+    argusDir: '/home/user/.argus',
     binary: {
-      name: 'hooker',
-      path: '/home/user/.hooker/bin/hooker',
+      name: 'argus',
+      path: '/home/user/.argus/bin/argus',
       sizeBytes: 18700000,
       lastModified: '2026-06-08T10:00:00Z',
       exists: true,
     },
     logs: [
       {
-        name: 'hooker.log',
-        path: '/home/user/.hooker/hooker.log',
+        name: 'argus.log',
+        path: '/home/user/.argus/argus.log',
         sizeBytes: 2900000,
         lastModified: '2026-06-08T10:00:00Z',
         exists: true,
       },
       {
         name: 'build.log',
-        path: '/home/user/.hooker/build.log',
+        path: '/home/user/.argus/build.log',
         sizeBytes: null,
         lastModified: null,
         exists: false,
       },
       {
         name: 'hook-scripts.log',
-        path: '/home/user/.hooker/hook-scripts.log',
+        path: '/home/user/.argus/hook-scripts.log',
         sizeBytes: 128,
         lastModified: '2026-06-10T00:00:00Z',
         exists: true,
@@ -229,7 +229,7 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText(/48,231 lines/)).toBeInTheDocument()
   })
 
-  it('shows Configured (X/Y) label in hook config column when config has hooker hooks', async () => {
+  it('shows Configured (X/Y) label in hook config column when config has argus hooks', async () => {
     const fullConfig = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.full)
     vi.stubGlobal(
       'fetch',
@@ -248,7 +248,7 @@ describe('DiagnosticsPage', () => {
     expect(await screen.findByText('Configured (30/30)')).toBeInTheDocument()
   })
 
-  it('shows Configured label when hooks exist but none are hooker-managed', async () => {
+  it('shows Configured label when hooks exist but none are argus-managed', async () => {
     const manualConfig = {
       hooks: {
         SessionStart: [{ hooks: [{ type: 'command', command: 'echo manual' }] }],
@@ -280,7 +280,7 @@ describe('DiagnosticsPage', () => {
     vi.stubGlobal('fetch', makeFetchMock(emptyDiagnostics))
     renderPage()
     expect(await screen.findByText('No activity observed yet')).toBeInTheDocument()
-    expect(screen.getByText(/hooker setup/)).toBeInTheDocument()
+    expect(screen.getByText(/argus setup/)).toBeInTheDocument()
   })
 
   it('renders Not ready tile and reason when health.ready is false', async () => {

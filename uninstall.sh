@@ -1,25 +1,25 @@
 #!/bin/bash
 set -e
 
-HOOKER_DIR="$HOME/.hooker"
-BINARY_DIR="$HOOKER_DIR/bin"
-BINARY="$BINARY_DIR/hooker"
-START_SCRIPT="$BINARY_DIR/start-hooker.sh"
-STOP_SCRIPT="$BINARY_DIR/hooker-stop.sh"
-HOOKS_DIR="$HOOKER_DIR/hooks"
-ACTIVATE_SCRIPT="$HOOKS_DIR/hooker-activate.js"
-DATA_DIR="$HOOKER_DIR"
+ARGUS_DIR="$HOME/.argus"
+BINARY_DIR="$ARGUS_DIR/bin"
+BINARY="$BINARY_DIR/argus"
+START_SCRIPT="$BINARY_DIR/start-argus.sh"
+STOP_SCRIPT="$BINARY_DIR/argus-stop.sh"
+HOOKS_DIR="$ARGUS_DIR/hooks"
+ACTIVATE_SCRIPT="$HOOKS_DIR/argus-activate.js"
+DATA_DIR="$ARGUS_DIR"
 SETTINGS="$HOME/.claude/settings.json"
-HOOKER_PORT=10804
+ARGUS_PORT=10804
 
-echo "Uninstalling hooker..."
+echo "Uninstalling argus..."
 
 # ── 1. stop server ────────────────────────────────────────────────────────────
 
-PID="$(lsof -ti:$HOOKER_PORT 2>/dev/null || true)"
+PID="$(lsof -ti:$ARGUS_PORT 2>/dev/null || true)"
 if [ -n "$PID" ]; then
   echo "$PID" | xargs kill 2>/dev/null || true
-  echo "  → stopped hooker (port $HOOKER_PORT)"
+  echo "  → stopped argus (port $ARGUS_PORT)"
 fi
 
 # ── 2. remove binaries and scripts ────────────────────────────────────────────
@@ -76,8 +76,8 @@ fi
 # ── 4. remove PATH line from shell rc ────────────────────────────────────────
 
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
-  if [ -f "$rc" ] && grep -q '.hooker/bin' "$rc" 2>/dev/null; then
-    grep -v '.hooker/bin' "$rc" | grep -v '^# hooker$' > "${rc}.tmp" && mv "${rc}.tmp" "$rc"
+  if [ -f "$rc" ] && grep -q '.argus/bin' "$rc" 2>/dev/null; then
+    grep -v '.argus/bin' "$rc" | grep -v '^# argus$' > "${rc}.tmp" && mv "${rc}.tmp" "$rc"
     echo "  → removed PATH entry from $rc"
   fi
 done
@@ -87,7 +87,7 @@ done
 if [ -d "$DATA_DIR" ]; then
   echo ""
   echo "Data directory: $DATA_DIR"
-  echo "  Contains: hooker.db (events), hooker.log, bin/, hooks/"
+  echo "  Contains: argus.db (events), argus.log, bin/, hooks/"
   printf "  Remove all data? [y/N] "
   read -r answer
   if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
@@ -99,4 +99,4 @@ if [ -d "$DATA_DIR" ]; then
 fi
 
 echo ""
-echo "hooker uninstalled."
+echo "argus uninstalled."

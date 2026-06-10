@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"hooker/internal/service"
+	"argus/internal/service"
 )
 
 func SessionsTree(svc *service.EventService) http.Handler {

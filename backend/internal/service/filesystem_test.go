@@ -13,11 +13,11 @@ func TestScanFileSystemPopulatesEntries(t *testing.T) {
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(binDir, "hooker"), []byte("binary"), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(binDir, "argus"), []byte("binary"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, "hooker.log"), []byte("log line\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "argus.log"), []byte("log line\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -31,8 +31,8 @@ func TestScanFileSystemPopulatesEntries(t *testing.T) {
 
 	fs := scanFileSystem(dir)
 
-	if fs.HookerDir != dir {
-		t.Errorf("hookerDir = %q, want %q", fs.HookerDir, dir)
+	if fs.ArgusDir != dir {
+		t.Errorf("argusDir = %q, want %q", fs.ArgusDir, dir)
 	}
 	if !fs.Binary.Exists {
 		t.Error("binary.exists = false, want true")
@@ -44,7 +44,7 @@ func TestScanFileSystemPopulatesEntries(t *testing.T) {
 		t.Fatalf("len(logs) = %d, want 3", len(fs.Logs))
 	}
 	if !fs.Logs[0].Exists {
-		t.Error("logs[0] (hooker.log) exists = false, want true")
+		t.Error("logs[0] (argus.log) exists = false, want true")
 	}
 	if fs.Logs[1].Exists {
 		t.Error("logs[1] (build.log) exists = true, want false")

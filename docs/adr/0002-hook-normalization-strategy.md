@@ -5,7 +5,7 @@ Date: 2026-05-27
 
 ## Context
 
-Claude Code, Codex, and Gemini CLI emit different hook payload shapes. The rest of hooker needs
+Claude Code, Codex, and Gemini CLI emit different hook payload shapes. The rest of argus needs
 a stable event contract for persistence, SSE, and frontend rendering. The canonical contract is
 `domain.NormalizedEvent`, and frontend fields mirror its JSON tags.
 

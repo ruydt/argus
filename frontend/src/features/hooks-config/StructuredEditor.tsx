@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/select'
 import {
   HOOK_PRESETS,
-  HOOKER_STATUS_MESSAGE,
+  ARGUS_STATUS_MESSAGE,
   PRESET_KEYS,
   PRESET_LABELS,
   applyPreset,
-  hasAnyHookerHooks,
-  removeHookerHooks,
+  hasAnyArgusHooks,
+  removeArgusHooks,
 } from './presets'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig } from './types'
 
@@ -82,7 +82,7 @@ function emptyEntry(): HookEntry {
     type: 'command',
     command:
       "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true",
-    statusMessage: HOOKER_STATUS_MESSAGE,
+    statusMessage: ARGUS_STATUS_MESSAGE,
   }
 }
 
@@ -134,8 +134,8 @@ export function StructuredEditor({
     onChange(applyPreset(config, preset))
   }
 
-  function handleRemoveHookerHooks() {
-    onChange(removeHookerHooks(config))
+  function handleRemoveArgusHooks() {
+    onChange(removeArgusHooks(config))
   }
 
   function addGroup(eventType: string) {
@@ -212,7 +212,7 @@ export function StructuredEditor({
               <SelectItem key={key} value={key} className="text-[13px]">
                 <span className="font-medium">{PRESET_LABELS[key].label}</span>
                 <span className="ml-1.5 text-muted-foreground text-[12px]">
-                  , overwrites current Hooker config with {PRESET_LABELS[key].description}
+                  , overwrites current Argus config with {PRESET_LABELS[key].description}
                 </span>
               </SelectItem>
             ))}
@@ -238,13 +238,13 @@ export function StructuredEditor({
           variant="outline"
           size="sm"
           className="h-8 text-[13px] text-muted-foreground hover:text-destructive"
-          disabled={!hasAnyHookerHooks(config)}
-          onClick={handleRemoveHookerHooks}
-          aria-label="Remove Hooker hooks"
-          title="Remove all hooks installed by Hooker"
+          disabled={!hasAnyArgusHooks(config)}
+          onClick={handleRemoveArgusHooks}
+          aria-label="Remove Argus hooks"
+          title="Remove all hooks installed by Argus"
         >
           <Trash2 className="size-3.5 mr-1.5" />
-          Remove Hooker hooks
+          Remove Argus hooks
         </Button>
       </div>
 

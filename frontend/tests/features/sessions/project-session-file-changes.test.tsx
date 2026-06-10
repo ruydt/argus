@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.stubGlobal('EventSource', MockES)
 })
 
-const cwd = '/Users/duytran/GitHub/hooker'
+const cwd = '/Users/duytran/GitHub/argus'
 const session: Session = {
   session_id: 'sess-1234567890',
   agent: 'codex',
@@ -91,7 +91,7 @@ describe('project scoped sessions pages', () => {
           projects: [
             {
               cwd,
-              name: 'hooker',
+              name: 'argus',
               session_count: 2,
               total_tokens: 0,
               last_activity: '2026-05-14T10:00:00Z',
@@ -109,7 +109,7 @@ describe('project scoped sessions pages', () => {
       </MemoryRouter>
     )
 
-    expect(await screen.findByText('hooker')).toBeInTheDocument()
+    expect(await screen.findByText('argus')).toBeInTheDocument()
     expect(screen.getByText('2 sessions')).toBeInTheDocument()
     expect(screen.getByText('codex')).toBeInTheDocument()
     expect(screen.getByText('0 tokens')).toBeInTheDocument()
@@ -188,7 +188,7 @@ describe('session file-change page', () => {
       await screen.findByText('No file changes recorded for this session.')
     ).toBeInTheDocument()
     expect(
-      screen.getByText('This session did not create or modify files that hooker captured.')
+      screen.getByText('This session did not create or modify files that argus captured.')
     ).toBeInTheDocument()
   })
 

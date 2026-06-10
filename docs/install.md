@@ -3,13 +3,13 @@
 ## Binary install (recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/hooker/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
 ```
 
 Requires: Node.js 18+, curl, tar. No Go or pnpm needed.
 
-The installer places the binary at `~/.local/bin/hooker` and wires a `SessionStart` hook
-in `~/.claude/settings.json` so hooker starts automatically with each Claude Code session.
+The installer places the binary at `~/.argus/bin/argus` and wires a `SessionStart` hook
+in `~/.claude/settings.json` so argus starts automatically with each Claude Code session.
 
 ## Support matrix
 
@@ -22,22 +22,22 @@ in `~/.claude/settings.json` so hooker starts automatically with each Claude Cod
 | Go                       | 1.25.0 or newer                          |
 | Node.js                  | 18 or newer                              |
 | Frontend package manager | pnpm 10.x                                |
-| Backend database         | SQLite at `backend/hooker.db` by default |
+| Backend database         | SQLite at `backend/argus.db` by default |
 | Supported agents         | Codex, Claude Code                       |
 
 ## Source install
 
 > **Note:** Source install is for contributors and development only. For end users, use the binary install above.
 
-Before enabling hooks, treat captured data as sensitive. Hooker can store prompts,
+Before enabling hooks, treat captured data as sensitive. Argus can store prompts,
 diffs, file paths, tool outputs, raw payloads, and exports on this machine.
 Read [docs/privacy.md](privacy.md) and [docs/security.md](security.md) before
 changing defaults.
 
 ```bash
-git clone https://github.com/duytrandt04-afk/hooker
-cd hooker
-./scripts/hooker setup
+git clone https://github.com/duytrandt04-afk/argus
+cd argus
+./scripts/argus setup
 ```
 
 Manual equivalent:
@@ -56,8 +56,8 @@ Backend:
 
 ```bash
 cd backend
-go build -o hooker ./cmd/server
-./hooker
+go build -o argus ./cmd/server
+./argus
 ```
 
 Frontend:
@@ -78,10 +78,10 @@ Backend environment variables:
 | Variable               | Default                          | Purpose                                                                       |
 | ---------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
 | `ADDR`                 | `127.0.0.1:10804`                 | Backend listen address                                                        |
-| `DB_PATH`              | `backend/hooker.db`              | SQLite database path                                                          |
-| `HOOKER_IGNORE`        | `~/.config/hooker/ignore`        | Path to gitignore-style privacy exclusion file                                |
-| `HOOKER_CORS_ORIGINS`  | _(derived from ADDR)_            | Extra comma-separated CORS origins allowed beyond the loopback defaults       |
-| `HOOKER_ALLOW_REMOTE`  | _(unset)_                        | Set to `1` to allow binding to non-loopback addresses (see security.md)      |
+| `DB_PATH`              | `backend/argus.db`              | SQLite database path                                                          |
+| `ARGUS_IGNORE`        | `~/.config/argus/ignore`        | Path to gitignore-style privacy exclusion file                                |
+| `ARGUS_CORS_ORIGINS`  | _(derived from ADDR)_            | Extra comma-separated CORS origins allowed beyond the loopback defaults       |
+| `ARGUS_ALLOW_REMOTE`  | _(unset)_                        | Set to `1` to allow binding to non-loopback addresses (see security.md)      |
 
 See [docs/privacy.md](privacy.md) for ignore rules and export handling. See
 [docs/security.md](security.md) for loopback defaults, remote opt-in, and
@@ -91,18 +91,18 @@ Use `DB_PATH` when you want data stored outside the repo:
 
 ```bash
 cd backend
-go build -o hooker ./cmd/server
-DB_PATH="$HOME/.local/share/hooker/hooker.db" ./hooker
+go build -o argus ./cmd/server
+DB_PATH="$HOME/.local/share/argus/argus.db" ./argus
 ```
 
 Keep `ADDR` on loopback unless you understand the privacy and security impact.
-Hooker stores local development context, including prompts, diffs, file paths,
+Argus stores local development context, including prompts, diffs, file paths,
 tool outputs, raw payloads, and exports.
 
 ## Doctor
 
 ```bash
-./scripts/hooker doctor
+./scripts/argus doctor
 ```
 
 Doctor checks toolchain availability, confirms pnpm is the only frontend
@@ -143,20 +143,20 @@ GOCACHE="$PWD/.cache/go-build" go test ./...
 
 ## Data storage
 
-Hooker stores all data in a single SQLite database file.
+Argus stores all data in a single SQLite database file.
 
-Default location: `backend/hooker.db` (relative to the repo root when started from `backend/`).
+Default location: `backend/argus.db` (relative to the repo root when started from `backend/`).
 
 Override with the `DB_PATH` environment variable:
 
 ```bash
-DB_PATH="$HOME/.local/share/hooker/hooker.db" ./hooker
+DB_PATH="$HOME/.local/share/argus/argus.db" ./argus
 ```
 
 The resolved path is printed at startup:
 
 ```text
-db -> /home/user/.local/share/hooker/hooker.db
+db -> /home/user/.local/share/argus/argus.db
 ```
 
 ### WAL files
@@ -164,8 +164,8 @@ db -> /home/user/.local/share/hooker/hooker.db
 SQLite WAL (Write-Ahead Log) mode is enabled for performance. You will see two companion
 files alongside the database:
 
-- `hooker.db-wal` - write-ahead log (in-progress writes)
-- `hooker.db-shm` - shared memory index
+- `argus.db-wal` - write-ahead log (in-progress writes)
+- `argus.db-shm` - shared memory index
 
 These are normal. They are managed automatically by SQLite. Do not delete them while the
 server is running.
@@ -175,27 +175,27 @@ server is running.
 To back up your data, copy all three files while the server is stopped:
 
 ```bash
-cp hooker.db hooker.db.bak
-cp hooker.db-wal hooker.db-wal.bak 2>/dev/null || true
-cp hooker.db-shm hooker.db-shm.bak 2>/dev/null || true
+cp argus.db argus.db.bak
+cp argus.db-wal argus.db-wal.bak 2>/dev/null || true
+cp argus.db-shm argus.db-shm.bak 2>/dev/null || true
 ```
 
 Or run a WAL checkpoint first (merges WAL into the main file), then copy only the `.db`:
 
 ```bash
-sqlite3 hooker.db "PRAGMA wal_checkpoint(FULL);"
-cp hooker.db hooker.db.bak
+sqlite3 argus.db "PRAGMA wal_checkpoint(FULL);"
+cp argus.db argus.db.bak
 ```
 
 ## Reset
 
 To reset all stored data and start fresh:
 
-1. Stop the hooker server.
+1. Stop the argus server.
 2. Delete the database and WAL files:
 
 ```bash
-rm -f backend/hooker.db backend/hooker.db-wal backend/hooker.db-shm
+rm -f backend/argus.db backend/argus.db-wal backend/argus.db-shm
 ```
 
 3. Restart the server. Migrations run automatically on the empty database.
@@ -205,20 +205,20 @@ rm -f backend/hooker.db backend/hooker.db-wal backend/hooker.db-shm
 To delete events older than 30 days without resetting everything:
 
 ```bash
-sqlite3 backend/hooker.db \
+sqlite3 backend/argus.db \
   "DELETE FROM events WHERE created_at < datetime('now', '-30 days');"
 ```
 
 To see how many events exist by date:
 
 ```bash
-sqlite3 backend/hooker.db \
+sqlite3 backend/argus.db \
   "SELECT date(created_at), count(*) FROM events GROUP BY date(created_at) ORDER BY 1 DESC LIMIT 14;"
 ```
 
 ## Privacy
 
-Hooker captures and stores the following data locally:
+Argus captures and stores the following data locally:
 
 - **Prompts** - the full text of prompts sent to coding agents
 - **Diffs** - code changes made during agent sessions
@@ -228,11 +228,11 @@ Hooker captures and stores the following data locally:
 - **Exports** - NDJSON event streams and SQLite snapshots that contain full-fidelity data
 
 All data is stored only on your machine in the SQLite database. Nothing is sent to any
-external service by hooker itself.
+external service by argus itself.
 
 See [docs/privacy.md](privacy.md) for ignore rules and export implications.
 
 The hook endpoint (`POST /api/hook`) accepts requests only from localhost by default.
 Setting `ADDR` to a non-loopback address exposes this data to your local network.
-Use `./scripts/hooker doctor` to verify your ADDR setting and read
+Use `./scripts/argus doctor` to verify your ADDR setting and read
 [docs/security.md](security.md) before changing it.

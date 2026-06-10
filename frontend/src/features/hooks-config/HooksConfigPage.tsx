@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { hookerEditorTheme, hookerHighlighting, editableExtensions } from '@/lib/editorTheme'
+import { argusEditorTheme, argusHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { StructuredEditor } from './StructuredEditor'
 import { SimulatorTab } from './SimulatorTab'
 import { useHooksConfig } from './hooks/useHooksConfig'
@@ -17,9 +17,9 @@ import type { AgentKey, HookEntry, HookGroup, HooksConfig, HooksConfigState } fr
 
 type ViewMode = 'structured' | 'json' | 'simulator'
 
-const SIM_STORAGE_KEY = 'hooker:sim'
-const AGENT_TAB_KEY = 'hooker:hooks-agent'
-const VIEW_MODE_KEY = 'hooker:hooks-view'
+const SIM_STORAGE_KEY = 'argus:sim'
+const AGENT_TAB_KEY = 'argus:hooks-agent'
+const VIEW_MODE_KEY = 'argus:hooks-view'
 
 function readStorageString(key: string): string | null {
   try {
@@ -136,7 +136,7 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
             <CodeMirror
               value={draftJSON}
               onChange={(value) => setDraftJSON(value)}
-              extensions={[json(), hookerEditorTheme, hookerHighlighting, ...editableExtensions]}
+              extensions={[json(), argusEditorTheme, argusHighlighting, ...editableExtensions]}
               theme="none"
               height="calc(100dvh - 220px)"
               minHeight="320px"

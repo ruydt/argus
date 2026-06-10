@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"hooker/internal/domain"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/service"
 )
 
 const (

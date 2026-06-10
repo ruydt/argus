@@ -3,12 +3,12 @@ package server
 import (
 	"net/http"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
-	"hooker/internal/hookconfig"
-	"hooker/internal/repository"
-	"hooker/internal/service"
-	"hooker/internal/ui"
+	"argus/internal/domain"
+	"argus/internal/handler"
+	"argus/internal/hookconfig"
+	"argus/internal/repository"
+	"argus/internal/service"
+	"argus/internal/ui"
 )
 
 // Options carries optional router configuration.
@@ -44,9 +44,9 @@ type Options struct {
 	// Defaults to ~/.codex/hooks.json if empty.
 	CodexHooksPath string
 
-	// HookerDir is the path to the hooker home directory (typically ~/.hooker).
+	// ArgusDir is the path to the argus home directory (typically ~/.argus).
 	// Used by diagnostics and log-tail endpoints.
-	HookerDir string
+	ArgusDir string
 }
 
 // allowNone is the default matcher used when Options.Matcher is nil.
@@ -90,10 +90,10 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 		Addr:               opts.Addr,
 		AllowRemote:        opts.AllowRemote,
 		CORSOrigins:        corsOrigins,
-		HookerDir:          opts.HookerDir,
+		ArgusDir:          opts.ArgusDir,
 	}))
 	mux.Handle("GET /api/diagnostics/log-tail", handler.LogTail(handler.LogTailOptions{
-		HookerDir: opts.HookerDir,
+		ArgusDir: opts.ArgusDir,
 	}))
 	mux.Handle("GET /api/projects", handler.Projects(svc))
 	mux.Handle("GET /api/sessions", handler.Sessions(svc))

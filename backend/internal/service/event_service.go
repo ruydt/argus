@@ -11,11 +11,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"hooker/internal/agents/claudecode"
-	"hooker/internal/agents/codex"
-	"hooker/internal/domain"
-	"hooker/internal/repository"
-	"hooker/internal/version"
+	"argus/internal/agents/claudecode"
+	"argus/internal/agents/codex"
+	"argus/internal/domain"
+	"argus/internal/repository"
+	"argus/internal/version"
 )
 
 type EventService struct {
@@ -38,7 +38,7 @@ type DiagnosticsOptions struct {
 	Addr               string
 	AllowRemote        bool
 	CORSOrigins        []string
-	HookerDir          string
+	ArgusDir          string
 }
 
 const exportSensitivityWarning = "Exports may include prompts, diffs, file paths, tool outputs, raw payloads, and exports; handle exported data as sensitive."
@@ -212,7 +212,7 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 			RemoteBind: diagnosticsRemoteBind(opts),
 			CORS:       diagnosticsCORS(opts.CORSOrigins),
 		},
-		FileSystem: scanFileSystem(opts.HookerDir),
+		FileSystem: scanFileSystem(opts.ArgusDir),
 		Runtime:    s.buildRuntime(),
 		DBHealth:   dbHealth,
 	}
@@ -744,16 +744,16 @@ func scanDirFiltered(dir string, suffix string) []domain.DiagnosticsFileEntry {
 	return result
 }
 
-func scanFileSystem(hookerDir string) domain.DiagnosticsFileSystem {
+func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 	fs := domain.DiagnosticsFileSystem{
-		HookerDir: hookerDir,
-		Binary:    statEntry("hooker", filepath.Join(hookerDir, "bin", "hooker")),
+		ArgusDir: argusDir,
+		Binary:    statEntry("argus", filepath.Join(argusDir, "bin", "argus")),
 		Logs: []domain.DiagnosticsFileEntry{
-			statEntry("hooker.log", filepath.Join(hookerDir, "hooker.log")),
-			statEntry("build.log", filepath.Join(hookerDir, "build.log")),
-			statEntry("hook-scripts.log", filepath.Join(hookerDir, "hook-scripts.log")),
+			statEntry("argus.log", filepath.Join(argusDir, "argus.log")),
+			statEntry("build.log", filepath.Join(argusDir, "build.log")),
+			statEntry("hook-scripts.log", filepath.Join(argusDir, "hook-scripts.log")),
 		},
-		Hooks:       scanDir(filepath.Join(hookerDir, "hooks")),
+		Hooks:       scanDir(filepath.Join(argusDir, "hooks")),
 		ClaudeHooks: []domain.DiagnosticsFileEntry{},
 		CodexHooks:  []domain.DiagnosticsFileEntry{},
 		CodexDBs:    []domain.DiagnosticsFileEntry{},

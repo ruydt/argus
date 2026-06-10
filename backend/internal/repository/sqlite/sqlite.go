@@ -18,8 +18,8 @@ import (
 	// Register SQLite driver for database/sql.
 	_ "modernc.org/sqlite"
 
-	"hooker/internal/agents/codex"
-	"hooker/internal/domain"
+	"argus/internal/agents/codex"
+	"argus/internal/domain"
 )
 
 //go:embed migrations/001_init.sql

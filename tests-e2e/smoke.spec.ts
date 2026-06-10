@@ -6,7 +6,7 @@ import { test, expect, request } from '@playwright/test'
 // Codex: transcript_path does NOT contain /.claude/ → codex.Normalize() reads tool_name + tool_input.command.
 const claudeCodeFixture = {
   session_id: 'smoke-cc-01',
-  transcript_path: '/home/user/.claude/projects/hooker-smoke/transcript.jsonl',
+  transcript_path: '/home/user/.claude/projects/argus-smoke/transcript.jsonl',
   hook_event_name: 'PreToolUse',
   turn_id: 'turn-smoke-01',
   tool_use_id: 'tuse-smoke-01',

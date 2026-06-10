@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"hooker/internal/handler"
+	"argus/internal/handler"
 )
 
 func TestLogTailRejectsInvalidFile(t *testing.T) {
-	h := handler.LogTail(handler.LogTailOptions{HookerDir: t.TempDir()})
+	h := handler.LogTail(handler.LogTailOptions{ArgusDir: t.TempDir()})
 	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=../../etc/passwd", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -23,8 +23,8 @@ func TestLogTailRejectsInvalidFile(t *testing.T) {
 
 func TestLogTailMissingFileReturnsEmptyLines(t *testing.T) {
 	dir := t.TempDir()
-	h := handler.LogTail(handler.LogTailOptions{HookerDir: dir})
-	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=hooker&lines=10", nil)
+	h := handler.LogTail(handler.LogTailOptions{ArgusDir: dir})
+	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=argus&lines=10", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -46,11 +46,11 @@ func TestLogTailMissingFileReturnsEmptyLines(t *testing.T) {
 func TestLogTailReturnsLastNLines(t *testing.T) {
 	dir := t.TempDir()
 	content := "line1\nline2\nline3\nline4\nline5\n"
-	if err := os.WriteFile(filepath.Join(dir, "hooker.log"), []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "argus.log"), []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	h := handler.LogTail(handler.LogTailOptions{HookerDir: dir})
-	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=hooker&lines=3", nil)
+	h := handler.LogTail(handler.LogTailOptions{ArgusDir: dir})
+	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=argus&lines=3", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -63,8 +63,8 @@ func TestLogTailReturnsLastNLines(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&payload); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if payload.File != "hooker.log" {
-		t.Errorf("file = %q, want hooker.log", payload.File)
+	if payload.File != "argus.log" {
+		t.Errorf("file = %q, want argus.log", payload.File)
 	}
 	if len(payload.Lines) != 3 {
 		t.Fatalf("len(lines) = %d, want 3", len(payload.Lines))
@@ -79,7 +79,7 @@ func TestLogTailBuildFileParam(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "build.log"), []byte("build output\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	h := handler.LogTail(handler.LogTailOptions{HookerDir: dir})
+	h := handler.LogTail(handler.LogTailOptions{ArgusDir: dir})
 	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=build", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -103,7 +103,7 @@ func TestLogTailHookScriptsFileParam(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "hook-scripts.log"), []byte("script output\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	h := handler.LogTail(handler.LogTailOptions{HookerDir: dir})
+	h := handler.LogTail(handler.LogTailOptions{ArgusDir: dir})
 	req := httptest.NewRequest(http.MethodGet, "/api/diagnostics/log-tail?file=hook-scripts", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)

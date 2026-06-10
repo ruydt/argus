@@ -1,12 +1,12 @@
 # Privacy
 
-Hooker is local-first, but it records sensitive development context. Treat the
+Argus is local-first, but it records sensitive development context. Treat the
 SQLite database, NDJSON exports, SQLite snapshots, logs, and backups as private
 developer data.
 
 ## Captured Data
 
-Hooker can capture and store:
+Argus can capture and store:
 
 - **Prompts** - user prompts and agent instructions present in hook payloads.
 - **Diffs** - code changes and patch content reported by agents.
@@ -15,7 +15,7 @@ Hooker can capture and store:
 - **Raw payloads** - the original hook request body for each ingested event.
 - **Exports** - NDJSON event streams and SQLite snapshots copied out of the app.
 
-Hooker does not send this data to an external service by itself. Any exposure
+Argus does not send this data to an external service by itself. Any exposure
 comes from where you run it, where you store the database, and how you share
 exports or backups.
 
@@ -24,13 +24,13 @@ exports or backups.
 The default ignore file is:
 
 ```text
-~/.config/hooker/ignore
+~/.config/argus/ignore
 ```
 
-Set `HOOKER_IGNORE` to use a different ignore file path.
+Set `ARGUS_IGNORE` to use a different ignore file path.
 
 Ignore rules are path controls. Matching is limited to the normalized event
-`cwd` and explicit `path` fields. Hooker does not scan prompts, tool output,
+`cwd` and explicit `path` fields. Argus does not scan prompts, tool output,
 diffs, or raw payload text for path-like substrings.
 
 When an event matches the ignore rules, it is not ingested:
@@ -39,7 +39,7 @@ When an event matches the ignore rules, it is not ingested:
 - no SSE broadcast is sent to connected browser tabs
 - only safe metadata should appear in backend logs
 
-Use ignore rules for repositories or paths that should never appear in hooker,
+Use ignore rules for repositories or paths that should never appear in argus,
 such as client projects, secret material, generated credential files, or
 private notes.
 

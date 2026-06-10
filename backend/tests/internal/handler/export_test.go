@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
-	"hooker/internal/repository/sqlite"
-	"hooker/internal/server"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/handler"
+	"argus/internal/repository/sqlite"
+	"argus/internal/server"
+	"argus/internal/service"
 )
 
 func newTestRepo(t *testing.T) *sqlite.DB {
@@ -116,8 +116,8 @@ func TestExportSnapshotReturns200WithHeaders(t *testing.T) {
 	}
 
 	cd := rec.Header().Get("Content-Disposition")
-	if !strings.Contains(cd, "hooker-snapshot-") {
-		t.Fatalf("Content-Disposition %q missing hooker-snapshot-", cd)
+	if !strings.Contains(cd, "argus-snapshot-") {
+		t.Fatalf("Content-Disposition %q missing argus-snapshot-", cd)
 	}
 	if !strings.Contains(cd, ".db") {
 		t.Fatalf("Content-Disposition %q missing .db extension", cd)

@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"testing"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
+	"argus/internal/domain"
+	"argus/internal/handler"
 )
 
 func TestProjectsHandlerReturnsProjectSummary(t *testing.T) {
@@ -17,7 +17,7 @@ func TestProjectsHandlerReturnsProjectSummary(t *testing.T) {
 		Time:          "2026-05-14T10:00:00Z",
 		Agent:         "codex",
 		Session:       "s1",
-		CWD:           "/work/hooker",
+		CWD:           "/work/argus",
 		HookEventName: "SessionStart",
 	})
 
@@ -39,8 +39,8 @@ func TestProjectsHandlerReturnsProjectSummary(t *testing.T) {
 	if len(payload.Projects) != 1 {
 		t.Fatalf("projects len = %d, want 1", len(payload.Projects))
 	}
-	if payload.Projects[0].Name != "hooker" || payload.Projects[0].CWD != "/work/hooker" {
-		t.Fatalf("project = %+v, want hooker cwd", payload.Projects[0])
+	if payload.Projects[0].Name != "argus" || payload.Projects[0].CWD != "/work/argus" {
+		t.Fatalf("project = %+v, want argus cwd", payload.Projects[0])
 	}
 }
 
@@ -50,7 +50,7 @@ func TestSessionsHandlerFiltersByCWDQuery(t *testing.T) {
 		Time:          "2026-05-14T10:00:00Z",
 		Agent:         "codex",
 		Session:       "target",
-		CWD:           "/work/hooker",
+		CWD:           "/work/argus",
 		HookEventName: "SessionStart",
 	})
 	addHandlerEvent(t, svc, domain.NormalizedEvent{
@@ -62,7 +62,7 @@ func TestSessionsHandlerFiltersByCWDQuery(t *testing.T) {
 	})
 
 	h := handler.Sessions(svc)
-	req := httptest.NewRequest(http.MethodGet, "/api/sessions?cwd="+url.QueryEscape("/work/hooker"), nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/sessions?cwd="+url.QueryEscape("/work/argus"), nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 

@@ -157,7 +157,7 @@ export function FileChangesList({
           </EmptyMedia>
           <EmptyTitle>No file changes recorded for this session.</EmptyTitle>
           <EmptyDescription className="text-white/45">
-            This session did not create or modify files that hooker captured.
+            This session did not create or modify files that argus captured.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>

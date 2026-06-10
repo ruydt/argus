@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/service"
 )
 
 func Sessions(svc *service.EventService) http.Handler {

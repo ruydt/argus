@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"hooker/internal/handler"
+	"argus/internal/handler"
 )
 
 func TestDashboardStatsReturns200(t *testing.T) {

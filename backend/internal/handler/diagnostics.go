@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"hooker/internal/service"
+	"argus/internal/service"
 )
 
 func Diagnostics(svc *service.EventService, ready func() bool, opts service.DiagnosticsOptions) http.Handler {

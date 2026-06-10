@@ -3,7 +3,7 @@ package codex_test
 import (
 	"testing"
 
-	"hooker/internal/agents/codex"
+	"argus/internal/agents/codex"
 )
 
 func TestNormalizeApplyPatchExtractsFileChangeSnippets(t *testing.T) {
@@ -69,7 +69,7 @@ func TestNormalizeCommandRelativePathResolvedToCWD(t *testing.T) {
 	raw := []byte(`{
 		"session_id":"s4",
 		"transcript_path":"/tmp/codex-session.jsonl",
-		"cwd":"/Users/duytran/GitHub/hooker/frontend/src/features/usage",
+		"cwd":"/Users/duytran/GitHub/argus/frontend/src/features/usage",
 		"hook_event_name":"PreToolUse",
 		"turn_id":"t4",
 		"tool_name":"read_file",
@@ -83,7 +83,7 @@ func TestNormalizeCommandRelativePathResolvedToCWD(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Normalize: %v", err)
 	}
-	want := "/Users/duytran/GitHub/hooker/frontend/src/features/usage/hooks/useOpenAIUsage"
+	want := "/Users/duytran/GitHub/argus/frontend/src/features/usage/hooks/useOpenAIUsage"
 	if got.Path != want {
 		t.Fatalf("Path = %q, want %q", got.Path, want)
 	}

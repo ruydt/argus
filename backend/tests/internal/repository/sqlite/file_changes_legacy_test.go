@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
+	"argus/internal/domain"
 )
 
 func TestGetFileChangesBackfillsLegacyCodexApplyPatchCommand(t *testing.T) {

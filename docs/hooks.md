@@ -1,6 +1,6 @@
 # Hooks
 
-Hooker receives agent events at:
+Argus receives agent events at:
 
 ```text
 http://127.0.0.1:10804/api/hook
@@ -12,7 +12,7 @@ Start the backend before configuring hooks. Hook delivery fails while the backen
 
 ## Quickest setup: Hooks Config UI
 
-Open the **Hooks Config** page in the Hooker dashboard. Select your agent tab (Claude Code or Codex), then use the **Apply preset** dropdown to install a preset in one click — no JSON editing required.
+Open the **Hooks Config** page in the Argus dashboard. Select your agent tab (Claude Code or Codex), then use the **Apply preset** dropdown to install a preset in one click — no JSON editing required.
 
 ### Presets
 
@@ -24,15 +24,15 @@ Open the **Hooks Config** page in the Hooker dashboard. Select your agent tab (C
 
 Presets are additive — they append to your existing config and never overwrite entries you already have.
 
-Each installed entry is tagged `statusMessage: "hooker"` so Hooker can identify its own entries. The **Diagnostics** page reflects the active preset name (Baseline / Medium / Full) or `Custom (X/30)` when your hooker-managed events don't match a preset exactly.
+Each installed entry is tagged `statusMessage: "argus"` so Argus can identify its own entries. The **Diagnostics** page reflects the active preset name (Baseline / Medium / Full) or `Custom (X/30)` when your argus-managed events don't match a preset exactly.
 
 ### Adding individual events
 
-Use the **Add hook event** dropdown (top of the structured editor) to add a single event type. A default hooker curl entry is pre-filled.
+Use the **Add hook event** dropdown (top of the structured editor) to add a single event type. A default argus curl entry is pre-filled.
 
-### Removing hooker-managed hooks
+### Removing argus-managed hooks
 
-Click **Remove Hooker hooks** to strip all entries tagged `statusMessage: "hooker"`. Manually added hooks are preserved. Save after removal.
+Click **Remove Argus hooks** to strip all entries tagged `statusMessage: "argus"`. Manually added hooks are preserved. Save after removal.
 
 ---
 

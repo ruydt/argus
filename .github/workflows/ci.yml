@@ -142,7 +142,7 @@ jobs:
 
       - name: Build backend binary
         working-directory: backend
-        run: go build -o hooker ./cmd/server
+        run: go build -o argus ./cmd/server
 
       - name: Install Playwright dependencies
         run: pnpm install --no-frozen-lockfile
@@ -150,9 +150,9 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
-      - name: Start hooker server
+      - name: Start argus server
         run: |
-          DB_PATH=/tmp/hooker-playwright-ci.db ./backend/hooker &
+          DB_PATH=/tmp/argus-playwright-ci.db ./backend/argus &
           until curl -sf http://127.0.0.1:10804/healthz; do sleep 1; done
         timeout-minutes: 1
 

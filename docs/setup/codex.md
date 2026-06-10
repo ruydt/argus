@@ -13,9 +13,9 @@ codex_hooks = true
 
 ### Option A: UI preset (recommended)
 
-Open the Hooker dashboard → **Hooks Config** → **Codex** tab → **Apply preset** → choose Baseline, Medium, or Full → **Save**.
+Open the Argus dashboard → **Hooks Config** → **Codex** tab → **Apply preset** → choose Baseline, Medium, or Full → **Save**.
 
-Hooker writes entries to `~/.codex/hooks.json` without touching your existing config.
+Argus writes entries to `~/.codex/hooks.json` without touching your existing config.
 
 See [docs/hooks.md](../hooks.md) for what each preset captures and how to manage installed hooks.
 

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"hooker/internal/domain"
+	"argus/internal/domain"
 )
 
 func FirstNonEmpty(vals ...string) string {

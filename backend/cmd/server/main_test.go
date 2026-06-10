@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"hooker/internal/config"
+	"argus/internal/config"
 )
 
 func TestValidateBind_LoopbackPasses(t *testing.T) {
@@ -41,8 +41,8 @@ func TestValidateBind_RemoteWithoutFlagFails(t *testing.T) {
 		if !strings.Contains(err.Error(), "refusing non-loopback ADDR") {
 			t.Errorf("validateBind(%q) error = %q, want to contain 'refusing non-loopback ADDR'", tc.addr, err.Error())
 		}
-		if !strings.Contains(err.Error(), "HOOKER_ALLOW_REMOTE=1") {
-			t.Errorf("validateBind(%q) error = %q, want to contain 'HOOKER_ALLOW_REMOTE=1'", tc.addr, err.Error())
+		if !strings.Contains(err.Error(), "ARGUS_ALLOW_REMOTE=1") {
+			t.Errorf("validateBind(%q) error = %q, want to contain 'ARGUS_ALLOW_REMOTE=1'", tc.addr, err.Error())
 		}
 	}
 }

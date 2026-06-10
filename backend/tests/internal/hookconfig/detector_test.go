@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"hooker/internal/hookconfig"
+	"argus/internal/hookconfig"
 )
 
 func TestDetectReportsConfiguredClaudeAndCodex(t *testing.T) {

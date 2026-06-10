@@ -5,7 +5,7 @@ import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { hookerEditorTheme, hookerHighlighting, readOnlyExtensions } from '@/lib/editorTheme'
+import { argusEditorTheme, argusHighlighting, readOnlyExtensions } from '@/lib/editorTheme'
 
 type PayloadState =
   | { status: 'idle' }
@@ -80,7 +80,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
               <CodeMirror
                 value={payload.rawJson}
                 theme="none"
-                extensions={[json(), hookerEditorTheme, hookerHighlighting, ...readOnlyExtensions]}
+                extensions={[json(), argusEditorTheme, argusHighlighting, ...readOnlyExtensions]}
                 basicSetup={{
                   lineNumbers: true,
                   highlightActiveLine: true,

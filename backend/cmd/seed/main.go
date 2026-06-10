@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// Seed directly against the local SQLite file used by the backend server.
-	dbPath := "/home/leeduy0403/emruy/backend/cmd/server/hooker.db"
+	dbPath := "/home/leeduy0403/emruy/backend/cmd/server/argus.db"
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		slog.Error("failed to open db", "err", err)

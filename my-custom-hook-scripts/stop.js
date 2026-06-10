@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-const { execFile } = require('child_process');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const scriptLog = path.join(os.homedir(), '.hooker', 'hook-scripts.log');
+const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
 
 function logScript(level, msg) {
   try {
@@ -66,14 +66,20 @@ function displayNotification({ title, subtitle, message }) {
     .filter(Boolean)
     .join(' ');
 
-  execFile('/usr/bin/osascript', ['-e', script], { timeout: 3000 }, () => {});
+  try {
+    const child = spawn('/usr/bin/osascript', ['-e', script], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+  } catch (_) {}
 }
 
 async function main() {
   const payload = parsePayload(await readStdin());
   const eventName = text(payload.hook_event_name) || 'Stop';
   logScript('INFO', eventName);
-  const title = eventName === 'StopFailure' ? 'Hooker: stop failed' : 'Hooker: session stopped';
+  const title = eventName === 'StopFailure' ? 'Argus: stop failed' : 'Argus: session stopped';
   const subtitle = text(payload.cwd) || text(payload.transcript_path) || text(payload.session_id);
   const message = stopMessage(payload);
 
@@ -86,4 +92,6 @@ async function main() {
 
 main().catch(() => {
   logScript('ERROR', 'failed');
+}).finally(() => {
+  process.exit(0);
 });

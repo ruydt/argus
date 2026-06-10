@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"hooker/internal/handler"
+	"argus/internal/handler"
 )
 
 func TestHooksConfigGetUnknownAgent(t *testing.T) {

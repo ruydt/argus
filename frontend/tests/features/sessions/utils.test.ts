@@ -99,7 +99,7 @@ describe('formatTimeAxis', () => {
 
 describe('shortenCwd', () => {
   it('replaces macOS home prefix with ~', () => {
-    expect(shortenCwd('/Users/duytran/projects/hooker')).toBe('~/projects/hooker')
+    expect(shortenCwd('/Users/duytran/projects/argus')).toBe('~/projects/argus')
   })
 
   it('replaces Linux home prefix with ~', () => {

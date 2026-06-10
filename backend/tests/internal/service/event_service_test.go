@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/repository/sqlite"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/repository/sqlite"
+	"argus/internal/service"
 )
 
 type mockRepo struct {
@@ -223,7 +223,7 @@ func TestDiagnosticsReportsNotReadyAndUnavailableMemoryDB(t *testing.T) {
 }
 
 func TestDiagnosticsReportsRealDBSizeAndStats(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "hooker.db")
+	dbPath := filepath.Join(t.TempDir(), "argus.db")
 	if err := os.WriteFile(dbPath, []byte("abcd"), 0o644); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
@@ -339,7 +339,7 @@ func TestDiagnosticsIncludesPrivacyAndSecurityPosture(t *testing.T) {
 	got, err := svc.DiagnosticsWithOptions(service.DiagnosticsOptions{
 		DBPath: ":memory:",
 		IgnoreFile: domain.DiagnosticsIgnoreFile{
-			Path:               "/tmp/hooker-ignore",
+			Path:               "/tmp/argus-ignore",
 			Status:             "loaded",
 			ActivePatternCount: 2,
 		},
@@ -354,8 +354,8 @@ func TestDiagnosticsIncludesPrivacyAndSecurityPosture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DiagnosticsWithOptions: %v", err)
 	}
-	if got.Privacy.IgnoreFile.Path != "/tmp/hooker-ignore" {
-		t.Fatalf("ignore path = %q, want /tmp/hooker-ignore", got.Privacy.IgnoreFile.Path)
+	if got.Privacy.IgnoreFile.Path != "/tmp/argus-ignore" {
+		t.Fatalf("ignore path = %q, want /tmp/argus-ignore", got.Privacy.IgnoreFile.Path)
 	}
 	if got.Privacy.IgnoreFile.Status != "loaded" {
 		t.Fatalf("ignore status = %q, want loaded", got.Privacy.IgnoreFile.Status)

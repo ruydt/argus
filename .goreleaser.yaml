@@ -10,10 +10,10 @@ before:
     - bash -c "rm -rf backend/internal/ui/dist && mkdir -p backend/internal/ui && cp -R frontend/dist backend/internal/ui/dist"
 
 builds:
-  - id: hooker
+  - id: argus
     main: ./cmd/server
     dir: backend
-    binary: hooker
+    binary: argus
     env:
       - CGO_ENABLED=0
     goos:
@@ -26,14 +26,14 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      # Package path matches module: hooker/internal/version (NOT main.version)
-      - -X hooker/internal/version.Version={{.Version}}
-      - -X hooker/internal/version.Commit={{.Commit}}
-      - -X hooker/internal/version.BuildDate={{.Date}}
+      # Package path matches module: argus/internal/version (NOT main.version)
+      - -X argus/internal/version.Version={{.Version}}
+      - -X argus/internal/version.Commit={{.Commit}}
+      - -X argus/internal/version.BuildDate={{.Date}}
 
 archives:
   - id: default
-    name_template: "hooker_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "argus_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     formats: [tar.gz]
 
 checksum:

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
+	"argus/internal/domain"
+	"argus/internal/handler"
 )
 
 func TestFileChangesReturnsOldNewAndStartLine(t *testing.T) {

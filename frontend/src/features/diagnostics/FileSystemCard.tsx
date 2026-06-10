@@ -170,7 +170,7 @@ function SubSection({ label, entries, dirExists, emptyLabel }: SubSectionProps) 
 }
 
 export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
-  const hookerTail = useLogTail('hooker', 50)
+  const argusTail = useLogTail('argus', 50)
   const buildTail = useLogTail('build', 50)
   const hookScriptsTail = useLogTail('hook-scripts', 50)
   const [openLog, setOpenLog] = useState<string | null>(null)
@@ -179,15 +179,15 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
     const opening = openLog !== name
     setOpenLog(opening ? name : null)
     if (opening) {
-      if (name === 'hooker.log') hookerTail.fetch()
+      if (name === 'argus.log') argusTail.fetch()
       else if (name === 'build.log') buildTail.fetch()
       else if (name === 'hook-scripts.log') hookScriptsTail.fetch()
     }
   }
 
   function tailStateFor(name: string) {
-    if (name === 'hooker.log')
-      return { lines: hookerTail.lines, loading: hookerTail.loading, error: hookerTail.error }
+    if (name === 'argus.log')
+      return { lines: argusTail.lines, loading: argusTail.loading, error: argusTail.error }
     if (name === 'hook-scripts.log')
       return {
         lines: hookScriptsTail.lines,
@@ -198,7 +198,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
   }
 
   function refreshFor(name: string) {
-    if (name === 'hooker.log') return hookerTail.fetch
+    if (name === 'argus.log') return argusTail.fetch
     if (name === 'hook-scripts.log') return hookScriptsTail.fetch
     return buildTail.fetch
   }
@@ -211,17 +211,17 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
       <CardContent className="flex flex-col gap-0">
         {/* Root dir */}
         <div className="flex items-center justify-between py-2 text-[13px]">
-          <span className="text-muted-foreground">~/.hooker</span>
+          <span className="text-muted-foreground">~/.argus</span>
           <span className="flex items-center gap-1">
             <span
               className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
-              title={fileSystem.hookerDir}
+              title={fileSystem.argusDir}
             >
-              {fileSystem.hookerDir}
+              {fileSystem.argusDir}
             </span>
             <CopyIconButton
-              text={fileSystem.hookerDir}
-              label="Copy .hooker path"
+              text={fileSystem.argusDir}
+              label="Copy .argus path"
               className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
             />
           </span>
@@ -274,7 +274,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
         </div>
         <Separator />
 
-        {/* ~/.hooker/hooks */}
+        {/* ~/.argus/hooks */}
         <SubSection label="hooks" entries={fileSystem.hooks} dirExists={true} />
 
         <Separator />

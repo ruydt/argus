@@ -1,6 +1,6 @@
 # Releases
 
-Hooker uses [GoReleaser](https://goreleaser.com) to produce versioned binaries with
+Argus uses [GoReleaser](https://goreleaser.com) to produce versioned binaries with
 checksums. Releases are triggered by pushing a `v*` tag to GitHub.
 
 ## Before your first release

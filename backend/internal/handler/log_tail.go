@@ -12,23 +12,23 @@ import (
 
 // LogTailOptions configures the log-tail handler.
 type LogTailOptions struct {
-	HookerDir string
+	ArgusDir string
 }
 
-// LogTail serves the last N lines of a whitelisted log file in ~/.hooker.
+// LogTail serves the last N lines of a whitelisted log file in ~/.argus.
 func LogTail(opts LogTailOptions) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fileParam := r.URL.Query().Get("file")
 		var filename string
 		switch fileParam {
-		case "hooker":
-			filename = "hooker.log"
+		case "argus":
+			filename = "argus.log"
 		case "build":
 			filename = "build.log"
 		case "hook-scripts":
 			filename = "hook-scripts.log"
 		default:
-			http.Error(w, "invalid file param: must be 'hooker', 'build', or 'hook-scripts'", http.StatusBadRequest)
+			http.Error(w, "invalid file param: must be 'argus', 'build', or 'hook-scripts'", http.StatusBadRequest)
 			return
 		}
 
@@ -45,7 +45,7 @@ func LogTail(opts LogTailOptions) http.Handler {
 			}
 		}
 
-		path := filepath.Join(opts.HookerDir, filename)
+		path := filepath.Join(opts.ArgusDir, filename)
 		lines, err := tailLines(path, n)
 		if err != nil {
 			lines = []string{}

@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"hooker/internal/agents/claudecode"
+	"argus/internal/agents/claudecode"
 )
 
 func TestComputeUsageBreakdownGroupsAssistantUsageByModel(t *testing.T) {

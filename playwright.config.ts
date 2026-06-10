@@ -19,7 +19,7 @@ export default defineConfig({
   // webServer is used for local dev only (CI starts server manually before running tests).
   webServer: {
     command:
-      'cd backend && DB_PATH=/tmp/hooker-playwright-dev.db go run ./cmd/server',
+      'cd backend && DB_PATH=/tmp/argus-playwright-dev.db go run ./cmd/server',
     url: 'http://127.0.0.1:10804/healthz',
     reuseExistingServer: true,
     timeout: 60000,

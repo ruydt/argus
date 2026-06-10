@@ -2,9 +2,9 @@
 
 ## Option 1: UI preset (recommended)
 
-Open the Hooker dashboard → **Hooks Config** → **Claude Code** tab → **Apply preset** → choose Baseline, Medium, or Full → **Save**.
+Open the Argus dashboard → **Hooks Config** → **Claude Code** tab → **Apply preset** → choose Baseline, Medium, or Full → **Save**.
 
-Hooker writes the hook entries to `~/.claude/settings.json` without touching your existing config.
+Argus writes the hook entries to `~/.claude/settings.json` without touching your existing config.
 
 See [docs/hooks.md](../hooks.md) for what each preset captures and how to manage installed hooks.
 

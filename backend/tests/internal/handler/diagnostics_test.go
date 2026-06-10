@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/handler"
+	"argus/internal/service"
 )
 
 func TestDiagnosticsHandlerReturnsGroupedShape(t *testing.T) {
@@ -62,7 +62,7 @@ func TestDiagnosticsHandlerReturnsGroupedShape(t *testing.T) {
 	if !ok {
 		t.Fatalf("fileSystem = %#v, want object", payload["fileSystem"])
 	}
-	for _, key := range []string{"hookerDir", "binary", "logs", "hooks"} {
+	for _, key := range []string{"argusDir", "binary", "logs", "hooks"} {
 		if _, ok := fileSystem[key]; !ok {
 			t.Fatalf("fileSystem missing %q: %#v", key, fileSystem)
 		}

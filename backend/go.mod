@@ -1,4 +1,4 @@
-module hooker
+module argus
 
 go 1.25.0
 

@@ -3,7 +3,7 @@ package sqlite_test
 import (
 	"testing"
 
-	"hooker/internal/domain"
+	"argus/internal/domain"
 )
 
 // TestDedupKeyStability verifies that adding the same NormalizedEvent twice

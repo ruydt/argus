@@ -207,7 +207,7 @@ export function Sidebar({
                 <FishingHook className="size-3.5 text-[#9a9a9a]" />
               </div>
               <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-[#ccc]">
-                hooker
+                argus
               </span>
             </div>
             <Button
@@ -243,7 +243,7 @@ export function Sidebar({
               <FishingHook className="size-3.5 text-[#9a9a9a]" />
             </div>
             <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-[#ccc]">
-              hooker
+              argus
             </span>
           </div>
 

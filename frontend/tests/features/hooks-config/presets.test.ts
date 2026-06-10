@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
   HOOK_PRESETS,
-  HOOKER_STATUS_MESSAGE,
+  ARGUS_STATUS_MESSAGE,
   applyPreset,
   detectHookConfigLabel,
-  hasAnyHookerHooks,
-  removeHookerHooks,
+  hasAnyArgusHooks,
+  removeArgusHooks,
 } from '@/features/hooks-config/presets'
 import type { HooksConfig } from '@/features/hooks-config/types'
 
-function hookerEntry() {
-  return { type: 'command' as const, command: 'curl ...', statusMessage: HOOKER_STATUS_MESSAGE }
+function argusEntry() {
+  return { type: 'command' as const, command: 'curl ...', statusMessage: ARGUS_STATUS_MESSAGE }
 }
 
 function userEntry() {
@@ -30,18 +30,18 @@ describe('applyPreset', () => {
     expect(keys).toContain('UserPromptSubmit')
   })
 
-  it('replaces event that already has a hooker-marked entry', () => {
+  it('replaces event that already has a argus-marked entry', () => {
     const current: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [{ ...hookerEntry(), command: 'echo old hooker hook' }] }],
+        SessionStart: [{ hooks: [{ ...argusEntry(), command: 'echo old argus hook' }] }],
       },
     }
     const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
     expect(result.hooks['SessionStart']).toHaveLength(1)
-    expect(result.hooks['SessionStart'][0].hooks[0].command).not.toBe('echo old hooker hook')
+    expect(result.hooks['SessionStart'][0].hooks[0].command).not.toBe('echo old argus hook')
   })
 
-  it('preserves existing non-hooker entries alongside the preset', () => {
+  it('preserves existing non-argus entries alongside the preset', () => {
     const current: HooksConfig = {
       hooks: {
         SessionStart: [{ hooks: [userEntry()] }],
@@ -51,11 +51,11 @@ describe('applyPreset', () => {
     // user group + preset group both present
     expect(result.hooks['SessionStart']).toHaveLength(2)
     const allEntries = result.hooks['SessionStart'].flatMap((g) => g.hooks)
-    expect(allEntries.some((e) => e.statusMessage === HOOKER_STATUS_MESSAGE)).toBe(true)
+    expect(allEntries.some((e) => e.statusMessage === ARGUS_STATUS_MESSAGE)).toBe(true)
     expect(allEntries.some((e) => e.statusMessage === undefined)).toBe(true)
   })
 
-  it('replaces prior hooker-managed preset coverage when applying a new preset', () => {
+  it('replaces prior argus-managed preset coverage when applying a new preset', () => {
     const afterMedium = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.medium)
     const afterBaseline = applyPreset(afterMedium, HOOK_PRESETS.claudecode.baseline)
 
@@ -64,7 +64,7 @@ describe('applyPreset', () => {
     expect(afterBaseline.hooks['SessionStart']).toHaveLength(1)
     expect(
       afterBaseline.hooks['SessionStart'][0].hooks.every(
-        (entry) => entry.statusMessage === HOOKER_STATUS_MESSAGE
+        (entry) => entry.statusMessage === ARGUS_STATUS_MESSAGE
       )
     ).toBe(true)
   })
@@ -75,11 +75,11 @@ describe('applyPreset', () => {
     expect(Object.keys(current.hooks)).toHaveLength(0)
   })
 
-  it('keeps unrelated manual hooks when replacing hooker-managed entries', () => {
+  it('keeps unrelated manual hooks when replacing argus-managed entries', () => {
     const current: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [userEntry(), hookerEntry()] }],
-        PreToolUse: [{ hooks: [hookerEntry()] }],
+        SessionStart: [{ hooks: [userEntry(), argusEntry()] }],
+        PreToolUse: [{ hooks: [argusEntry()] }],
       },
     }
     const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
@@ -88,7 +88,7 @@ describe('applyPreset', () => {
     expect(result.hooks['SessionStart']).toHaveLength(2)
     const sessionStartEntries = result.hooks['SessionStart'].flatMap((group) => group.hooks)
     expect(sessionStartEntries.some((entry) => entry.command === 'echo user')).toBe(true)
-    expect(sessionStartEntries.some((entry) => entry.statusMessage === HOOKER_STATUS_MESSAGE)).toBe(
+    expect(sessionStartEntries.some((entry) => entry.statusMessage === ARGUS_STATUS_MESSAGE)).toBe(
       true
     )
   })
@@ -103,81 +103,81 @@ describe('applyPreset', () => {
   })
 })
 
-// ─── removeHookerHooks ──────────────────────────────────────────────────────
+// ─── removeArgusHooks ──────────────────────────────────────────────────────
 
-describe('removeHookerHooks', () => {
-  it('removes hooker-marked entries', () => {
+describe('removeArgusHooks', () => {
+  it('removes argus-marked entries', () => {
     const config: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [hookerEntry()] }],
+        SessionStart: [{ hooks: [argusEntry()] }],
       },
     }
-    const result = removeHookerHooks(config)
+    const result = removeArgusHooks(config)
     expect(result.hooks['SessionStart']).toBeUndefined()
   })
 
-  it('keeps non-hooker entries', () => {
+  it('keeps non-argus entries', () => {
     const config: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [userEntry(), hookerEntry()] }],
+        SessionStart: [{ hooks: [userEntry(), argusEntry()] }],
       },
     }
-    const result = removeHookerHooks(config)
+    const result = removeArgusHooks(config)
     const entries = result.hooks['SessionStart']?.[0]?.hooks ?? []
     expect(entries).toHaveLength(1)
     expect(entries[0].statusMessage).toBeUndefined()
   })
 
-  it('drops empty groups after removing hooker entries', () => {
+  it('drops empty groups after removing argus entries', () => {
     const config: HooksConfig = {
       hooks: {
         PostToolUse: [
-          { hooks: [hookerEntry()] }, // becomes empty → dropped
-          { hooks: [userEntry(), hookerEntry()] }, // one user entry remains
+          { hooks: [argusEntry()] }, // becomes empty → dropped
+          { hooks: [userEntry(), argusEntry()] }, // one user entry remains
         ],
       },
     }
-    const result = removeHookerHooks(config)
+    const result = removeArgusHooks(config)
     expect(result.hooks['PostToolUse']).toHaveLength(1)
   })
 
   it('drops event key when all groups become empty', () => {
     const config: HooksConfig = {
       hooks: {
-        Stop: [{ hooks: [hookerEntry()] }],
+        Stop: [{ hooks: [argusEntry()] }],
         SessionStart: [{ hooks: [userEntry()] }],
       },
     }
-    const result = removeHookerHooks(config)
+    const result = removeArgusHooks(config)
     expect(result.hooks['Stop']).toBeUndefined()
     expect(result.hooks['SessionStart']).toBeDefined()
   })
 
   it('returns empty hooks object when config is already empty', () => {
-    const result = removeHookerHooks({ hooks: {} })
+    const result = removeArgusHooks({ hooks: {} })
     expect(result.hooks).toEqual({})
   })
 })
 
-// ─── hasAnyHookerHooks ──────────────────────────────────────────────────────
+// ─── hasAnyArgusHooks ──────────────────────────────────────────────────────
 
-describe('hasAnyHookerHooks', () => {
-  it('returns true when at least one hooker entry exists', () => {
+describe('hasAnyArgusHooks', () => {
+  it('returns true when at least one argus entry exists', () => {
     const config: HooksConfig = {
-      hooks: { SessionStart: [{ hooks: [hookerEntry()] }] },
+      hooks: { SessionStart: [{ hooks: [argusEntry()] }] },
     }
-    expect(hasAnyHookerHooks(config)).toBe(true)
+    expect(hasAnyArgusHooks(config)).toBe(true)
   })
 
-  it('returns false when no hooker entries', () => {
+  it('returns false when no argus entries', () => {
     const config: HooksConfig = {
       hooks: { SessionStart: [{ hooks: [userEntry()] }] },
     }
-    expect(hasAnyHookerHooks(config)).toBe(false)
+    expect(hasAnyArgusHooks(config)).toBe(false)
   })
 
   it('returns false for empty config', () => {
-    expect(hasAnyHookerHooks({ hooks: {} })).toBe(false)
+    expect(hasAnyArgusHooks({ hooks: {} })).toBe(false)
   })
 })
 
@@ -193,7 +193,7 @@ describe('detectHookConfigLabel', () => {
     expect(detectHookConfigLabel('claudecode', config)).toBe('Missing')
   })
 
-  it('returns Configured when hooks exist but none are hooker-managed', () => {
+  it('returns Configured when hooks exist but none are argus-managed', () => {
     const config: HooksConfig = {
       hooks: { SessionStart: [{ hooks: [userEntry()] }] },
     }
@@ -231,21 +231,21 @@ describe('detectHookConfigLabel', () => {
     expect(detectHookConfigLabel('codex', config)).toBe('Configured (10/10)')
   })
 
-  it('returns Configured (X/30) for partial hooker coverage', () => {
-    // Apply baseline then add one extra hooker event manually
+  it('returns Configured (X/30) for partial argus coverage', () => {
+    // Apply baseline then add one extra argus event manually
     const config = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.baseline)
-    config.hooks['StopFailure'] = [{ hooks: [hookerEntry()] }]
+    config.hooks['StopFailure'] = [{ hooks: [argusEntry()] }]
     const label = detectHookConfigLabel('claudecode', config)
     expect(label).toMatch(/^Configured \(\d+\/30\)$/)
     // 5 baseline events + 1 extra = 6
     expect(label).toBe('Configured (6/30)')
   })
 
-  it('Configured label uses hooker-event count, not total event count', () => {
-    // One hooker event + one user event — only hooker event counts toward X
+  it('Configured label uses argus-event count, not total event count', () => {
+    // One argus event + one user event — only argus event counts toward X
     const config: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [hookerEntry()] }],
+        SessionStart: [{ hooks: [argusEntry()] }],
         PostToolUse: [{ hooks: [userEntry()] }],
       },
     }
@@ -256,15 +256,15 @@ describe('detectHookConfigLabel', () => {
   it('returns Configured (X/10) for codex agent with partial coverage', () => {
     const config: HooksConfig = {
       hooks: {
-        SessionStart: [{ hooks: [hookerEntry()] }],
-        Stop: [{ hooks: [hookerEntry()] }],
+        SessionStart: [{ hooks: [argusEntry()] }],
+        Stop: [{ hooks: [argusEntry()] }],
       },
     }
     expect(detectHookConfigLabel('codex', config)).toBe('Configured (2/10)')
   })
 
-  it('non-hooker entries in same config do not affect Configured (X/Y) count', () => {
-    // Baseline hooker events + a user entry on a different event
+  it('non-argus entries in same config do not affect Configured (X/Y) count', () => {
+    // Baseline argus events + a user entry on a different event
     const config = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.baseline)
     config.hooks['PreToolUse'] = [{ hooks: [userEntry()] }]
     const label = detectHookConfigLabel('claudecode', config)

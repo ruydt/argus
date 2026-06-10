@@ -9,8 +9,8 @@ import (
 	"slices"
 	"strings"
 
-	"hooker/internal/domain"
-	"hooker/internal/fileutil"
+	"argus/internal/domain"
+	"argus/internal/fileutil"
 )
 
 type DiffInput struct {

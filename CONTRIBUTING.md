@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to `hooker`. This guide is the quick path for making safe,
+Thanks for contributing to `argus`. This guide is the quick path for making safe,
 reviewable changes without breaking the local-first data model.
 
 ## Prerequisites
@@ -26,7 +26,7 @@ go run ./cmd/server/main.go
 ```
 
 By default, the backend listens on `127.0.0.1:10804` and stores SQLite data in
-`backend/hooker.db`. Use `DB_PATH=/absolute/path/to/my.db` when you need a separate
+`backend/argus.db`. Use `DB_PATH=/absolute/path/to/my.db` when you need a separate
 database.
 
 Start the frontend dev server:
@@ -175,7 +175,7 @@ bug even if one side still compiles.
 
 ## Privacy and Local-First Scope
 
-Hooker captures prompts, diffs, file paths, tool outputs, raw payloads, and exports locally.
+Argus captures prompts, diffs, file paths, tool outputs, raw payloads, and exports locally.
 Do not add behavior that implies cloud sync, multi-tenant access, or supported remote sharing.
 Remote exposure is advanced and unsupported unless explicit security work lands with it.
 

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/repository/sqlite"
+	"argus/internal/domain"
+	"argus/internal/repository/sqlite"
 )
 
 func newTestDB(t *testing.T) *sqlite.DB {
@@ -58,7 +58,7 @@ func TestAdd_and_List(t *testing.T) {
 }
 
 func TestAddDoesNotWaitForUnrelatedOpenReadRows(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "hooker-test.db")
+	dbPath := filepath.Join(t.TempDir(), "argus-test.db")
 	db, err := sqlite.New(dbPath)
 	if err != nil {
 		t.Fatalf("sqlite.New: %v", err)
@@ -95,7 +95,7 @@ func TestAddDoesNotWaitForUnrelatedOpenReadRows(t *testing.T) {
 }
 
 func TestAddReturnsBeforeHookTimeoutWhenDatabaseIsWriteLocked(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "hooker-test.db")
+	dbPath := filepath.Join(t.TempDir(), "argus-test.db")
 	db, err := sqlite.New(dbPath)
 	if err != nil {
 		t.Fatalf("sqlite.New: %v", err)
@@ -481,10 +481,10 @@ func TestListSessions_sortsByStartedAtDesc(t *testing.T) {
 func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
 	db := newTestDB(t)
 
-	if err := db.UpsertSession("sess-old", "codex", "gpt-5.4", "", "/work/hooker", "", "2026-05-14T10:00:00Z", "2026-05-14T10:05:00Z", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-old", "codex", "gpt-5.4", "", "/work/argus", "", "2026-05-14T10:00:00Z", "2026-05-14T10:05:00Z", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession old: %v", err)
 	}
-	if err := db.UpsertSession("sess-live", "claudecode", "claude-opus-4-7", "", "/work/hooker", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-live", "claudecode", "claude-opus-4-7", "", "/work/argus", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession live: %v", err)
 	}
 	if err := db.UpsertSession("sess-other", "codex", "gpt-5.4", "", "/work/other", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
@@ -499,11 +499,11 @@ func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
 	if len(projects) != 2 {
 		t.Fatalf("projects len = %d, want 2", len(projects))
 	}
-	if projects[0].CWD != "/work/hooker" {
-		t.Fatalf("first cwd = %q, want /work/hooker", projects[0].CWD)
+	if projects[0].CWD != "/work/argus" {
+		t.Fatalf("first cwd = %q, want /work/argus", projects[0].CWD)
 	}
-	if projects[0].Name != "hooker" {
-		t.Fatalf("name = %q, want hooker", projects[0].Name)
+	if projects[0].Name != "argus" {
+		t.Fatalf("name = %q, want argus", projects[0].Name)
 	}
 	if projects[0].SessionCount != 2 {
 		t.Fatalf("session_count = %d, want 2", projects[0].SessionCount)
@@ -526,17 +526,17 @@ func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
 func TestListSessionsByCWDFiltersAndAppliesSince(t *testing.T) {
 	db := newTestDB(t)
 
-	if err := db.UpsertSession("old", "codex", "", "", "/work/hooker", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("old", "codex", "", "", "/work/argus", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession old: %v", err)
 	}
-	if err := db.UpsertSession("new", "codex", "", "", "/work/hooker", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("new", "codex", "", "", "/work/argus", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession new: %v", err)
 	}
 	if err := db.UpsertSession("other", "codex", "", "", "/work/other", "", "2026-05-14T12:00:00Z", "", domain.SessionUsage{}); err != nil {
 		t.Fatalf("UpsertSession other: %v", err)
 	}
 
-	sessions, err := db.ListSessionsByCWD("/work/hooker", "2026-05-14T10:00:00Z")
+	sessions, err := db.ListSessionsByCWD("/work/argus", "2026-05-14T10:00:00Z")
 	if err != nil {
 		t.Fatalf("ListSessionsByCWD: %v", err)
 	}

@@ -13,13 +13,13 @@ import (
 	"syscall"
 	"time"
 
-	"hooker/internal/config"
-	"hooker/internal/domain"
-	"hooker/internal/privacy/ignore"
-	"hooker/internal/repository/sqlite"
-	"hooker/internal/server"
-	"hooker/internal/service"
-	"hooker/internal/version"
+	"argus/internal/config"
+	"argus/internal/domain"
+	"argus/internal/privacy/ignore"
+	"argus/internal/repository/sqlite"
+	"argus/internal/server"
+	"argus/internal/service"
+	"argus/internal/version"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func run() int {
 		return 1
 	}
 
-	// Reject non-loopback bind unless HOOKER_ALLOW_REMOTE=1 (D-07, D-08).
+	// Reject non-loopback bind unless ARGUS_ALLOW_REMOTE=1 (D-07, D-08).
 	if err := validateBind(cfg); err != nil {
 		slog.Error(err.Error())
 		return 1
@@ -71,7 +71,7 @@ func run() int {
 	home, _ := os.UserHomeDir()
 
 	// Load ignore matcher. A missing default file returns an empty matcher (safe).
-	// An unreadable explicit HOOKER_IGNORE path exits with an actionable error (T-03-02-04).
+	// An unreadable explicit ARGUS_IGNORE path exits with an actionable error (T-03-02-04).
 	matcher, ignoreStatus, err := ignore.LoadWithStatus(cfg.IgnorePath)
 	if err != nil {
 		slog.Error("load ignore file", "path", cfg.IgnorePath, "err", err)
@@ -87,10 +87,10 @@ func run() int {
 		AllowRemote:        cfg.AllowRemote,
 		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
 		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
-		HookerDir:          filepath.Join(home, ".hooker"),
+		ArgusDir:          filepath.Join(home, ".argus"),
 	})
 
-	slog.Info("hooker", "version", version.Version, "commit", version.Commit)
+	slog.Info("argus", "version", version.Version, "commit", version.Commit)
 	slog.Info("hook endpoint", "url", "POST http://"+cfg.Addr+"/api/hook")
 	slog.Info("events SSE", "url", "GET http://"+cfg.Addr+"/api/events/stream")
 	slog.Info("db", "path", cfg.DBPath)
@@ -162,7 +162,7 @@ func validateBind(cfg config.Config) error {
 	if cfg.AllowRemote {
 		return nil
 	}
-	return fmt.Errorf("refusing non-loopback ADDR %q — set HOOKER_ALLOW_REMOTE=1 to enable", cfg.Addr)
+	return fmt.Errorf("refusing non-loopback ADDR %q — set ARGUS_ALLOW_REMOTE=1 to enable", cfg.Addr)
 }
 
 // isLoopbackHost reports whether host is a known loopback address.
@@ -176,7 +176,7 @@ func isLoopbackHost(host string) bool {
 
 // warnRemoteBind emits a prominent startup warning when remote bind is explicitly enabled (D-09).
 func warnRemoteBind(cfg config.Config) {
-	slog.Warn("REMOTE BIND ACTIVE — hooker is reachable beyond localhost",
+	slog.Warn("REMOTE BIND ACTIVE — argus is reachable beyond localhost",
 		"addr", cfg.Addr,
 		"captures", "prompts, diffs, file paths, tool outputs, raw payloads, exports",
 		"note", "public internet exposure is unsupported",

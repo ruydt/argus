@@ -1,0 +1,256 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BACKEND="$ROOT/backend"
+FRONTEND="$ROOT/frontend"
+
+usage() {
+  cat <<'EOF'
+Usage: ./scripts/argus <command>
+
+Commands:
+  setup   Install source dependencies for backend and frontend
+  doctor  Verify local toolchain, dependency state, and tests
+EOF
+}
+
+require_cmd() {
+  local cmd="$1"
+  local hint="$2"
+
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    printf 'missing %s. %s\n' "$cmd" "$hint" >&2
+    exit 1
+  fi
+}
+
+show_versions() {
+  printf 'go: '
+  go version
+  printf 'node: '
+  node --version
+  printf 'pnpm: '
+  pnpm --version
+}
+
+ensure_tools() {
+  require_cmd go 'Install Go 1.25.0 or newer.'
+  require_cmd node 'Install Node.js 18 or newer.'
+  require_cmd pnpm 'Install pnpm, or run: corepack enable && corepack prepare pnpm@latest --activate'
+}
+
+ARGUS_HOOK_CMD="curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true"
+
+patch_claudecode_hooks() {
+  local settings="$HOME/.claude/settings.json"
+  if [ ! -f "$settings" ]; then
+    printf '[skip] Claude Code settings.json not found at %s\n' "$settings"
+    return 0
+  fi
+  if grep -q "8765/api/hook" "$settings"; then
+    printf '[ok]   Claude Code hooks already configured — skipping\n'
+    return 0
+  fi
+  cp "$settings" "${settings}.bak.pre-argus"
+  python3 - "$settings" "$ARGUS_HOOK_CMD" <<'PYEOF'
+import sys, json
+path, cmd = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    d = json.load(f)
+hooks = d.setdefault('hooks', {})
+entry = {'hooks': [{'type': 'command', 'command': cmd}]}
+for event in ['PreToolUse', 'PostToolUse', 'SessionStart', 'SessionEnd', 'Stop']:
+    hooks.setdefault(event, []).append(entry)
+with open(path, 'w') as f:
+    json.dump(d, f, indent=2)
+PYEOF
+  printf '[ok]   Claude Code hooks configured (backup: %s.bak.pre-argus)\n' "$settings"
+}
+
+patch_codex_hooks() {
+  local settings="$HOME/.codex/hooks.json"
+  if [ ! -f "$settings" ]; then
+    printf '[skip] Codex hooks.json not found at %s\n' "$settings"
+    return 0
+  fi
+  if grep -q "8765/api/hook" "$settings"; then
+    printf '[ok]   Codex hooks already configured — skipping\n'
+    return 0
+  fi
+  cp "$settings" "${settings}.bak.pre-argus"
+  python3 - "$settings" "$ARGUS_HOOK_CMD" <<'PYEOF'
+import sys, json
+path, cmd = sys.argv[1], sys.argv[2]
+with open(path) as f:
+    d = json.load(f)
+hooks = d.setdefault('hooks', {})
+entry = {'hooks': [{'type': 'command', 'command': cmd}]}
+for event in ['SessionStart', 'PreToolUse']:
+    hooks.setdefault(event, []).append(entry)
+with open(path, 'w') as f:
+    json.dump(d, f, indent=2)
+PYEOF
+  printf '[ok]   Codex hooks configured (backup: %s.bak.pre-argus)\n' "$settings"
+}
+
+setup() {
+  ensure_tools
+  show_versions
+
+  printf '\nbackend: downloading Go modules\n'
+  (cd "$BACKEND" && go mod download)
+
+  printf '\nfrontend: installing pnpm dependencies\n'
+  (cd "$FRONTEND" && pnpm install --frozen-lockfile)
+
+  printf '\nbuilding argus binary\n'
+  (cd "$BACKEND" && go build -o "$ROOT/argus" ./cmd/server)
+  printf 'binary: %s/argus\n' "$ROOT"
+
+  printf '\npatching agent hook configs\n'
+  patch_claudecode_hooks
+  patch_codex_hooks
+
+  printf '\nsetup complete\n'
+  printf 'start: cd backend && ./argus\n'
+  printf 'verify: ./scripts/argus doctor\n'
+}
+
+doctor() {
+  local doctor_errors=0
+  local PASS='[ok]  '
+  local FAIL='[FAIL]'
+  local WARN='[warn]'
+  local go_ver=""
+  local go_major=""
+  local go_minor=""
+  local node_ver=""
+  local node_major=""
+  local db_path="${DB_PATH:-$BACKEND/argus.db}"
+  local db_dir=""
+  local claude_cfg="$HOME/.claude/settings.json"
+  local codex_cfg="$HOME/.codex/hooks.json"
+  local addr="${ADDR:-127.0.0.1:8765}"
+  local addr_host=""
+
+  check_required() {
+    local label="$1" result="$2" hint="$3"
+    if [ "$result" = "pass" ]; then
+      printf '%s %s\n' "$PASS" "$label"
+    else
+      printf '%s %s\n      fix: %s\n' "$FAIL" "$label" "$hint"
+      doctor_errors=$((doctor_errors + 1))
+    fi
+  }
+
+  check_optional() {
+    local label="$1" result="$2" hint="$3"
+    if [ "$result" = "pass" ]; then
+      printf '%s %s\n' "$PASS" "$label"
+    else
+      printf '%s %s\n      note: %s\n' "$WARN" "$label" "$hint"
+    fi
+  }
+
+  printf 'argus doctor — required checks\n'
+  printf '────────────────────────────────\n'
+
+  if command -v go >/dev/null 2>&1; then
+    go_ver="$(go version | awk '{print $3}' | sed 's/go//')"
+    go_major="$(printf '%s' "$go_ver" | cut -d. -f1)"
+    go_minor="$(printf '%s' "$go_ver" | cut -d. -f2)"
+    if [ "$go_major" -gt 1 ] || { [ "$go_major" -eq 1 ] && [ "$go_minor" -ge 25 ]; }; then
+      check_required "go >= 1.25.0 (found $go_ver)" "pass" ""
+    else
+      check_required "go >= 1.25.0 (found $go_ver)" "fail" "Install Go 1.25.0 or newer from https://go.dev/dl/"
+    fi
+  else
+    check_required "go installed" "fail" "Install Go 1.25.0 or newer from https://go.dev/dl/"
+  fi
+
+  if command -v node >/dev/null 2>&1; then
+    node_ver="$(node --version | sed 's/v//')"
+    node_major="$(printf '%s' "$node_ver" | cut -d. -f1)"
+    if [ "$node_major" -ge 18 ]; then
+      check_required "node >= 18 (found v$node_ver)" "pass" ""
+    else
+      check_required "node >= 18 (found v$node_ver)" "fail" "Install Node.js 18 or newer from https://nodejs.org/"
+    fi
+  else
+    check_required "node installed" "fail" "Install Node.js 18 or newer from https://nodejs.org/"
+  fi
+
+  if command -v pnpm >/dev/null 2>&1; then
+    check_required "pnpm installed ($(pnpm --version))" "pass" ""
+  else
+    check_required "pnpm installed" "fail" "Run: corepack enable && corepack prepare pnpm@10.23.0 --activate"
+  fi
+
+  db_dir="$(dirname "$db_path")"
+  if [ -w "$db_dir" ]; then
+    check_required "DB path writable ($db_path)" "pass" ""
+  else
+    check_required "DB path writable ($db_path)" "fail" "Directory $db_dir is not writable. Check permissions or set DB_PATH to a writable path."
+  fi
+
+  if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 http://127.0.0.1:8765/healthz >/dev/null 2>&1; then
+    check_required "port 8765 (argus running)" "pass" ""
+  elif ! command -v lsof >/dev/null 2>&1 || ! lsof -i :8765 >/dev/null 2>&1; then
+    check_required "port 8765 available" "pass" ""
+  else
+    check_required "port 8765 available" "fail" "Port 8765 is in use by another process. Run: lsof -i :8765"
+  fi
+
+  printf '\nargus doctor — optional checks\n'
+  printf '────────────────────────────────\n'
+  printf '%s Privacy: argus captures prompts, diffs, file paths, tool outputs, raw payloads, and exports. Treat the local DB and exported files as sensitive.\n' "$WARN"
+
+  if [ -f "$claude_cfg" ] && grep -q "8765/api/hook" "$claude_cfg"; then
+    check_optional "Claude Code hooks configured" "pass" ""
+  else
+    check_optional "Claude Code hooks configured" "warn" "Run: ./scripts/argus setup"
+  fi
+
+  if [ -f "$codex_cfg" ] && grep -q "8765/api/hook" "$codex_cfg"; then
+    check_optional "Codex hooks configured" "pass" ""
+  else
+    check_optional "Codex hooks configured" "warn" "Run: ./scripts/argus setup"
+  fi
+
+  # Handle both IPv4 "host:port" and IPv6 "[::1]:port" ADDR formats.
+  if printf '%s' "$addr" | grep -q '^\['; then
+    addr_host="$(printf '%s' "$addr" | sed 's/^\[//; s/\]:.*//')"
+  else
+    addr_host="$(printf '%s' "$addr" | cut -d: -f1)"
+  fi
+  if [ "$addr_host" = "127.0.0.1" ] || [ "$addr_host" = "localhost" ] || [ "$addr_host" = "::1" ]; then
+    check_optional "ADDR is loopback ($addr)" "pass" ""
+  else
+    check_optional "ADDR is loopback ($addr)" "warn" "Non-loopback bind exposes argus on the network. Argus stores prompts, diffs, file paths, tool outputs, raw payloads, and exports. Keep ADDR on loopback for personal use."
+  fi
+
+  printf '\n'
+  if [ "$doctor_errors" -gt 0 ]; then
+    printf '%d required check(s) failed. Fix the issues above before using argus.\n' "$doctor_errors"
+    return 1
+  else
+    printf 'all required checks passed.\n'
+  fi
+}
+
+case "${1:-}" in
+  setup)
+    setup
+    ;;
+  doctor)
+    doctor
+    ;;
+  -h|--help|help|'')
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac

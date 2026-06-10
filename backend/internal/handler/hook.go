@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"hooker/internal/agents/claudecode"
-	"hooker/internal/agents/codex"
-	"hooker/internal/domain"
-	"hooker/internal/fileutil"
-	"hooker/internal/service"
+	"argus/internal/agents/claudecode"
+	"argus/internal/agents/codex"
+	"argus/internal/domain"
+	"argus/internal/fileutil"
+	"argus/internal/service"
 )
 
 // IgnoreMatcher is the interface satisfied by privacy/ignore.Matcher.
@@ -74,7 +74,7 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 				Session:             "degraded-" + rawHash[:16],
 				RawPayload:          raw,
 				NormalizationStatus: "degraded",
-				NormalizerVersion:   "hooker/1",
+				NormalizerVersion:   "argus/1",
 			}
 			if normalizeErr != nil {
 				slog.Warn("degraded ingest (parse error)", "err", normalizeErr, "raw_len", len(raw))

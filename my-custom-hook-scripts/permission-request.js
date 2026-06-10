@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // PermissionRequest hook: native macOS dialog for Claude Code and Codex.
-// Always list: ~/.hooker/approved-always.json
+// Always list: ~/.argus/approved-always.json
 
 const fs = require('fs');
 const os = require('os');
@@ -10,9 +10,9 @@ const { execFile, spawn } = require('child_process');
 const ALLOW_OUTPUT = '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}';
 const EMPTY_OUTPUT = '{}';
 const DENY_OUTPUT = JSON.stringify({ hookSpecificOutput: { hookEventName: 'PermissionRequest', decision: { behavior: 'deny', message: 'Denied by user.' } } });
-const ALWAYS_FILE = path.join(os.homedir(), '.hooker', 'approved-always.json');
-const HOOKER_URL = 'http://127.0.0.1:8765/api/hook';
-const scriptLog = path.join(os.homedir(), '.hooker', 'hook-scripts.log');
+const ALWAYS_FILE = path.join(os.homedir(), '.argus', 'approved-always.json');
+const ARGUS_URL = 'http://127.0.0.1:10804/api/hook';
+const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
 
 function logScript(level, msg) {
   try {
@@ -142,14 +142,14 @@ function saveAlways(key) {
   fs.writeFileSync(ALWAYS_FILE, JSON.stringify(alwaysList, null, 2) + '\n');
 }
 
-function logToHooker(payload) {
+function logToArgus(payload) {
   const child = spawn('curl', [
     '-s',
     '--max-time',
     '2',
     '-X',
     'POST',
-    HOOKER_URL,
+    ARGUS_URL,
     '-H',
     'Content-Type: application/json',
     '-d',
@@ -272,7 +272,7 @@ async function main() {
       openPreferredTerminal();
     }
     logScript('INFO', 'allow-or-dismiss');
-    logToHooker(payload);
+    logToArgus(payload);
     process.stdout.write(EMPTY_OUTPUT + '\n');
     return;
   }
@@ -281,7 +281,7 @@ async function main() {
   const alwaysKey = `${tool}:${detail}`;
 
   if (readAlwaysList().some(entry => entry && entry.key === alwaysKey)) {
-    logToHooker(payload);
+    logToArgus(payload);
     process.stdout.write(ALLOW_OUTPUT + '\n');
     return;
   }
@@ -295,7 +295,7 @@ async function main() {
   const msg = parts.join('\n\n');
   const title = `Permission Request - ${agent}`;
   const result = await showDialog(title, msg);
-  logToHooker(payload);
+  logToArgus(payload);
 
   if (result.includes('button returned:Always')) {
     logScript('INFO', 'always');

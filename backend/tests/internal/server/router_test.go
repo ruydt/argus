@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/server"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/server"
+	"argus/internal/service"
 )
 
 type noopRepo struct{}
@@ -90,7 +90,7 @@ func newTestRouter() http.Handler {
 		CORSOrigins: testCORSOrigins,
 		DBPath:      ":memory:",
 		IgnoreFile: domain.DiagnosticsIgnoreFile{
-			Path:               "/tmp/hooker-ignore",
+			Path:               "/tmp/argus-ignore",
 			Status:             "missing_ok",
 			ActivePatternCount: 0,
 		},
@@ -273,8 +273,8 @@ func TestNewRouterDiagnosticsReturnsJSON(t *testing.T) {
 	if payload.Storage.LatestEventAt != nil {
 		t.Fatalf("storage.latestEventAt = %q, want nil", *payload.Storage.LatestEventAt)
 	}
-	if payload.Privacy.IgnoreFile.Path != "/tmp/hooker-ignore" {
-		t.Fatalf("privacy.ignoreFile.path = %q, want /tmp/hooker-ignore", payload.Privacy.IgnoreFile.Path)
+	if payload.Privacy.IgnoreFile.Path != "/tmp/argus-ignore" {
+		t.Fatalf("privacy.ignoreFile.path = %q, want /tmp/argus-ignore", payload.Privacy.IgnoreFile.Path)
 	}
 	if payload.Privacy.IgnoreFile.Status != "missing_ok" {
 		t.Fatalf("privacy.ignoreFile.status = %q, want missing_ok", payload.Privacy.IgnoreFile.Status)

@@ -87,7 +87,7 @@ export interface DiagnosticsFileEntry {
 }
 
 export interface DiagnosticsFileSystem {
-  hookerDir: string
+  argusDir: string
   binary: DiagnosticsFileEntry
   logs: DiagnosticsFileEntry[]
   hooks: DiagnosticsFileEntry[]

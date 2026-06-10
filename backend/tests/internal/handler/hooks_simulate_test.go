@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"hooker/internal/handler"
+	"argus/internal/handler"
 )
 
 func TestHooksSimulateRejectsGET(t *testing.T) {

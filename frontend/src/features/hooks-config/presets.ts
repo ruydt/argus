@@ -1,11 +1,11 @@
 import type { AgentKey, HookGroup, HooksConfig } from './types'
 
-export const HOOKER_STATUS_MESSAGE = 'hooker'
+export const ARGUS_STATUS_MESSAGE = 'argus'
 
 const HOOK_CMD =
   "curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true"
 
-function hookerGroup(matcher?: string): HookGroup {
+function argusGroup(matcher?: string): HookGroup {
   return {
     id: crypto.randomUUID(),
     ...(matcher !== undefined ? { matcher } : {}),
@@ -14,7 +14,7 @@ function hookerGroup(matcher?: string): HookGroup {
         id: crypto.randomUUID(),
         type: 'command',
         command: HOOK_CMD,
-        statusMessage: HOOKER_STATUS_MESSAGE,
+        statusMessage: ARGUS_STATUS_MESSAGE,
       },
     ],
   }
@@ -25,70 +25,70 @@ type PresetKey = 'baseline' | 'medium' | 'full'
 const CLAUDE_PRESETS: Record<PresetKey, HooksConfig> = {
   baseline: {
     hooks: {
-      SessionStart: [hookerGroup()],
-      SessionEnd: [hookerGroup()],
-      UserPromptSubmit: [hookerGroup()],
-      PostToolUse: [hookerGroup('.*')],
-      Stop: [hookerGroup()],
+      SessionStart: [argusGroup()],
+      SessionEnd: [argusGroup()],
+      UserPromptSubmit: [argusGroup()],
+      PostToolUse: [argusGroup('.*')],
+      Stop: [argusGroup()],
     },
   },
   medium: {
     hooks: {
-      SessionStart: [hookerGroup()],
-      SessionEnd: [hookerGroup()],
-      UserPromptSubmit: [hookerGroup()],
-      PreToolUse: [hookerGroup('.*')],
-      PostToolUse: [hookerGroup('.*')],
-      PostToolUseFailure: [hookerGroup('.*')],
-      StopFailure: [hookerGroup()],
-      Stop: [hookerGroup()],
-      SubagentStart: [hookerGroup()],
-      SubagentStop: [hookerGroup()],
-      PreCompact: [hookerGroup()],
-      PostCompact: [hookerGroup()],
+      SessionStart: [argusGroup()],
+      SessionEnd: [argusGroup()],
+      UserPromptSubmit: [argusGroup()],
+      PreToolUse: [argusGroup('.*')],
+      PostToolUse: [argusGroup('.*')],
+      PostToolUseFailure: [argusGroup('.*')],
+      StopFailure: [argusGroup()],
+      Stop: [argusGroup()],
+      SubagentStart: [argusGroup()],
+      SubagentStop: [argusGroup()],
+      PreCompact: [argusGroup()],
+      PostCompact: [argusGroup()],
     },
   },
   full: {
     hooks: {
       // Session lifecycle
-      SessionStart: [hookerGroup()],
-      Setup: [hookerGroup()],
-      SessionEnd: [hookerGroup()],
+      SessionStart: [argusGroup()],
+      Setup: [argusGroup()],
+      SessionEnd: [argusGroup()],
       // Per-turn
-      UserPromptSubmit: [hookerGroup()],
-      UserPromptExpansion: [hookerGroup()],
-      Stop: [hookerGroup()],
-      StopFailure: [hookerGroup()],
+      UserPromptSubmit: [argusGroup()],
+      UserPromptExpansion: [argusGroup()],
+      Stop: [argusGroup()],
+      StopFailure: [argusGroup()],
       // Tool lifecycle
-      PreToolUse: [hookerGroup('.*')],
-      PostToolUse: [hookerGroup('.*')],
-      PostToolUseFailure: [hookerGroup('.*')],
-      PostToolBatch: [hookerGroup()],
-      PermissionRequest: [hookerGroup()],
-      PermissionDenied: [hookerGroup()],
+      PreToolUse: [argusGroup('.*')],
+      PostToolUse: [argusGroup('.*')],
+      PostToolUseFailure: [argusGroup('.*')],
+      PostToolBatch: [argusGroup()],
+      PermissionRequest: [argusGroup()],
+      PermissionDenied: [argusGroup()],
       // Subagent & tasks
-      SubagentStart: [hookerGroup()],
-      SubagentStop: [hookerGroup()],
-      TeammateIdle: [hookerGroup()],
-      TaskCreated: [hookerGroup()],
-      TaskCompleted: [hookerGroup()],
+      SubagentStart: [argusGroup()],
+      SubagentStop: [argusGroup()],
+      TeammateIdle: [argusGroup()],
+      TaskCreated: [argusGroup()],
+      TaskCompleted: [argusGroup()],
       // File & config
-      FileChanged: [hookerGroup()],
-      CwdChanged: [hookerGroup()],
-      ConfigChange: [hookerGroup()],
-      InstructionsLoaded: [hookerGroup()],
+      FileChanged: [argusGroup()],
+      CwdChanged: [argusGroup()],
+      ConfigChange: [argusGroup()],
+      InstructionsLoaded: [argusGroup()],
       // Context & display
-      MessageDisplay: [hookerGroup()],
-      Notification: [hookerGroup()],
+      MessageDisplay: [argusGroup()],
+      Notification: [argusGroup()],
       // Compaction
-      PreCompact: [hookerGroup()],
-      PostCompact: [hookerGroup()],
+      PreCompact: [argusGroup()],
+      PostCompact: [argusGroup()],
       // Worktree
-      WorktreeCreate: [hookerGroup()],
-      WorktreeRemove: [hookerGroup()],
+      WorktreeCreate: [argusGroup()],
+      WorktreeRemove: [argusGroup()],
       // MCP elicitation
-      Elicitation: [hookerGroup()],
-      ElicitationResult: [hookerGroup()],
+      Elicitation: [argusGroup()],
+      ElicitationResult: [argusGroup()],
     },
   },
 }
@@ -98,37 +98,37 @@ const CLAUDE_PRESETS: Record<PresetKey, HooksConfig> = {
 const CODEX_PRESETS: Record<PresetKey, HooksConfig> = {
   baseline: {
     hooks: {
-      SessionStart: [hookerGroup()],
-      UserPromptSubmit: [hookerGroup()],
-      PostToolUse: [hookerGroup()],
-      Stop: [hookerGroup()],
+      SessionStart: [argusGroup()],
+      UserPromptSubmit: [argusGroup()],
+      PostToolUse: [argusGroup()],
+      Stop: [argusGroup()],
     },
   },
   medium: {
     hooks: {
-      SessionStart: [hookerGroup()],
-      UserPromptSubmit: [hookerGroup()],
-      PreToolUse: [hookerGroup('.*')],
-      PostToolUse: [hookerGroup()],
-      Stop: [hookerGroup()],
-      SubagentStart: [hookerGroup()],
-      SubagentStop: [hookerGroup()],
-      PreCompact: [hookerGroup()],
-      PostCompact: [hookerGroup()],
+      SessionStart: [argusGroup()],
+      UserPromptSubmit: [argusGroup()],
+      PreToolUse: [argusGroup('.*')],
+      PostToolUse: [argusGroup()],
+      Stop: [argusGroup()],
+      SubagentStart: [argusGroup()],
+      SubagentStop: [argusGroup()],
+      PreCompact: [argusGroup()],
+      PostCompact: [argusGroup()],
     },
   },
   full: {
     hooks: {
-      SessionStart: [hookerGroup()],
-      UserPromptSubmit: [hookerGroup()],
-      PreToolUse: [hookerGroup('.*')],
-      PermissionRequest: [hookerGroup()],
-      PostToolUse: [hookerGroup()],
-      Stop: [hookerGroup()],
-      SubagentStart: [hookerGroup()],
-      SubagentStop: [hookerGroup()],
-      PreCompact: [hookerGroup()],
-      PostCompact: [hookerGroup()],
+      SessionStart: [argusGroup()],
+      UserPromptSubmit: [argusGroup()],
+      PreToolUse: [argusGroup('.*')],
+      PermissionRequest: [argusGroup()],
+      PostToolUse: [argusGroup()],
+      Stop: [argusGroup()],
+      SubagentStart: [argusGroup()],
+      SubagentStop: [argusGroup()],
+      PreCompact: [argusGroup()],
+      PostCompact: [argusGroup()],
     },
   },
 }
@@ -147,7 +147,7 @@ export const PRESET_LABELS: Record<PresetKey, { label: string; description: stri
 export const PRESET_KEYS: PresetKey[] = ['baseline', 'medium', 'full']
 
 export function applyPreset(current: HooksConfig, preset: HooksConfig): HooksConfig {
-  const merged = removeHookerHooks(current)
+  const merged = removeArgusHooks(current)
   for (const [eventType, presetGroups] of Object.entries(preset.hooks)) {
     const existing = merged.hooks[eventType] ?? []
     merged.hooks[eventType] = [...existing, ...presetGroups]
@@ -155,13 +155,13 @@ export function applyPreset(current: HooksConfig, preset: HooksConfig): HooksCon
   return merged
 }
 
-export function removeHookerHooks(current: HooksConfig): HooksConfig {
+export function removeArgusHooks(current: HooksConfig): HooksConfig {
   const cleaned: HooksConfig['hooks'] = {}
   for (const [eventType, groups] of Object.entries(current.hooks)) {
     const filteredGroups = groups
       .map((g) => ({
         ...g,
-        hooks: g.hooks.filter((e) => e.statusMessage !== HOOKER_STATUS_MESSAGE),
+        hooks: g.hooks.filter((e) => e.statusMessage !== ARGUS_STATUS_MESSAGE),
       }))
       .filter((g) => g.hooks.length > 0)
     if (filteredGroups.length > 0) {
@@ -171,9 +171,9 @@ export function removeHookerHooks(current: HooksConfig): HooksConfig {
   return { hooks: cleaned }
 }
 
-export function hasAnyHookerHooks(config: HooksConfig): boolean {
+export function hasAnyArgusHooks(config: HooksConfig): boolean {
   return Object.values(config.hooks).some((groups) =>
-    groups.some((g) => g.hooks.some((e) => e.statusMessage === HOOKER_STATUS_MESSAGE))
+    groups.some((g) => g.hooks.some((e) => e.statusMessage === ARGUS_STATUS_MESSAGE))
   )
 }
 
@@ -185,9 +185,9 @@ const AGENT_EVENT_TOTALS: Record<AgentKey, number> = {
 
 /**
  * Returns a human-readable label for the hook config status of an agent.
- * - "Configured (X/Y)" when hooker-managed hooks exist.
- *   X = hooker-managed event count; Y = total available events for this agent.
- * - "Configured" when hooks exist but none are hooker-managed (manual setup).
+ * - "Configured (X/Y)" when argus-managed hooks exist.
+ *   X = argus-managed event count; Y = total available events for this agent.
+ * - "Configured" when hooks exist but none are argus-managed (manual setup).
  * - "Missing" when no hooks are configured at all.
  */
 export function detectHookConfigLabel(agent: AgentKey, config: HooksConfig): string {
@@ -196,16 +196,16 @@ export function detectHookConfigLabel(agent: AgentKey, config: HooksConfig): str
   )
   if (!anyEvents) return 'Missing'
 
-  const hookerEventTypes = new Set(
+  const argusEventTypes = new Set(
     Object.entries(config.hooks)
       .filter(([, groups]) =>
-        groups.some((g) => g.hooks.some((e) => e.statusMessage === HOOKER_STATUS_MESSAGE))
+        groups.some((g) => g.hooks.some((e) => e.statusMessage === ARGUS_STATUS_MESSAGE))
       )
       .map(([eventType]) => eventType)
   )
 
-  if (hookerEventTypes.size === 0) return 'Configured'
+  if (argusEventTypes.size === 0) return 'Configured'
 
   const total = AGENT_EVENT_TOTALS[agent]
-  return `Configured (${hookerEventTypes.size}/${total})`
+  return `Configured (${argusEventTypes.size}/${total})`
 }

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
-	"hooker/internal/repository/sqlite"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/handler"
+	"argus/internal/repository/sqlite"
+	"argus/internal/service"
 )
 
 func TestSessionsTreeHandler_returnsJSON(t *testing.T) {

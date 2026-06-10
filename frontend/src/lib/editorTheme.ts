@@ -11,7 +11,7 @@ const muted = '#8b949e'
 const selection = 'rgba(121, 192, 255, 0.18)'
 const lineHighlight = '#161b22'
 
-export const hookerEditorTheme = EditorView.theme(
+export const argusEditorTheme = EditorView.theme(
   {
     '&': { backgroundColor: bg, color: white },
     '.cm-content': { caretColor: white },
@@ -47,7 +47,7 @@ export const hookerEditorTheme = EditorView.theme(
 export const readOnlyExtensions = [EditorView.lineWrapping, EditorView.editable.of(false)]
 export const editableExtensions = [EditorView.lineWrapping, keymap.of([indentWithTab])]
 
-export const hookerHighlighting = syntaxHighlighting(
+export const argusHighlighting = syntaxHighlighting(
   HighlightStyle.define([
     { tag: tags.propertyName, color: cyan },
     { tag: tags.string, color: orange },

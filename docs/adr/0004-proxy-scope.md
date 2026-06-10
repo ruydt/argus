@@ -6,7 +6,7 @@ Date: 2026-05-27
 ## Context
 
 During local development, the frontend dev server proxies `/api` requests to the local Go
-backend. In production, the Go backend serves both API routes and the embedded React SPA. Hooker
+backend. In production, the Go backend serves both API routes and the embedded React SPA. Argus
 also receives local agent hook payloads at `POST /api/hook`.
 
 ## Decision

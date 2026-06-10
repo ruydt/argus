@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
+	"argus/internal/domain"
+	"argus/internal/handler"
 )
 
 func TestEventsHandlerSessionQueryReturnsOldSessionEvents(t *testing.T) {

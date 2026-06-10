@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"hooker/internal/domain"
-	"hooker/internal/repository/sqlite"
+	"argus/internal/domain"
+	"argus/internal/repository/sqlite"
 )
 
 // newTestFileDB creates a file-based SQLite DB for migration testing.

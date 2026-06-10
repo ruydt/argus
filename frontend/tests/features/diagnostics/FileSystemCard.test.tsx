@@ -4,32 +4,32 @@ import { FileSystemCard } from '@/features/diagnostics/FileSystemCard'
 import type { DiagnosticsFileSystem } from '@/features/diagnostics/types'
 
 const mockFS: DiagnosticsFileSystem = {
-  hookerDir: '/home/user/.hooker',
+  argusDir: '/home/user/.argus',
   binary: {
-    name: 'hooker',
-    path: '/home/user/.hooker/bin/hooker',
+    name: 'argus',
+    path: '/home/user/.argus/bin/argus',
     sizeBytes: 18700000,
     lastModified: '2026-06-08T10:00:00Z',
     exists: true,
   },
   logs: [
     {
-      name: 'hooker.log',
-      path: '/home/user/.hooker/hooker.log',
+      name: 'argus.log',
+      path: '/home/user/.argus/argus.log',
       sizeBytes: 2900000,
       lastModified: '2026-06-08T10:00:00Z',
       exists: true,
     },
     {
       name: 'build.log',
-      path: '/home/user/.hooker/build.log',
+      path: '/home/user/.argus/build.log',
       sizeBytes: null,
       lastModified: null,
       exists: false,
     },
     {
       name: 'hook-scripts.log',
-      path: '/home/user/.hooker/hook-scripts.log',
+      path: '/home/user/.argus/hook-scripts.log',
       sizeBytes: 128,
       lastModified: '2026-06-10T00:00:00Z',
       exists: true,
@@ -38,7 +38,7 @@ const mockFS: DiagnosticsFileSystem = {
   hooks: [
     {
       name: 'permission-request.sh',
-      path: '/home/user/.hooker/hooks/permission-request.sh',
+      path: '/home/user/.argus/hooks/permission-request.sh',
       sizeBytes: 5600,
       lastModified: '2026-06-08T09:00:00Z',
       exists: true,
@@ -80,9 +80,9 @@ describe('FileSystemCard', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders hookerDir', () => {
+  it('renders argusDir', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
-    expect(screen.getByText('/home/user/.hooker')).toBeInTheDocument()
+    expect(screen.getByText('/home/user/.argus')).toBeInTheDocument()
   })
 
   it('renders binary size', () => {
@@ -126,7 +126,7 @@ describe('FileSystemCard', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ file: 'hooker.log', lines: ['log line A', 'log line B'] }),
+        json: () => Promise.resolve({ file: 'argus.log', lines: ['log line A', 'log line B'] }),
       })
     )
     render(<FileSystemCard fileSystem={mockFS} />)

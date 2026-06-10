@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"hooker/internal/fileutil"
+	"argus/internal/fileutil"
 )
 
 func TestResolvePath_absolute(t *testing.T) {

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"hooker/internal/domain"
-	"hooker/internal/handler"
-	"hooker/internal/repository/sqlite"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/handler"
+	"argus/internal/repository/sqlite"
+	"argus/internal/service"
 )
 
 // matchAllMatcher implements handler.IgnoreMatcher and matches every event.
@@ -225,7 +225,7 @@ func TestHookHandlerValidPayloadHasNormalizationStatusOK(t *testing.T) {
 }
 
 func TestHookHandlerAcknowledgesWhenStoreIsTemporarilyLocked(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "hooker-test.db")
+	dbPath := filepath.Join(t.TempDir(), "argus-test.db")
 	db, err := sqlite.New(dbPath)
 	if err != nil {
 		t.Fatalf("sqlite.New: %v", err)

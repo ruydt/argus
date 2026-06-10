@@ -25,7 +25,7 @@ Make the diagnostics page a complete health-check view — system runtime, datab
 
 ### Group 2 — DB Health (new rows in System Facts card)
 
-Hooker's own SQLite database:
+Argus's own SQLite database:
 
 | Row | Source |
 |---|---|
@@ -41,7 +41,7 @@ Always shown regardless of whether files exist. Badge indicates state:
 
 | Section | Path | Empty state |
 |---|---|---|
-| `~/.hooker/hooks` | existing | `(0)` no badge |
+| `~/.argus/hooks` | existing | `(0)` no badge |
 | `~/.claude/hooks` | existing | `(0)` no badge |
 | `~/.claude/history.jsonl` | single file entry | shows size + **line count** |
 | `~/.codex/hooks` | existing | `Uninstalled` amber badge if dir missing, `(0)` if exists but empty |
@@ -100,7 +100,7 @@ type DiagnosticsFileEntry struct {
 
 // Extended DiagnosticsFileSystem
 type DiagnosticsFileSystem struct {
-    HookerDir    string                 `json:"hookerDir"`
+    ArgusDir    string                 `json:"argusDir"`
     Binary       DiagnosticsFileEntry   `json:"binary"`
     Logs         []DiagnosticsFileEntry `json:"logs"`
     Hooks        []DiagnosticsFileEntry `json:"hooks"`

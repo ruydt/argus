@@ -310,8 +310,8 @@ function LoadedContent({ data }: { data: Diagnostics }) {
               <div className="flex flex-col items-center gap-2 py-6 text-center">
                 <p className="text-sm text-foreground">No activity observed yet</p>
                 <p className="text-xs text-muted-foreground">
-                  Run <code className="font-mono">hooker setup</code> or{' '}
-                  <code className="font-mono">hooker doctor</code> to configure hook integrations.
+                  Run <code className="font-mono">argus setup</code> or{' '}
+                  <code className="font-mono">argus doctor</code> to configure hook integrations.
                 </p>
               </div>
             )}

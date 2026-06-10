@@ -2,19 +2,19 @@
 
 ## Goal
 
-Add `~/.hooker/hook-scripts.log` so Diagnostics can show execution details from Hooker-generated hook scripts under `~/.hooker/hooks/`.
+Add `~/.argus/hook-scripts.log` so Diagnostics can show execution details from Argus-generated hook scripts under `~/.argus/hooks/`.
 
-Scope is limited to scripts Hooker generates and owns. Arbitrary user-created scripts in `~/.hooker/hooks/` are not captured because Hooker does not control their execution unless it wraps or rewrites user commands.
+Scope is limited to scripts Argus generates and owns. Arbitrary user-created scripts in `~/.argus/hooks/` are not captured because Argus does not control their execution unless it wraps or rewrites user commands.
 
 ## User Outcome
 
-The Diagnostics File System card lists `hook-scripts.log` alongside `hooker.log` and `build.log`. Users can click Tail and see recent script activity when Hooker's generated hook scripts run, especially startup and activation failures that may otherwise be hidden by hook output suppression.
+The Diagnostics File System card lists `hook-scripts.log` alongside `argus.log` and `build.log`. Users can click Tail and see recent script activity when Argus's generated hook scripts run, especially startup and activation failures that may otherwise be hidden by hook output suppression.
 
 ## Architecture
 
 Logging is produced by installer-generated scripts and consumed by existing diagnostics log-tail infrastructure.
 
-- `install.sh` writes generated scripts that append best-effort diagnostic lines to `~/.hooker/hook-scripts.log`.
+- `install.sh` writes generated scripts that append best-effort diagnostic lines to `~/.argus/hook-scripts.log`.
 - Backend filesystem scan includes `hook-scripts.log` in the stable log list.
 - Backend log-tail endpoint whitelists a new `file=hook-scripts` value and maps it to `hook-scripts.log`.
 - Frontend diagnostics type and File System card reuse existing log row/tail UI for the third log.
@@ -23,15 +23,15 @@ No database schema changes are needed.
 
 ## Log Producers
 
-`start-hooker.sh` logs these events:
+`start-argus.sh` logs these events:
 
 - script start
 - server already running with installed binary
-- different binary found on Hooker port
+- different binary found on Argus port
 - old PID kill requested
 - server launch attempted through `nohup`
 
-`hooker-activate.js` logs these events:
+`argus-activate.js` logs these events:
 
 - activation start
 - server offline and start script invoked
@@ -43,7 +43,7 @@ No database schema changes are needed.
 Each line uses this format:
 
 ```text
-2026-06-10T12:34:56.789Z hooker-activate.js INFO server online
+2026-06-10T12:34:56.789Z argus-activate.js INFO server online
 ```
 
 Logging is best effort. Any logging failure is ignored so hook execution behavior is unchanged.
@@ -56,18 +56,18 @@ Log lines must not include raw hook payloads, prompts, tool outputs, diffs, file
 
 `scanFileSystem()` changes its log list from:
 
-- `hooker.log`
+- `argus.log`
 - `build.log`
 
 to:
 
-- `hooker.log`
+- `argus.log`
 - `build.log`
 - `hook-scripts.log`
 
 `LogTail` accepts:
 
-- `file=hooker` -> `hooker.log`
+- `file=argus` -> `argus.log`
 - `file=build` -> `build.log`
 - `file=hook-scripts` -> `hook-scripts.log`
 
@@ -75,7 +75,7 @@ Unknown values still return `400`. Missing files still return `200` with empty `
 
 ## Frontend
 
-`useLogTail` accepts `'hook-scripts'` in addition to `'hooker'` and `'build'`.
+`useLogTail` accepts `'hook-scripts'` in addition to `'argus'` and `'build'`.
 
 `FileSystemCard` maps `hook-scripts.log` to `useLogTail('hook-scripts', 50)`. Existing UI behavior remains: log rows are listed from diagnostics, Tail fetches on open, Refresh fetches again, missing logs show the existing empty/not-found message.
 
@@ -99,7 +99,7 @@ Installer verification:
 
 ## Non-Goals
 
-- Do not capture arbitrary user scripts in `~/.hooker/hooks/`.
+- Do not capture arbitrary user scripts in `~/.argus/hooks/`.
 - Do not rotate or truncate `hook-scripts.log` in this change.
 - Do not send script logs to SQLite or event stream.
 - Do not expose a new diagnostics page; extend existing File System card only.

@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"hooker/internal/version"
+	"argus/internal/version"
 )
 
 func Version() http.Handler {

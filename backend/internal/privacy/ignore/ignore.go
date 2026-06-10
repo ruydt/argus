@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"hooker/internal/domain"
+	"argus/internal/domain"
 )
 
 // rule represents a single parsed pattern line from the ignore file.

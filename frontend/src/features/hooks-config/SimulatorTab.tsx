@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { hookerEditorTheme, hookerHighlighting, editableExtensions } from '@/lib/editorTheme'
+import { argusEditorTheme, argusHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { getTemplate, HOOK_TEMPLATES } from './hookTemplates'
 import type { AgentKey, HooksConfig } from './types'
 
@@ -199,7 +199,7 @@ export function SimulatorTab({
           <CodeMirror
             value={payloadJSON}
             onChange={onPayloadJSONChange}
-            extensions={[json(), hookerEditorTheme, hookerHighlighting, ...editableExtensions]}
+            extensions={[json(), argusEditorTheme, argusHighlighting, ...editableExtensions]}
             theme="none"
             height="280px"
             basicSetup={{

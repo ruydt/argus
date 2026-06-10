@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"hooker/internal/domain"
+	"argus/internal/domain"
 )
 
 // EventRepository is the storage interface. The SQLite implementation lives in

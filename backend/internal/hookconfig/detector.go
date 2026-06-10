@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"hooker/internal/domain"
+	"argus/internal/domain"
 )
 
 const defaultEndpointSubstring = "10804/api/hook"

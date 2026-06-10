@@ -1,8 +1,8 @@
-# CLAUDE.md — hooker
+# CLAUDE.md — argus
 
 ## Project overview
 
-Hooker = AI coding session observer. Receives hook payloads from Claude Code and Codex via `POST /api/hook`, normalizes them, persists to SQLite, streams to browser via SSE. Frontend is a React SPA: live event feed, session waterfall, dashboard stats, usage breakdown.
+Argus = AI coding session observer. Receives hook payloads from Claude Code and Codex via `POST /api/hook`, normalizes them, persists to SQLite, streams to browser via SSE. Frontend is a React SPA: live event feed, session waterfall, dashboard stats, usage breakdown.
 
 Go backend + React frontend. No external infra. Ships as Docker image or local binary.
 
@@ -11,7 +11,7 @@ Go backend + React frontend. No external infra. Ships as Docker image or local b
 ## What lives where
 
 ```
-hooker/
+argus/
 ├── backend/
 │   ├── cmd/server/          # Binary entry point — wire config → repo → service → router
 │   ├── cmd/seed/            # Dev data seeder
@@ -221,11 +221,11 @@ function renderWith(props) {
 
 ## Project
 
-**hooker**
+**argus**
 
-hooker is a local-first monitoring dashboard for AI coding agent activity. It receives hook payloads from Claude Code, Codex, and Gemini CLI, normalizes them into a canonical event model, persists to SQLite, and streams to a React SPA in real time. Built for solo developers who want visibility into their coding agent sessions without cloud dependencies.
+argus is a local-first monitoring dashboard for AI coding agent activity. It receives hook payloads from Claude Code, Codex, and Gemini CLI, normalizes them into a canonical event model, persists to SQLite, and streams to a React SPA in real time. Built for solo developers who want visibility into their coding agent sessions without cloud dependencies.
 
-**Core Value:** A developer can install hooker from source in under 10 minutes and trust that it reliably captures, stores, and surfaces their coding agent activity without data loss, silent failures, or upgrade surprises.
+**Core Value:** A developer can install argus from source in under 10 minutes and trust that it reliably captures, stores, and surfaces their coding agent activity without data loss, silent failures, or upgrade surprises.
 
 ### Constraints
 

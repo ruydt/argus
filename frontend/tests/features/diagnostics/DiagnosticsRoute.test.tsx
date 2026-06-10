@@ -8,7 +8,7 @@ const minimalDiagnostics: Diagnostics = {
   version: { version: '1.1.0', commit: 'abc12345', buildDate: '2026-05-28' },
   health: { live: true, ready: true },
   storage: {
-    dbPath: '/tmp/hooker.db',
+    dbPath: '/tmp/argus.db',
     dbSizeBytes: 0,
     totalEvents: 0,
     totalSessions: 0,
@@ -24,32 +24,32 @@ const minimalDiagnostics: Diagnostics = {
     cors: { totalOrigins: 1, localOrigins: 1, extraOrigins: 0 },
   },
   fileSystem: {
-    hookerDir: '/home/user/.hooker',
+    argusDir: '/home/user/.argus',
     binary: {
-      name: 'hooker',
-      path: '/home/user/.hooker/bin/hooker',
+      name: 'argus',
+      path: '/home/user/.argus/bin/argus',
       sizeBytes: null,
       lastModified: null,
       exists: false,
     },
     logs: [
       {
-        name: 'hooker.log',
-        path: '/home/user/.hooker/hooker.log',
+        name: 'argus.log',
+        path: '/home/user/.argus/argus.log',
         sizeBytes: null,
         lastModified: null,
         exists: false,
       },
       {
         name: 'build.log',
-        path: '/home/user/.hooker/build.log',
+        path: '/home/user/.argus/build.log',
         sizeBytes: null,
         lastModified: null,
         exists: false,
       },
       {
         name: 'hook-scripts.log',
-        path: '/home/user/.hooker/hook-scripts.log',
+        path: '/home/user/.argus/hook-scripts.log',
         sizeBytes: 128,
         lastModified: '2026-06-10T00:00:00Z',
         exists: true,

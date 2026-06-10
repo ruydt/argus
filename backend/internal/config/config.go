@@ -18,15 +18,15 @@ type Config struct {
 func Load() Config {
 	addr := envOr("ADDR", "127.0.0.1:10804")
 	origins := defaultCORSOrigins(addr)
-	if extra := parseCORSOrigins(os.Getenv("HOOKER_CORS_ORIGINS")); len(extra) > 0 {
+	if extra := parseCORSOrigins(os.Getenv("ARGUS_CORS_ORIGINS")); len(extra) > 0 {
 		origins = append(origins, extra...)
 	}
 	return Config{
 		Addr:        addr,
 		DBPath:      envOr("DB_PATH", defaultDBPath()),
-		IgnorePath:  envOr("HOOKER_IGNORE", defaultIgnorePath()),
+		IgnorePath:  envOr("ARGUS_IGNORE", defaultIgnorePath()),
 		CORSOrigins: origins,
-		AllowRemote: os.Getenv("HOOKER_ALLOW_REMOTE") == "1",
+		AllowRemote: os.Getenv("ARGUS_ALLOW_REMOTE") == "1",
 	}
 }
 
@@ -59,13 +59,13 @@ func parseCORSOrigins(s string) []string {
 }
 
 // defaultIgnorePath returns the canonical default ignore file path:
-// ~/.config/hooker/ignore (D-01).
+// ~/.config/argus/ignore (D-01).
 func defaultIgnorePath() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(".config", "hooker", "ignore")
+		return filepath.Join(".config", "argus", "ignore")
 	}
-	return filepath.Join(home, ".config", "hooker", "ignore")
+	return filepath.Join(home, ".config", "argus", "ignore")
 }
 
 func envOr(key, fallback string) string {
@@ -83,13 +83,13 @@ func defaultDBPath() string {
 
 	// Case 1: started somewhere under backend/ (e.g. backend or backend/cmd/server).
 	if backendRoot, ok := findBackendRoot(cwd); ok {
-		return filepath.Join(backendRoot, "hooker.db")
+		return filepath.Join(backendRoot, "argus.db")
 	}
 
 	// Case 2: started from repository root that contains a backend/ folder.
 	backendDir := filepath.Join(cwd, "backend")
 	if isBackendRoot(backendDir) {
-		return filepath.Join(backendDir, "hooker.db")
+		return filepath.Join(backendDir, "argus.db")
 	}
 
 	// Case 3: launched from an unrelated cwd; infer from executable location.
@@ -124,8 +124,8 @@ func defaultFromExecutable() string {
 	exePath, err := os.Executable()
 	if err == nil {
 		if backendRoot, ok := findBackendRoot(filepath.Dir(exePath)); ok {
-			return filepath.Join(backendRoot, "hooker.db")
+			return filepath.Join(backendRoot, "argus.db")
 		}
 	}
-	return "hooker.db"
+	return "argus.db"
 }

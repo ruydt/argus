@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"hooker/internal/domain"
-	"hooker/internal/service"
+	"argus/internal/domain"
+	"argus/internal/service"
 )
 
 func FileChanges(svc *service.EventService) http.Handler {

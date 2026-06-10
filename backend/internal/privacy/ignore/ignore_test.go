@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"hooker/internal/domain"
-	"hooker/internal/privacy/ignore"
+	"argus/internal/domain"
+	"argus/internal/privacy/ignore"
 )
 
 // writeIgnoreFile writes content to a temp file and returns its path.
@@ -345,7 +345,7 @@ func TestMatchEvent_EmptyCWDAndPath(t *testing.T) {
 	}
 }
 
-// TestLoad_HOOKER_IGNORE verifies that HOOKER_IGNORE env var controls the path
+// TestLoad_ARGUS_IGNORE verifies that ARGUS_IGNORE env var controls the path
 // (config-level behavior is tested in config_test; this exercises the Load function directly).
 func TestLoad_ExplicitPathTakesEffect(t *testing.T) {
 	// Write two different ignore files.

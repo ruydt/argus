@@ -5,14 +5,14 @@ import path from 'path'
 import { defineConfig } from 'vitest/config'
 
 const versionPath = path.resolve(__dirname, '../VERSION')
-const hookerVersion = fs.existsSync(versionPath)
+const argusVersion = fs.existsSync(versionPath)
   ? fs.readFileSync(versionPath, 'utf8').trim()
   : '0.0.0-dev'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
-    __HOOKER_VERSION__: JSON.stringify(hookerVersion),
+    __ARGUS_VERSION__: JSON.stringify(argusVersion),
   },
   resolve: {
     alias: {

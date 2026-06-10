@@ -11,24 +11,24 @@ describe('useLogTail', () => {
   })
 
   it('does not fetch on mount', () => {
-    renderHook(() => useLogTail('hooker'))
+    renderHook(() => useLogTail('argus'))
     expect(fetch).not.toHaveBeenCalled()
   })
 
   it('fetches when fetch() is called', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ file: 'hooker.log', lines: ['line1', 'line2'] }),
+      json: () => Promise.resolve({ file: 'argus.log', lines: ['line1', 'line2'] }),
     })
     vi.stubGlobal('fetch', mockFetch)
 
-    const { result } = renderHook(() => useLogTail('hooker', 10))
+    const { result } = renderHook(() => useLogTail('argus', 10))
 
     await act(async () => {
       await result.current.fetch()
     })
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/diagnostics/log-tail?file=hooker&lines=10')
+    expect(mockFetch).toHaveBeenCalledWith('/api/diagnostics/log-tail?file=argus&lines=10')
     expect(result.current.lines).toEqual(['line1', 'line2'])
     expect(result.current.loading).toBe(false)
     expect(result.current.error).toBeNull()
@@ -68,10 +68,10 @@ describe('useLogTail', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ file: 'hooker.log', lines: ['x'] }),
+        json: () => Promise.resolve({ file: 'argus.log', lines: ['x'] }),
       })
     )
-    const { result } = renderHook(() => useLogTail('hooker'))
+    const { result } = renderHook(() => useLogTail('argus'))
 
     await act(async () => {
       await result.current.fetch()
