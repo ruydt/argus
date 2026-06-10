@@ -223,7 +223,7 @@ function renderWith(props) {
 
 **argus**
 
-argus is a local-first monitoring dashboard for AI coding agent activity. It receives hook payloads from Claude Code, Codex, and Gemini CLI, normalizes them into a canonical event model, persists to SQLite, and streams to a React SPA in real time. Built for solo developers who want visibility into their coding agent sessions without cloud dependencies.
+argus is a local-first monitoring dashboard for AI coding agent activity. It receives hook payloads from Claude Code and Codex normalizes them into a canonical event model, persists to SQLite, and streams to a React SPA in real time. Built for solo developers who want visibility into their coding agent sessions without cloud dependencies.
 
 **Core Value:** A developer can install argus from source in under 10 minutes and trust that it reliably captures, stores, and surfaces their coding agent activity without data loss, silent failures, or upgrade surprises.
 
@@ -425,7 +425,7 @@ argus is a local-first monitoring dashboard for AI coding agent activity. It rec
 - Examples: `backend/internal/service/event_service.go`
 - Pattern: Single orchestrator service.
 - Purpose: Convert source-specific payloads into `domain.NormalizedEvent`.
-- Examples: `backend/internal/agents/claudecode`, `backend/internal/agents/codex`, `backend/internal/agents/geminicli`
+- Examples: `backend/internal/agents/claudecode`, `backend/internal/agents/codex`
 - Pattern: Handler-selected strategy by transcript/source metadata.
 
 ## Entry Points

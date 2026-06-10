@@ -34,6 +34,10 @@ function agentColor(agent: string, index: number) {
 
 export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProps) {
   const { data, series } = useMemo(() => toTokenTimelineByAgentData(stats, query), [stats, query])
+  const xAxisTicks = useMemo(
+    () => (data.length <= 31 ? data.map((row) => String(row.date)) : undefined),
+    [data]
+  )
 
   const labelByBucket = useMemo(
     () =>
@@ -56,9 +60,8 @@ export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProp
       ),
     [series]
   )
-
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle className="text-sm font-medium text-muted-foreground">
           Tokens over time
@@ -67,8 +70,8 @@ export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProp
       <CardContent className="px-3 sm:px-6">
         <div className="h-[300px] min-w-0 w-full">
           {data.length > 0 ? (
-            <ChartContainer config={chartConfig} className="h-full w-full">
-              <AreaChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+            <ChartContainer config={chartConfig} className="h-full w-[calc(100%+40px)] -mx-5">
+              <AreaChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 0 }}>
                 <defs>
                   {series.map((agent) => (
                     <linearGradient
@@ -91,6 +94,8 @@ export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProp
                   fontSize={10}
                   axisLine={false}
                   tickLine={false}
+                  ticks={xAxisTicks}
+                  interval={xAxisTicks ? 0 : 'preserveStartEnd'}
                   tickFormatter={(value) => labelByBucket.get(String(value)) || String(value)}
                 />
                 <YAxis

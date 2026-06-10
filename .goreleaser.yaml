@@ -46,14 +46,13 @@ release:
   header: |
     ## Argus v0.1.0 — First Public Release
 
-    **Argus** is a local-first monitoring dashboard for AI coding agent activity. Install it in under 10 minutes and get full visibility into your Claude Code, Codex, and Gemini CLI sessions — no cloud dependencies, no data leaving your machine.
+    **Argus** is a local-first monitoring dashboard for AI coding agent activity. Install it in under 10 minutes and get full visibility into your Claude Code and Codex sessions — no cloud dependencies, no data leaving your machine.
 
     ### What's included
 
     **Agents supported**
     - Claude Code — full hook payload normalization, token usage breakdown, tool call rendering
     - Codex — session tracking, file diff rendering, tool call events
-    - Gemini CLI (Antigravity) — hook payload normalization and session tracking
 
     **Event feed**
     - Real-time event stream via SSE
@@ -77,7 +76,7 @@ release:
     - Version and build info endpoint
 
     **Hooks configuration UI**
-    - Generate and install `hooks.json` for Claude Code, Codex, and Gemini CLI
+    - Generate and install `hooks.json` for Claude Code, Codex
     - Preset levels: minimal, standard, full
     - One-click install / uninstall scripts
     - Simulate hooks behavior
