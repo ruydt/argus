@@ -80,9 +80,7 @@ release:
     - Generate and install `hooks.json` for Claude Code, Codex, and Gemini CLI
     - Preset levels: minimal, standard, full
     - One-click install / uninstall scripts
-
-    **Privacy**
-    - `.argusignore` support to exclude paths from context enrichment
+    - Simulate hooks behavior
 
     ### Install
 
