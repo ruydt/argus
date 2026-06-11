@@ -1,9 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestScanFileSystemPopulatesEntries(t *testing.T) {
@@ -57,6 +59,51 @@ func TestScanFileSystemPopulatesEntries(t *testing.T) {
 	}
 	if fs.Hooks[0].Name != "myhook.sh" {
 		t.Errorf("hooks[0].name = %q, want myhook.sh", fs.Hooks[0].Name)
+	}
+}
+
+func TestScanDirCapsEntriesNewestFirst(t *testing.T) {
+	dir := t.TempDir()
+	// maxDirEntries+50 files with strictly increasing mtimes.
+	base := time.Now().Add(-24 * time.Hour)
+	for i := 0; i < maxDirEntries+50; i++ {
+		path := filepath.Join(dir, fmt.Sprintf("f%04d.txt", i))
+		if err := os.WriteFile(path, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		mtime := base.Add(time.Duration(i) * time.Second)
+		if err := os.Chtimes(path, mtime, mtime); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	entries, total := scanDir(dir)
+	if total != maxDirEntries+50 {
+		t.Errorf("total = %d, want %d", total, maxDirEntries+50)
+	}
+	if len(entries) != maxDirEntries {
+		t.Fatalf("len(entries) = %d, want %d", len(entries), maxDirEntries)
+	}
+	// Newest file (highest index) must be first; oldest 50 must be dropped.
+	if entries[0].Name != fmt.Sprintf("f%04d.txt", maxDirEntries+49) {
+		t.Errorf("entries[0].name = %q, want newest file", entries[0].Name)
+	}
+	last := entries[len(entries)-1].Name
+	if last != "f0050.txt" {
+		t.Errorf("entries[last].name = %q, want f0050.txt (oldest 50 dropped)", last)
+	}
+}
+
+func TestScanDirUnderCapReturnsAll(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"a.txt", "b.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	entries, total := scanDir(dir)
+	if total != 2 || len(entries) != 2 {
+		t.Errorf("entries=%d total=%d, want 2/2", len(entries), total)
 	}
 }
 

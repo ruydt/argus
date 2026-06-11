@@ -695,41 +695,30 @@ func statEntryWithLineCount(name, path string) domain.DiagnosticsFileEntry {
 	return entry
 }
 
-func scanDir(dir string) []domain.DiagnosticsFileEntry {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return []domain.DiagnosticsFileEntry{}
-	}
-	var result []domain.DiagnosticsFileEntry
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		info, err := e.Info()
-		if err != nil {
-			continue
-		}
-		size := info.Size()
-		mod := info.ModTime().UTC().Format(time.RFC3339)
-		result = append(result, domain.DiagnosticsFileEntry{
-			Name:         e.Name(),
-			Path:         filepath.Join(dir, e.Name()),
-			SizeBytes:    &size,
-			LastModified: &mod,
-			Exists:       true,
-		})
-	}
-	return result
+// maxDirEntries caps directory listings in diagnostics responses so a runaway
+// directory (thousands of loose files) cannot bloat the JSON payload or the UI.
+// The full count is still reported alongside the capped list.
+const maxDirEntries = 200
+
+// scanDir lists regular files in dir, newest first, capped at maxDirEntries.
+// The second return value is the uncapped total.
+func scanDir(dir string) ([]domain.DiagnosticsFileEntry, int) {
+	return scanDirMatching(dir, func(string) bool { return true })
 }
 
-func scanDirFiltered(dir string, suffix string) []domain.DiagnosticsFileEntry {
+// scanDirFiltered is scanDir restricted to names ending in suffix.
+func scanDirFiltered(dir string, suffix string) ([]domain.DiagnosticsFileEntry, int) {
+	return scanDirMatching(dir, func(name string) bool { return strings.HasSuffix(name, suffix) })
+}
+
+func scanDirMatching(dir string, match func(string) bool) ([]domain.DiagnosticsFileEntry, int) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return []domain.DiagnosticsFileEntry{}
+		return []domain.DiagnosticsFileEntry{}, 0
 	}
 	var result []domain.DiagnosticsFileEntry
 	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), suffix) {
+		if e.IsDir() || !match(e.Name()) {
 			continue
 		}
 		info, err := e.Info()
@@ -746,7 +735,16 @@ func scanDirFiltered(dir string, suffix string) []domain.DiagnosticsFileEntry {
 			Exists:       true,
 		})
 	}
-	return result
+	total := len(result)
+	// Newest first so the capped window keeps the most relevant files.
+	// LastModified is RFC3339 UTC, so string order == time order.
+	slices.SortFunc(result, func(a, b domain.DiagnosticsFileEntry) int {
+		return strings.Compare(*b.LastModified, *a.LastModified)
+	})
+	if len(result) > maxDirEntries {
+		result = result[:maxDirEntries]
+	}
+	return result, total
 }
 
 func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
@@ -758,11 +756,11 @@ func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 			statEntry("build.log", filepath.Join(argusDir, "build.log")),
 			statEntry("hook-scripts.log", filepath.Join(argusDir, "hook-scripts.log")),
 		},
-		Hooks:       scanDir(filepath.Join(argusDir, "hooks")),
 		ClaudeHooks: []domain.DiagnosticsFileEntry{},
 		CodexHooks:  []domain.DiagnosticsFileEntry{},
 		CodexDBs:    []domain.DiagnosticsFileEntry{},
 	}
+	fs.Hooks, fs.HooksTotal = scanDir(filepath.Join(argusDir, "hooks"))
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -774,7 +772,7 @@ func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 	fs.ClaudeDirExists = pathExists(claudeDir)
 	claudeHooksDir := filepath.Join(claudeDir, "hooks")
 	fs.ClaudeHooksDirExists = pathExists(claudeHooksDir)
-	fs.ClaudeHooks = scanDir(claudeHooksDir)
+	fs.ClaudeHooks, fs.ClaudeHooksTotal = scanDir(claudeHooksDir)
 	fs.ClaudeHistory = statEntryWithLineCount("history.jsonl", filepath.Join(claudeDir, "history.jsonl"))
 
 	codexDir := filepath.Join(homeDir, ".codex")
@@ -782,9 +780,9 @@ func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 	fs.CodexDirExists = pathExists(codexDir)
 	codexHooksDir := filepath.Join(codexDir, "hooks")
 	fs.CodexHooksDirExists = pathExists(codexHooksDir)
-	fs.CodexHooks = scanDir(codexHooksDir)
+	fs.CodexHooks, fs.CodexHooksTotal = scanDir(codexHooksDir)
 	fs.CodexDBsDirExists = pathExists(codexDir)
-	fs.CodexDBs = scanDirFiltered(codexDir, ".sqlite")
+	fs.CodexDBs, fs.CodexDBsTotal = scanDirFiltered(codexDir, ".sqlite")
 
 	return fs
 }

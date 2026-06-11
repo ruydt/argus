@@ -116,16 +116,20 @@ type DiagnosticsFileSystem struct {
 	Binary               DiagnosticsFileEntry   `json:"binary"`
 	Logs                 []DiagnosticsFileEntry `json:"logs"`
 	Hooks                []DiagnosticsFileEntry `json:"hooks"`
+	HooksTotal           int                    `json:"hooksTotal"`
 	ClaudeDir            string                 `json:"claudeDir"`
 	ClaudeDirExists      bool                   `json:"claudeDirExists"`
 	ClaudeHooks          []DiagnosticsFileEntry `json:"claudeHooks"`
+	ClaudeHooksTotal     int                    `json:"claudeHooksTotal"`
 	ClaudeHooksDirExists bool                   `json:"claudeHooksDirExists"`
 	ClaudeHistory        DiagnosticsFileEntry   `json:"claudeHistory"`
 	CodexDir             string                 `json:"codexDir"`
 	CodexDirExists       bool                   `json:"codexDirExists"`
 	CodexHooks           []DiagnosticsFileEntry `json:"codexHooks"`
+	CodexHooksTotal      int                    `json:"codexHooksTotal"`
 	CodexHooksDirExists  bool                   `json:"codexHooksDirExists"`
 	CodexDBs             []DiagnosticsFileEntry `json:"codexDBs"`
+	CodexDBsTotal        int                    `json:"codexDBsTotal"`
 	CodexDBsDirExists    bool                   `json:"codexDBsDirExists"`
 }
 

@@ -130,14 +130,19 @@ type SubSectionProps = {
   entries: DiagnosticsFileEntry[]
   dirExists: boolean
   emptyLabel?: string
+  total?: number
 }
 
-function SubSection({ label, entries, dirExists, emptyLabel }: SubSectionProps) {
+function SubSection({ label, entries, dirExists, emptyLabel, total }: SubSectionProps) {
+  // Backend caps listings; total carries the uncapped directory count.
+  const truncated = total !== undefined && total > entries.length
   return (
     <div className="mt-2">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-[11px] font-mono text-muted-foreground">{label}</span>
-        <span className="text-[11px] text-muted-foreground">({entries.length})</span>
+        <span className="text-[11px] text-muted-foreground">
+          ({truncated ? `${entries.length} of ${total.toLocaleString()}` : entries.length})
+        </span>
         {!dirExists && <UninstalledBadge />}
       </div>
       {entries.length === 0 && dirExists ? (
@@ -275,7 +280,12 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
         <Separator />
 
         {/* ~/.argus/hooks */}
-        <SubSection label="hooks" entries={fileSystem.hooks} dirExists={true} />
+        <SubSection
+          label="hooks"
+          entries={fileSystem.hooks}
+          dirExists={true}
+          total={fileSystem.hooksTotal}
+        />
 
         <Separator />
 
@@ -304,6 +314,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
           label="hooks"
           entries={fileSystem.claudeHooks ?? []}
           dirExists={fileSystem.claudeHooksDirExists}
+          total={fileSystem.claudeHooksTotal}
         />
         <div className="mt-2 border-l border-border pl-3">
           <div className="flex items-center justify-between py-1.5 text-[13px]">
@@ -354,12 +365,14 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
           label="hooks"
           entries={fileSystem.codexHooks ?? []}
           dirExists={fileSystem.codexHooksDirExists}
+          total={fileSystem.codexHooksTotal}
         />
         <SubSection
           label="databases"
           entries={fileSystem.codexDBs ?? []}
           dirExists={fileSystem.codexDBsDirExists}
           emptyLabel="No databases found"
+          total={fileSystem.codexDBsTotal}
         />
 
         {/* Warning for missing binary */}
