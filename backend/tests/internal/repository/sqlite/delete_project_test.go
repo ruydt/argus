@@ -12,7 +12,11 @@ func TestDeleteProjectByCWDCascades(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("close db: %v", err)
+		}
+	}()
 
 	seed := func(session, cwd, ts string) {
 		t.Helper()
@@ -75,7 +79,11 @@ func TestDeleteProjectByCWDNoMatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Errorf("close db: %v", err)
+		}
+	}()
 
 	sessionsDeleted, eventsDeleted, err := db.DeleteProjectByCWD("/nope")
 	if err != nil {
