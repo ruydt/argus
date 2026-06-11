@@ -1,5 +1,6 @@
 import { Columns2, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,6 +11,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+
+const ACTION_VALUES = [
+  'EDIT',
+  'READ',
+  'BASH',
+  'TOOL',
+  'SESSION',
+  'STOP',
+  'PROMPT',
+  'AGENT',
+  'TASK',
+  'NOTIFY',
+  'COMPACT',
+  'FILE',
+  'CONFIG',
+  'WORKTREE',
+  'PERMISSION',
+  'CWD',
+  'BATCH',
+  'INSTRUCT',
+  'DISPLAY',
+  'ELICIT',
+]
+
+const ACTION_OPTIONS = [
+  { label: 'All', value: 'all' },
+  ...ACTION_VALUES.map((a) => ({ label: a, value: a })),
+]
 
 type EventFiltersProps = {
   actionFilter: string
@@ -74,36 +103,14 @@ export function EventFilters({
     >
       <div className="flex w-full items-center gap-2 sm:w-auto">
         <span className="text-[0.7rem] text-[#666]">Action</span>
-        <Select value={actionFilter} onValueChange={setActionFilter}>
-          <SelectTrigger className="h-auto w-full px-2 py-1 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[100px] focus:ring-0 focus:ring-offset-0">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
-            <SelectGroup>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="EDIT">EDIT</SelectItem>
-              <SelectItem value="READ">READ</SelectItem>
-              <SelectItem value="BASH">BASH</SelectItem>
-              <SelectItem value="TOOL">TOOL</SelectItem>
-              <SelectItem value="SESSION">SESSION</SelectItem>
-              <SelectItem value="STOP">STOP</SelectItem>
-              <SelectItem value="PROMPT">PROMPT</SelectItem>
-              <SelectItem value="AGENT">AGENT</SelectItem>
-              <SelectItem value="TASK">TASK</SelectItem>
-              <SelectItem value="NOTIFY">NOTIFY</SelectItem>
-              <SelectItem value="COMPACT">COMPACT</SelectItem>
-              <SelectItem value="FILE">FILE</SelectItem>
-              <SelectItem value="CONFIG">CONFIG</SelectItem>
-              <SelectItem value="WORKTREE">WORKTREE</SelectItem>
-              <SelectItem value="PERMISSION">PERMISSION</SelectItem>
-              <SelectItem value="CWD">CWD</SelectItem>
-              <SelectItem value="BATCH">BATCH</SelectItem>
-              <SelectItem value="INSTRUCT">INSTRUCT</SelectItem>
-              <SelectItem value="DISPLAY">DISPLAY</SelectItem>
-              <SelectItem value="ELICIT">ELICIT</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={actionFilter}
+          onValueChange={setActionFilter}
+          options={ACTION_OPTIONS}
+          placeholder="All"
+          ariaLabel="Filter by action"
+          className="h-auto w-full px-2 py-1 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[100px]"
+        />
       </div>
 
       {availableAgents.length > 0 && (
