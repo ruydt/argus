@@ -120,7 +120,7 @@ export function SimulatorTab({
       const command = composeScriptCommand(script, agent)
       if (seen.has(command)) return
       seen.add(command)
-      opts.push({ label: `script: ${script.name}`, value: command })
+      opts.push({ label: `${script.name}`, value: command })
     })
     return opts
   })()
@@ -211,8 +211,8 @@ export function SimulatorTab({
           value={commandValue}
           onValueChange={handleCommandValueChange}
           options={commandSelectOptions}
-          placeholder="Select hook command"
-          ariaLabel="Select hook command"
+          placeholder="command/script (~/.argus/hooks/...)"
+          ariaLabel="command/script (~/.argus/hooks/...)"
           disabled={!eventType}
           className="flex-1"
         />

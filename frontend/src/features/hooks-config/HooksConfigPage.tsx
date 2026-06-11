@@ -226,6 +226,11 @@ export function HooksConfigPage() {
   async function handleSimulatorApply(eventType: string, command: string) {
     const state = activeAgent === 'claudecode' ? claudeState : codexState
     const currentConfig = state.config ?? { hooks: {} }
+    // Idempotent: command already wired for this event → nothing to add
+    const exists = (currentConfig.hooks[eventType] ?? []).some((g) =>
+      g.hooks.some((h) => h.command === command)
+    )
+    if (exists) return
     const newGroup: HookGroup = {
       id: crypto.randomUUID(),
       hooks: [{ id: crypto.randomUUID(), type: 'command', command } satisfies HookEntry],

@@ -71,14 +71,14 @@ describe('SimulatorTab script options', () => {
     const onChange = renderTab('claudecode')
     const user = userEvent.setup()
 
-    const commandTrigger = await screen.findByRole('combobox', { name: /hook command/i })
+    const commandTrigger = await screen.findByRole('combobox', { name: /command\/script/i })
     await user.click(commandTrigger)
 
-    expect(await screen.findByText('script: stop.js')).toBeInTheDocument()
-    expect(screen.getByText('script: notify.sh')).toBeInTheDocument()
+    expect(await screen.findByText('stop.js')).toBeInTheDocument()
+    expect(screen.getByText('notify.sh')).toBeInTheDocument()
     expect(screen.queryByText(/README/)).not.toBeInTheDocument()
 
-    await user.click(screen.getByText('script: stop.js'))
+    await user.click(screen.getByText('stop.js'))
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith('CLAUDECODE=1 node "/Users/dev/.argus/hooks/stop.js"')
     })
@@ -89,8 +89,8 @@ describe('SimulatorTab script options', () => {
     const onChange = renderTab('codex')
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('combobox', { name: /hook command/i }))
-    await user.click(await screen.findByText('script: notify.sh'))
+    await user.click(await screen.findByRole('combobox', { name: /command\/script/i }))
+    await user.click(await screen.findByText('notify.sh'))
 
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith('sh "/Users/dev/.argus/hooks/notify.sh"')
@@ -102,13 +102,13 @@ describe('SimulatorTab script options', () => {
     renderTab('claudecode')
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('combobox', { name: /hook command/i }))
+    await user.click(await screen.findByRole('combobox', { name: /command\/script/i }))
     const search = await screen.findByPlaceholderText('Search…')
     await user.type(search, 'notify')
 
     await waitFor(() => {
-      expect(screen.queryByText('script: stop.js')).not.toBeInTheDocument()
+      expect(screen.queryByText('stop.js')).not.toBeInTheDocument()
     })
-    expect(screen.getByText('script: notify.sh')).toBeInTheDocument()
+    expect(screen.getByText('notify.sh')).toBeInTheDocument()
   })
 })
