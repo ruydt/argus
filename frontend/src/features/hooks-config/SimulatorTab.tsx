@@ -8,13 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { argusEditorTheme, argusHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { getTemplate, HOOK_TEMPLATES } from './hookTemplates'
 import type { AgentKey, HooksConfig } from './types'
@@ -205,18 +198,14 @@ export function SimulatorTab({
   return (
     <div className="flex flex-col gap-4 mt-4">
       <div className="flex gap-3">
-        <Select value={eventType} onValueChange={handleEventTypeChange}>
-          <SelectTrigger className="flex-1">
-            <SelectValue placeholder="Select hook event" />
-          </SelectTrigger>
-          <SelectContent>
-            {eventTypes.map((et) => (
-              <SelectItem key={et} value={et}>
-                {et}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={eventType}
+          onValueChange={handleEventTypeChange}
+          options={eventTypes.map((et) => ({ label: et, value: et }))}
+          placeholder="Select hook event"
+          ariaLabel="Select hook event"
+          className="flex-1"
+        />
 
         <SearchableSelect
           value={commandValue}
