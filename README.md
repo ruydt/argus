@@ -6,6 +6,11 @@ Local-first monitoring dashboard for AI coding agent activity. Receives hook pay
 Claude Code and Codex, normalizes them to a canonical event model, persists to
 SQLite, and streams to a React SPA in real time.
 
+Highlights: live event feed, per-project session explorer, usage dashboard, hooks
+config editor with one-click presets, and a **hook simulator** — run any hook command
+or `~/.argus/hooks` script against a synthetic event payload and inspect its
+stdout/stderr/exit code without waiting for a real agent session.
+
 ## Quick start
 
 ```bash
@@ -32,6 +37,7 @@ Stops the server, removes binaries and scripts, unwires hooks from `~/.claude/se
 ## Documentation
 
 - [docs/quickstart.md](docs/quickstart.md) - first-event walkthrough (under 10 minutes)
+- [docs/hooks.md](docs/hooks.md) - hook setup, presets, and the hook simulator
 - [docs/install.md](docs/install.md) - full install reference, support matrix, data lifecycle
 - [docs/privacy.md](docs/privacy.md) - capture categories, ignore controls, export implications
 - [docs/security.md](docs/security.md) - local threat model and remote-sharing posture

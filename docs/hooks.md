@@ -36,6 +36,25 @@ Click **Remove Argus hooks** to strip all entries tagged `statusMessage: "argus"
 
 ---
 
+## Hook simulator
+
+The **Simulator** tab on the Hooks Config page runs any hook command against a synthetic payload — no live agent session needed. Use it to test a guardrail script before wiring it, debug a hook that misbehaves, or inspect exactly what an event payload looks like.
+
+How it works:
+
+1. Pick a **hook event** (searchable — every event type the selected agent supports). A realistic JSON payload template loads into the editor; edit it freely.
+2. Pick a **command**:
+   - hooks already wired in your config for that event,
+   - scripts auto-discovered from `~/.argus/hooks` (`.js` runs with `node`, `.sh` with `sh`, `.py` with `python3`; on the Claude Code tab the command is prefixed with `CLAUDECODE=1` so scripts exercise their Claude Code output path),
+   - or **Custom command…** for anything else.
+3. Click **Run**. The backend executes the command with the payload piped to stdin (the hook contract), honoring the hook's configured timeout (default 10s), and shows stdout, stderr, exit code, and duration.
+
+A custom command can be saved into your hooks config for the selected event with **Apply to config** (idempotent — applying the same command twice adds nothing).
+
+Example: select `PreToolUse`, pick `block-dangerous.js`, set `tool_input.command` to `rm -rf ~` in the payload — the output panel shows the deny JSON the agent would receive.
+
+---
+
 ## Manual JSON setup
 
 If you prefer editing config files directly, see the per-agent guides:
