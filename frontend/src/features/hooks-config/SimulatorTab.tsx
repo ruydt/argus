@@ -3,6 +3,7 @@ import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
 import { Check, RefreshCw, Terminal } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
+import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -131,6 +132,11 @@ export function SimulatorTab({
     return opts
   })()
 
+  const commandSelectOptions = [
+    ...commandOptions.map(({ label, value }) => ({ label, value })),
+    { label: 'Custom command…', value: CUSTOM_VALUE },
+  ]
+
   const effectiveCommand = commandValue === CUSTOM_VALUE ? customCommandText.trim() : commandValue
   const selectedHookTimeout =
     commandValue === CUSTOM_VALUE
@@ -212,19 +218,15 @@ export function SimulatorTab({
           </SelectContent>
         </Select>
 
-        <Select value={commandValue} onValueChange={handleCommandValueChange} disabled={!eventType}>
-          <SelectTrigger className="flex-1" aria-label="Select hook command">
-            <SelectValue placeholder="Select hook command" />
-          </SelectTrigger>
-          <SelectContent>
-            {commandOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-            <SelectItem value={CUSTOM_VALUE}>Custom command…</SelectItem>
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={commandValue}
+          onValueChange={handleCommandValueChange}
+          options={commandSelectOptions}
+          placeholder="Select hook command"
+          ariaLabel="Select hook command"
+          disabled={!eventType}
+          className="flex-1"
+        />
       </div>
 
       {commandValue === CUSTOM_VALUE && (

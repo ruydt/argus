@@ -56,6 +56,14 @@ describe('SimulatorTab script options', () => {
     window.HTMLElement.prototype.setPointerCapture = () => {}
     window.HTMLElement.prototype.releasePointerCapture = () => {}
     window.HTMLElement.prototype.scrollIntoView = () => {}
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+    )
   })
 
   it('lists hook scripts and composes CLAUDECODE command for claudecode agent', async () => {
@@ -87,5 +95,20 @@ describe('SimulatorTab script options', () => {
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith('sh "/Users/dev/.argus/hooks/notify.sh"')
     })
+  })
+
+  it('filters script options via search input', async () => {
+    stubDiagnosticsFetch()
+    renderTab('claudecode')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('combobox', { name: /hook command/i }))
+    const search = await screen.findByPlaceholderText('Search…')
+    await user.type(search, 'notify')
+
+    await waitFor(() => {
+      expect(screen.queryByText('script: stop.js')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('script: notify.sh')).toBeInTheDocument()
   })
 })
