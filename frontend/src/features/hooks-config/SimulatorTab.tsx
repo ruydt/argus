@@ -35,7 +35,7 @@ function scriptExtension(name: string): string {
 
 function composeScriptCommand(script: HookScript, agent: AgentKey): string {
   const runner = SCRIPT_RUNNERS[scriptExtension(script.name)]
-  const base = `${runner} ${script.path}`
+  const base = `${runner} "${script.path}"`
   return agent === 'claudecode' ? `CLAUDECODE=1 ${base}` : base
 }
 

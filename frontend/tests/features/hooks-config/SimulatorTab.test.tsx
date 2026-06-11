@@ -72,7 +72,7 @@ describe('SimulatorTab script options', () => {
 
     await user.click(screen.getByText('script: stop.js'))
     await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith('CLAUDECODE=1 node /Users/dev/.argus/hooks/stop.js')
+      expect(onChange).toHaveBeenCalledWith('CLAUDECODE=1 node "/Users/dev/.argus/hooks/stop.js"')
     })
   })
 
@@ -85,7 +85,7 @@ describe('SimulatorTab script options', () => {
     await user.click(await screen.findByText('script: notify.sh'))
 
     await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith('sh /Users/dev/.argus/hooks/notify.sh')
+      expect(onChange).toHaveBeenCalledWith('sh "/Users/dev/.argus/hooks/notify.sh"')
     })
   })
 })
