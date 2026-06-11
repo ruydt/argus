@@ -330,6 +330,11 @@ func (s *EventService) ListProjects() ([]domain.Project, error) {
 	return s.repo.ListProjects()
 }
 
+// DeleteProject removes all sessions and events recorded under cwd.
+func (s *EventService) DeleteProject(cwd string) (sessionsDeleted, eventsDeleted int64, err error) {
+	return s.repo.DeleteProjectByCWD(cwd)
+}
+
 func (s *EventService) ListSessions() ([]domain.Session, error) {
 	sessions, err := s.repo.ListSessions()
 	if err != nil {

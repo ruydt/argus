@@ -96,6 +96,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 		ArgusDir: opts.ArgusDir,
 	}))
 	mux.Handle("GET /api/projects", handler.Projects(svc))
+	mux.Handle("DELETE /api/projects", handler.Projects(svc))
 	mux.Handle("GET /api/sessions", handler.Sessions(svc))
 	mux.Handle("GET /api/sessions/tree", handler.SessionsTree(svc))
 	mux.Handle("GET /api/file-changes", handler.FileChanges(svc))
