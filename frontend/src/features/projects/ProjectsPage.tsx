@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FolderKanban } from 'lucide-react'
+import { FolderKanban, Trash2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 import type { Project } from '@/types/sessions'
 
 async function loadProjects(signal: AbortSignal): Promise<Project[]> {
@@ -12,6 +23,8 @@ async function loadProjects(signal: AbortSignal): Promise<Project[]> {
 
 export function ProjectsPage() {
   const [projects, setProjects] = useState<Project[] | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<Project | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -30,6 +43,23 @@ export function ProjectsPage() {
       window.clearInterval(interval)
     }
   }, [])
+
+  async function handleDelete() {
+    if (!pendingDelete) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/projects?cwd=${encodeURIComponent(pendingDelete.cwd)}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        const controller = new AbortController()
+        setProjects(await loadProjects(controller.signal))
+      }
+    } finally {
+      setDeleting(false)
+      setPendingDelete(null)
+    }
+  }
 
   return (
     <div className="flex h-full flex-col bg-[#0a0a0a] text-white">
@@ -55,8 +85,23 @@ export function ProjectsPage() {
                 to={`/sessions/${encodeURIComponent(project.cwd)}`}
                 title={project.cwd}
                 data-testid="project-card"
-                className="rounded-lg border border-white/10 bg-white/[0.035] p-4 transition-colors hover:border-white/20 hover:bg-white/[0.06]"
+                className="group relative rounded-lg border border-white/10 bg-white/[0.035] p-4 transition-colors hover:border-white/20 hover:bg-white/[0.06]"
               >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Delete project ${project.name}`}
+                  className="absolute right-2 top-2 size-7 text-white/30 opacity-0 transition-opacity hover:bg-white/10 hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setPendingDelete(project)
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+
                 <div className="flex items-start gap-3">
                   <div className="rounded-md border border-white/10 bg-black/30 p-2 text-white/70">
                     <FolderKanban className="size-4" />
@@ -91,6 +136,34 @@ export function ProjectsPage() {
           </div>
         )}
       </main>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {pendingDelete?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes {pendingDelete?.session_count}{' '}
+              {pendingDelete?.session_count === 1 ? 'session' : 'sessions'} and all their events.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 text-white hover:bg-red-500"
+              disabled={deleting}
+              onClick={() => void handleDelete()}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
