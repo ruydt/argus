@@ -22,6 +22,7 @@ function buildSession(overrides: Partial<SessionGroup> = {}): SessionGroup {
   return {
     sessionId: 'test-session-abc123',
     transcriptPath: '/home/user/.claude/test',
+    cwd: '',
     events: [
       {
         time: '2026-05-21T10:00:00.000Z',
@@ -85,5 +86,19 @@ describe('AgentSession copy session ID', () => {
       vi.advanceTimersByTime(1500)
     })
     expect(screen.getByRole('button', { name: /copy session id/i })).toBeDefined()
+  })
+})
+
+describe('AgentSession project label', () => {
+  it('shows shortened project cwd in the header', () => {
+    renderSession({ session: buildSession({ cwd: '/Users/dev/GitHub/argus' }) })
+    const label = screen.getByText('~/GitHub/argus')
+    expect(label).toBeInTheDocument()
+    expect(label).toHaveAttribute('title', '/Users/dev/GitHub/argus')
+  })
+
+  it('omits project label when session has no cwd', () => {
+    renderSession({ session: buildSession({ cwd: '' }) })
+    expect(screen.queryByText(/^~\//)).not.toBeInTheDocument()
   })
 })

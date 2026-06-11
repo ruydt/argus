@@ -42,12 +42,14 @@ export function SessionList({
 
       if (existing) {
         existing.events.push(event)
+        if (!existing.cwd && event.cwd) existing.cwd = event.cwd
         return
       }
 
       grouped.set(key, {
         sessionId: key,
         transcriptPath: event.transcript_path ?? '',
+        cwd: event.cwd ?? '',
         events: [event],
       })
     })

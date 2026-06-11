@@ -73,6 +73,7 @@ export interface SessionUsage {
 export interface SessionGroup {
   sessionId: string
   transcriptPath: string
+  cwd: string
   events: EventRecord[]
 }
 

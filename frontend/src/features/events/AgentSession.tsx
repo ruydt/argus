@@ -6,6 +6,7 @@ import { PaginationBar } from '@/components/shared/PaginationBar'
 import { cn } from '@/lib/utils'
 import { formatTokenCount, highlight, shortId } from '@/lib/format'
 import { agentForEvent } from '@/agents'
+import { shortenCwd } from '@/features/sessions/utils'
 import type { SessionGroup, SessionUsage, TooltipState } from '@/types/events'
 import { buildEventKey } from './eventKey'
 import { EventRow } from './EventRow'
@@ -41,7 +42,7 @@ export const AgentSession = memo(function AgentSession({
   onTargetVisible,
   isEventDraggable = false,
 }: AgentSessionProps) {
-  const { sessionId, transcriptPath, events } = session
+  const { sessionId, transcriptPath, cwd, events } = session
   const firstEvent = events[0]
   const agent = agentForEvent(firstEvent)
   const { Logo } = agent
@@ -90,6 +91,14 @@ export const AgentSession = memo(function AgentSession({
             <span className="min-w-0 break-words sm:break-all">
               {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
             </span>
+            {cwd !== '' && (
+              <span
+                title={cwd}
+                className="shrink-0 max-w-[180px] truncate text-[0.68rem] font-normal text-[#666]"
+              >
+                {shortenCwd(cwd)}
+              </span>
+            )}
             <CopyIconButton
               text={sessionId}
               label="session ID"
