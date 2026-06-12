@@ -1,27 +1,29 @@
 /* ============================================================
-   ARGUS — the watchhouse
-   Editorial serif voice over instrument-panel hardware. Serif
-   (Instrument Serif, display only, one italic word per headline)
-   tells the story; mono panels prove the product. Full-strength
-   violet only on the iris and the primary CTA; the soft tint
-   carries italic words, feed markers, and the hero glow. Nothing
-   blinks, nothing follows the cursor, one eye only.
+   ARGUS — neural watchhouse
+   Deep-black (#030303) neural treatment over the watchhouse
+   skeleton: glass navbar, centered hero with violet+cyan radial
+   atmospheres, massive Instrument Serif with a shimmer on the
+   headline's last word, shiny-border CTA, staggered entry.
+   Mono panels still prove the product; serif still tells the
+   story; one eye only; every animation reduced-motion gated.
    ============================================================ */
 
 /* ============================================================
    TOKENS
    ============================================================ */
 :root {
-  --bg-base: #0a0a0c;
-  --bg-surface: #101014;
-  --bg-card: #16161b;
-  --bg-inset: #0d0d10;
-  --border: #26262d;
-  --border-deep: #1e1e24;
-  --accent: #863bff;
-  --accent-mid: #7434e0;
-  --accent-soft: #a978ff;
-  --glow: rgba(134, 59, 255, 0.07);
+  --bg-base: #030303;
+  --bg-surface: #0a0a0c;
+  --bg-card: #101013;
+  --bg-inset: #08080a;
+  --border: #232329;
+  --border-deep: #1a1a1f;
+  --accent: #8b5cf6;
+  --accent-mid: #7c3aed;
+  --accent-soft: #a78bfa;
+  --accent-cyan: #06b6d4;
+  --glow: rgba(139, 92, 246, 0.4);
+  --glow-cyan: rgba(6, 182, 212, 0.08);
   --shadow: rgba(0, 0, 0, 0.45);
   --text-primary: #ededf0;
   --text-muted: #9c9ca6;
@@ -119,14 +121,15 @@ a {
   position: sticky;
   top: 0;
   z-index: 100;
-  height: 56px;
-  background: rgba(19, 19, 22, 0.88);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.25s;
+  height: 60px;
+  background: rgba(8, 8, 10, 0.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  backdrop-filter: blur(16px) saturate(1.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.25s;
 }
 .navbar.scrolled {
-  border-bottom: 1px solid var(--border-deep);
+  background: rgba(8, 8, 10, 0.72);
 }
 .navbar-inner {
   max-width: var(--max-width);
@@ -193,76 +196,55 @@ a {
 }
 
 /* ============================================================
-   HERO — the lens
+   HERO — neural, centered (Synapse direction)
+   Radial atmospheres: violet at top-center, cyan whisper at
+   left-center. Massive serif, last word shimmers. Staggered
+   entry; secondary link lands last at 1s.
    ============================================================ */
 .hero {
-  padding: 96px 0 80px;
+  padding: 120px 0 96px;
   position: relative;
   overflow: hidden;
 }
-/* iris: concentric hairline rings, the dial and the eye at once */
 .hero::before {
   content: '';
   position: absolute;
-  top: 50%;
-  right: -10%;
-  width: 900px;
-  height: 900px;
-  transform: translateY(-50%);
-  background: repeating-radial-gradient(
-    circle at center,
-    transparent 0,
-    transparent 47px,
-    var(--border-deep) 47px,
-    var(--border-deep) 48px
-  );
-  -webkit-mask-image: radial-gradient(circle at center, #000 0%, transparent 62%);
-  mask-image: radial-gradient(circle at center, #000 0%, transparent 62%);
-  opacity: 0.7;
-  pointer-events: none;
-}
-/* one ambient violet atmosphere — the mesh gradient reduced to a whisper */
-.hero::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 4%;
-  width: 640px;
-  height: 640px;
-  transform: translateY(-50%);
-  background: radial-gradient(circle at center, var(--glow) 0%, transparent 65%);
+  inset: 0;
+  background:
+    radial-gradient(ellipse 62% 52% at 50% -12%, var(--glow) 0%, transparent 62%),
+    radial-gradient(ellipse 38% 42% at 0% 52%, var(--glow-cyan) 0%, transparent 65%);
   pointer-events: none;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .hero::after {
-    animation: breathe 12s ease-in-out infinite;
+  .hero::before {
+    animation: breathe 14s ease-in-out infinite;
   }
 }
 @keyframes breathe {
   0%,
   100% {
-    opacity: 0.7;
-    transform: translateY(-50%) scale(1);
+    opacity: 0.85;
   }
   50% {
     opacity: 1;
-    transform: translateY(-50%) scale(1.06);
   }
 }
 .hero-inner {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 28px;
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  gap: 56px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  text-align: center;
   position: relative;
 }
 .hero-copy {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 28px;
+  max-width: 900px;
 }
 .hero-badge {
   display: inline-flex;
@@ -271,94 +253,189 @@ a {
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-dim);
+  color: var(--text-sub);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  width: fit-content;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
 }
 .hero-badge::before {
   content: '';
-  width: 24px;
-  height: 1px;
-  background: var(--text-ghost);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 .hero h1 {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: clamp(44px, 6vw, 84px);
-  line-height: 1.06;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
+  font-size: clamp(56px, 9vw, 128px);
+  line-height: 0.92;
+  letter-spacing: -0.015em;
+  color: #fff;
 }
+/* last word of the headline */
 .hero h1 .accent {
   font-style: italic;
-  color: var(--accent-soft);
+  background: linear-gradient(
+    110deg,
+    var(--accent) 15%,
+    #efeaff 38%,
+    var(--accent-cyan) 60%,
+    var(--accent) 85%
+  );
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero h1 .accent {
+    animation: shimmer 4s linear infinite;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 250% 0;
+  }
+  to {
+    background-position: -250% 0;
+  }
 }
 .hero-sub {
   font-family: var(--font-sans);
-  font-size: 16px;
-  color: var(--text-muted);
+  font-size: 18px;
+  color: #a3a3a3;
   line-height: 1.65;
-  max-width: 52ch;
+  max-width: 42rem;
 }
 .hero-actions {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  align-items: center;
+  gap: 22px;
 }
 .hero-ctas {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 22px;
   flex-wrap: wrap;
+  justify-content: center;
+}
+/* shiny-border primary button: rotating conic highlight on the border */
+@property --btn-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 .btn-primary {
-  font-family: var(--font-mono);
-  font-size: 13px;
+  font-family: var(--font-sans);
+  font-size: 14px;
   font-weight: 600;
-  background: var(--accent);
   color: #fff;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  padding: 10px 20px;
+  padding: 12px 26px;
+  border-radius: 999px;
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--bg-card), var(--bg-card)) padding-box,
+    conic-gradient(
+        from var(--btn-angle),
+        rgba(139, 92, 246, 0.15),
+        var(--accent) 18%,
+        #e9e6ff 28%,
+        var(--accent-cyan) 45%,
+        rgba(139, 92, 246, 0.15) 70%
+      )
+      border-box;
+  transition: color 0.2s;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn-primary {
+    animation: btn-spin 4s linear infinite;
+  }
+}
+@keyframes btn-spin {
+  to {
+    --btn-angle: 360deg;
+  }
 }
 .btn-primary:hover {
-  background: var(--accent-mid);
-  border-color: var(--accent-mid);
+  color: var(--accent-soft);
+}
+/* hero entry stagger — secondary link lands at 1s */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy > * {
+    opacity: 0;
+    animation: hero-enter 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .hero-copy > :nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .hero-copy > :nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .hero-copy > :nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  .hero-copy > :nth-child(4) {
+    animation-delay: 0.65s;
+  }
+  .hero-copy .btn-secondary {
+    opacity: 0;
+    animation: hero-enter 0.8s cubic-bezier(0.22, 1, 0.36, 1) 1s forwards;
+  }
+}
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.hero-panel {
+  margin-top: 64px;
+  width: 100%;
+  max-width: 860px;
+  position: relative;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero-panel {
+    opacity: 0;
+    animation: hero-enter 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.9s forwards;
+  }
 }
 .btn-secondary {
-  font-family: var(--font-mono);
-  font-size: 13px;
+  font-family: var(--font-sans);
+  font-size: 14px;
   font-weight: 500;
   background: transparent;
   color: var(--text-sub);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px 20px;
+  border: none;
+  padding: 12px 4px;
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
-  transition:
-    color 0.15s,
-    border-color 0.15s;
+  transition: color 0.15s;
 }
 .btn-secondary:hover {
-  color: var(--text-primary);
-  border-color: var(--text-dim);
+  color: #fff;
 }
 .hero-snippet {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: var(--bg-inset);
-  border: 1px solid var(--border-deep);
-  border-radius: 8px;
-  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  padding: 10px 18px;
   max-width: 560px;
 }
 .hero-snippet::before {
@@ -1221,17 +1298,11 @@ a {
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
-  .hero-inner {
-    grid-template-columns: 1fr;
+  .hero {
+    padding: 72px 0 64px;
   }
-  .terminal-window {
-    display: none;
-  }
-  .hero::before {
-    display: none;
-  }
-  .hero::after {
-    display: none;
+  .hero-panel {
+    margin-top: 40px;
   }
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1291,5 +1362,114 @@ a {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   WHY — numbered problems, one thesis
+   ============================================================ */
+.why {
+  background: var(--bg-surface);
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  margin-top: 8px;
+}
+.why-problems {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.why-problems li {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-top: 1px solid var(--border-deep);
+}
+.why-problems li:last-child {
+  border-bottom: 1px solid var(--border-deep);
+}
+.why-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-ghost);
+  flex-shrink: 0;
+}
+.why-text {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.why-thesis {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(26px, 2.8vw, 34px);
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+.why-thesis .accent {
+  font-style: italic;
+  color: var(--accent-soft);
+}
+
+/* ============================================================
+   FOOTER — multi-column
+   ============================================================ */
+.footer-grid {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 56px 28px 40px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+}
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.footer-tag {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-dim);
+  max-width: 24ch;
+  line-height: 1.6;
+}
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.footer-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-ghost);
+  margin-bottom: 4px;
+}
+.footer-col a {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.footer-col a:hover {
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .why-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }

@@ -8,6 +8,7 @@ import { Privacy } from './sections/Privacy'
 import { QuickInstall } from './sections/QuickInstall'
 import { StatsBar } from './sections/StatsBar'
 import { SurfaceTour } from './sections/SurfaceTour'
+import { WhyBlock } from './sections/WhyBlock'
 import { FeaturesPage } from './pages/FeaturesPage'
 import { InstallPage } from './pages/InstallPage'
 
@@ -21,6 +22,7 @@ function HomePage() {
         <Pillars />
         <MythBlock />
         <SurfaceTour />
+        <WhyBlock />
         <QuickInstall />
         <Privacy />
       </main>

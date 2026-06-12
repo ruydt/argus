@@ -1,6 +1,5 @@
 import { Check, Copy } from 'lucide-react'
 import { useState } from 'react'
-import { AnimateOnScroll } from '../components/AnimateOnScroll'
 
 const INSTALL_CMD = 'git clone https://github.com/duytrandt04-afk/argus && make build-local'
 
@@ -75,13 +74,13 @@ export function Hero() {
   return (
     <section className="hero">
       <div className="hero-inner">
-        <AnimateOnScroll className="hero-copy">
+        <div className="hero-copy">
           <div className="hero-badge">Open source · local-first · zero cloud</div>
 
           <h1>
-            The watchman whose eyes
+            The watchman whose
             <br />
-            <span className="accent">never</span> all close.
+            eyes never all <span className="accent">close.</span>
           </h1>
 
           <p className="hero-sub">
@@ -98,7 +97,7 @@ export function Hero() {
                 rel="noopener noreferrer"
                 className="btn-primary"
               >
-                View on GitHub
+                View on GitHub →
               </a>
               <a
                 href="https://github.com/duytrandt04-afk/argus/tree/main/docs"
@@ -122,11 +121,11 @@ export function Hero() {
               </button>
             </div>
           </div>
-        </AnimateOnScroll>
+        </div>
 
-        <AnimateOnScroll delay={200}>
+        <div className="hero-panel">
           <TerminalWindow />
-        </AnimateOnScroll>
+        </div>
       </div>
     </section>
   )
