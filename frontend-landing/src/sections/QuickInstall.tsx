@@ -2,7 +2,7 @@ import { Check, Copy } from 'lucide-react'
 import { useState } from 'react'
 import { AnimateOnScroll } from '../components/AnimateOnScroll'
 
-type Tab = 'clone' | 'hooks' | 'dashboard'
+type Tab = 'clone' | 'hooks' | 'dashboard' | 'contribute'
 
 type CodeBlockProps = {
   lang: string
@@ -61,10 +61,17 @@ http://localhost:10804
 # Verify the backend is live
 curl -fsS http://127.0.0.1:10804/api/version`
 
+const CONTRIBUTE_CODE = `# Build from source — needs Go 1.25+ and pnpm 10.x
+git clone https://github.com/duytrandt04-afk/argus
+cd argus
+make build-local
+~/.argus/bin/argus`
+
 const TAB_CONTENT: Record<Tab, { label: string; lang: string; code: string }> = {
   clone: { label: 'Install', lang: 'bash', code: INSTALL_CODE },
   hooks: { label: 'Configure Hooks', lang: 'json', code: HOOKS_CODE },
   dashboard: { label: 'Open Dashboard', lang: 'bash', code: DASHBOARD_CODE },
+  contribute: { label: 'Contribute', lang: 'bash', code: CONTRIBUTE_CODE },
 }
 
 export function QuickInstall() {

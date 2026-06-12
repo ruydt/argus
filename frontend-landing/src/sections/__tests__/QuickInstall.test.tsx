@@ -32,6 +32,12 @@ describe('QuickInstall', () => {
     expect(screen.getByRole('button', { name: /^install$/i })).toHaveClass('active')
   })
 
+  it('switches to Contribute tab', async () => {
+    render(<QuickInstall />)
+    await userEvent.click(screen.getByRole('button', { name: /contribute/i }))
+    expect(screen.getByText(/make build-local/i)).toBeInTheDocument()
+  })
+
   it('clicked tab becomes active', async () => {
     render(<QuickInstall />)
     const hooksTab = screen.getByRole('button', { name: /configure hooks/i })
