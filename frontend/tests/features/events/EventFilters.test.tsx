@@ -71,6 +71,29 @@ describe('EventFilters search', () => {
     expect(input).toHaveClass('w-0')
   })
 
+  it('collapses the search input on a second magnifier click', () => {
+    const setSearchQuery = vi.fn()
+    renderEventFilters({ setSearchQuery })
+
+    const toggle = screen.getByRole('button', { name: /search events/i })
+    fireEvent.click(toggle)
+    const input = screen.getByRole('textbox', { name: /search events/i })
+    expect(input).not.toHaveClass('w-0')
+
+    fireEvent.click(screen.getByRole('button', { name: /close events search/i }))
+    expect(input).toHaveClass('w-0')
+    expect(setSearchQuery).toHaveBeenCalledWith('')
+  })
+
+  it('keeps the search input open when the filter group is toggled', () => {
+    renderEventFilters()
+
+    fireEvent.click(screen.getByRole('button', { name: /search events/i }))
+    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
+
+    expect(screen.getByRole('textbox', { name: /search events/i })).not.toHaveClass('w-0')
+  })
+
   it('starts expanded when a query is already set', () => {
     renderEventFilters({ searchQuery: 'session' })
 
