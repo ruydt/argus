@@ -61,6 +61,9 @@ var schema012 string
 //go:embed migrations/013_repair_new_event_fields.sql
 var schema013 string
 
+//go:embed migrations/014_normalize_hook_events_created_at.sql
+var schema014 string
+
 type DB struct {
 	db     *sql.DB
 	ready  atomic.Bool
@@ -139,6 +142,7 @@ func (d *DB) migrate() error {
 		{11, schema011},
 		{12, schema012},
 		{13, schema013},
+		{14, schema014},
 	}
 	for _, m := range migrations {
 		var count int
@@ -202,6 +206,10 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 	ctx, cancel := context.WithTimeout(context.Background(), sqliteWriteTimeout)
 	defer cancel()
 
+	// Normalize created_at to UTC RFC3339 at write time so string comparison
+	// equals time comparison for all read-path predicates and ORDER BY clauses.
+	createdAt := normalizeToUTC(e.Time)
+
 	_, err := d.db.ExecContext(ctx, `
 		INSERT OR IGNORE INTO hook_events (
 			created_at, agent, session_id, hook_event_name, turn_id, tool_use_id,
@@ -219,7 +227,7 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 			expansion_type, command_name, memory_type, load_reason, branch, server_name,
 			tool_input_questions_json, permission_suggestions_json
 		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		e.Time, e.Agent, e.Session, e.HookEventName, e.TurnID, e.ToolUseID,
+		createdAt, e.Agent, e.Session, e.HookEventName, e.TurnID, e.ToolUseID,
 		e.Tool, e.Model, e.Source, e.CWD, e.TranscriptPath,
 		nullStr(e.Action), nullStr(e.Path), nullStr(e.Command),
 		nullStr(e.OldString), nullStr(e.NewString), nullInt(e.StartLine),
@@ -257,12 +265,12 @@ func (d *DB) ListByTimeRange(since, until, sessionID string, beforeID int64, lim
 		args = append(args, sessionID)
 	}
 	if since != "" {
-		conditions = append(conditions, "datetime(created_at) >= datetime(?)")
-		args = append(args, since)
+		conditions = append(conditions, "created_at >= ?")
+		args = append(args, normalizeToUTC(since))
 	}
 	if until != "" {
-		conditions = append(conditions, "datetime(created_at) < datetime(?)")
-		args = append(args, until)
+		conditions = append(conditions, "created_at < ?")
+		args = append(args, normalizeToUTC(until))
 	}
 	if beforeID > 0 {
 		conditions = append(conditions, "id < ?")
@@ -388,12 +396,12 @@ func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, se
 
 	sb.WriteString(`SELECT session_id, MAX(id) as max_id FROM hook_events WHERE 1=1`)
 	if since != "" {
-		sb.WriteString(" AND datetime(created_at) >= datetime(?)")
-		sessionArgs = append(sessionArgs, since)
+		sb.WriteString(" AND created_at >= ?")
+		sessionArgs = append(sessionArgs, normalizeToUTC(since))
 	}
 	if until != "" {
-		sb.WriteString(" AND datetime(created_at) < datetime(?)")
-		sessionArgs = append(sessionArgs, until)
+		sb.WriteString(" AND created_at < ?")
+		sessionArgs = append(sessionArgs, normalizeToUTC(until))
 	}
 	sb.WriteString(" GROUP BY session_id")
 	if beforeCursor > 0 {
@@ -445,12 +453,12 @@ func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, se
 		eventArgs = append(eventArgs, s.sessionID)
 	}
 	if since != "" {
-		conditions = append(conditions, "datetime(created_at) >= datetime(?)")
-		eventArgs = append(eventArgs, since)
+		conditions = append(conditions, "created_at >= ?")
+		eventArgs = append(eventArgs, normalizeToUTC(since))
 	}
 	if until != "" {
-		conditions = append(conditions, "datetime(created_at) < datetime(?)")
-		eventArgs = append(eventArgs, until)
+		conditions = append(conditions, "created_at < ?")
+		eventArgs = append(eventArgs, normalizeToUTC(until))
 	}
 
 	events, err := d.listWithWhere("WHERE "+strings.Join(conditions, " AND "), eventArgs, 0, 0)
@@ -572,8 +580,8 @@ func (d *DB) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
 	clauses := []string{"cwd = ?"}
 	args := []any{cwd}
 	if since != "" {
-		clauses = append(clauses, "datetime(last_seen_at) >= datetime(?)")
-		args = append(args, since)
+		clauses = append(clauses, "last_seen_at >= ?")
+		args = append(args, normalizeToUTC(since))
 	}
 	return d.listSessionsWhere("WHERE "+strings.Join(clauses, " AND "), args)
 }
@@ -589,7 +597,7 @@ func (d *DB) listSessionsWhere(where string, args []any) ([]domain.Session, erro
 	if where != "" {
 		query += where + "\n"
 	}
-	query += "ORDER BY datetime(started_at) DESC, datetime(last_seen_at) DESC"
+	query += "ORDER BY started_at DESC, last_seen_at DESC"
 
 	rows, err := d.db.Query(query, args...)
 	if err != nil {
@@ -627,7 +635,7 @@ func (d *DB) listSessionsWherePaged(where string, args []any, limit, offset int)
 	if where != "" {
 		query += where + "\n"
 	}
-	query += "ORDER BY datetime(started_at) DESC, datetime(last_seen_at) DESC LIMIT ? OFFSET ?"
+	query += "ORDER BY started_at DESC, last_seen_at DESC LIMIT ? OFFSET ?"
 	queryArgs := append(append([]any{}, args...), limit, offset)
 
 	rows, err := d.db.Query(query, queryArgs...)
@@ -659,8 +667,8 @@ func (d *DB) ListSessionsByCWDPage(cwd, since string, page, size int) ([]domain.
 	clauses := []string{"cwd = ?"}
 	args := []any{cwd}
 	if since != "" {
-		clauses = append(clauses, "datetime(last_seen_at) >= datetime(?)")
-		args = append(args, since)
+		clauses = append(clauses, "last_seen_at >= ?")
+		args = append(args, normalizeToUTC(since))
 	}
 	where := "WHERE " + strings.Join(clauses, " AND ")
 
@@ -686,7 +694,7 @@ func (d *DB) DiagnosticsStorageStats() (domain.DiagnosticsStorageStats, error) {
 	if err := d.db.QueryRow(`
 		SELECT created_at
 		FROM hook_events
-		ORDER BY datetime(created_at) DESC, created_at DESC
+		ORDER BY created_at DESC
 		LIMIT 1
 	`).Scan(&latest); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -1008,16 +1016,18 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 	var eventArgs []any
 	var sessionArgs []any
 	if since != "" {
-		eventClauses = append(eventClauses, "datetime(created_at) >= datetime(?)")
-		sessionClauses = append(sessionClauses, "datetime(started_at) >= datetime(?)")
-		eventArgs = append(eventArgs, since)
-		sessionArgs = append(sessionArgs, since)
+		s := normalizeToUTC(since)
+		eventClauses = append(eventClauses, "created_at >= ?")
+		sessionClauses = append(sessionClauses, "started_at >= ?")
+		eventArgs = append(eventArgs, s)
+		sessionArgs = append(sessionArgs, s)
 	}
 	if until != "" {
-		eventClauses = append(eventClauses, "datetime(created_at) <= datetime(?)")
-		sessionClauses = append(sessionClauses, "datetime(started_at) <= datetime(?)")
-		eventArgs = append(eventArgs, until)
-		sessionArgs = append(sessionArgs, until)
+		u := normalizeToUTC(until)
+		eventClauses = append(eventClauses, "created_at <= ?")
+		sessionClauses = append(sessionClauses, "started_at <= ?")
+		eventArgs = append(eventArgs, u)
+		sessionArgs = append(sessionArgs, u)
 	}
 
 	eventWhere := ""
@@ -1262,8 +1272,8 @@ func (d *DB) GetSessionTree(since string) ([]domain.SessionTreeNode, error) {
 		       COALESCE(input_tokens,0), COALESCE(output_tokens,0),
 		       COALESCE(cache_creation_tokens,0), COALESCE(cache_read_tokens,0), COALESCE(turns,0)
 		FROM sessions
-		WHERE datetime(started_at) >= datetime(?)
-		ORDER BY started_at ASC`, since)
+		WHERE started_at >= ?
+		ORDER BY started_at ASC`, normalizeToUTC(since))
 	if err != nil {
 		return nil, err
 	}

@@ -1204,7 +1204,7 @@ git commit -m "perf(service): 5s TTL cache for dashboard stats responses"
 - Modify: `backend/internal/repository/sqlite/sqlite.go` — `GetDashboardStats` (lines 1008-1019), `ListSessionsByCWD` (line 575), `listSessionsWhere` ORDER BY (line 592)
 - Possibly create: next-numbered migration in `backend/internal/repository/sqlite/migrations/`
 
-- [ ] **Step 1: Replace `datetime()` predicates in GetDashboardStats**
+- [x] **Step 1: Replace `datetime()` predicates in GetDashboardStats**
 
 All stored timestamps (`created_at`, `started_at`, `last_seen_at`) are normalized RFC3339 UTC strings, so lexicographic comparison equals time comparison — but only if the parameter is normalized the same way. Replace lines 1008-1019 with:
 
@@ -1227,18 +1227,18 @@ All stored timestamps (`created_at`, `started_at`, `last_seen_at`) are normalize
 
 Check `normalizeToUTC`'s behavior on unparseable input first (it exists in this file): if it returns the input unchanged, this is safe; if it returns empty, guard with `if normalized == "" { normalized = since }`.
 
-- [ ] **Step 2: Same treatment for session listing**
+- [x] **Step 2: Same treatment for session listing**
 
 `ListSessionsByCWD` (line 575): `"datetime(last_seen_at) >= datetime(?)"` → `"last_seen_at >= ?"` with `args = append(args, normalizeToUTC(since))`.
 
 `listSessionsWhere` (line 592): `ORDER BY datetime(started_at) DESC, datetime(last_seen_at) DESC` → `ORDER BY started_at DESC, last_seen_at DESC`.
 
-- [ ] **Step 3: Run existing tests**
+- [x] **Step 3: Run existing tests**
 
 Run: `cd backend && go test ./...`
 Expected: PASS. Dashboard/session time-range tests exercise the boundaries; failures here mean a normalization mismatch — fix by normalizing the parameter, never by reverting to `datetime()`.
 
-- [ ] **Step 4: Check query plans; add index only if a scan is confirmed**
+- [x] **Step 4: Check query plans; add index only if a scan is confirmed**
 
 Write a throwaway check (delete after running, or keep as a skipped test):
 
@@ -1274,7 +1274,7 @@ CREATE INDEX IF NOT EXISTS idx_hook_events_created_at ON hook_events(created_at)
 
 Never edit existing migration files.
 
-- [ ] **Step 5: Gates and commit**
+- [x] **Step 5: Gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.

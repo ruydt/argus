@@ -727,8 +727,11 @@ func TestDiagnosticsStorageStatsCountsRowsAndLatestTimestamp(t *testing.T) {
 	if stats.TotalSessions != 2 {
 		t.Fatalf("TotalSessions = %d, want 2", stats.TotalSessions)
 	}
-	if stats.LatestEventAt == nil || *stats.LatestEventAt != offsetLatest {
-		t.Fatalf("LatestEventAt = %v, want %q", stats.LatestEventAt, offsetLatest)
+	// created_at is normalized to UTC at write time; the stored value for
+	// offsetLatest ("2026-05-27T08:30:00-05:00") becomes "2026-05-27T13:30:00Z".
+	wantLatest := "2026-05-27T13:30:00Z"
+	if stats.LatestEventAt == nil || *stats.LatestEventAt != wantLatest {
+		t.Fatalf("LatestEventAt = %v, want %q", stats.LatestEventAt, wantLatest)
 	}
 }
 
@@ -1269,14 +1272,14 @@ func TestMigrationRunner_Idempotent(t *testing.T) {
 	db := newTestDB(t)
 
 	// A second call to New on the same DB would re-run migrate(). Instead,
-	// verify idempotency by checking schema_migrations has exactly 13 versions.
+	// verify idempotency by checking schema_migrations has exactly 14 versions.
 	rawDB := db.RawDB()
 	var count int
 	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("count schema_migrations: %v", err)
 	}
-	if count != 13 {
-		t.Errorf("schema_migrations has %d rows, want 13 (migrations 1–13)", count)
+	if count != 14 {
+		t.Errorf("schema_migrations has %d rows, want 14 (migrations 1–14)", count)
 	}
 }
 
