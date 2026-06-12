@@ -80,7 +80,7 @@ export function Hero() {
         <div className="hero-copy">
           <WatchingEye size={76} className="hero-eye" />
 
-          <div className="hero-badge">Open source · local-first · zero cloud</div>
+          <div className="hero-badge">Open source · MIT license · one-command install</div>
 
           <h1>
             The watchman whose
