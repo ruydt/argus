@@ -371,33 +371,16 @@ func (s *EventService) DeleteProject(cwd string) (sessionsDeleted, eventsDeleted
 }
 
 func (s *EventService) ListSessions() ([]domain.Session, error) {
-	sessions, err := s.repo.ListSessions()
-	if err != nil {
-		return nil, err
-	}
-	if err := s.backfillSessionUsage(sessions); err != nil {
-		return nil, err
-	}
-	return sessions, nil
+	return s.repo.ListSessions()
 }
 
 func (s *EventService) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
-	sessions, err := s.repo.ListSessionsByCWD(cwd, since)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.backfillSessionUsage(sessions); err != nil {
-		return nil, err
-	}
-	return sessions, nil
+	return s.repo.ListSessionsByCWD(cwd, since)
 }
 
 func (s *EventService) GetDashboardStats(since, until string) (*domain.DashboardStats, error) {
 	sessions, err := s.repo.ListSessions()
 	if err != nil {
-		return nil, err
-	}
-	if err := s.backfillSessionUsage(sessions); err != nil {
 		return nil, err
 	}
 	stats, err := s.repo.GetDashboardStats(since, until)
@@ -418,7 +401,16 @@ func (s *EventService) GetDashboardStats(since, until string) (*domain.Dashboard
 	return stats, nil
 }
 
-func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
+// BackfillMissingSessionUsage computes usage for sessions persisted before
+// write-time usage existed. Called once at startup in a background goroutine;
+// errors are logged per session and never fatal.
+func (s *EventService) BackfillMissingSessionUsage() {
+	sessions, err := s.repo.ListSessions()
+	if err != nil {
+		slog.Warn("usage backfill: list sessions", "err", err)
+		return
+	}
+	updated := 0
 	for i := range sessions {
 		if hasUsage(sessions[i].Usage) || sessions[i].TranscriptPath == "" {
 			continue
@@ -427,7 +419,6 @@ func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
 		if !hasUsage(usage) {
 			continue
 		}
-		sessions[i].Usage = usage
 		if err := s.repo.UpsertSession(
 			sessions[i].SessionID,
 			sessions[i].Agent,
@@ -439,10 +430,14 @@ func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
 			sessions[i].EndedAt,
 			usage,
 		); err != nil {
-			return err
+			slog.Warn("usage backfill: upsert", "session", sessions[i].SessionID, "err", err)
+			continue
 		}
+		updated++
 	}
-	return nil
+	if updated > 0 {
+		slog.Info("usage backfill complete", "updated", updated)
+	}
 }
 
 func computeUsage(agent, transcriptPath string) domain.SessionUsage {

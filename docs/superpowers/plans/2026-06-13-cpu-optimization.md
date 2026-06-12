@@ -877,7 +877,7 @@ git commit -m "perf(service): throttle per-event transcript usage scans to 30s p
 - Modify: `backend/cmd/server/main.go` (spawn goroutine)
 - Test: service test file
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```go
 // trackingListRepo serves canned sessions and records upserts.
@@ -952,12 +952,12 @@ func TestBackfillMissingSessionUsage(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run 'TestListSessionsDoesNotScanTranscripts|TestBackfillMissingSessionUsage' ./internal/service/`
 Expected: FAIL — `upserts` is 1 in the first test (read-path backfill), and `BackfillMissingSessionUsage` is undefined.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `event_service.go`:
 
@@ -1016,7 +1016,7 @@ func (s *EventService) BackfillMissingSessionUsage() {
 	go svc.BackfillMissingSessionUsage()
 ```
 
-- [ ] **Step 4: Run tests, gates, commit**
+- [x] **Step 4: Run tests, gates, commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass. Existing tests that relied on read-path backfill (e.g., a sessions-list test asserting freshly computed usage) must be updated: usage now comes from the DB (write-time, Task 6) or the startup backfill.

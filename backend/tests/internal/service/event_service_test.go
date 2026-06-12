@@ -520,7 +520,7 @@ func TestAddEventStopSetsEndedAt(t *testing.T) {
 	}
 }
 
-func TestListSessionsBackfillsZeroUsageFromTranscript(t *testing.T) {
+func TestBackfillMissingSessionUsageScansAndPersists(t *testing.T) {
 	transcript := t.TempDir() + "/session.jsonl"
 	data := `{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":120,"cached_input_tokens":40,"output_tokens":8}}}}` + "\n"
 	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
@@ -533,16 +533,14 @@ func TestListSessionsBackfillsZeroUsageFromTranscript(t *testing.T) {
 	}}}
 	svc := service.New(repo)
 
-	sessions, err := svc.ListSessions()
-	if err != nil {
-		t.Fatalf("ListSessions: %v", err)
-	}
+	// Backfill is now a one-time startup operation, not an implicit read-path scan.
+	svc.BackfillMissingSessionUsage()
 
-	if got := sessions[0].Usage.InputTokens; got != 120 {
-		t.Fatalf("input tokens = %d, want 120", got)
-	}
 	if repo.upserts != 1 {
 		t.Fatalf("upserts = %d, want 1", repo.upserts)
+	}
+	if repo.lastUsage.InputTokens != 120 {
+		t.Fatalf("input tokens = %d, want 120", repo.lastUsage.InputTokens)
 	}
 	if repo.lastUsage.OutputTokens != 8 || repo.lastUsage.CacheReadTokens != 40 {
 		t.Fatalf("persisted usage = %+v, want output=8 cache_read=40", repo.lastUsage)
