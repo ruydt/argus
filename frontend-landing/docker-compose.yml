@@ -1,9 +1,0 @@
-version: '3.8'
-
-services:
-  frontend-landing:
-    image: ${IMAGE_NAME:-ghcr.io/duytrandt04-afk/frontend-landing:latest}
-    container_name: frontend-landing-app
-    ports:
-      - "8080:80"
-    restart: unless-stopped
