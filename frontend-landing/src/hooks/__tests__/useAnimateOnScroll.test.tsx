@@ -2,7 +2,10 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { useAnimateOnScroll } from '../useAnimateOnScroll'
 
-type ObserverCallback = (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void
+type ObserverCallback = (
+  entries: IntersectionObserverEntry[],
+  observer: IntersectionObserver
+) => void
 
 let capturedCallback: ObserverCallback | null = null
 const mockObserve = vi.fn()
@@ -29,7 +32,7 @@ beforeEach(() => {
       observe = mockObserve
       unobserve = mockUnobserve
       disconnect = mockDisconnect
-    },
+    }
   )
 })
 
@@ -49,7 +52,7 @@ describe('useAnimateOnScroll', () => {
     expect(el.classList.contains('visible')).toBe(false)
     capturedCallback!(
       [{ isIntersecting: true, target: el } as unknown as IntersectionObserverEntry],
-      {} as IntersectionObserver,
+      {} as IntersectionObserver
     )
     expect(el.classList.contains('visible')).toBe(true)
   })
@@ -59,7 +62,7 @@ describe('useAnimateOnScroll', () => {
     const el = screen.getByTestId('el')
     capturedCallback!(
       [{ isIntersecting: true, target: el } as unknown as IntersectionObserverEntry],
-      {} as IntersectionObserver,
+      {} as IntersectionObserver
     )
     expect(mockUnobserve).toHaveBeenCalledWith(el)
   })
@@ -69,7 +72,7 @@ describe('useAnimateOnScroll', () => {
     const el = screen.getByTestId('el')
     capturedCallback!(
       [{ isIntersecting: false, target: el } as unknown as IntersectionObserverEntry],
-      {} as IntersectionObserver,
+      {} as IntersectionObserver
     )
     expect(el.classList.contains('visible')).toBe(false)
   })

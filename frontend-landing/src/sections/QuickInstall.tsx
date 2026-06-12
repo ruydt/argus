@@ -62,9 +62,9 @@ http://localhost:10804
 curl http://127.0.0.1:10804/api/hook`
 
 const TAB_CONTENT: Record<Tab, { label: string; lang: string; code: string }> = {
-  clone:     { label: 'Clone & Build',    lang: 'bash', code: CLONE_CODE },
-  hooks:     { label: 'Configure Hooks',  lang: 'json', code: HOOKS_CODE },
-  dashboard: { label: 'Open Dashboard',   lang: 'bash', code: DASHBOARD_CODE },
+  clone: { label: 'Clone & Build', lang: 'bash', code: CLONE_CODE },
+  hooks: { label: 'Configure Hooks', lang: 'json', code: HOOKS_CODE },
+  dashboard: { label: 'Open Dashboard', lang: 'bash', code: DASHBOARD_CODE },
 }
 
 export function QuickInstall() {
@@ -75,8 +75,9 @@ export function QuickInstall() {
     <section id="install" className="quick-install">
       <div className="container">
         <AnimateOnScroll className="quick-install-header">
-          <h2 className="section-title">UP AND RUNNING IN MINUTES</h2>
-          <p style={{ fontFamily: 'var(--font-vt)', fontSize: '19px', color: 'var(--text-muted)' }}>
+          <p className="section-eyebrow">03 · Install</p>
+          <h2 className="section-title">Up and running in minutes</h2>
+          <p>
             No accounts, no API keys. Clone, build, configure one hook line, and you&apos;re live.
           </p>
         </AnimateOnScroll>

@@ -12,15 +12,40 @@ function EventsFeedPanel() {
         <span className="terminal-title">events — live feed</span>
       </div>
       <div className="terminal-body">
-        <div><span className="t-dim">12:34:01</span> <span className="t-accent">▸</span> <span className="t-cmd">PreToolUse</span> <span className="t-sub">Bash</span></div>
-        <div className="t-dim" style={{ paddingLeft: '12px' }}>  cmd: npm run test</div>
-        <div><span className="t-dim">12:34:02</span> <span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span> <span className="t-sub">Bash</span></div>
-        <div className="t-dim" style={{ paddingLeft: '12px' }}>  exit: 0  duration: 1.2s</div>
-        <div><span className="t-dim">12:34:03</span> <span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span> <span className="t-sub">Write</span> <span className="t-path">src/App.tsx</span></div>
-        <div><span className="t-dim">12:34:05</span> <span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span> <span className="t-sub">Edit</span> <span className="t-path">src/index.css</span></div>
-        <div><span className="t-dim">12:34:09</span> <span className="t-ok">✓</span> <span className="t-cmd">Stop</span> <span className="t-dim">agent finished</span></div>
+        <div>
+          <span className="t-dim">12:34:01</span> <span className="t-accent">▸</span>{' '}
+          <span className="t-cmd">PreToolUse</span> <span className="t-sub">Bash</span>
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '12px' }}>
+          {' '}
+          cmd: npm run test
+        </div>
+        <div>
+          <span className="t-dim">12:34:02</span> <span className="t-accent">▸</span>{' '}
+          <span className="t-cmd">PostToolUse</span> <span className="t-sub">Bash</span>
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '12px' }}>
+          {' '}
+          exit: 0 duration: 1.2s
+        </div>
+        <div>
+          <span className="t-dim">12:34:03</span> <span className="t-accent">▸</span>{' '}
+          <span className="t-cmd">PostToolUse</span> <span className="t-sub">Write</span>{' '}
+          <span className="t-path">src/App.tsx</span>
+        </div>
+        <div>
+          <span className="t-dim">12:34:05</span> <span className="t-accent">▸</span>{' '}
+          <span className="t-cmd">PostToolUse</span> <span className="t-sub">Edit</span>{' '}
+          <span className="t-path">src/index.css</span>
+        </div>
+        <div>
+          <span className="t-dim">12:34:09</span> <span className="t-ok">✓</span>{' '}
+          <span className="t-cmd">Stop</span> <span className="t-dim">agent finished</span>
+        </div>
         <div>&nbsp;</div>
-        <div><span className="t-dim">$</span> <span className="terminal-cursor" /></div>
+        <div>
+          <span className="t-dim">$</span> <span className="terminal-cursor" />
+        </div>
       </div>
     </div>
   )
@@ -36,14 +61,34 @@ function SessionsPanel() {
         <span className="terminal-title">sessions — waterfall</span>
       </div>
       <div className="terminal-body">
-        <div><span className="t-path">~/projects/argus</span> <span className="t-ok">● running</span></div>
-        <div className="t-dim" style={{ paddingLeft: '4px' }}>├─ <span className="t-cmd">Bash</span>         <span style={{ color: 'var(--accent)' }}>████████</span><span className="t-dim">░░░░</span> 800ms</div>
-        <div className="t-dim" style={{ paddingLeft: '4px' }}>├─ <span className="t-cmd">Read</span>         <span style={{ color: 'var(--accent)' }}>███</span><span className="t-dim">░░░░░░░</span> 300ms</div>
-        <div className="t-dim" style={{ paddingLeft: '4px' }}>├─ <span className="t-cmd">Edit</span>         <span style={{ color: 'var(--accent)' }}>████</span><span className="t-dim">░░░░░░</span> 400ms</div>
-        <div className="t-dim" style={{ paddingLeft: '4px' }}>└─ <span className="t-cmd">Write</span>        <span style={{ color: 'var(--accent)' }}>██</span><span className="t-dim">░░░░░░░░</span> 200ms</div>
+        <div>
+          <span className="t-path">~/projects/argus</span> <span className="t-ok">● running</span>
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '4px' }}>
+          ├─ <span className="t-cmd">Bash</span>{' '}
+          <span style={{ color: 'var(--accent)' }}>████████</span>
+          <span className="t-dim">░░░░</span> 800ms
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '4px' }}>
+          ├─ <span className="t-cmd">Read</span> <span style={{ color: 'var(--accent)' }}>███</span>
+          <span className="t-dim">░░░░░░░</span> 300ms
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '4px' }}>
+          ├─ <span className="t-cmd">Edit</span>{' '}
+          <span style={{ color: 'var(--accent)' }}>████</span>
+          <span className="t-dim">░░░░░░</span> 400ms
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '4px' }}>
+          └─ <span className="t-cmd">Write</span> <span style={{ color: 'var(--accent)' }}>██</span>
+          <span className="t-dim">░░░░░░░░</span> 200ms
+        </div>
         <div>&nbsp;</div>
-        <div><span className="t-path">~/projects/api</span> <span className="t-dim">● 2m ago</span></div>
-        <div className="t-dim" style={{ paddingLeft: '4px' }}>└─ <span className="t-dim">14 tool calls · 12.4k tokens</span></div>
+        <div>
+          <span className="t-path">~/projects/api</span> <span className="t-dim">● 2m ago</span>
+        </div>
+        <div className="t-dim" style={{ paddingLeft: '4px' }}>
+          └─ <span className="t-dim">14 tool calls · 12.4k tokens</span>
+        </div>
       </div>
     </div>
   )
@@ -59,15 +104,31 @@ function DashboardPanel() {
         <span className="terminal-title">dashboard — stats</span>
       </div>
       <div className="terminal-body">
-        <div><span className="t-dim">today</span></div>
-        <div><span className="t-cmd">input tokens</span>    <span className="t-accent">142,831</span></div>
-        <div><span className="t-cmd">output tokens</span>   <span className="t-accent"> 18,440</span></div>
-        <div><span className="t-cmd">tool calls</span>      <span className="t-accent">    214</span></div>
-        <div><span className="t-cmd">sessions</span>        <span className="t-accent">      7</span></div>
+        <div>
+          <span className="t-dim">today</span>
+        </div>
+        <div>
+          <span className="t-cmd">input tokens</span> <span className="t-accent">142,831</span>
+        </div>
+        <div>
+          <span className="t-cmd">output tokens</span> <span className="t-accent"> 18,440</span>
+        </div>
+        <div>
+          <span className="t-cmd">tool calls</span> <span className="t-accent"> 214</span>
+        </div>
+        <div>
+          <span className="t-cmd">sessions</span> <span className="t-accent"> 7</span>
+        </div>
         <div>&nbsp;</div>
-        <div><span className="t-dim">cost estimate</span></div>
-        <div><span className="t-ok">$0.84</span> <span className="t-dim">claude-sonnet-4</span></div>
-        <div><span className="t-ok">$0.12</span> <span className="t-dim">codex</span></div>
+        <div>
+          <span className="t-dim">cost estimate</span>
+        </div>
+        <div>
+          <span className="t-ok">$0.84</span> <span className="t-dim">claude-sonnet-4</span>
+        </div>
+        <div>
+          <span className="t-ok">$0.12</span> <span className="t-dim">codex</span>
+        </div>
       </div>
     </div>
   )
@@ -83,14 +144,32 @@ function HooksConfigPanel() {
         <span className="terminal-title">hooks — config &amp; simulator</span>
       </div>
       <div className="terminal-body">
-        <div><span className="t-accent">▸</span> <span className="t-cmd">PreToolUse</span>   <span className="t-ok">✓ active</span></div>
-        <div><span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span>  <span className="t-ok">✓ active</span></div>
-        <div><span className="t-accent">▸</span> <span className="t-cmd">Stop</span>         <span className="t-ok">✓ active</span></div>
-        <div><span className="t-accent">▸</span> <span className="t-cmd">Notification</span> <span className="t-dim">○ inactive</span></div>
+        <div>
+          <span className="t-accent">▸</span> <span className="t-cmd">PreToolUse</span>{' '}
+          <span className="t-ok">✓ active</span>
+        </div>
+        <div>
+          <span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span>{' '}
+          <span className="t-ok">✓ active</span>
+        </div>
+        <div>
+          <span className="t-accent">▸</span> <span className="t-cmd">Stop</span>{' '}
+          <span className="t-ok">✓ active</span>
+        </div>
+        <div>
+          <span className="t-accent">▸</span> <span className="t-cmd">Notification</span>{' '}
+          <span className="t-dim">○ inactive</span>
+        </div>
         <div>&nbsp;</div>
-        <div><span className="t-dim">── simulate ──</span></div>
-        <div><span className="t-sub">payload</span> <span className="t-cmd">PostToolUse/Write</span></div>
-        <div><span className="t-ok">200</span> <span className="t-dim">event accepted · 12ms</span></div>
+        <div>
+          <span className="t-dim">── simulate ──</span>
+        </div>
+        <div>
+          <span className="t-sub">payload</span> <span className="t-cmd">PostToolUse/Write</span>
+        </div>
+        <div>
+          <span className="t-ok">200</span> <span className="t-dim">event accepted · 12ms</span>
+        </div>
       </div>
     </div>
   )
@@ -107,8 +186,8 @@ type FeatureDetail = {
 
 const FEATURES: FeatureDetail[] = [
   {
-    eyebrow: '▸ LIVE EVENT FEED',
-    title: 'EVERY TOOL CALL,\nIN REAL TIME',
+    eyebrow: 'Live event feed',
+    title: 'Every tool call,\nin real time',
     desc: 'Argus streams every agent action to your browser the instant it fires. No polling. No refresh.',
     bullets: [
       'SSE stream — sub-100ms latency from hook to browser',
@@ -120,8 +199,8 @@ const FEATURES: FeatureDetail[] = [
     panel: <EventsFeedPanel />,
   },
   {
-    eyebrow: '▸ SESSION WATERFALL',
-    title: 'SEE THE FULL\nTIMELINE AT A GLANCE',
+    eyebrow: 'Session waterfall',
+    title: 'See the full\ntimeline at a glance',
     desc: 'Group events into sessions and visualise tool-call sequences as a waterfall. Instantly spot bottlenecks.',
     bullets: [
       'Auto-groups events by working directory + agent',
@@ -134,8 +213,8 @@ const FEATURES: FeatureDetail[] = [
     flip: true,
   },
   {
-    eyebrow: '▸ DASHBOARD & COSTS',
-    title: 'TOKEN USAGE\n& COST ESTIMATES',
+    eyebrow: 'Dashboard & costs',
+    title: 'Token usage\n& cost estimates',
     desc: 'Know exactly what your agents are spending — per session, per day, per model.',
     bullets: [
       'Input / output / cache token breakdown per session',
@@ -147,8 +226,8 @@ const FEATURES: FeatureDetail[] = [
     panel: <DashboardPanel />,
   },
   {
-    eyebrow: '▸ HOOKS CONFIG & SIMULATOR',
-    title: 'CONFIGURE &\nTEST YOUR HOOKS',
+    eyebrow: 'Hooks config & simulator',
+    title: 'Configure &\ntest your hooks',
     desc: 'Manage your hook configuration and fire test payloads directly from the dashboard — no curl required.',
     bullets: [
       'View and edit hook config for Claude Code and Codex',
@@ -171,10 +250,11 @@ export function FeaturesPage() {
         <section className="page-hero">
           <div className="container">
             <AnimateOnScroll>
-              <p className="section-eyebrow">▸ CAPABILITIES</p>
-              <h1 className="page-hero-title">FEATURES</h1>
+              <p className="section-eyebrow">Capabilities</p>
+              <h1 className="page-hero-title">Features</h1>
               <p className="page-hero-sub">
-                Everything you need to observe, debug, and understand your AI coding agents — running entirely on localhost.
+                Everything you need to observe, debug, and understand your AI coding agents —
+                running entirely on localhost.
               </p>
             </AnimateOnScroll>
           </div>
@@ -189,19 +269,22 @@ export function FeaturesPage() {
                   <p className="section-eyebrow">{f.eyebrow}</p>
                   <h2 className="feature-row-title">
                     {f.title.split('\n').map((line, j) => (
-                      <span key={j}>{line}{j === 0 ? <br /> : null}</span>
+                      <span key={j}>
+                        {line}
+                        {j === 0 ? <br /> : null}
+                      </span>
                     ))}
                   </h2>
                   <p className="feature-row-desc">{f.desc}</p>
                   <ul className="feature-row-bullets">
                     {f.bullets.map((b) => (
-                      <li key={b}><span className="t-accent">▸</span> {b}</li>
+                      <li key={b}>
+                        <span className="t-accent">▸</span> {b}
+                      </li>
                     ))}
                   </ul>
                 </AnimateOnScroll>
-                <AnimateOnScroll delay={120}>
-                  {f.panel}
-                </AnimateOnScroll>
+                <AnimateOnScroll delay={120}>{f.panel}</AnimateOnScroll>
               </div>
             </div>
           </section>
@@ -211,19 +294,30 @@ export function FeaturesPage() {
         <section className="section">
           <div className="container" style={{ textAlign: 'center' }}>
             <AnimateOnScroll>
-              <h2 className="section-title">READY TO START?</h2>
-              <p style={{ fontFamily: 'var(--font-vt)', fontSize: '20px', color: 'var(--text-muted)', marginTop: '12px', marginBottom: '32px' }}>
+              <h2 className="section-title" style={{ marginBottom: 0 }}>
+                Ready to start?
+              </h2>
+              <p
+                style={{
+                  fontSize: '15px',
+                  color: 'var(--text-muted)',
+                  marginTop: '12px',
+                  marginBottom: '32px',
+                }}
+              >
                 Clone, build, and have your first event in under 10 minutes.
               </p>
               <div className="hero-ctas" style={{ justifyContent: 'center' }}>
-                <a href="/install" className="btn-primary">▶ INSTALL GUIDE</a>
+                <a href="/install" className="btn-primary">
+                  Install guide
+                </a>
                 <a
                   href="https://github.com/duytrandt04-afk/argus"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
                 >
-                  ◈ GITHUB
+                  GitHub ↗
                 </a>
               </div>
             </AnimateOnScroll>

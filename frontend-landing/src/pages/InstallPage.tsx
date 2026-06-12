@@ -116,8 +116,8 @@ export function InstallPage() {
         <section className="page-hero">
           <div className="container">
             <AnimateOnScroll>
-              <p className="section-eyebrow">▸ SETUP</p>
-              <h1 className="page-hero-title">INSTALL GUIDE</h1>
+              <p className="section-eyebrow">Setup</p>
+              <h1 className="page-hero-title">Install guide</h1>
               <p className="page-hero-sub">
                 First event in under 10 minutes. No accounts. No API keys. No cloud.
               </p>
@@ -125,12 +125,22 @@ export function InstallPage() {
 
             <AnimateOnScroll delay={100}>
               <div className="requirements-bar">
-                <span className="req-label">REQUIREMENTS</span>
-                <span className="req-item"><span className="t-ok">●</span> Go 1.25+</span>
-                <span className="req-item"><span className="t-ok">●</span> Node.js 18+</span>
-                <span className="req-item"><span className="t-ok">●</span> pnpm 10.x</span>
-                <span className="req-item"><span className="t-ok">●</span> curl</span>
-                <span className="req-item"><span className="t-ok">●</span> macOS / Linux / WSL</span>
+                <span className="req-label">Requirements</span>
+                <span className="req-item">
+                  <span className="t-ok">●</span> Go 1.25+
+                </span>
+                <span className="req-item">
+                  <span className="t-ok">●</span> Node.js 18+
+                </span>
+                <span className="req-item">
+                  <span className="t-ok">●</span> pnpm 10.x
+                </span>
+                <span className="req-item">
+                  <span className="t-ok">●</span> curl
+                </span>
+                <span className="req-item">
+                  <span className="t-ok">●</span> macOS / Linux / WSL
+                </span>
               </div>
             </AnimateOnScroll>
           </div>
@@ -139,26 +149,31 @@ export function InstallPage() {
         {/* Steps */}
         <section className="section">
           <div className="container install-steps">
-
-            <Step num="01" title="CLONE & BUILD">
+            <Step num="01" title="Clone & build">
               <p className="step-desc">
-                Clone the repo and run <code>make build-local</code>. This compiles the frontend, embeds the React SPA into the Go binary, and places <code>argus</code> in <code>~/.argus/bin/</code>.
+                Clone the repo and run <code>make build-local</code>. This compiles the frontend,
+                embeds the React SPA into the Go binary, and places <code>argus</code> in{' '}
+                <code>~/.argus/bin/</code>.
               </p>
               <CodeBlock lang="bash" code={CLONE_CODE} />
             </Step>
 
-            <Step num="02" title="START THE SERVER">
+            <Step num="02" title="Start the server">
               <p className="step-desc">
-                Run the binary. It starts the hook endpoint and serves the dashboard on <code>:10804</code>.
+                Run the binary. It starts the hook endpoint and serves the dashboard on{' '}
+                <code>:10804</code>.
               </p>
               <CodeBlock lang="bash" code={RUN_CODE} />
-              <p className="step-desc" style={{ marginTop: '12px' }}>Expected output:</p>
+              <p className="step-desc" style={{ marginTop: '12px' }}>
+                Expected output:
+              </p>
               <CodeBlock lang="text" code={RUN_OUTPUT} filename="stdout" />
             </Step>
 
-            <Step num="03" title="CONFIGURE AGENT HOOKS">
+            <Step num="03" title="Configure agent hooks">
               <p className="step-desc">
-                Add the hook commands to your agent config. Argus accepts any JSON payload via <code>POST /api/hook</code> — it auto-detects the agent from the transcript path.
+                Add the hook commands to your agent config. Argus accepts any JSON payload via{' '}
+                <code>POST /api/hook</code> — it auto-detects the agent from the transcript path.
               </p>
               <div className="tabs" style={{ marginBottom: '0' }}>
                 <span className="tab-label">Claude Code</span>
@@ -170,9 +185,11 @@ export function InstallPage() {
               <CodeBlock lang="bash" filename="codex hooks" code={CODEX_HOOKS} />
             </Step>
 
-            <Step num="04" title="OPEN THE DASHBOARD">
+            <Step num="04" title="Open the dashboard">
               <p className="step-desc">
-                Open <strong style={{ color: 'var(--accent)' }}>http://localhost:10804</strong> in your browser. Start an agent session — events should appear within milliseconds of the first tool call.
+                Open <strong style={{ color: 'var(--accent)' }}>http://localhost:10804</strong> in
+                your browser. Start an agent session — events should appear within milliseconds of
+                the first tool call.
               </p>
               <div className="terminal-window" style={{ marginTop: '16px' }}>
                 <div className="terminal-chrome">
@@ -182,24 +199,41 @@ export function InstallPage() {
                   <span className="terminal-title">localhost:10804 — events</span>
                 </div>
                 <div className="terminal-body">
-                  <div><span className="t-ok">✓</span> <span className="t-cmd">SSE stream connected</span></div>
-                  <div><span className="t-dim">── waiting for events ──</span></div>
+                  <div>
+                    <span className="t-ok">✓</span>{' '}
+                    <span className="t-cmd">SSE stream connected</span>
+                  </div>
+                  <div>
+                    <span className="t-dim">── waiting for events ──</span>
+                  </div>
                   <div>&nbsp;</div>
-                  <div><span className="t-accent">▸</span> <span className="t-cmd">PreToolUse</span>  <span className="t-sub">Bash</span></div>
-                  <div><span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span> <span className="t-sub">Bash</span> <span className="t-path">exit:0</span></div>
-                  <div><span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span> <span className="t-sub">Write</span> <span className="t-path">src/App.tsx</span></div>
-                  <div><span className="t-ok">✓</span> <span className="t-cmd">Stop</span> <span className="t-dim">agent finished</span></div>
+                  <div>
+                    <span className="t-accent">▸</span> <span className="t-cmd">PreToolUse</span>{' '}
+                    <span className="t-sub">Bash</span>
+                  </div>
+                  <div>
+                    <span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span>{' '}
+                    <span className="t-sub">Bash</span> <span className="t-path">exit:0</span>
+                  </div>
+                  <div>
+                    <span className="t-accent">▸</span> <span className="t-cmd">PostToolUse</span>{' '}
+                    <span className="t-sub">Write</span> <span className="t-path">src/App.tsx</span>
+                  </div>
+                  <div>
+                    <span className="t-ok">✓</span> <span className="t-cmd">Stop</span>{' '}
+                    <span className="t-dim">agent finished</span>
+                  </div>
                 </div>
               </div>
             </Step>
 
-            <Step num="05" title="VERIFY (OPTIONAL)">
+            <Step num="05" title="Verify (optional)">
               <p className="step-desc">
-                Test the endpoint directly with curl to confirm argus is accepting payloads before running a full agent session.
+                Test the endpoint directly with curl to confirm argus is accepting payloads before
+                running a full agent session.
               </p>
               <CodeBlock lang="bash" code={VERIFY_CODE} />
             </Step>
-
           </div>
         </section>
 
@@ -207,8 +241,8 @@ export function InstallPage() {
         <section className="section alt-bg">
           <div className="container">
             <AnimateOnScroll>
-              <p className="section-eyebrow">▸ TROUBLESHOOTING</p>
-              <h2 className="section-title">COMMON ISSUES</h2>
+              <p className="section-eyebrow">Troubleshooting</p>
+              <h2 className="section-title">Common issues</h2>
             </AnimateOnScroll>
             <div className="trouble-grid">
               {TROUBLE_ITEMS.map((item, i) => (
@@ -227,19 +261,30 @@ export function InstallPage() {
         <section className="section">
           <div className="container" style={{ textAlign: 'center' }}>
             <AnimateOnScroll>
-              <h2 className="section-title">EXPLORE THE DASHBOARD</h2>
-              <p style={{ fontFamily: 'var(--font-vt)', fontSize: '20px', color: 'var(--text-muted)', marginTop: '12px', marginBottom: '32px' }}>
+              <h2 className="section-title" style={{ marginBottom: 0 }}>
+                Explore the dashboard
+              </h2>
+              <p
+                style={{
+                  fontSize: '15px',
+                  color: 'var(--text-muted)',
+                  marginTop: '12px',
+                  marginBottom: '32px',
+                }}
+              >
                 See what the dashboard can show you once events start flowing.
               </p>
               <div className="hero-ctas" style={{ justifyContent: 'center' }}>
-                <a href="/features" className="btn-primary">▶ VIEW FEATURES</a>
+                <a href="/features" className="btn-primary">
+                  View features
+                </a>
                 <a
                   href="https://github.com/duytrandt04-afk/argus"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary"
                 >
-                  ◈ GITHUB
+                  GitHub ↗
                 </a>
               </div>
             </AnimateOnScroll>

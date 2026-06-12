@@ -14,7 +14,7 @@ export function useAnimateOnScroll<T extends HTMLElement>() {
           observer.unobserve(el)
         }
       },
-      { threshold: 0, rootMargin: '0px 0px -40px 0px' },
+      { threshold: 0, rootMargin: '0px 0px -40px 0px' }
     )
 
     observer.observe(el)
