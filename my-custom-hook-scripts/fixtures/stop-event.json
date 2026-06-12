@@ -1,0 +1,7 @@
+{
+  "hook_event_name": "Stop",
+  "session_id": "abc12345-6789",
+  "cwd": "/tmp/argus-hook-test/repo-feature",
+  "last_assistant_message": "Refactor complete, all tests pass.",
+  "transcript_path": "/Users/duytran/.claude/projects/test/session.jsonl"
+}

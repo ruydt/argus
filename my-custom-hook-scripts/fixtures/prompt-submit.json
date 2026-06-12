@@ -1,0 +1,7 @@
+{
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "fix the failing test",
+  "cwd": "/tmp/argus-hook-test/repo-feature",
+  "session_id": "abc12345-6789",
+  "transcript_path": "/Users/duytran/.claude/projects/test/session.jsonl"
+}
