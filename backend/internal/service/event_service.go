@@ -614,7 +614,7 @@ func (s *EventService) SweepStaleSessions(cutoff time.Time) error {
 // re-decoding the payload.
 type BroadcastEvent struct {
 	Session string
-	Payload []byte
+	Payload []byte // immutable after construction; safe to share across subscribers
 }
 
 func (s *EventService) Subscribe() <-chan BroadcastEvent {
