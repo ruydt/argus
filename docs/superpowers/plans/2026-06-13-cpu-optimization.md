@@ -1292,7 +1292,7 @@ git commit -m "perf(sqlite): direct string time predicates so indexes apply"
 - Modify: `backend/internal/repository/sqlite/sqlite.go:515-565`
 - Test: sqlite test file
 
-- [ ] **Step 1: Write the failing equivalence test**
+- [x] **Step 1: Write the failing equivalence test**
 
 The test pins the old algorithm's output as the contract. Copy the **current** `mergeChildProjects` body into the test file as `mergeChildProjectsQuadratic` (test-local, unexported) before changing the implementation, and add:
 
@@ -1344,7 +1344,7 @@ func TestMergeChildProjectsMatchesQuadratic(t *testing.T) {
 
 This test needs access to the unexported `mergeChildProjects`, so it lives in `package sqlite` (white-box, same directory: `backend/internal/repository/sqlite/merge_projects_test.go`).
 
-- [ ] **Step 2: Run to verify it passes against the old code, then implement**
+- [x] **Step 2: Run to verify it passes against the old code, then implement**
 
 Run: `cd backend && go test -run TestMergeChildProjectsMatchesQuadratic ./internal/repository/sqlite/`
 Expected: PASS (both sides are the quadratic algorithm). This is the safety net.
@@ -1423,12 +1423,12 @@ func mergeChildProjects(projects []domain.Project) []domain.Project {
 
 Equivalence caveat: the old code processed projects in path-length order; the new one in lexicographic order. Both guarantee every parent is processed before its children, and the final LastActivity sort makes output order identical. If the equivalence test finds a fixture where final ordering ties differ (same LastActivity), accept either order in the test by comparing as sets keyed by CWD.
 
-- [ ] **Step 3: Run the equivalence test against the new code**
+- [x] **Step 3: Run the equivalence test against the new code**
 
 Run: `cd backend && go test -run 'TestMergeChildProjects' ./internal/repository/sqlite/ ./tests/...`
 Expected: PASS, including any pre-existing `mergeChildProjects`/`ListProjects` tests.
 
-- [ ] **Step 4: Gates and commit**
+- [x] **Step 4: Gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.

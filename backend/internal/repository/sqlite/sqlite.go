@@ -520,23 +520,35 @@ func (d *DB) ListProjects() ([]domain.Project, error) {
 
 // mergeChildProjects collapses sessions from subdirectory CWDs into their
 // nearest parent project so e.g. /foo/bar doesn't show alongside /foo.
+// Lexicographic order puts every parent path immediately before its children,
+// so one pass with an ancestor stack replaces the quadratic prefix search.
 func mergeChildProjects(projects []domain.Project) []domain.Project {
 	slices.SortStableFunc(projects, func(a, b domain.Project) int {
-		return len(a.CWD) - len(b.CWD)
+		return strings.Compare(a.CWD, b.CWD)
 	})
 
 	merged := make([]domain.Project, 0, len(projects))
+	var stack []int // indexes into merged forming the current ancestor chain
 	for _, p := range projects {
+		for len(stack) > 0 {
+			top := merged[stack[len(stack)-1]].CWD
+			if top != "" && strings.HasPrefix(p.CWD, top+"/") {
+				break
+			}
+			stack = stack[:len(stack)-1]
+		}
+
+		// Deepest eligible ancestor wins. Require ≥4 path components so home
+		// dirs like /Users/foo don't absorb all projects as a side-effect of
+		// prefix matching.
 		parentIdx := -1
-		for i := range merged {
-			// Require parent to have ≥4 path components so home dirs like
-			// /Users/foo don't absorb all projects as a side-effect of prefix matching.
-			if merged[i].CWD != "" &&
-				len(strings.Split(merged[i].CWD, "/")) >= 4 &&
-				strings.HasPrefix(p.CWD, merged[i].CWD+"/") {
-				parentIdx = i // keep updating to get deepest match
+		for i := len(stack) - 1; i >= 0; i-- {
+			if len(strings.Split(merged[stack[i]].CWD, "/")) >= 4 {
+				parentIdx = stack[i]
+				break
 			}
 		}
+
 		if parentIdx >= 0 {
 			par := &merged[parentIdx]
 			par.SessionCount += p.SessionCount
@@ -554,9 +566,11 @@ func mergeChildProjects(projects []domain.Project) []domain.Project {
 					par.Agents = append(par.Agents, a)
 				}
 			}
-		} else {
-			merged = append(merged, p)
+			continue
 		}
+
+		merged = append(merged, p)
+		stack = append(stack, len(merged)-1)
 	}
 
 	slices.SortStableFunc(merged, func(a, b domain.Project) int {
