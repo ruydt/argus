@@ -241,3 +241,42 @@ export function DiagnosticsPanel() {
     </div>
   )
 }
+
+export function ScriptsPanel() {
+  return (
+    <div className="terminal-window">
+      <div className="terminal-chrome">
+        <span className="terminal-dot red" />
+        <span className="terminal-dot amber" />
+        <span className="terminal-dot green" />
+        <span className="terminal-title">my-custom-hook-scripts</span>
+      </div>
+      <div className="terminal-body">
+        <div>
+          <span className="t-path">$</span> <span className="t-cmd">ls ~/.argus/hooks</span>
+        </div>
+        <div>
+          <span className="t-cmd">block-dangerous.js</span>{' '}
+          <span className="t-cmd">protect-secrets.js</span>
+        </div>
+        <div>
+          <span className="t-cmd">protect-branch.js</span>{' '}
+          <span className="t-cmd">format-lint.js</span>
+        </div>
+        <div>
+          <span className="t-cmd">scan-injection.js</span>{' '}
+          <span className="t-cmd">notify-webhook.js</span>
+        </div>
+        <div>&nbsp;</div>
+        <div>
+          <span className="t-path">$</span>{' '}
+          <span className="t-cmd">node block-dangerous.js &lt; fixtures/bash-dangerous.json</span>
+        </div>
+        <div>
+          <span className="t-accent">▸</span> <span className="t-sub">permissionDecision:</span>{' '}
+          <span className="t-cmd">deny</span>
+        </div>
+      </div>
+    </div>
+  )
+}

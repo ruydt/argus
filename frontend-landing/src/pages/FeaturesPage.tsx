@@ -1,11 +1,15 @@
 import { AnimateOnScroll } from '../components/AnimateOnScroll'
 import {
   DashboardPanel,
+  DiagnosticsPanel,
   EventsFeedPanel,
   HooksConfigPanel,
+  ProjectsPanel,
+  ScriptsPanel,
   SessionsPanel,
 } from '../components/PanelMocks'
 import { Footer } from '../sections/Footer'
+import { HowItWorks } from '../sections/HowItWorks'
 import { NavBar } from '../sections/NavBar'
 
 type FeatureDetail = {
@@ -19,7 +23,7 @@ type FeatureDetail = {
 
 const FEATURES: FeatureDetail[] = [
   {
-    eyebrow: 'Hooks config & simulator',
+    eyebrow: '01 · The guard',
     title: 'Manage & test hooks\nbefore agents run them',
     desc: 'The core of Argus: one-click hook presets, a structured config editor, and a simulator that fires synthetic payloads at any hook command — plus a free public collection of battle-tested guardrail scripts.',
     bullets: [
@@ -32,7 +36,21 @@ const FEATURES: FeatureDetail[] = [
     panel: <HooksConfigPanel />,
   },
   {
-    eyebrow: 'Live event feed',
+    eyebrow: '02 · The armory',
+    title: 'A public collection\nof battle-tested guardrails',
+    desc: 'Zero-dependency hook scripts, free for everyone — copy one file, wire it up, or test it in the simulator first. Works with Claude Code and Codex.',
+    bullets: [
+      'block-dangerous — denies rm -rf ~, curl | sh, force-push to main',
+      'protect-secrets & protect-branch — secret files and protected branches stay untouchable',
+      'format-lint — auto-format on edit, lint errors fed back to the agent',
+      'scan-injection — warns when tool output smells like prompt injection',
+      'notify-webhook & git-autostage — Slack/Discord/ntfy alerts, opt-in checkpoints',
+    ],
+    panel: <ScriptsPanel />,
+    flip: true,
+  },
+  {
+    eyebrow: '03 · The record',
     title: 'Every tool call,\nin real time',
     desc: 'Argus streams every agent action to your browser the instant it fires. No polling. No refresh.',
     bullets: [
@@ -43,10 +61,9 @@ const FEATURES: FeatureDetail[] = [
       'Permission events (allow / deny) tracked separately',
     ],
     panel: <EventsFeedPanel />,
-    flip: true,
   },
   {
-    eyebrow: 'Session waterfall',
+    eyebrow: '04 · The timeline',
     title: 'See the full\ntimeline at a glance',
     desc: 'Group events into sessions and visualise tool-call sequences as a waterfall. Instantly spot bottlenecks.',
     bullets: [
@@ -57,9 +74,10 @@ const FEATURES: FeatureDetail[] = [
       'Session state persists across page reloads',
     ],
     panel: <SessionsPanel />,
+    flip: true,
   },
   {
-    eyebrow: 'Dashboard & costs',
+    eyebrow: '05 · The ledger',
     title: 'Token usage\n& cost estimates',
     desc: 'Know exactly what your agents are spending — per session, per day, per model.',
     bullets: [
@@ -70,7 +88,33 @@ const FEATURES: FeatureDetail[] = [
       'All math runs locally — no external pricing API',
     ],
     panel: <DashboardPanel />,
+  },
+  {
+    eyebrow: '06 · The grounds',
+    title: 'Every repo\nyour agents touch',
+    desc: 'Project cards group sessions by working directory — searchable, with per-project stats and cascade delete.',
+    bullets: [
+      'Sessions and events rolled up per project',
+      'Client-side search across project paths',
+      'Delete a project with full data cascade',
+      'Jump from project to its session list',
+      'Last-activity timestamps at a glance',
+    ],
+    panel: <ProjectsPanel />,
     flip: true,
+  },
+  {
+    eyebrow: '07 · The pulse',
+    title: 'The instrument\nchecks itself',
+    desc: 'Diagnostics shows the watcher is awake: health, storage, hook inventory, and live log tails.',
+    bullets: [
+      'Backend health and version at a glance',
+      'SQLite size and event counts',
+      'Active hook preset detection (Baseline / Medium / Full)',
+      '~/.argus file inventory with reveal-in-Finder',
+      'Server, watcher, and hook-script log tails',
+    ],
+    panel: <DiagnosticsPanel />,
   },
 ]
 
@@ -122,6 +166,9 @@ export function FeaturesPage() {
             </div>
           </section>
         ))}
+
+        {/* Signal chain */}
+        <HowItWorks />
 
         {/* CTA */}
         <section className="section">

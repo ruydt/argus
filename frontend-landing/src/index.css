@@ -948,12 +948,12 @@ a {
   pointer-events: none;
 }
 .page-hero-title {
-  font-family: var(--font-mono);
-  font-size: clamp(28px, 3.6vw, 38px);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(36px, 4.4vw, 56px);
+  letter-spacing: -0.005em;
   color: var(--text-primary);
-  line-height: 1.25;
+  line-height: 1.1;
   margin-bottom: 16px;
   position: relative;
 }
@@ -988,12 +988,12 @@ a {
   gap: 18px;
 }
 .feature-row-title {
-  font-family: var(--font-mono);
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: 30px;
+  letter-spacing: -0.005em;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.2;
 }
 .feature-row-desc {
   font-family: var(--font-sans);
