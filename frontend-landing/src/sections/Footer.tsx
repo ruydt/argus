@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArgusEye } from '../components/ArgusEye'
+import { WatchingEye } from '../components/WatchingEye'
 
 const REPO = 'https://github.com/duytrandt04-afk/argus'
 
@@ -14,10 +14,10 @@ export function Footer() {
                 display: 'inline-flex',
                 width: 18,
                 height: 18,
-                color: 'var(--accent)',
+                color: 'rgba(255, 255, 255, 0.9)',
               }}
             >
-              <ArgusEye />
+              <WatchingEye size={18} track={false} />
             </span>
             <span>
               <span style={{ color: 'var(--text-primary)' }}>Argus</span>

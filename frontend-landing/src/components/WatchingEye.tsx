@@ -3,19 +3,20 @@ import { useEffect, useRef } from 'react'
 type WatchingEyeProps = {
   size?: number
   className?: string
+  track?: boolean
 }
 
 // The Argus eye, awake: the iris follows the visitor's cursor with a slow,
 // clamped drift — the watchman noticing, not surveilling. Static for
 // reduced-motion users and touch devices.
-export function WatchingEye({ size = 72, className }: WatchingEyeProps) {
+export function WatchingEye({ size = 72, className, track = true }: WatchingEyeProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const irisRef = useRef<SVGGElement>(null)
 
   useEffect(() => {
     const svg = svgRef.current
     const iris = irisRef.current
-    if (!svg || !iris) return
+    if (!track || !svg || !iris) return
     if (typeof window.matchMedia !== 'function') return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     if (window.matchMedia('(hover: none)').matches) return
@@ -55,7 +56,7 @@ export function WatchingEye({ size = 72, className }: WatchingEyeProps) {
       window.removeEventListener('mousemove', onMove)
       cancelAnimationFrame(frame)
     }
-  }, [])
+  }, [track])
 
   return (
     <svg

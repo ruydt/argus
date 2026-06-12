@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArgusEye } from '../components/ArgusEye'
 import { GitHubIcon } from '../components/GitHubIcon'
+import { WatchingEye } from '../components/WatchingEye'
 
 export function NavBar() {
   const [scrolled, setScrolled] = useState(false)
@@ -23,10 +23,10 @@ export function NavBar() {
               display: 'inline-flex',
               width: 18,
               height: 18,
-              color: 'var(--accent)',
+              color: 'rgba(255, 255, 255, 0.9)',
             }}
           >
-            <ArgusEye />
+            <WatchingEye size={18} track={false} />
           </span>
           <span>
             <span className="navbar-wordmark-arg">Argus</span>
