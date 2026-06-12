@@ -2333,6 +2333,14 @@ git commit -m "docs: record CPU optimization benchmark and QA results"
 
 ---
 
+## Known remaining work (accepted, out of scope)
+
+- Codex `apply_patch` events read the target file once in `codex.Normalize` (hunk
+  line-number resolution) and possibly once more in `handler.enrichContext`
+  (context window) — 2 reads total, down from up to 2 per hunk. Removing the second
+  read would require `codex.Normalize` to emit `CtxBefore`/`CtxAfter` itself;
+  deferred until profiling shows it matters.
+
 ## Deviation notes vs the spec (already reflected above)
 
 1. **Spec 2b "compute usage at write time"** — the codebase already computes usage at write time, but on *every* event (worse than the spec assumed). The implemented form is a 30s per-session throttle plus always-exact terminal events (Task 6), which both fixes the discovered hot-path cost and satisfies the spec's intent. The zero-usage upsert guard (Task 5) is a new prerequisite discovered from `UpsertSession`'s unconditional overwrite.
