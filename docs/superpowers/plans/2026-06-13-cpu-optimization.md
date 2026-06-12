@@ -1514,7 +1514,7 @@ git commit -m "test(backend): after-benchmarks for CPU optimization pass"
 - Modify: `frontend/src/app/Layout.tsx:91, 148-151, 301-305`
 - Test: `frontend/src/app/__tests__/HeaderClock.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { act, render, screen } from '@testing-library/react'
@@ -1545,12 +1545,12 @@ describe('HeaderClock', () => {
 })
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/app/__tests__/HeaderClock.test.tsx`
 Expected: FAIL — module `../HeaderClock` not found.
 
-- [ ] **Step 3: Create the component**
+- [x] **Step 3: Create the component**
 
 `frontend/src/app/HeaderClock.tsx`:
 
@@ -1578,7 +1578,7 @@ export function HeaderClock() {
 }
 ```
 
-- [ ] **Step 4: Wire into Layout**
+- [x] **Step 4: Wire into Layout**
 
 In `Layout.tsx`:
 1. Delete line 91: `const [now, setNow] = useState(() => new Date())`
@@ -1587,7 +1587,7 @@ In `Layout.tsx`:
 4. Add `import { HeaderClock } from './HeaderClock'` (feature-local relative import, last group).
 5. Remove `useState` from the React import only if now unused (it is still used for `isLive` — keep it).
 
-- [ ] **Step 5: Run tests, format, commit**
+- [x] **Step 5: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/app/HeaderClock.tsx src/app/Layout.tsx src/app/__tests__/HeaderClock.test.tsx`
 Expected: all pass.
