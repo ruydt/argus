@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { Dispatch, SetStateAction } from 'react'
 import type { EventRecord } from '@/types/events'
 import type { Project } from '@/types/sessions'
+import { usePollingInterval } from '@/hooks/usePollingInterval'
 
 function readStr(key: string, fallback: string): string {
   try {
@@ -75,16 +76,10 @@ export function useEventFilters(
     const timeout = window.setTimeout(() => {
       void refreshProjects()
     }, 0)
-    const interval = isLive
-      ? window.setInterval(() => {
-          void refreshProjects()
-        }, 15_000)
-      : null
-    return () => {
-      window.clearTimeout(timeout)
-      if (interval !== null) window.clearInterval(interval)
-    }
-  }, [isLive, refreshProjects])
+    return () => window.clearTimeout(timeout)
+  }, [refreshProjects])
+
+  usePollingInterval(() => void refreshProjects(), 15_000, isLive)
 
   useEffect(() => {
     sessionStorage.setItem('events_action_filter', actionFilter)

@@ -1607,7 +1607,7 @@ git commit -m "perf(frontend): isolate header clock so the shell stops re-render
 - Modify: `frontend/src/features/events/hooks/useEventFilters.ts:74-87`
 - Test: `frontend/src/hooks/__tests__/usePollingInterval.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { renderHook, act } from '@testing-library/react'
@@ -1690,12 +1690,12 @@ describe('usePollingInterval', () => {
 })
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/hooks/__tests__/usePollingInterval.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 `frontend/src/hooks/usePollingInterval.ts`:
 
@@ -1746,7 +1746,7 @@ export function usePollingInterval(callback: () => void, ms: number, enabled = t
 }
 ```
 
-- [ ] **Step 4: Wire into useSessions**
+- [x] **Step 4: Wire into useSessions**
 
 In `frontend/src/hooks/useSessions.ts`, replace the interval effect (lines 31-44) with:
 
@@ -1763,7 +1763,7 @@ In `frontend/src/hooks/useSessions.ts`, replace the interval effect (lines 31-44
 
 Add `import { usePollingInterval } from './usePollingInterval'`.
 
-- [ ] **Step 5: Wire into useEventFilters projects poll**
+- [x] **Step 5: Wire into useEventFilters projects poll**
 
 In `frontend/src/features/events/hooks/useEventFilters.ts`, replace the projects poll effect (lines 74-87) with:
 
@@ -1780,7 +1780,7 @@ In `frontend/src/features/events/hooks/useEventFilters.ts`, replace the projects
 
 Add `import { usePollingInterval } from '@/hooks/usePollingInterval'` (shared-lib import group).
 
-- [ ] **Step 6: Run tests, format, commit**
+- [x] **Step 6: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/hooks/ src/features/events/hooks/useEventFilters.ts`
 Expected: all pass. If existing useSessions/useEventFilters tests stub timers and assert polling while "hidden", they will need `document.hidden = false` made explicit (jsdom default is visible — usually no change needed).

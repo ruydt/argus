@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Session } from '@/types/sessions'
+import { usePollingInterval } from './usePollingInterval'
 
 export type { Session }
 
@@ -32,16 +33,10 @@ export function useSessions({ enabled = true }: { enabled?: boolean } = {}) {
     const timeout = window.setTimeout(() => {
       void refresh()
     }, 0)
-    const interval = enabled
-      ? window.setInterval(() => {
-          void refresh()
-        }, 5000)
-      : null
-    return () => {
-      window.clearTimeout(timeout)
-      if (interval !== null) window.clearInterval(interval)
-    }
-  }, [enabled, refresh])
+    return () => window.clearTimeout(timeout)
+  }, [refresh])
+
+  usePollingInterval(() => void refresh(), 5000, enabled)
 
   return { sessions, loading, refresh }
 }
