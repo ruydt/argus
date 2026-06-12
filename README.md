@@ -1,6 +1,9 @@
 # argus
 
 [![Release](https://img.shields.io/github/v/release/duytrandt04-afk/argus)](https://github.com/duytrandt04-afk/argus/releases/latest)
+[![Website](https://img.shields.io/badge/website-getargus.org-863bff)](https://getargus.org)
+
+**Website: [getargus.org](https://getargus.org)**
 
 Local-first monitoring dashboard for AI coding agent activity. Receives hook payloads from
 Claude Code and Codex, normalizes them to a canonical event model, persists to
