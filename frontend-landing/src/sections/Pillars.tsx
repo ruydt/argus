@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 import { AnimateOnScroll } from '../components/AnimateOnScroll'
 
 const PILLARS = [
@@ -42,13 +44,20 @@ export function Pillars() {
                 <p className="section-eyebrow">{p.eyebrow}</p>
                 <h3 className="pillar-title">{p.title}</h3>
                 <p className="pillar-body">{p.body}</p>
-                <a
-                  className="pillar-link"
-                  href={p.link.href}
-                  {...(p.link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                >
-                  {p.link.label} →
-                </a>
+                {p.link.external ? (
+                  <a
+                    className="pillar-link"
+                    href={p.link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {p.link.label} →
+                  </a>
+                ) : (
+                  <Link className="pillar-link" to={p.link.href}>
+                    {p.link.label} →
+                  </Link>
+                )}
               </div>
             </AnimateOnScroll>
           ))}
