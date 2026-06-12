@@ -4,6 +4,7 @@ import { Footer } from './sections/Footer'
 import { Hero } from './sections/Hero'
 import { HowItWorks } from './sections/HowItWorks'
 import { NavBar } from './sections/NavBar'
+import { MythBlock } from './sections/MythBlock'
 import { Pillars } from './sections/Pillars'
 import { Privacy } from './sections/Privacy'
 import { QuickInstall } from './sections/QuickInstall'
@@ -19,6 +20,7 @@ function HomePage() {
         <Hero />
         <StatsBar />
         <Pillars />
+        <MythBlock />
         <HowItWorks />
         <Features />
         <QuickInstall />

@@ -1203,6 +1203,36 @@ a {
 }
 
 /* ============================================================
+   MYTH INTERLUDE — typography only, no imagery
+   ============================================================ */
+.myth {
+  padding: 96px 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-deep);
+}
+.myth-text {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(24px, 2.4vw, 27px);
+  line-height: 1.5;
+  color: var(--text-primary);
+  max-width: 30em;
+}
+.myth-footnote {
+  margin-top: 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.myth-footnote code {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-sub);
+}
+
+/* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 900px) {
