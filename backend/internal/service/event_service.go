@@ -112,6 +112,11 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		); err != nil {
 			return err
 		}
+		// Ended sessions receive no further events; drop their scan timestamp
+		// so the map size tracks active sessions, not lifetime sessions.
+		if endedAtForEvent(e) != "" {
+			s.usageScannedAt.Delete(e.Session)
+		}
 	}
 	s.broadcast(e)
 	return nil
