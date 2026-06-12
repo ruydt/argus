@@ -1486,7 +1486,11 @@ Run: `cd backend && go test -bench . -benchtime 2s -run '^$' ./internal/fileutil
 Expected: `BenchmarkEnrichLookup` roughly halves vs baseline (one read instead of two); `BenchmarkGetDashboardStats` drops by orders of magnitude on cache hits. **Paste the numbers here next to the Task 1 baseline:**
 
 ```
-AFTER BenchmarkEnrichLookup:             220620 ns/op   (baseline: 212832 ns/op)
+AFTER BenchmarkEnrichLookup:             220620 ns/op   (baseline: 212832 ns/op — unchanged BY DESIGN:
+                                          this bench calls the two-read wrapper API, which still reads twice)
+AFTER BenchmarkEnrichLookupSingleRead:   117631 ns/op   (the actual post-refactor enrichContext pattern:
+                                          one ReadFileLines + both InLines lookups — 45% faster than the
+                                          212730 ns/op two-read pattern measured in the same run)
 AFTER BenchmarkGetDashboardStats:            77.21 ns/op   (baseline: 75647572 ns/op — 5s TTL cache)
 AFTER BenchmarkBroadcastFiveSubscribers:  1752 ns/op (no baseline — marshal-once by construction)
 ```

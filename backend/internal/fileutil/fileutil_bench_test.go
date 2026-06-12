@@ -24,8 +24,8 @@ func writeBenchFile(b *testing.B, n int) string {
 	return path
 }
 
-// BenchmarkEnrichLookup mirrors what handler.enrichContext does per edit hook:
-// find the snippet's start line, then compute surrounding context.
+// BenchmarkEnrichLookup mirrors the pre-optimization enrichment pattern:
+// each wrapper call reads and splits the file independently (two reads).
 func BenchmarkEnrichLookup(b *testing.B) {
 	path := writeBenchFile(b, 5000)
 	// Snippet near the end of the file = worst-case linear search.
@@ -37,5 +37,21 @@ func BenchmarkEnrichLookup(b *testing.B) {
 			b.Fatal("snippet not found")
 		}
 		fileutil.ComputeContext(path, start, 1, 3)
+	}
+}
+
+// BenchmarkEnrichLookupSingleRead mirrors what handler.enrichContext does
+// since the single-read refactor: one read serves both lookups.
+func BenchmarkEnrichLookupSingleRead(b *testing.B) {
+	path := writeBenchFile(b, 5000)
+	snippet := "func line4900OfFile() { return 4900 } // padding padding padding"
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		lines := fileutil.ReadFileLines(path)
+		start := fileutil.FindStartLineInLines(lines, snippet)
+		if start == 0 {
+			b.Fatal("snippet not found")
+		}
+		fileutil.ComputeContextFromLines(lines, start, 1, 3)
 	}
 }
