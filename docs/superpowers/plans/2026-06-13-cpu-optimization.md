@@ -1446,7 +1446,7 @@ git commit -m "perf(sqlite): single-pass ancestor-stack project merge"
 - Create: `backend/internal/service/broadcast_bench_test.go`
 - Modify: this plan file (record numbers)
 
-- [ ] **Step 1: Write the broadcast benchmark (new code shape)**
+- [x] **Step 1: Write the broadcast benchmark (new code shape)**
 
 ```go
 package service_test
@@ -1480,18 +1480,18 @@ func BenchmarkBroadcastFiveSubscribers(b *testing.B) {
 
 (`stubAddRepo` is defined in Task 4's test file, same package.)
 
-- [ ] **Step 2: Re-run all benchmarks, record after-numbers**
+- [x] **Step 2: Re-run all benchmarks, record after-numbers**
 
 Run: `cd backend && go test -bench . -benchtime 2s -run '^$' ./internal/fileutil/ ./internal/service/`
 Expected: `BenchmarkEnrichLookup` roughly halves vs baseline (one read instead of two); `BenchmarkGetDashboardStats` drops by orders of magnitude on cache hits. **Paste the numbers here next to the Task 1 baseline:**
 
 ```
-AFTER BenchmarkEnrichLookup:           ____ ns/op   (baseline: ____)
-AFTER BenchmarkGetDashboardStats:      ____ ns/op   (baseline: ____)
-AFTER BenchmarkBroadcastFiveSubscribers: ____ ns/op (no baseline — marshal-once by construction)
+AFTER BenchmarkEnrichLookup:             220620 ns/op   (baseline: 212832 ns/op)
+AFTER BenchmarkGetDashboardStats:            77.21 ns/op   (baseline: 75647572 ns/op — 5s TTL cache)
+AFTER BenchmarkBroadcastFiveSubscribers:  1752 ns/op (no baseline — marshal-once by construction)
 ```
 
-- [ ] **Step 3: Full backend gates and commit**
+- [x] **Step 3: Full backend gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
