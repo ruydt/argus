@@ -34,6 +34,9 @@ type EventService struct {
 	diagCache      *domain.Diagnostics
 	diagCachedAt   time.Time
 	diagAgentStats []domain.DiagnosticsAgentStats
+
+	statsMu    sync.RWMutex
+	statsCache map[string]cachedDashboardStats
 }
 
 type DiagnosticsOptions struct {
@@ -52,10 +55,22 @@ const exportSensitivityWarning = "Exports may include prompts, diffs, file paths
 // recomputed at most this often per session, plus always on terminal events.
 const usageRescanInterval = 30 * time.Second
 
+// cachedDashboardStats is a TTL-cached GetDashboardStats response. The cached
+// value is never mutated after store, so shallow copies are safe to hand out.
+type cachedDashboardStats struct {
+	stats    domain.DashboardStats
+	cachedAt time.Time
+}
+
+// dashboardStatsTTL bounds how often dashboard aggregates and transcript
+// scans run. 5s staleness is invisible for a local single-user dashboard.
+const dashboardStatsTTL = 5 * time.Second
+
 func New(repo repository.EventRepository) *EventService {
 	return &EventService{
-		repo:      repo,
-		startTime: time.Now(),
+		repo:       repo,
+		startTime:  time.Now(),
+		statsCache: map[string]cachedDashboardStats{},
 	}
 }
 
@@ -379,6 +394,16 @@ func (s *EventService) ListSessionsByCWD(cwd, since string) ([]domain.Session, e
 }
 
 func (s *EventService) GetDashboardStats(since, until string) (*domain.DashboardStats, error) {
+	key := since + "|" + until
+
+	s.statsMu.RLock()
+	if c, ok := s.statsCache[key]; ok && time.Since(c.cachedAt) < dashboardStatsTTL {
+		result := c.stats // shallow copy — cached value is never mutated after store
+		s.statsMu.RUnlock()
+		return &result, nil
+	}
+	s.statsMu.RUnlock()
+
 	sessions, err := s.repo.ListSessions()
 	if err != nil {
 		return nil, err
@@ -398,7 +423,22 @@ func (s *EventService) GetDashboardStats(since, until string) (*domain.Dashboard
 		}
 	}
 	enrichDashboardStats(stats, sessions, since, until)
+
+	s.statsMu.Lock()
+	s.statsCache[key] = cachedDashboardStats{stats: *stats, cachedAt: time.Now()}
+	s.statsMu.Unlock()
 	return stats, nil
+}
+
+// SetStatsCachedAt sets a stats cache entry's timestamp for testing TTL
+// expiry. Testing only — do not call in production code.
+func (s *EventService) SetStatsCachedAt(key string, t time.Time) {
+	s.statsMu.Lock()
+	if c, ok := s.statsCache[key]; ok {
+		c.cachedAt = t
+		s.statsCache[key] = c
+	}
+	s.statsMu.Unlock()
 }
 
 // BackfillMissingSessionUsage computes usage for sessions persisted before

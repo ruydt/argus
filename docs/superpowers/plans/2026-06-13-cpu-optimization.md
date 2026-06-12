@@ -1034,7 +1034,7 @@ git commit -m "perf(service): move session usage backfill off read paths to one-
 - Modify: `backend/internal/service/event_service.go` (struct, New, GetDashboardStats)
 - Test: service test file
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```go
 func TestGetDashboardStatsCached(t *testing.T) {
@@ -1089,12 +1089,12 @@ func TestGetDashboardStatsCached(t *testing.T) {
 
 Imports needed in the test file: `"time"`, `"argus/internal/repository/sqlite"`.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run TestGetDashboardStatsCached ./internal/service/`
 Expected: FAIL — `SetStatsCachedAt` undefined; without the cache `second.TotalEvents` is 2.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Struct additions (after the diag cache fields):
 
@@ -1186,7 +1186,7 @@ func (s *EventService) SetStatsCachedAt(key string, t time.Time) {
 }
 ```
 
-- [ ] **Step 4: Run tests, gates, commit**
+- [x] **Step 4: Run tests, gates, commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass. Any existing dashboard test asserting immediate freshness across two calls must expire the cache via `SetStatsCachedAt` between calls.
