@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -731,9 +732,13 @@ func TestSubscribeReceivesNewEvents(t *testing.T) {
 	}()
 
 	select {
-	case e := <-ch:
-		if e.Path != "/tmp/x.go" {
-			t.Fatalf("Path = %q, want /tmp/x.go", e.Path)
+	case ev := <-ch:
+		var decoded domain.NormalizedEvent
+		if err := json.Unmarshal(ev.Payload, &decoded); err != nil {
+			t.Fatalf("unmarshal payload: %v", err)
+		}
+		if decoded.Path != "/tmp/x.go" {
+			t.Fatalf("Path = %q, want /tmp/x.go", decoded.Path)
 		}
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for event")

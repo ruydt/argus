@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -607,24 +608,40 @@ func (s *EventService) SweepStaleSessions(cutoff time.Time) error {
 	return nil
 }
 
-func (s *EventService) Subscribe() <-chan domain.NormalizedEvent {
-	ch := make(chan domain.NormalizedEvent, 64)
-	recv := (<-chan domain.NormalizedEvent)(ch)
+// BroadcastEvent is a pre-marshaled event delivered to SSE subscribers.
+// Marshaling happens once in broadcast() instead of once per subscriber.
+// Session is carried alongside so the SSE handler can filter without
+// re-decoding the payload.
+type BroadcastEvent struct {
+	Session string
+	Payload []byte
+}
+
+func (s *EventService) Subscribe() <-chan BroadcastEvent {
+	ch := make(chan BroadcastEvent, 64)
+	recv := (<-chan BroadcastEvent)(ch)
 	s.subscribers.Store(recv, ch)
 	return recv
 }
 
-func (s *EventService) Unsubscribe(ch <-chan domain.NormalizedEvent) {
+func (s *EventService) Unsubscribe(ch <-chan BroadcastEvent) {
 	if v, ok := s.subscribers.LoadAndDelete(ch); ok {
-		close(v.(chan domain.NormalizedEvent))
+		close(v.(chan BroadcastEvent))
 	}
 }
 
 func (s *EventService) broadcast(e domain.NormalizedEvent) {
+	payload, err := json.Marshal(e)
+	if err != nil {
+		// Event is already persisted; only the live push is dropped.
+		slog.Error("broadcast marshal", "err", err)
+		return
+	}
+	ev := BroadcastEvent{Session: e.Session, Payload: payload}
 	s.subscribers.Range(func(_, v any) bool {
-		ch := v.(chan domain.NormalizedEvent)
+		ch := v.(chan BroadcastEvent)
 		select {
-		case ch <- e:
+		case ch <- ev:
 		default:
 		}
 		return true

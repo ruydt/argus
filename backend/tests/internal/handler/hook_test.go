@@ -355,8 +355,8 @@ func TestHookIgnoredEventNoSSEBroadcast(t *testing.T) {
 
 	// No event should arrive on the subscriber channel.
 	select {
-	case e := <-ch:
-		t.Fatalf("received unexpected SSE event for ignored hook: agent=%q session=%q", e.Agent, e.Session)
+	case ev := <-ch:
+		t.Fatalf("received unexpected SSE event for ignored hook: session=%q payload=%s", ev.Session, ev.Payload)
 	case <-time.After(50 * time.Millisecond):
 		// Pass: no broadcast received.
 	}

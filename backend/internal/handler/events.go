@@ -137,14 +137,14 @@ func EventsStream(svc *service.EventService) http.Handler {
 
 		for {
 			select {
-			case e, ok := <-ch:
+			case ev, ok := <-ch:
 				if !ok {
 					return
 				}
-				if sessionID != "" && e.Session != sessionID {
+				if sessionID != "" && ev.Session != sessionID {
 					continue
 				}
-				sendSSE(w, e)
+				_, _ = fmt.Fprintf(w, "data: %s\n\n", ev.Payload)
 				flusher.Flush()
 			case <-r.Context().Done():
 				return

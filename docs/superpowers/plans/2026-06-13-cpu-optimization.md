@@ -460,7 +460,7 @@ git commit -m "perf(ingest): enrich hook and codex patch context with a single f
 - Modify: `backend/internal/handler/events.go:112-154` (EventsStream)
 - Test: existing service/handler SSE tests (update signatures), plus one new service test
 
-- [ ] **Step 1: Write the failing service test**
+- [x] **Step 1: Write the failing service test**
 
 Append to the service test file that holds broadcast/subscribe tests (or create `backend/internal/service/broadcast_test.go`):
 
@@ -520,12 +520,12 @@ func TestBroadcastMarshalsOnce(t *testing.T) {
 
 Note: `AddEvent` with `Session != ""` and an empty `TranscriptPath` calls `ComputeUsage("")` today, which returns zero usage — `UpsertSession` stub absorbs it. After Task 6 the call is skipped entirely; this test is unaffected.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run TestBroadcastMarshalsOnce ./internal/service/`
 Expected: FAIL — `got1.Session undefined` / `got1.Payload undefined` (channel currently carries `domain.NormalizedEvent`).
 
-- [ ] **Step 3: Implement in the service**
+- [x] **Step 3: Implement in the service**
 
 In `backend/internal/service/event_service.go`, add `"encoding/json"` to imports, then replace `Subscribe`, `Unsubscribe`, and `broadcast` (lines 610-632) with:
 
@@ -571,7 +571,7 @@ func (s *EventService) broadcast(e domain.NormalizedEvent) {
 }
 ```
 
-- [ ] **Step 4: Update the SSE handler**
+- [x] **Step 4: Update the SSE handler**
 
 In `backend/internal/handler/events.go`, replace the `for { select { ... } }` loop in `EventsStream` (lines 138-152) with:
 
@@ -595,13 +595,13 @@ In `backend/internal/handler/events.go`, replace the `for { select { ... } }` lo
 
 The backfill loop above it keeps using `sendSSE(w, e)` — backfill events come from the repository as `domain.NormalizedEvent` and are marshaled per request, which is fine (bounded at `sseBackfillLimit`). Do not change the subscribe-before-backfill order — it is intentional (prevents dropped events).
 
-- [ ] **Step 5: Fix any compile errors in existing tests**
+- [x] **Step 5: Fix any compile errors in existing tests**
 
 Run: `cd backend && go build ./... && go test ./...`
 Any existing test that consumed `<-chan domain.NormalizedEvent` from `Subscribe()` must switch to `service.BroadcastEvent` and `json.Unmarshal(ev.Payload, &event)` where it inspected fields. Make those mechanical updates.
 Expected: all pass.
 
-- [ ] **Step 6: Lint and commit**
+- [x] **Step 6: Lint and commit**
 
 Run: `cd backend && golangci-lint run ./...`
 Expected: clean.
