@@ -20,7 +20,9 @@ export function Footer() {
             <span style={{ color: 'var(--text-muted)' }}>_</span>
           </span>
         </div>
-        <div className="footer-meta">MIT license · local-first · no telemetry</div>
+        <div className="footer-meta">
+          watching since the bronze age · MIT license · no telemetry
+        </div>
       </div>
     </footer>
   )

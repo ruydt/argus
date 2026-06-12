@@ -887,25 +887,6 @@ a {
   padding: 96px 0;
   border-top: 1px solid var(--border-deep);
 }
-.privacy-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--border-deep);
-  border: 1px solid var(--border-deep);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-top: 48px;
-}
-.privacy-grid > .animate-on-scroll {
-  display: contents;
-}
-.privacy-grid .feature-card {
-  background: var(--bg-base);
-}
-.privacy-grid .feature-card:hover {
-  background: var(--bg-surface);
-}
 
 /* ============================================================
    FOOTER
@@ -1308,9 +1289,6 @@ a {
     border-top: 1px solid var(--border-deep);
   }
   .features-grid {
-    grid-template-columns: 1fr;
-  }
-  .privacy-grid {
     grid-template-columns: 1fr;
   }
   .flow-row {

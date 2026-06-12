@@ -40,15 +40,17 @@ export function Privacy() {
       <div className="container">
         <AnimateOnScroll>
           <p className="section-eyebrow">04 · Data handling</p>
-          <h2 className="section-title">Private by default</h2>
+          <h2 className="section-title">
+            Private by <span className="accent">default</span>.
+          </h2>
         </AnimateOnScroll>
-        <div className="privacy-grid">
+        <div className="pillars-grid">
           {CARDS.map((card, i) => (
             <AnimateOnScroll key={card.title} delay={i * 80}>
-              <div className={`feature-card ${card.variant}`}>
+              <div className="pillar">
                 <div className="feature-icon">{card.icon}</div>
-                <h3>{card.title}</h3>
-                <p>{card.desc}</p>
+                <h3 className="pillar-title">{card.title}</h3>
+                <p className="pillar-body">{card.desc}</p>
               </div>
             </AnimateOnScroll>
           ))}
