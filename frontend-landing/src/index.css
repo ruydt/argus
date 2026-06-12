@@ -1467,3 +1467,127 @@ a {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ============================================================
+   RESPONSIVE — tablet and phone
+   ============================================================ */
+@media (max-width: 900px) {
+  .section,
+  .how-it-works,
+  .quick-install,
+  .privacy,
+  .features,
+  .myth,
+  .why {
+    padding: 64px 0;
+  }
+  .tour-row {
+    gap: 32px;
+    padding: 36px 0;
+  }
+  .section-title {
+    margin-bottom: 32px;
+  }
+}
+
+@media (max-width: 720px) {
+  /* nav: keep logo + GitHub, drop center links (anchors live in footer) */
+  .navbar-links {
+    display: none;
+  }
+  .navbar-inner {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 560px) {
+  .container,
+  .navbar-inner,
+  .hero-inner,
+  .footer-grid,
+  .footer-inner {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .hero {
+    padding: 48px 0 56px;
+  }
+  .hero-copy {
+    gap: 18px;
+  }
+  .hero-eye {
+    width: 56px;
+    height: 56px;
+  }
+  .hero-badge {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+  .hero-sub {
+    font-size: 15.5px;
+  }
+  .hero-ctas {
+    width: 100%;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+  .hero-snippet {
+    width: 100%;
+    border-radius: 12px;
+  }
+  .hero-panel {
+    margin-top: 32px;
+  }
+  .terminal-body {
+    font-size: 11px;
+    padding: 14px 12px;
+    overflow-x: auto;
+  }
+  .pillar {
+    padding-left: 18px;
+  }
+  .pillar-title {
+    font-size: 25px;
+  }
+  .tour-title {
+    font-size: 25px;
+  }
+  .myth-text {
+    font-size: 24px;
+    line-height: 1.45;
+  }
+  .tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .code-block code {
+    font-size: 12px;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-top: 40px;
+  }
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .why-thesis {
+    font-size: 24px;
+  }
+  .install-step-header {
+    flex-wrap: wrap;
+  }
+  .requirements-bar {
+    gap: 12px;
+  }
+  .feature-row-bullets li,
+  .tour-bullets li {
+    font-size: 13.5px;
+  }
+}
