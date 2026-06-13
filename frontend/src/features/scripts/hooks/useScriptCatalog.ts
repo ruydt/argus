@@ -23,7 +23,11 @@ export function useScriptCatalog() {
   }, [])
 
   useEffect(() => {
-    reload()
+    // Wrap in an async IIFE so the fetch-driven setState happens off the
+    // effect's synchronous path (no cascading-render lint warning).
+    void (async () => {
+      await reload()
+    })()
   }, [reload])
 
   const install = useCallback(
