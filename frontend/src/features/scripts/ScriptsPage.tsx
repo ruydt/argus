@@ -10,8 +10,9 @@ import { useScriptCatalog } from './hooks/useScriptCatalog'
 import { ScriptRow } from './ScriptRow'
 import { BundleCard } from './BundleCard'
 import { filterBundles, filterScripts } from './scriptFilters'
+import { CollectionTab } from './collection/CollectionTab'
 
-type Tab = 'all' | 'installed' | 'bundles'
+type Tab = 'all' | 'installed' | 'bundles' | 'collection'
 
 const DEFAULT_PAGE_SIZE = 10
 
@@ -108,9 +109,12 @@ export function ScriptsPage() {
             <ToggleGroupItem value="all">All ({packages.length})</ToggleGroupItem>
             <ToggleGroupItem value="installed">Installed ({installedCount})</ToggleGroupItem>
             <ToggleGroupItem value="bundles">Bundles ({bundles.length})</ToggleGroupItem>
+            <ToggleGroupItem value="collection">My Collection</ToggleGroupItem>
           </ToggleGroup>
 
-          {tab === 'bundles' ? (
+          {tab === 'collection' ? (
+            <CollectionTab />
+          ) : tab === 'bundles' ? (
             filteredBundles.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-[#777]">
                 No bundles match “{query}”.
