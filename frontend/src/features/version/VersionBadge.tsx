@@ -4,10 +4,10 @@ export function VersionBadge() {
   const info = useVersion()
   if (!info) return null
 
-  const raw = info.version.startsWith('v') ? info.version : `v${info.version}`
-  // Strip the git-describe suffix (-<N>-g<hash>[-dirty]) so a dev build off a
-  // release tag still shows a clean version (e.g. v0.1.2, not v0.1.2-26-g1626c6f).
-  const label = raw.replace(/-\d+-g[0-9a-f]+(-dirty)?$/, '')
+  // Show the version verbatim: a release built on a tag reads clean (v0.1.2),
+  // while a dev build (make build-local) keeps git-describe's commit suffix
+  // (v0.1.2-29-g021a77e) so the running build is identifiable.
+  const label = info.version.startsWith('v') ? info.version : `v${info.version}`
 
   return (
     <span
