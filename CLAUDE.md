@@ -34,7 +34,7 @@ argus/
 │       ├── features/
 │       │   ├── events/      # EventsPage, hooks/useEvents, hooks/useEventFilters, renderers/
 │       │   ├── dashboard/   # DashboardPage, hooks/useDashboardStats, date-range helpers
-│       │   ├── sessions/    # SessionsPage, TraceBlock, SessionDetail, hooks/useSessionTree
+│       │   ├── sessions/    # SessionListPage, SessionFileChangesPage, FileChangesDrawer/List, hooks/useFileChanges, utils
 │       │   ├── projects/    # ProjectsPage — project cards, search, delete-with-cascade
 │       │   ├── diagnostics/ # DiagnosticsPage — health, storage, file system, log tails
 │       │   ├── hooks-config/# HooksConfigPage — structured/JSON editors, presets, SimulatorTab

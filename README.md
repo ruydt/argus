@@ -56,16 +56,18 @@ Then follow [docs/quickstart.md](docs/quickstart.md) to verify your first event.
 
 ## What it looks like
 
-The dashboard is one local panel over your agents: a live event feed, a session
-waterfall, token and cost stats, the hooks config editor, and the built-in hook
+The dashboard is one local panel over your agents: a live event feed, per-project
+sessions, token-usage stats, the hooks config editor, and the built-in hook
 simulator. Take the full visual tour at **[getargus.org](https://getargus.org)**.
 
 | Surface | What it does |
 | ------- | ------------ |
 | **Hooks config + simulator** | One-click presets; fire a synthetic payload at any hook and read stdout/stderr/exit code before a live agent runs it. |
 | **Event feed** | Every normalized tool call streamed over SSE, sub-100ms from hook to browser. |
-| **Sessions** | Tool calls grouped per session and drawn as a waterfall. |
-| **Dashboard** | Token and cost roll-ups per session, day, and model — computed locally. |
+| **Sessions** | Per-project session table — duration, tokens, agent, timing — with a file-change drawer of per-edit diffs. |
+| **Dashboard** | Token-usage roll-ups (input/output/cache) charted over time and by model — computed locally. |
+| **Projects** | Cards grouping sessions by working directory, searchable, with cascade delete. |
+| **Diagnostics** | Health, storage, hook-preset detection, `~/.argus` inventory, and log tails. |
 | **Script collection** | Free zero-dependency guardrails in [`my-custom-hook-scripts/`](my-custom-hook-scripts/). |
 
 ## Uninstall
