@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -49,21 +49,33 @@ export const AgentSession = memo(function AgentSession({
 
   const [manualPage, setManualPage] = useState(0)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
-  const targetEventIndex =
-    targetEventKey && targetSessionId === sessionId
-      ? events.findIndex((event) => buildEventKey(event) === targetEventKey)
-      : -1
 
-  const page =
-    targetEventIndex >= 0
-      ? Math.min(Math.floor(targetEventIndex / pageSize), totalPages - 1)
-      : Math.min(manualPage, totalPages - 1)
-  const clampedPage = page
-  const pageStart = page * pageSize
-  const pageEnd = Math.min(pageStart + pageSize, events.length)
-  const visibleEvents = events.slice(pageStart, pageEnd)
+  const { totalPages, clampedPage, pageStart, pageEnd, visibleEvents } = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
+    const targetEventIndex =
+      targetEventKey && targetSessionId === sessionId
+        ? events.findIndex((event) => buildEventKey(event) === targetEventKey)
+        : -1
+    const page =
+      targetEventIndex >= 0
+        ? Math.min(Math.floor(targetEventIndex / pageSize), totalPages - 1)
+        : Math.min(manualPage, totalPages - 1)
+    const pageStart = page * pageSize
+    const pageEnd = Math.min(pageStart + pageSize, events.length)
+    return {
+      totalPages,
+      clampedPage: page,
+      pageStart,
+      pageEnd,
+      visibleEvents: events.slice(pageStart, pageEnd),
+    }
+  }, [events, pageSize, manualPage, targetEventKey, targetSessionId, sessionId])
   const needsPagination = events.length > pageSize
+
+  const lastTimeLabel = useMemo(
+    () => `${lastTime.toLocaleDateString()} • ${lastTime.toLocaleTimeString()}`,
+    [lastTime]
+  )
 
   return (
     <Collapsible
@@ -132,8 +144,7 @@ export const AgentSession = memo(function AgentSession({
                     </span>
                   )
                 })()}
-              {events.length} events • {lastTime.toLocaleDateString()} •{' '}
-              {lastTime.toLocaleTimeString()}
+              {events.length} events • {lastTimeLabel}
             </div>
           </div>
         </div>

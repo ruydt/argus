@@ -1800,7 +1800,7 @@ git commit -m "perf(frontend): pause sessions and projects polling while the tab
 - Modify: `frontend/src/features/events/AgentSession.tsx:50-66, 135-136`
 - Test: `frontend/src/lib/__tests__/format.test.ts` (create or extend)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -1829,12 +1829,12 @@ describe('highlight regex cache', () => {
 })
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/format.test.ts`
 Expected: FAIL — `formatEventTime` is not exported.
 
-- [ ] **Step 3: Implement in format.ts**
+- [x] **Step 3: Implement in format.ts**
 
 Add to `frontend/src/lib/format.ts`:
 
@@ -1884,7 +1884,7 @@ export function highlight(text: string, query: string): ReactNode {
 }
 ```
 
-- [ ] **Step 4: Use formatEventTime in EventRow**
+- [x] **Step 4: Use formatEventTime in EventRow**
 
 `EventRow.tsx:107`: replace
 
@@ -1900,7 +1900,7 @@ with
 
 and change the format import to `import { formatEventTime, highlight } from '@/lib/format'`.
 
-- [ ] **Step 5: Memoize AgentSession derived values**
+- [x] **Step 5: Memoize AgentSession derived values**
 
 In `AgentSession.tsx`:
 
@@ -1945,7 +1945,7 @@ In `AgentSession.tsx`:
             {events.length} events • {lastTimeLabel}
 ```
 
-- [ ] **Step 6: Run tests, format, commit**
+- [x] **Step 6: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/lib/format.ts src/lib/__tests__/format.test.ts src/features/events/EventRow.tsx src/features/events/AgentSession.tsx`
 Expected: all pass.
