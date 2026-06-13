@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 
 /**
  * Run callback every `ms` while the document is visible. Pauses entirely when
@@ -7,7 +7,11 @@ import { useEffect, useRef } from 'react'
  */
 export function usePollingInterval(callback: () => void, ms: number, enabled = true) {
   const callbackRef = useRef(callback)
-  callbackRef.current = callback
+  // Keep the latest callback without restarting the interval. Written in a
+  // layout effect (not during render) so React 19's refs rule is satisfied.
+  useLayoutEffect(() => {
+    callbackRef.current = callback
+  })
 
   useEffect(() => {
     if (!enabled) return
