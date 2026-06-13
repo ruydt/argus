@@ -128,6 +128,8 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("POST /api/collection", handler.CollectionAdd(ghSvc, scriptSrc, opts.ArgusDir))
 	mux.Handle("DELETE /api/collection", handler.CollectionRemove(ghSvc))
 	mux.Handle("POST /api/collection/install", handler.CollectionInstall(ghSvc, opts.ArgusDir))
+	mux.Handle("GET /api/collection/local", handler.CollectionLocal(opts.ArgusDir))
+	mux.Handle("DELETE /api/collection/local", handler.CollectionLocal(opts.ArgusDir))
 	registryURL := os.Getenv("ARGUS_REGISTRY_RAW_URL")
 	if registryURL == "" {
 		registryURL = defaultRegistryRawURL

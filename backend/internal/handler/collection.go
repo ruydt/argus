@@ -230,6 +230,42 @@ func CollectionRemove(svc *github.Service) http.Handler {
 	})
 }
 
+// CollectionLocal serves a local hook script's body (GET) or removes it (DELETE).
+// The filename is validated as a flat basename (no traversal).
+func CollectionLocal(argusDir string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		filename := r.URL.Query().Get("filename")
+		target, err := hookTarget(argusDir, filename)
+		if err != nil {
+			http.Error(w, "invalid filename", http.StatusBadRequest)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			body, err := os.ReadFile(target)
+			if errors.Is(err, os.ErrNotExist) {
+				http.Error(w, "not found", http.StatusNotFound)
+				return
+			}
+			if err != nil {
+				log.Printf("[collection] local read %s err=%v", filename, err)
+				http.Error(w, "read failed", http.StatusInternalServerError)
+				return
+			}
+			writeJSON(w, map[string]string{"filename": filename, "body": string(body)})
+		case http.MethodDelete:
+			if err := os.Remove(target); err != nil && !errors.Is(err, os.ErrNotExist) {
+				log.Printf("[collection] local delete %s err=%v", filename, err)
+				http.Error(w, "delete failed", http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+}
+
 // CollectionInstall writes a collection script into ~/.argus/hooks/.
 func CollectionInstall(svc *github.Service, argusDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
