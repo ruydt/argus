@@ -134,4 +134,4 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 
 // defaultGitHubClientID is argus's public OAuth App client id (device flow needs
 // no secret). Override at runtime with ARGUS_GITHUB_CLIENT_ID.
-const defaultGitHubClientID = "REPLACE_WITH_OAUTH_APP_CLIENT_ID"
+const defaultGitHubClientID = "Ov23liZl7euqQmfnmBPW"
