@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"argus/internal/domain"
+	"argus/internal/community"
 	"argus/internal/github"
 	"argus/internal/handler"
 	"argus/internal/hookconfig"
@@ -127,6 +128,15 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("POST /api/collection", handler.CollectionAdd(ghSvc, scriptSrc, opts.ArgusDir))
 	mux.Handle("DELETE /api/collection", handler.CollectionRemove(ghSvc))
 	mux.Handle("POST /api/collection/install", handler.CollectionInstall(ghSvc, opts.ArgusDir))
+	registryURL := os.Getenv("ARGUS_REGISTRY_RAW_URL")
+	if registryURL == "" {
+		registryURL = defaultRegistryRawURL
+	}
+	communitySrc := community.NewSource(registryURL, nil)
+	mux.Handle("GET /api/community/catalog", handler.CommunityCatalog(communitySrc, opts.ArgusDir))
+	mux.Handle("GET /api/community/script", handler.CommunityScriptBody(communitySrc))
+	mux.Handle("POST /api/community/install", handler.CommunityInstall(communitySrc, opts.ArgusDir))
+	mux.Handle("POST /api/community/simulate", handler.CommunitySimulate(communitySrc))
 	mux.Handle("GET /", ui.Handler())
 
 	return panicRecovery(hostHeader(corsAllowlist(corsOrigins)(logging(mux))))
@@ -135,3 +145,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 // defaultGitHubClientID is argus's public OAuth App client id (device flow needs
 // no secret). Override at runtime with ARGUS_GITHUB_CLIENT_ID.
 const defaultGitHubClientID = "Ov23liZl7euqQmfnmBPW"
+
+// defaultRegistryRawURL is where argus reads the public community script index.
+// Override at runtime with ARGUS_REGISTRY_RAW_URL (forks/tests).
+const defaultRegistryRawURL = "https://raw.githubusercontent.com/argus-hooks/registry/main"
