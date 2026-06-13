@@ -12,8 +12,11 @@ import { ScriptRow } from './ScriptRow'
 import { BundleCard } from './BundleCard'
 import { filterBundles, filterScripts } from './scriptFilters'
 import { CollectionTab } from './collection/CollectionTab'
+import { CommunityTab } from './community/CommunityTab'
+import { buildMetaHeader, buildPublishUrl } from './community/publishUrl'
+import type { ScriptPackage } from '@/types'
 
-type Tab = 'all' | 'installed' | 'bundles' | 'collection'
+type Tab = 'all' | 'installed' | 'bundles' | 'collection' | 'community'
 
 const DEFAULT_PAGE_SIZE = 10
 
@@ -68,6 +71,35 @@ export function ScriptsPage() {
       setNotice(`Added “${script.id}” to your collection.`)
     } catch {
       setNotice('Could not add to collection.')
+    }
+  }
+
+  async function publish(script: ScriptPackage) {
+    try {
+      const resp = await fetch('/api/github/status')
+      const status: { authenticated: boolean; login?: string } = await resp.json()
+      if (!status.authenticated || !status.login) {
+        setNotice('Log in with GitHub (My Collection tab) to publish.')
+        changeTab('collection')
+        return
+      }
+      const fields = {
+        id: script.id,
+        title: script.title,
+        purpose: script.purpose,
+        event: script.event,
+        matcher: script.matcher,
+        runtime: script.runtime,
+        body: script.body,
+      }
+      const { url, prefilled } = buildPublishUrl(status.login, fields)
+      if (!prefilled) {
+        await navigator.clipboard.writeText(buildMetaHeader(fields) + '\n' + script.body)
+        setNotice('Script copied — paste it into the new file on GitHub.')
+      }
+      window.open(url, '_blank', 'noopener')
+    } catch {
+      setNotice('Could not start publishing.')
     }
   }
 
@@ -143,6 +175,7 @@ export function ScriptsPage() {
             <ToggleGroupItem value="installed">Installed ({installedCount})</ToggleGroupItem>
             <ToggleGroupItem value="bundles">Bundles ({bundles.length})</ToggleGroupItem>
             <ToggleGroupItem value="collection">My Collection</ToggleGroupItem>
+            <ToggleGroupItem value="community">Community</ToggleGroupItem>
           </ToggleGroup>
 
           {notice ? (
@@ -162,6 +195,8 @@ export function ScriptsPage() {
 
           {tab === 'collection' ? (
             <CollectionTab />
+          ) : tab === 'community' ? (
+            <CommunityTab query={query} />
           ) : tab === 'bundles' ? (
             filteredBundles.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-[#777]">
@@ -222,6 +257,7 @@ export function ScriptsPage() {
                         })
                       )
                     }
+                    onPublish={tab === 'installed' ? publish : undefined}
                   />
                 ))
               )}

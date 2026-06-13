@@ -12,6 +12,7 @@ type ScriptRowProps = {
   // a Delete action (the All/Bundles tabs); the Installed tab passes true.
   canDelete?: boolean
   onAddToCollection?: (id: string) => void
+  onPublish?: (script: ScriptPackage) => void
 }
 
 export function ScriptRow({
@@ -22,6 +23,7 @@ export function ScriptRow({
   busy,
   canDelete = false,
   onAddToCollection,
+  onPublish,
 }: ScriptRowProps) {
   return (
     <div className="flex items-center gap-4 border-b border-white/[0.06] px-3 py-3 hover:bg-white/[0.02]">
@@ -55,6 +57,11 @@ export function ScriptRow({
             onClick={() => onAddToCollection(script.id)}
           >
             + Collection
+          </Button>
+        ) : null}
+        {onPublish ? (
+          <Button variant="outline" size="sm" disabled={busy} onClick={() => onPublish(script)}>
+            Publish
           </Button>
         ) : null}
         {!script.installed ? (
