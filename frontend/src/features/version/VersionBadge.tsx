@@ -4,9 +4,7 @@ export function VersionBadge() {
   const info = useVersion()
   if (!info) return null
 
-  const short = info.commit !== 'none' ? info.commit.slice(0, 7) : null
-  const v = info.version.startsWith('v') ? info.version : `v${info.version}`
-  const label = short ? `${v} (${short})` : v
+  const label = info.version.startsWith('v') ? info.version : `v${info.version}`
 
   return (
     <span

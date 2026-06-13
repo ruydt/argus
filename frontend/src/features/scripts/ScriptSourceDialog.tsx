@@ -21,7 +21,7 @@ export function ScriptSourceDialog({ script }: ScriptSourceDialogProps) {
           View source
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl border border-white/15 bg-[#141414] shadow-[0_0_0_100vmax_rgba(0,0,0,0.82)]">
+      <DialogContent className="max-w-2xl border border-white/15 bg-[#141414] shadow-2xl">
         <DialogHeader>
           <DialogTitle className="font-mono">{script.filename}</DialogTitle>
         </DialogHeader>
