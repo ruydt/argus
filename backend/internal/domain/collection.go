@@ -34,3 +34,22 @@ type DeviceCodeResponse struct {
 	ExpiresIn       int    `json:"expires_in"`
 	Interval        int    `json:"interval"`
 }
+
+// CollectionEntry is one row in the unified collection view: a script that is
+// installed locally and/or saved in the gist.
+type CollectionEntry struct {
+	ID       string `json:"id"`
+	Filename string `json:"filename"`
+	Title    string `json:"title"`
+	Event    string `json:"event,omitempty"`
+	Runtime  string `json:"runtime,omitempty"`
+	Local    bool   `json:"local"`
+	Gist     bool   `json:"gist"`
+}
+
+// CollectionView is the unified collection response: local ∪ gist.
+type CollectionView struct {
+	Authenticated bool              `json:"authenticated"`
+	GistURL       string            `json:"gist_url,omitempty"`
+	Entries       []CollectionEntry `json:"entries"`
+}

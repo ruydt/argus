@@ -11,13 +11,13 @@ import (
 	"argus/internal/scriptcatalog"
 )
 
-func TestCollectionRequiresAuth(t *testing.T) {
+func TestCollectionLoggedOutReturns200(t *testing.T) {
 	svc := github.NewService("c", t.TempDir())
 	dir := t.TempDir()
 	rec := httptest.NewRecorder()
-	handler.Collection(svc, dir).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/collection", nil))
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want 401", rec.Code)
+	handler.Collection(svc, scriptcatalog.NewBundledSource(), dir).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/collection", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (auth-optional)", rec.Code)
 	}
 }
 

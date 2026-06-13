@@ -7,35 +7,123 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"argus/internal/domain"
 	"argus/internal/github"
 	"argus/internal/scriptcatalog"
 )
 
-// markInstalled fills Installed for each collection script by stat'ing ~/.argus/hooks/.
-func markInstalled(col *domain.Collection, argusDir string) {
-	for i := range col.Scripts {
-		_, err := os.Stat(filepath.Join(hooksDir(argusDir), col.Scripts[i].Filename))
-		col.Scripts[i].Installed = err == nil
+// listLocalHooks returns the basenames of installed hook scripts in ~/.argus/hooks.
+func listLocalHooks(argusDir string) []string {
+	ents, err := os.ReadDir(hooksDir(argusDir))
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range ents {
+		if e.IsDir() {
+			continue
+		}
+		switch filepath.Ext(e.Name()) {
+		case ".js", ".sh", ".py":
+			out = append(out, e.Name())
+		}
+	}
+	return out
+}
+
+func idFromFilename(filename string) string {
+	if ext := filepath.Ext(filename); ext != "" {
+		return filename[:len(filename)-len(ext)]
+	}
+	return filename
+}
+
+func runtimeFromExt(filename string) string {
+	switch filepath.Ext(filename) {
+	case ".js":
+		return "node"
+	case ".py":
+		return "python3"
+	default:
+		return "sh"
 	}
 }
 
-// Collection lists the user's collection with install state.
-func Collection(svc *github.Service, argusDir string) http.Handler {
+// Collection returns the unified collection view: every script installed locally
+// or saved in the gist, with independent Local/Gist flags. Auth is OPTIONAL — a
+// logged-out user still sees their local scripts (never a 401).
+func Collection(svc *github.Service, src scriptcatalog.ScriptSource, argusDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		col, err := svc.Collection(r.Context())
-		if errors.Is(err, github.ErrNotAuthenticated) {
-			http.Error(w, "not authenticated", http.StatusUnauthorized)
-			return
-		}
-		if err != nil {
+		view := domain.CollectionView{}
+
+		gistByFile := map[string]domain.CollectionScript{}
+		switch col, err := svc.Collection(r.Context()); {
+		case errors.Is(err, github.ErrNotAuthenticated):
+			view.Authenticated = false
+		case err != nil:
 			log.Printf("[collection] list err=%v", err)
 			http.Error(w, "github error", http.StatusBadGateway)
 			return
+		default:
+			view.Authenticated = true
+			view.GistURL = col.GistURL
+			for _, s := range col.Scripts {
+				gistByFile[s.Filename] = s
+			}
 		}
-		markInstalled(&col, argusDir)
-		writeJSON(w, col)
+
+		localSet := map[string]bool{}
+		for _, f := range listLocalHooks(argusDir) {
+			localSet[f] = true
+		}
+
+		metaByFile := map[string]domain.ScriptPackage{}
+		if cat, err := src.Catalog(r.Context()); err == nil {
+			for _, p := range cat.Packages {
+				metaByFile[p.Filename] = p
+			}
+		}
+
+		names := map[string]bool{}
+		for f := range gistByFile {
+			names[f] = true
+		}
+		for f := range localSet {
+			names[f] = true
+		}
+		sorted := make([]string, 0, len(names))
+		for f := range names {
+			sorted = append(sorted, f)
+		}
+		sort.Strings(sorted)
+
+		for _, f := range sorted {
+			e := domain.CollectionEntry{Filename: f, Local: localSet[f], Gist: false}
+			if gs, ok := gistByFile[f]; ok {
+				e.Gist = true
+				e.ID = gs.ID
+				e.Title = gs.Title
+				e.Event = gs.Event
+				e.Runtime = gs.Runtime
+			} else if p, ok := metaByFile[f]; ok {
+				e.ID = idFromFilename(f)
+				e.Title = p.Title
+				e.Event = p.Event
+				e.Runtime = p.Runtime
+			} else {
+				e.ID = idFromFilename(f)
+				e.Title = f
+				e.Runtime = runtimeFromExt(f)
+			}
+			if e.ID == "" {
+				e.ID = idFromFilename(f)
+			}
+			view.Entries = append(view.Entries, e)
+		}
+
+		writeJSON(w, view)
 	})
 }
 
