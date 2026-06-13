@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -29,8 +30,8 @@ func hookTarget(argusDir, filename string) (string, error) {
 }
 
 // loadCatalogWithState returns the catalog with Installed + RuntimeAvailable filled in.
-func loadCatalogWithState(src scriptcatalog.ScriptSource, argusDir string) (domain.ScriptCatalog, error) {
-	cat, err := src.Catalog(nil)
+func loadCatalogWithState(ctx context.Context, src scriptcatalog.ScriptSource, argusDir string) (domain.ScriptCatalog, error) {
+	cat, err := src.Catalog(ctx)
 	if err != nil {
 		return domain.ScriptCatalog{}, err
 	}
@@ -72,7 +73,7 @@ func findBundle(cat domain.ScriptCatalog, id string) (domain.ScriptBundle, bool)
 // installOne writes a package's embedded bytes to ~/.argus/hooks/<filename>.
 // Never overwrites: O_EXCL makes the create atomic, so a concurrent install of
 // the same id can't race past the check — returns os.ErrExist when present.
-func installOne(src scriptcatalog.ScriptSource, argusDir string, p domain.ScriptPackage) error {
+func installOne(ctx context.Context, src scriptcatalog.ScriptSource, argusDir string, p domain.ScriptPackage) error {
 	target, err := hookTarget(argusDir, p.Filename)
 	if err != nil {
 		return err
@@ -80,7 +81,7 @@ func installOne(src scriptcatalog.ScriptSource, argusDir string, p domain.Script
 	if err := os.MkdirAll(hooksDir(argusDir), 0o755); err != nil {
 		return err
 	}
-	body, err := src.ReadScript(nil, p.ID)
+	body, err := src.ReadScript(ctx, p.ID)
 	if err != nil {
 		return err
 	}
@@ -98,8 +99,8 @@ func installOne(src scriptcatalog.ScriptSource, argusDir string, p domain.Script
 
 // ScriptsCatalog returns the full catalog with install + runtime state.
 func ScriptsCatalog(src scriptcatalog.ScriptSource, argusDir string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		cat, err := loadCatalogWithState(src, argusDir)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cat, err := loadCatalogWithState(r.Context(), src, argusDir)
 		if err != nil {
 			log.Printf("[scripts] catalog err=%v", err)
 			http.Error(w, "failed to load catalog", http.StatusInternalServerError)
@@ -128,7 +129,7 @@ func ScriptsInstall(src scriptcatalog.ScriptSource, argusDir string) http.Handle
 			http.Error(w, "id is required", http.StatusBadRequest)
 			return
 		}
-		cat, err := loadCatalogWithState(src, argusDir)
+		cat, err := loadCatalogWithState(r.Context(), src, argusDir)
 		if err != nil {
 			http.Error(w, "failed to load catalog", http.StatusInternalServerError)
 			return
@@ -138,7 +139,7 @@ func ScriptsInstall(src scriptcatalog.ScriptSource, argusDir string) http.Handle
 			http.Error(w, "unknown script", http.StatusBadRequest)
 			return
 		}
-		switch err := installOne(src, argusDir, p); {
+		switch err := installOne(r.Context(), src, argusDir, p); {
 		case errors.Is(err, os.ErrExist):
 			http.Error(w, "script already installed", http.StatusConflict)
 			return
@@ -172,7 +173,7 @@ func ScriptsInstallBundle(src scriptcatalog.ScriptSource, argusDir string) http.
 			http.Error(w, "id is required", http.StatusBadRequest)
 			return
 		}
-		cat, err := loadCatalogWithState(src, argusDir)
+		cat, err := loadCatalogWithState(r.Context(), src, argusDir)
 		if err != nil {
 			http.Error(w, "failed to load catalog", http.StatusInternalServerError)
 			return
@@ -189,7 +190,7 @@ func ScriptsInstallBundle(src scriptcatalog.ScriptSource, argusDir string) http.
 				results = append(results, bundleInstallResult{ID: pid, Status: "error"})
 				continue
 			}
-			switch err := installOne(src, argusDir, p); {
+			switch err := installOne(r.Context(), src, argusDir, p); {
 			case errors.Is(err, os.ErrExist):
 				results = append(results, bundleInstallResult{ID: pid, Status: "skipped"})
 			case err != nil:
@@ -218,7 +219,7 @@ func ScriptsDelete(src scriptcatalog.ScriptSource, argusDir string) http.Handler
 			http.Error(w, "id is required", http.StatusBadRequest)
 			return
 		}
-		cat, err := loadCatalogWithState(src, argusDir)
+		cat, err := loadCatalogWithState(r.Context(), src, argusDir)
 		if err != nil {
 			http.Error(w, "failed to load catalog", http.StatusInternalServerError)
 			return
