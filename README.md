@@ -1,12 +1,21 @@
+<div align="center">
+
+<img src="docs/argus-eye.png" alt="Argus" width="120" />
+
 # Argus
+
+**the watchman whose eyes never all close**
 
 [![Release](https://img.shields.io/github/v/release/duytrandt04-afk/argus)](https://github.com/duytrandt04-afk/argus/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/duytrandt04-afk/argus?style=flat)](https://github.com/duytrandt04-afk/argus/stargazers)
 [![Website](https://img.shields.io/badge/website-getargus.org-863bff)](https://getargus.org)
 
-> **The hook control center for AI coding agents.** Manage hooks, test them before
-> an agent fires them, ship guardrails — all local. **[getargus.org »](https://getargus.org)**
+[Quick start](#quick-start) · [What it looks like](#what-it-looks-like) · [Hook scripts](my-custom-hook-scripts/) · [Docs](#documentation) · [getargus.org](https://getargus.org)
+
+</div>
+
+---
 
 **The hook control center for AI coding agents.** Hooks are how you govern what
 Claude Code and Codex can do — block dangerous commands, protect secrets, enforce
