@@ -10,9 +10,19 @@ type ScriptRowProps = {
   onInstall: (id: string) => void
   onDelete: (id: string) => void
   busy: boolean
+  // When false, an installed script shows a static "Installed" label instead of
+  // a Delete action (the All/Bundles tabs); the Installed tab passes true.
+  canDelete?: boolean
 }
 
-export function ScriptRow({ script, index, onInstall, onDelete, busy }: ScriptRowProps) {
+export function ScriptRow({
+  script,
+  index,
+  onInstall,
+  onDelete,
+  busy,
+  canDelete = false,
+}: ScriptRowProps) {
   return (
     <div className="flex items-center gap-4 border-b border-white/[0.06] px-3 py-3 hover:bg-white/[0.02]">
       <span className="w-6 shrink-0 text-right text-[0.72rem] tabular-nums text-[#555]">
@@ -38,13 +48,12 @@ export function ScriptRow({ script, index, onInstall, onDelete, busy }: ScriptRo
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {script.installed ? (
-          <Badge variant="secondary">Added</Badge>
-        ) : (
-          <Badge variant="outline">Available</Badge>
-        )}
         <ScriptSourceDialog script={script} />
-        {script.installed ? (
+        {!script.installed ? (
+          <Button size="sm" disabled={busy} onClick={() => onInstall(script.id)}>
+            Install
+          </Button>
+        ) : canDelete ? (
           <Button
             variant="destructive"
             size="sm"
@@ -54,9 +63,9 @@ export function ScriptRow({ script, index, onInstall, onDelete, busy }: ScriptRo
             Delete
           </Button>
         ) : (
-          <Button size="sm" disabled={busy} onClick={() => onInstall(script.id)}>
-            Install
-          </Button>
+          <Badge variant="secondary" className="px-2.5 py-1">
+            Installed
+          </Badge>
         )}
       </div>
     </div>

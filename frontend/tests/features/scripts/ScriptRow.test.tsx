@@ -29,23 +29,36 @@ describe('ScriptRow', () => {
     render(
       <ScriptRow script={base} index={1} onInstall={onInstall} onDelete={vi.fn()} busy={false} />
     )
-    expect(screen.getByText('Available')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Install' }))
     expect(onInstall).toHaveBeenCalledWith('block-dangerous')
   })
 
-  it('shows Added + Delete when installed', () => {
-    const onDelete = vi.fn()
+  it('shows a static Installed label (no Delete) when installed and canDelete is false', () => {
     render(
       <ScriptRow
         script={{ ...base, installed: true }}
         index={1}
         onInstall={vi.fn()}
+        onDelete={vi.fn()}
+        busy={false}
+      />
+    )
+    expect(screen.getByText('Installed')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+  })
+
+  it('shows Delete when installed and canDelete is true', () => {
+    const onDelete = vi.fn()
+    render(
+      <ScriptRow
+        script={{ ...base, installed: true }}
+        index={1}
+        canDelete
+        onInstall={vi.fn()}
         onDelete={onDelete}
         busy={false}
       />
     )
-    expect(screen.getByText('Added')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(onDelete).toHaveBeenCalledWith('block-dangerous')
   })

@@ -159,6 +159,7 @@ export function ScriptsPage() {
                     script={p}
                     index={pageStart + i + 1}
                     busy={busy}
+                    canDelete={tab === 'installed'}
                     onInstall={(id) => run(() => install(id))}
                     onDelete={(id) => run(() => remove(id))}
                   />
