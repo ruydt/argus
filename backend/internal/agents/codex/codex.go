@@ -304,6 +304,11 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 			perfectLines = append(perfectLines, "*** "+path)
 		}
 
+		// One read for all hunks — path is constant within the patch block.
+		// fileLines is nil when path is empty or the file is missing/oversized;
+		// FindStartLineInLines(nil, x) returns 0, preserving the existing fallback.
+		fileLines := fileutil.ReadFileLines(path)
+
 		for _, h := range hunks {
 			actualStart := h.StartLine
 			searchStr := strings.Join(h.SearchLines, "\n")
@@ -312,7 +317,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 			if path != "" {
 				// 1. Try to find the whole block first
 				if searchStr != "" {
-					foundLine = fileutil.FindStartLine(path, searchStr)
+					foundLine = fileutil.FindStartLineInLines(fileLines, searchStr)
 				}
 
 				// 2. Fallback: Try to find based on the LONGEST (most unique) context line
@@ -330,7 +335,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 					}
 
 					if bestLine != "" {
-						if found := fileutil.FindStartLine(path, bestLine); found > 0 {
+						if found := fileutil.FindStartLineInLines(fileLines, bestLine); found > 0 {
 							// found is the line of bestLine, so start is found - bestIdx
 							foundLine = found - bestIdx
 						}

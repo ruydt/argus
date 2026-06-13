@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
@@ -6,7 +6,7 @@ import { PaginationBar } from '@/components/shared/PaginationBar'
 import { cn } from '@/lib/utils'
 import { formatTokenCount, highlight, shortId } from '@/lib/format'
 import { agentForEvent } from '@/agents'
-import { shortenCwd } from '@/features/sessions/utils'
+import { projectName } from '@/features/sessions/utils'
 import type { SessionGroup, SessionUsage, TooltipState } from '@/types/events'
 import { buildEventKey } from './eventKey'
 import { EventRow } from './EventRow'
@@ -49,21 +49,33 @@ export const AgentSession = memo(function AgentSession({
 
   const [manualPage, setManualPage] = useState(0)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
-  const targetEventIndex =
-    targetEventKey && targetSessionId === sessionId
-      ? events.findIndex((event) => buildEventKey(event) === targetEventKey)
-      : -1
 
-  const page =
-    targetEventIndex >= 0
-      ? Math.min(Math.floor(targetEventIndex / pageSize), totalPages - 1)
-      : Math.min(manualPage, totalPages - 1)
-  const clampedPage = page
-  const pageStart = page * pageSize
-  const pageEnd = Math.min(pageStart + pageSize, events.length)
-  const visibleEvents = events.slice(pageStart, pageEnd)
+  const { totalPages, clampedPage, pageStart, pageEnd, visibleEvents } = useMemo(() => {
+    const totalPages = Math.max(1, Math.ceil(events.length / pageSize))
+    const targetEventIndex =
+      targetEventKey && targetSessionId === sessionId
+        ? events.findIndex((event) => buildEventKey(event) === targetEventKey)
+        : -1
+    const page =
+      targetEventIndex >= 0
+        ? Math.min(Math.floor(targetEventIndex / pageSize), totalPages - 1)
+        : Math.min(manualPage, totalPages - 1)
+    const pageStart = page * pageSize
+    const pageEnd = Math.min(pageStart + pageSize, events.length)
+    return {
+      totalPages,
+      clampedPage: page,
+      pageStart,
+      pageEnd,
+      visibleEvents: events.slice(pageStart, pageEnd),
+    }
+  }, [events, pageSize, manualPage, targetEventKey, targetSessionId, sessionId])
   const needsPagination = events.length > pageSize
+
+  const lastTimeLabel = useMemo(
+    () => `${lastTime.toLocaleDateString()} • ${lastTime.toLocaleTimeString()}`,
+    [lastTime]
+  )
 
   return (
     <Collapsible
@@ -79,60 +91,61 @@ export const AgentSession = memo(function AgentSession({
             ev.dataTransfer.effectAllowed = 'move'
           }}
           className={cn(
-            'flex flex-col items-start justify-between gap-3 px-3 py-[10px] cursor-grab active:cursor-grabbing sm:flex-row sm:items-center',
+            'flex items-start gap-2 px-3 py-[10px] cursor-grab active:cursor-grabbing',
             'bg-white/[0.03] border-b border-white/[0.06]',
             isCollapsed && 'border-b-0'
           )}
         >
-          <div className="group inline-flex min-w-0 items-center gap-2 text-[0.8rem] font-bold text-[#47ff9c]">
-            <span className={cn('agent-badge', `agent-${agent.badgeClass}`)}>
-              <Logo size={18} />
-            </span>
-            <span className="min-w-0 break-words sm:break-all">
-              {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
-            </span>
-            {cwd !== '' && (
-              <span
-                title={cwd}
-                className="shrink-0 max-w-[180px] truncate text-[0.68rem] font-normal text-[#666]"
-              >
-                {shortenCwd(cwd)}
+          <span className={cn('agent-badge shrink-0', `agent-${agent.badgeClass}`)}>
+            <Logo size={18} />
+          </span>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <div className="group inline-flex min-w-0 max-w-full items-center gap-2 text-[0.8rem] font-bold text-[#47ff9c]">
+              <span title={sessionId} className="min-w-[8ch] truncate">
+                {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
               </span>
-            )}
-            <CopyIconButton
-              text={sessionId}
-              label="session ID"
-              className="opacity-0 group-hover:opacity-100 size-4 text-[#666] hover:text-[#47ff9c] hover:bg-transparent"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-          <div className="inline-flex w-full flex-wrap items-center gap-2 text-[0.68rem] text-[#666] sm:w-auto sm:justify-end sm:text-right">
-            {sessionUsage[sessionId] &&
-              agent.buildUsageItems &&
-              (() => {
-                const u = sessionUsage[sessionId]
-                return (
-                  <span className="usage-summary">
-                    {agent.buildUsageItems(u, formatTokenCount).map(({ cls, label, tip }) => (
-                      <span
-                        key={cls}
-                        className={`usage-item ${cls}`}
-                        onMouseEnter={(ev) =>
-                          setTooltip({ text: tip, x: ev.clientX, y: ev.clientY })
-                        }
-                        onMouseMove={(ev) =>
-                          setTooltip((t) => (t ? { ...t, x: ev.clientX, y: ev.clientY } : null))
-                        }
-                        onMouseLeave={() => setTooltip(null)}
-                      >
-                        {label}
-                      </span>
-                    ))}
-                  </span>
-                )
-              })()}
-            {events.length} events • {lastTime.toLocaleDateString()} •{' '}
-            {lastTime.toLocaleTimeString()}
+              {cwd !== '' && (
+                <span
+                  title={cwd}
+                  className="shrink-0 max-w-[180px] truncate text-[0.68rem] font-normal text-[#666]"
+                >
+                  {projectName(cwd)}
+                </span>
+              )}
+              <CopyIconButton
+                text={sessionId}
+                label="session ID"
+                className="shrink-0 opacity-0 group-hover:opacity-100 size-4 text-[#666] hover:text-[#47ff9c] hover:bg-transparent"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="inline-flex flex-wrap items-center gap-2 text-[0.68rem] text-[#666]">
+              {sessionUsage[sessionId] &&
+                agent.buildUsageItems &&
+                (() => {
+                  const u = sessionUsage[sessionId]
+                  return (
+                    <span className="usage-summary">
+                      {agent.buildUsageItems(u, formatTokenCount).map(({ cls, label, tip }) => (
+                        <span
+                          key={cls}
+                          className={`usage-item ${cls}`}
+                          onMouseEnter={(ev) =>
+                            setTooltip({ text: tip, x: ev.clientX, y: ev.clientY })
+                          }
+                          onMouseMove={(ev) =>
+                            setTooltip((t) => (t ? { ...t, x: ev.clientX, y: ev.clientY } : null))
+                          }
+                          onMouseLeave={() => setTooltip(null)}
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </span>
+                  )
+                })()}
+              {events.length} events • {lastTimeLabel}
+            </div>
           </div>
         </div>
       </CollapsibleTrigger>

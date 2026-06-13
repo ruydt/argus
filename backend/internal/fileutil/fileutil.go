@@ -2,6 +2,7 @@ package fileutil
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -167,17 +168,44 @@ func sanitizePathToken(tok string) string {
 	return tok
 }
 
-// FindStartLine returns the 1-based line number where oldStr begins in filePath.
-// Comparison ignores leading/trailing whitespace per line.
-func FindStartLine(filePath, oldStr string) int {
-	if filePath == "" || oldStr == "" {
-		return 0
+// MaxEnrichFileBytes caps context enrichment. Files larger than this are
+// skipped entirely so one huge file can't burn CPU on the hook ingest path.
+const MaxEnrichFileBytes = 2 << 20 // 2 MiB
+
+// ReadFileLines reads filePath once and returns its lines. Returns nil when
+// the path is empty, the file is missing/unreadable, or it exceeds
+// MaxEnrichFileBytes.
+func ReadFileLines(filePath string) []string {
+	if filePath == "" {
+		return nil
+	}
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return nil
+	}
+	if info.Size() > MaxEnrichFileBytes {
+		slog.Debug("enrichment skipped: file too large", "path", filePath, "size", info.Size())
+		return nil
 	}
 	data, err := os.ReadFile(filePath)
 	if err != nil {
+		return nil
+	}
+	return strings.Split(string(data), "\n")
+}
+
+// FindStartLine returns the 1-based line number where oldStr begins in filePath.
+// Comparison ignores leading/trailing whitespace per line.
+func FindStartLine(filePath, oldStr string) int {
+	return FindStartLineInLines(ReadFileLines(filePath), oldStr)
+}
+
+// FindStartLineInLines is FindStartLine over already-read file lines, so a
+// caller that needs both the start line and the context only reads once.
+func FindStartLineInLines(fileLines []string, oldStr string) int {
+	if len(fileLines) == 0 || oldStr == "" {
 		return 0
 	}
-	fileLines := strings.Split(string(data), "\n")
 	searchLines := strings.Split(strings.TrimRight(oldStr, "\n"), "\n")
 	if len(searchLines) == 0 {
 		return 0
@@ -206,12 +234,15 @@ func FindStartLine(filePath, oldStr string) int {
 // ComputeContext returns ctxLines lines before/after a changed region.
 // changeStart is 1-based. changeLen is the number of lines in the changed block.
 func ComputeContext(filePath string, changeStart, changeLen, ctxLines int) (before, after []domain.CtxLine) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
+	return ComputeContextFromLines(ReadFileLines(filePath), changeStart, changeLen, ctxLines)
+}
+
+// ComputeContextFromLines is ComputeContext over already-read file lines.
+func ComputeContextFromLines(lines []string, changeStart, changeLen, ctxLines int) (before, after []domain.CtxLine) {
+	n := len(lines)
+	if n == 0 {
 		return
 	}
-	lines := strings.Split(string(data), "\n")
-	n := len(lines)
 	start := changeStart - 1
 	end := start + changeLen - 1
 	for i := max(0, start-ctxLines); i < start && i < n; i++ {

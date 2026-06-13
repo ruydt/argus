@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -30,7 +30,7 @@ type ActivityPanelProps = {
 const agentConfigById = new Map(AGENTS.map((agent) => [agent.id, agent] as const))
 const agentPalette = ['var(--chart-2)', 'var(--chart-1)', 'var(--chart-4)', 'var(--chart-5)']
 
-export function ActivityPanel({ stats, query }: ActivityPanelProps) {
+export const ActivityPanel = memo(function ActivityPanel({ stats, query }: ActivityPanelProps) {
   const { data: timelineData, series } = useMemo(
     () => toTimelineByAgentChartData(stats, query),
     [query, stats]
@@ -168,7 +168,7 @@ export function ActivityPanel({ stats, query }: ActivityPanelProps) {
       </Card>
     </div>
   )
-}
+})
 
 function agentLabel(agent: string) {
   return agentConfigById.get(agent as (typeof AGENTS)[number]['id'])?.label || agent

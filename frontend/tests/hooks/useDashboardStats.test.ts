@@ -30,7 +30,7 @@ beforeEach(() => {
     'fetch',
     vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => minimalStats,
+      text: async () => JSON.stringify(minimalStats),
     })
   )
 })
@@ -44,7 +44,7 @@ describe('useDashboardStats', () => {
     const query = uniqueQuery() // compute ONCE outside render fn to avoid re-render loop
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => minimalStats,
+      text: async () => JSON.stringify(minimalStats),
     })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -60,7 +60,7 @@ describe('useDashboardStats', () => {
     const query = uniqueQuery()
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => minimalStats,
+      text: async () => JSON.stringify(minimalStats),
     })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -108,7 +108,7 @@ describe('useDashboardStats', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => rawStats,
+        text: async () => JSON.stringify(rawStats),
       })
     )
 

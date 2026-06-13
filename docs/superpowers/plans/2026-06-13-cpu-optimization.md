@@ -48,7 +48,7 @@ Capture before-numbers for the two hot paths whose public API stays stable acros
 - Create: `backend/internal/fileutil/fileutil_bench_test.go`
 - Create: `backend/internal/service/event_service_bench_test.go`
 
-- [ ] **Step 1: Write the fileutil benchmark**
+- [x] **Step 1: Write the fileutil benchmark**
 
 ```go
 package fileutil_test
@@ -94,7 +94,7 @@ func BenchmarkEnrichLookup(b *testing.B) {
 }
 ```
 
-- [ ] **Step 2: Write the dashboard stats benchmark**
+- [x] **Step 2: Write the dashboard stats benchmark**
 
 ```go
 package service_test
@@ -168,17 +168,17 @@ func BenchmarkGetDashboardStats(b *testing.B) {
 
 Note: `domain.NormalizedEvent` field names above must match `backend/internal/domain/event.go` — verify with a quick read and adjust field names if they differ (e.g., `CWD` vs `Cwd`).
 
-- [ ] **Step 3: Run benchmarks, record baseline**
+- [x] **Step 3: Run benchmarks, record baseline**
 
 Run: `cd backend && go test -bench BenchmarkEnrichLookup -benchtime 2s -run '^$' ./internal/fileutil/ && go test -bench BenchmarkGetDashboardStats -benchtime 2s -run '^$' ./internal/service/`
 Expected: both benchmarks run and report ns/op. **Paste the two baseline numbers here:**
 
 ```
-BASELINE BenchmarkEnrichLookup:        ____ ns/op
-BASELINE BenchmarkGetDashboardStats:   ____ ns/op
+BASELINE BenchmarkEnrichLookup:        212832 ns/op
+BASELINE BenchmarkGetDashboardStats:   75647572 ns/op
 ```
 
-- [ ] **Step 4: Verify gates and commit**
+- [x] **Step 4: Verify gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
@@ -196,7 +196,7 @@ git commit -m "test(backend): baseline CPU benchmarks for enrichment and dashboa
 - Modify: `backend/internal/fileutil/fileutil.go:170-224`
 - Test: `backend/internal/fileutil/fileutil_test.go` (create if absent; append if it exists)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to (or create) `backend/internal/fileutil/fileutil_test.go`:
 
@@ -278,12 +278,12 @@ func TestComputeContextFromLinesMatchesComputeContext(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd backend && go test -run 'TestReadFileLines|TestFindStartLineInLines|TestComputeContextFromLines' ./internal/fileutil/`
 Expected: FAIL — `undefined: fileutil.ReadFileLines`, `undefined: fileutil.MaxEnrichFileBytes`, etc.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `backend/internal/fileutil/fileutil.go`, replace the existing `FindStartLine` and `ComputeContext` (lines 170-224) with:
 
@@ -379,12 +379,12 @@ Add `"log/slog"` to the import block of `fileutil.go`.
 
 Behavior change (intentional, per spec 1b): `FindStartLine`/`ComputeContext` now skip files over 2 MB — previously they read any size. If an existing fileutil test asserts behavior on a >2 MB fixture (unlikely), flag it rather than changing the cap.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `cd backend && go test ./internal/fileutil/ ./internal/handler/`
 Expected: PASS (handler tests confirm no regression in enrichment behavior).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add backend/internal/fileutil/
@@ -398,7 +398,7 @@ git commit -m "perf(fileutil): single-read line helpers and 2MB enrichment cap"
 **Files:**
 - Modify: `backend/internal/handler/hook.go:162-178`
 
-- [ ] **Step 1: Replace the two-read block**
+- [x] **Step 1: Replace the two-read block**
 
 In `enrichContext`, replace lines 162-178 (from `startLine := e.StartLine` through the closing brace of `if startLine > 0 {`) with:
 
@@ -434,19 +434,21 @@ In `enrichContext`, replace lines 162-178 (from `startLine := e.StartLine` throu
 
 Note the early return: when the payload already carries a usable `StartLine` (> 1) and context lines, the file is no longer read at all (previously this path also did zero reads — preserve that).
 
-- [ ] **Step 2: Run handler tests**
+- [x] **Step 2: Run handler tests**
 
 Run: `cd backend && go test ./internal/handler/`
 Expected: PASS. Existing enrichment tests assert the same outputs from one read.
 
-- [ ] **Step 3: Gates and commit**
+- [x] **Step 3: Gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
 
+Scope extension (approved): `backend/internal/agents/codex/codex.go` hunk loop also had two `FindStartLine(path, …)` calls each re-reading the same file per hunk. One `ReadFileLines(path)` call was hoisted before the hunks loop (path is constant within the patch block — set before the loop and never changed inside it). Both lookups replaced with `FindStartLineInLines(fileLines, …)`. Guard: `fileLines == nil` passes nil through; `FindStartLineInLines(nil, x)` returns 0, matching pre-existing fallback when file is missing.
+
 ```bash
-git add backend/internal/handler/hook.go
-git commit -m "perf(handler): enrich hook context with a single file read"
+git add backend/internal/handler/hook.go backend/internal/agents/codex/codex.go docs/superpowers/plans/2026-06-13-cpu-optimization.md
+git commit -m "perf(ingest): enrich hook and codex patch context with a single file read"
 ```
 
 ---
@@ -458,7 +460,7 @@ git commit -m "perf(handler): enrich hook context with a single file read"
 - Modify: `backend/internal/handler/events.go:112-154` (EventsStream)
 - Test: existing service/handler SSE tests (update signatures), plus one new service test
 
-- [ ] **Step 1: Write the failing service test**
+- [x] **Step 1: Write the failing service test**
 
 Append to the service test file that holds broadcast/subscribe tests (or create `backend/internal/service/broadcast_test.go`):
 
@@ -518,12 +520,12 @@ func TestBroadcastMarshalsOnce(t *testing.T) {
 
 Note: `AddEvent` with `Session != ""` and an empty `TranscriptPath` calls `ComputeUsage("")` today, which returns zero usage — `UpsertSession` stub absorbs it. After Task 6 the call is skipped entirely; this test is unaffected.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run TestBroadcastMarshalsOnce ./internal/service/`
 Expected: FAIL — `got1.Session undefined` / `got1.Payload undefined` (channel currently carries `domain.NormalizedEvent`).
 
-- [ ] **Step 3: Implement in the service**
+- [x] **Step 3: Implement in the service**
 
 In `backend/internal/service/event_service.go`, add `"encoding/json"` to imports, then replace `Subscribe`, `Unsubscribe`, and `broadcast` (lines 610-632) with:
 
@@ -569,7 +571,7 @@ func (s *EventService) broadcast(e domain.NormalizedEvent) {
 }
 ```
 
-- [ ] **Step 4: Update the SSE handler**
+- [x] **Step 4: Update the SSE handler**
 
 In `backend/internal/handler/events.go`, replace the `for { select { ... } }` loop in `EventsStream` (lines 138-152) with:
 
@@ -593,13 +595,13 @@ In `backend/internal/handler/events.go`, replace the `for { select { ... } }` lo
 
 The backfill loop above it keeps using `sendSSE(w, e)` — backfill events come from the repository as `domain.NormalizedEvent` and are marshaled per request, which is fine (bounded at `sseBackfillLimit`). Do not change the subscribe-before-backfill order — it is intentional (prevents dropped events).
 
-- [ ] **Step 5: Fix any compile errors in existing tests**
+- [x] **Step 5: Fix any compile errors in existing tests**
 
 Run: `cd backend && go build ./... && go test ./...`
 Any existing test that consumed `<-chan domain.NormalizedEvent` from `Subscribe()` must switch to `service.BroadcastEvent` and `json.Unmarshal(ev.Payload, &event)` where it inspected fields. Make those mechanical updates.
 Expected: all pass.
 
-- [ ] **Step 6: Lint and commit**
+- [x] **Step 6: Lint and commit**
 
 Run: `cd backend && golangci-lint run ./...`
 Expected: clean.
@@ -619,7 +621,7 @@ Prerequisite for Task 6 — once usage is computed only on some events, the othe
 - Modify: `backend/internal/repository/sqlite/sqlite.go:901-946`
 - Test: the sqlite test file containing `UpsertSession` tests
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to the sqlite test file (package `sqlite_test`):
 
@@ -666,12 +668,12 @@ func TestUpsertSessionZeroUsagePreservesStored(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run TestUpsertSessionZeroUsagePreservesStored ./internal/repository/sqlite/... ./tests/...`
 Expected: FAIL — stored usage is wiped to 0 by the second upsert. (Run against whichever path holds the sqlite tests; `backend/tests/internal/repository/sqlite/` exists in this repo.)
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `UpsertSession` (`sqlite.go:937-941`), replace the five unconditional usage assignments:
 
@@ -693,7 +695,7 @@ with guarded ones (all-zero incoming usage means "no new usage computed — keep
 			turns = CASE WHEN (excluded.input_tokens + excluded.output_tokens + excluded.cache_creation_tokens + excluded.cache_read_tokens + excluded.turns) > 0 THEN excluded.turns ELSE sessions.turns END`,
 ```
 
-- [ ] **Step 4: Run tests, gates, commit**
+- [x] **Step 4: Run tests, gates, commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
@@ -713,7 +715,7 @@ Today `AddEvent` scans the whole transcript JSONL on **every** hook event. Chang
 - Modify: `backend/internal/service/event_service.go:21-32` (struct), `70-106` (AddEvent)
 - Test: service test file
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```go
 // countingUsageRepo records UpsertSession usage values, embedding the
@@ -779,12 +781,12 @@ func TestAddEventThrottlesUsageComputation(t *testing.T) {
 
 Add `"os"` and `"path/filepath"` imports to the test file as needed.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run TestAddEventThrottlesUsageComputation ./internal/service/`
 Expected: FAIL — `repo.usages[1].InputTokens` is 10 (usage currently computed on every event).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Add to the `EventService` struct (after `ingestionErrors atomic.Int64`):
 
@@ -856,7 +858,7 @@ func (s *EventService) shouldComputeUsage(e domain.NormalizedEvent) bool {
 
 Zero-usage upserts are safe because of Task 5's guard.
 
-- [ ] **Step 4: Run tests, gates, commit**
+- [x] **Step 4: Run tests, gates, commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass. If an existing service/handler test asserts usage is upserted on every event, update it to match the throttle semantics (terminal events exact, mid-session throttled).
@@ -875,7 +877,7 @@ git commit -m "perf(service): throttle per-event transcript usage scans to 30s p
 - Modify: `backend/cmd/server/main.go` (spawn goroutine)
 - Test: service test file
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```go
 // trackingListRepo serves canned sessions and records upserts.
@@ -950,12 +952,12 @@ func TestBackfillMissingSessionUsage(t *testing.T) {
 }
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run 'TestListSessionsDoesNotScanTranscripts|TestBackfillMissingSessionUsage' ./internal/service/`
 Expected: FAIL — `upserts` is 1 in the first test (read-path backfill), and `BackfillMissingSessionUsage` is undefined.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `event_service.go`:
 
@@ -1014,7 +1016,7 @@ func (s *EventService) BackfillMissingSessionUsage() {
 	go svc.BackfillMissingSessionUsage()
 ```
 
-- [ ] **Step 4: Run tests, gates, commit**
+- [x] **Step 4: Run tests, gates, commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass. Existing tests that relied on read-path backfill (e.g., a sessions-list test asserting freshly computed usage) must be updated: usage now comes from the DB (write-time, Task 6) or the startup backfill.
@@ -1032,7 +1034,7 @@ git commit -m "perf(service): move session usage backfill off read paths to one-
 - Modify: `backend/internal/service/event_service.go` (struct, New, GetDashboardStats)
 - Test: service test file
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```go
 func TestGetDashboardStatsCached(t *testing.T) {
@@ -1087,12 +1089,12 @@ func TestGetDashboardStatsCached(t *testing.T) {
 
 Imports needed in the test file: `"time"`, `"argus/internal/repository/sqlite"`.
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd backend && go test -run TestGetDashboardStatsCached ./internal/service/`
 Expected: FAIL — `SetStatsCachedAt` undefined; without the cache `second.TotalEvents` is 2.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Struct additions (after the diag cache fields):
 
@@ -1184,7 +1186,7 @@ func (s *EventService) SetStatsCachedAt(key string, t time.Time) {
 }
 ```
 
-- [ ] **Step 4: Run tests, gates, commit**
+- [x] **Step 4: Run tests, gates, commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass. Any existing dashboard test asserting immediate freshness across two calls must expire the cache via `SetStatsCachedAt` between calls.
@@ -1202,7 +1204,7 @@ git commit -m "perf(service): 5s TTL cache for dashboard stats responses"
 - Modify: `backend/internal/repository/sqlite/sqlite.go` — `GetDashboardStats` (lines 1008-1019), `ListSessionsByCWD` (line 575), `listSessionsWhere` ORDER BY (line 592)
 - Possibly create: next-numbered migration in `backend/internal/repository/sqlite/migrations/`
 
-- [ ] **Step 1: Replace `datetime()` predicates in GetDashboardStats**
+- [x] **Step 1: Replace `datetime()` predicates in GetDashboardStats**
 
 All stored timestamps (`created_at`, `started_at`, `last_seen_at`) are normalized RFC3339 UTC strings, so lexicographic comparison equals time comparison — but only if the parameter is normalized the same way. Replace lines 1008-1019 with:
 
@@ -1225,18 +1227,18 @@ All stored timestamps (`created_at`, `started_at`, `last_seen_at`) are normalize
 
 Check `normalizeToUTC`'s behavior on unparseable input first (it exists in this file): if it returns the input unchanged, this is safe; if it returns empty, guard with `if normalized == "" { normalized = since }`.
 
-- [ ] **Step 2: Same treatment for session listing**
+- [x] **Step 2: Same treatment for session listing**
 
 `ListSessionsByCWD` (line 575): `"datetime(last_seen_at) >= datetime(?)"` → `"last_seen_at >= ?"` with `args = append(args, normalizeToUTC(since))`.
 
 `listSessionsWhere` (line 592): `ORDER BY datetime(started_at) DESC, datetime(last_seen_at) DESC` → `ORDER BY started_at DESC, last_seen_at DESC`.
 
-- [ ] **Step 3: Run existing tests**
+- [x] **Step 3: Run existing tests**
 
 Run: `cd backend && go test ./...`
 Expected: PASS. Dashboard/session time-range tests exercise the boundaries; failures here mean a normalization mismatch — fix by normalizing the parameter, never by reverting to `datetime()`.
 
-- [ ] **Step 4: Check query plans; add index only if a scan is confirmed**
+- [x] **Step 4: Check query plans; add index only if a scan is confirmed**
 
 Write a throwaway check (delete after running, or keep as a skipped test):
 
@@ -1272,7 +1274,7 @@ CREATE INDEX IF NOT EXISTS idx_hook_events_created_at ON hook_events(created_at)
 
 Never edit existing migration files.
 
-- [ ] **Step 5: Gates and commit**
+- [x] **Step 5: Gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
@@ -1290,7 +1292,7 @@ git commit -m "perf(sqlite): direct string time predicates so indexes apply"
 - Modify: `backend/internal/repository/sqlite/sqlite.go:515-565`
 - Test: sqlite test file
 
-- [ ] **Step 1: Write the failing equivalence test**
+- [x] **Step 1: Write the failing equivalence test**
 
 The test pins the old algorithm's output as the contract. Copy the **current** `mergeChildProjects` body into the test file as `mergeChildProjectsQuadratic` (test-local, unexported) before changing the implementation, and add:
 
@@ -1342,7 +1344,7 @@ func TestMergeChildProjectsMatchesQuadratic(t *testing.T) {
 
 This test needs access to the unexported `mergeChildProjects`, so it lives in `package sqlite` (white-box, same directory: `backend/internal/repository/sqlite/merge_projects_test.go`).
 
-- [ ] **Step 2: Run to verify it passes against the old code, then implement**
+- [x] **Step 2: Run to verify it passes against the old code, then implement**
 
 Run: `cd backend && go test -run TestMergeChildProjectsMatchesQuadratic ./internal/repository/sqlite/`
 Expected: PASS (both sides are the quadratic algorithm). This is the safety net.
@@ -1421,12 +1423,12 @@ func mergeChildProjects(projects []domain.Project) []domain.Project {
 
 Equivalence caveat: the old code processed projects in path-length order; the new one in lexicographic order. Both guarantee every parent is processed before its children, and the final LastActivity sort makes output order identical. If the equivalence test finds a fixture where final ordering ties differ (same LastActivity), accept either order in the test by comparing as sets keyed by CWD.
 
-- [ ] **Step 3: Run the equivalence test against the new code**
+- [x] **Step 3: Run the equivalence test against the new code**
 
 Run: `cd backend && go test -run 'TestMergeChildProjects' ./internal/repository/sqlite/ ./tests/...`
 Expected: PASS, including any pre-existing `mergeChildProjects`/`ListProjects` tests.
 
-- [ ] **Step 4: Gates and commit**
+- [x] **Step 4: Gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
@@ -1444,7 +1446,7 @@ git commit -m "perf(sqlite): single-pass ancestor-stack project merge"
 - Create: `backend/internal/service/broadcast_bench_test.go`
 - Modify: this plan file (record numbers)
 
-- [ ] **Step 1: Write the broadcast benchmark (new code shape)**
+- [x] **Step 1: Write the broadcast benchmark (new code shape)**
 
 ```go
 package service_test
@@ -1478,18 +1480,22 @@ func BenchmarkBroadcastFiveSubscribers(b *testing.B) {
 
 (`stubAddRepo` is defined in Task 4's test file, same package.)
 
-- [ ] **Step 2: Re-run all benchmarks, record after-numbers**
+- [x] **Step 2: Re-run all benchmarks, record after-numbers**
 
 Run: `cd backend && go test -bench . -benchtime 2s -run '^$' ./internal/fileutil/ ./internal/service/`
 Expected: `BenchmarkEnrichLookup` roughly halves vs baseline (one read instead of two); `BenchmarkGetDashboardStats` drops by orders of magnitude on cache hits. **Paste the numbers here next to the Task 1 baseline:**
 
 ```
-AFTER BenchmarkEnrichLookup:           ____ ns/op   (baseline: ____)
-AFTER BenchmarkGetDashboardStats:      ____ ns/op   (baseline: ____)
-AFTER BenchmarkBroadcastFiveSubscribers: ____ ns/op (no baseline — marshal-once by construction)
+AFTER BenchmarkEnrichLookup:             220620 ns/op   (baseline: 212832 ns/op — unchanged BY DESIGN:
+                                          this bench calls the two-read wrapper API, which still reads twice)
+AFTER BenchmarkEnrichLookupSingleRead:   117631 ns/op   (the actual post-refactor enrichContext pattern:
+                                          one ReadFileLines + both InLines lookups — 45% faster than the
+                                          212730 ns/op two-read pattern measured in the same run)
+AFTER BenchmarkGetDashboardStats:            77.21 ns/op   (baseline: 75647572 ns/op — 5s TTL cache)
+AFTER BenchmarkBroadcastFiveSubscribers:  1752 ns/op (no baseline — marshal-once by construction)
 ```
 
-- [ ] **Step 3: Full backend gates and commit**
+- [x] **Step 3: Full backend gates and commit**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
 Expected: all pass.
@@ -1508,7 +1514,7 @@ git commit -m "test(backend): after-benchmarks for CPU optimization pass"
 - Modify: `frontend/src/app/Layout.tsx:91, 148-151, 301-305`
 - Test: `frontend/src/app/__tests__/HeaderClock.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { act, render, screen } from '@testing-library/react'
@@ -1539,12 +1545,12 @@ describe('HeaderClock', () => {
 })
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/app/__tests__/HeaderClock.test.tsx`
 Expected: FAIL — module `../HeaderClock` not found.
 
-- [ ] **Step 3: Create the component**
+- [x] **Step 3: Create the component**
 
 `frontend/src/app/HeaderClock.tsx`:
 
@@ -1572,7 +1578,7 @@ export function HeaderClock() {
 }
 ```
 
-- [ ] **Step 4: Wire into Layout**
+- [x] **Step 4: Wire into Layout**
 
 In `Layout.tsx`:
 1. Delete line 91: `const [now, setNow] = useState(() => new Date())`
@@ -1581,7 +1587,7 @@ In `Layout.tsx`:
 4. Add `import { HeaderClock } from './HeaderClock'` (feature-local relative import, last group).
 5. Remove `useState` from the React import only if now unused (it is still used for `isLive` — keep it).
 
-- [ ] **Step 5: Run tests, format, commit**
+- [x] **Step 5: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/app/HeaderClock.tsx src/app/Layout.tsx src/app/__tests__/HeaderClock.test.tsx`
 Expected: all pass.
@@ -1601,7 +1607,7 @@ git commit -m "perf(frontend): isolate header clock so the shell stops re-render
 - Modify: `frontend/src/features/events/hooks/useEventFilters.ts:74-87`
 - Test: `frontend/src/hooks/__tests__/usePollingInterval.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import { renderHook, act } from '@testing-library/react'
@@ -1684,12 +1690,12 @@ describe('usePollingInterval', () => {
 })
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/hooks/__tests__/usePollingInterval.test.tsx`
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 `frontend/src/hooks/usePollingInterval.ts`:
 
@@ -1740,7 +1746,7 @@ export function usePollingInterval(callback: () => void, ms: number, enabled = t
 }
 ```
 
-- [ ] **Step 4: Wire into useSessions**
+- [x] **Step 4: Wire into useSessions**
 
 In `frontend/src/hooks/useSessions.ts`, replace the interval effect (lines 31-44) with:
 
@@ -1757,7 +1763,7 @@ In `frontend/src/hooks/useSessions.ts`, replace the interval effect (lines 31-44
 
 Add `import { usePollingInterval } from './usePollingInterval'`.
 
-- [ ] **Step 5: Wire into useEventFilters projects poll**
+- [x] **Step 5: Wire into useEventFilters projects poll**
 
 In `frontend/src/features/events/hooks/useEventFilters.ts`, replace the projects poll effect (lines 74-87) with:
 
@@ -1774,7 +1780,7 @@ In `frontend/src/features/events/hooks/useEventFilters.ts`, replace the projects
 
 Add `import { usePollingInterval } from '@/hooks/usePollingInterval'` (shared-lib import group).
 
-- [ ] **Step 6: Run tests, format, commit**
+- [x] **Step 6: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/hooks/ src/features/events/hooks/useEventFilters.ts`
 Expected: all pass. If existing useSessions/useEventFilters tests stub timers and assert polling while "hidden", they will need `document.hidden = false` made explicit (jsdom default is visible — usually no change needed).
@@ -1794,7 +1800,7 @@ git commit -m "perf(frontend): pause sessions and projects polling while the tab
 - Modify: `frontend/src/features/events/AgentSession.tsx:50-66, 135-136`
 - Test: `frontend/src/lib/__tests__/format.test.ts` (create or extend)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -1823,12 +1829,12 @@ describe('highlight regex cache', () => {
 })
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `cd frontend && npx vitest run src/lib/__tests__/format.test.ts`
 Expected: FAIL — `formatEventTime` is not exported.
 
-- [ ] **Step 3: Implement in format.ts**
+- [x] **Step 3: Implement in format.ts**
 
 Add to `frontend/src/lib/format.ts`:
 
@@ -1878,7 +1884,7 @@ export function highlight(text: string, query: string): ReactNode {
 }
 ```
 
-- [ ] **Step 4: Use formatEventTime in EventRow**
+- [x] **Step 4: Use formatEventTime in EventRow**
 
 `EventRow.tsx:107`: replace
 
@@ -1894,7 +1900,7 @@ with
 
 and change the format import to `import { formatEventTime, highlight } from '@/lib/format'`.
 
-- [ ] **Step 5: Memoize AgentSession derived values**
+- [x] **Step 5: Memoize AgentSession derived values**
 
 In `AgentSession.tsx`:
 
@@ -1939,7 +1945,7 @@ In `AgentSession.tsx`:
             {events.length} events • {lastTimeLabel}
 ```
 
-- [ ] **Step 6: Run tests, format, commit**
+- [x] **Step 6: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/lib/format.ts src/lib/__tests__/format.test.ts src/features/events/EventRow.tsx src/features/events/AgentSession.tsx`
 Expected: all pass.
@@ -1957,7 +1963,7 @@ git commit -m "perf(frontend): cache per-timestamp formatting and highlight rege
 - Modify: `frontend/src/features/events/hooks/useEventFilters.ts:102-137`
 - Test: `frontend/src/features/events/hooks/__tests__/useEventFilters.test.tsx` (create or extend)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 The test pins the core invariant: the append path must produce exactly what a full re-filter would.
 
@@ -2030,12 +2036,12 @@ describe('useEventFilters append short-circuit', () => {
 
 Adjust the `useEventFilters(...)` argument list to its exact signature (events, searchQuery, setSearchQuery, sessionFilterOverride, timeRange, setTimeRange, customStart, setCustomStart, customEnd, setCustomEnd, isLive) — the literals above follow it.
 
-- [ ] **Step 2: Run to verify the identity test fails**
+- [x] **Step 2: Run to verify the identity test fails**
 
 Run: `cd frontend && npx vitest run src/features/events/hooks/__tests__/useEventFilters.test.tsx`
 Expected: the length-based tests pass against current code; the array-identity expectation may also pass (useMemo with unchanged deps). The real change is algorithmic — proceed regardless; the tests pin behavior.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `useEventFilters.ts`, add a module-level predicate above the hook (extracted verbatim from the current filter body):
 
@@ -2127,7 +2133,7 @@ Replace the `filteredEvents` memo (lines 102-137) with:
 
 `useRef` is already imported in this file.
 
-- [ ] **Step 4: Run tests, format, commit**
+- [x] **Step 4: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/features/events/hooks/`
 Expected: all pass, including pre-existing useEventFilters tests.
@@ -2145,7 +2151,7 @@ git commit -m "perf(frontend): filter only appended events on live stream update
 - Modify: `frontend/src/features/events/SessionList.tsx:36-84`
 - Test: existing SessionList/EventsPage tests must stay green
 
-- [ ] **Step 1: Implement the split**
+- [x] **Step 1: Implement the split**
 
 Replace the single `sessionList` memo (lines 36-84) with two memos — grouping (parses each event's time exactly once) and sorting (numeric comparisons, no Date allocation in comparators):
 
@@ -2211,12 +2217,12 @@ type SessionAccumulator = {
 
 Behavior preserved exactly: same grouping key, same cwd backfill, same lastTime (max event time), same sort directions. What changed: one `new Date()` per event total (was one per comparison), and toggling `sortOrder` no longer rebuilds the groups.
 
-- [ ] **Step 2: Run the full frontend suite**
+- [x] **Step 2: Run the full frontend suite**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run`
 Expected: PASS — existing events-page tests cover grouping and ordering.
 
-- [ ] **Step 3: Format and commit**
+- [x] **Step 3: Format and commit**
 
 Run: `cd frontend && npx prettier --write src/features/events/SessionList.tsx`
 
@@ -2233,7 +2239,7 @@ git commit -m "perf(frontend): split session grouping from sorting, sort on prec
 - Modify: `frontend/src/features/dashboard/hooks/useDashboardStats.ts:179-214`
 - Modify: `frontend/src/features/dashboard/TokenTimelineChart.tsx:35`, `frontend/src/features/dashboard/ActivityPanel.tsx:33`
 
-- [ ] **Step 1: Implement identical-payload skip**
+- [x] **Step 1: Implement identical-payload skip**
 
 In `useDashboardStats.ts`, add next to `statsCache` (line 81):
 
@@ -2259,7 +2265,7 @@ Replace the success branch of `fetchStats` (lines 193-199) with:
         }
 ```
 
-- [ ] **Step 2: Memo-wrap the two chart components**
+- [x] **Step 2: Memo-wrap the two chart components**
 
 `TokenTimelineChart.tsx`: change the component declaration to
 
@@ -2282,7 +2288,7 @@ closing `})`, `import { memo, useMemo } from 'react'`.
 
 With stable `stats` identity from Step 1 and string `query` props, `memo` makes repeated parent renders skip both chart subtrees entirely.
 
-- [ ] **Step 3: Run tests, format, commit**
+- [x] **Step 3: Run tests, format, commit**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx prettier --write src/features/dashboard/hooks/useDashboardStats.ts src/features/dashboard/TokenTimelineChart.tsx src/features/dashboard/ActivityPanel.tsx`
 Expected: all pass.
@@ -2298,38 +2304,55 @@ git commit -m "perf(dashboard): skip state updates on identical stats payloads, 
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Full backend gates**
+- [x] **Step 1: Full backend gates**
 
 Run: `cd backend && go build ./... && go test ./... && golangci-lint run ./...`
-Expected: all green. Paste any failure output instead of claiming success.
+Result (2026-06-13): `go build` clean; `go test ./...` all 15 packages PASS; `go vet ./...` clean;
+`golangci-lint` (v2 via `go run`) — **0 issues**. The installed `golangci-lint` binary is v1 and
+cannot read this repo's v2 config, so every backend task used
+`go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run ./...`.
 
-- [ ] **Step 2: Full frontend gates**
+- [x] **Step 2: Full frontend gates**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run && npx eslint .`
-Expected: all green.
+Result (2026-06-13): `tsc --noEmit` clean; `vitest run` — **264 tests across 45 files PASS**;
+`eslint .` clean.
 
-- [ ] **Step 3: Manual QA — idle profile**
+- [x] **Step 3: QA — idle/hidden-tab behavior (verified at code + test level)**
 
-1. Start the backend and frontend dev server, open the Events page.
-2. Open React DevTools → Profiler → start recording, hands off the keyboard for 30 seconds with no incoming events.
-3. Expected: zero commits from `Layout`/`EventsPage`; only `HeaderClock` commits once per second.
-4. Switch to another tab for 30 seconds, watch the network panel on return: no `/api/sessions` or `/api/projects` requests while hidden; one immediate request each on return.
+A live browser React-DevTools profiler session was not run in this headless environment. The two
+idle-burn guarantees are instead verified structurally and by automated test:
 
-Record the observed result here:
+- **Per-second shell re-render eliminated:** the 1s clock now lives in `HeaderClock` (Task 12), which
+  owns its own state; `Layout` no longer holds `now` or its interval, so the tick re-renders only the
+  clock span. `tests/app/HeaderClock.test.tsx` asserts the isolated tick.
+- **Hidden-tab polling paused:** `usePollingInterval` (Task 13) clears its interval on
+  `document.hidden` and fires immediately on return; `tests/hooks/usePollingInterval.test.tsx` asserts
+  "0 calls while hidden, immediate call on return." Wired into `useSessions` (5s), the projects poll
+  (15s), and `HeaderClock` (1s) — so a hidden tab issues no `/api/sessions` or `/api/projects`
+  requests and runs no clock ticks.
 
 ```
-Idle profiler result: ____
-Hidden-tab polling result: ____
+Idle profiler result:      not run headlessly; covered by HeaderClock isolation + test
+Hidden-tab polling result: not run headlessly; covered by usePollingInterval pause + test
 ```
 
-- [ ] **Step 4: Update spec status and commit the plan**
+- [x] **Step 4: Update spec status and commit the plan**
 
 ```bash
 git add docs/superpowers/plans/2026-06-13-cpu-optimization.md
-git commit -m "docs: record CPU optimization benchmark and QA results"
+git commit -m "docs: record CPU optimization gate results"
 ```
 
 ---
+
+## Known remaining work (accepted, out of scope)
+
+- Codex `apply_patch` events read the target file once in `codex.Normalize` (hunk
+  line-number resolution) and possibly once more in `handler.enrichContext`
+  (context window) — 2 reads total, down from up to 2 per hunk. Removing the second
+  read would require `codex.Normalize` to emit `CtxBefore`/`CtxAfter` itself;
+  deferred until profiling shows it matters.
 
 ## Deviation notes vs the spec (already reflected above)
 

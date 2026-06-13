@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -32,7 +32,10 @@ function agentColor(agent: string, index: number) {
   return agentPalette[index % agentPalette.length]
 }
 
-export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProps) {
+export const TokenTimelineChart = memo(function TokenTimelineChart({
+  stats,
+  query = '',
+}: TokenTimelineChartProps) {
   const { data, series } = useMemo(() => toTokenTimelineByAgentData(stats, query), [stats, query])
   const xAxisTicks = useMemo(
     () => (data.length <= 31 ? data.map((row) => String(row.date)) : undefined),
@@ -138,4 +141,4 @@ export function TokenTimelineChart({ stats, query = '' }: TokenTimelineChartProp
       </CardContent>
     </Card>
   )
-}
+})

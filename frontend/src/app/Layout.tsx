@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSessions } from '@/hooks/useSessions'
 import type { LayoutOutletContext } from '@/types'
+import { HeaderClock } from './HeaderClock'
 import { Sidebar } from './Sidebar'
 
 const COLLAPSED_SESSIONS_STORAGE_KEY = 'events_collapsed_sessions'
@@ -88,7 +89,6 @@ export function Layout() {
     searchQuery,
     isDesktopViewport,
   } = state
-  const [now, setNow] = useState(() => new Date())
   const location = useLocation()
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null)
   const mobileSidebarRef = useRef<HTMLElement | null>(null)
@@ -144,11 +144,6 @@ export function Layout() {
   useEffect(() => {
     localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, JSON.stringify(sidebarCollapsed))
   }, [sidebarCollapsed])
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY)
@@ -299,9 +294,7 @@ export function Layout() {
           </div>
 
           <div className="flex min-w-0 items-center justify-end">
-            <span className="tabular-nums text-[#444] shrink-0 font-medium text-right">
-              {now.toLocaleDateString()} {now.toLocaleTimeString()}
-            </span>
+            <HeaderClock />
           </div>
         </header>
         <Outlet context={outletContext} />

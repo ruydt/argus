@@ -727,8 +727,11 @@ func TestDiagnosticsStorageStatsCountsRowsAndLatestTimestamp(t *testing.T) {
 	if stats.TotalSessions != 2 {
 		t.Fatalf("TotalSessions = %d, want 2", stats.TotalSessions)
 	}
-	if stats.LatestEventAt == nil || *stats.LatestEventAt != offsetLatest {
-		t.Fatalf("LatestEventAt = %v, want %q", stats.LatestEventAt, offsetLatest)
+	// created_at is normalized to UTC at write time; the stored value for
+	// offsetLatest ("2026-05-27T08:30:00-05:00") becomes "2026-05-27T13:30:00Z".
+	wantLatest := "2026-05-27T13:30:00Z"
+	if stats.LatestEventAt == nil || *stats.LatestEventAt != wantLatest {
+		t.Fatalf("LatestEventAt = %v, want %q", stats.LatestEventAt, wantLatest)
 	}
 }
 
@@ -1269,14 +1272,14 @@ func TestMigrationRunner_Idempotent(t *testing.T) {
 	db := newTestDB(t)
 
 	// A second call to New on the same DB would re-run migrate(). Instead,
-	// verify idempotency by checking schema_migrations has exactly 13 versions.
+	// verify idempotency by checking schema_migrations has exactly 14 versions.
 	rawDB := db.RawDB()
 	var count int
 	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("count schema_migrations: %v", err)
 	}
-	if count != 13 {
-		t.Errorf("schema_migrations has %d rows, want 13 (migrations 1–13)", count)
+	if count != 14 {
+		t.Errorf("schema_migrations has %d rows, want 14 (migrations 1–14)", count)
 	}
 }
 
@@ -1401,5 +1404,46 @@ func TestDiagnosticsAgentStatsEventRates(t *testing.T) {
 	}
 	if cc.EventsLast24h != 1 {
 		t.Errorf("EventsLast24h: want 1, got %d", cc.EventsLast24h)
+	}
+}
+
+func TestUpsertSessionZeroUsagePreservesStored(t *testing.T) {
+	db, err := sqlite.New(":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+
+	usage := domain.SessionUsage{InputTokens: 100, OutputTokens: 50, Turns: 3}
+	if err := db.UpsertSession("s1", "claudecode", "m", "", "/tmp/p", "/tmp/.claude/t.jsonl",
+		"2026-06-13T00:00:00Z", "", usage); err != nil {
+		t.Fatal(err)
+	}
+
+	// A later event without computed usage must not wipe the stored counts.
+	if err := db.UpsertSession("s1", "claudecode", "m", "", "/tmp/p", "/tmp/.claude/t.jsonl",
+		"2026-06-13T00:01:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatal(err)
+	}
+
+	sessions, err := db.ListSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sessions) != 1 {
+		t.Fatalf("expected 1 session, got %d", len(sessions))
+	}
+	if sessions[0].Usage.InputTokens != 100 || sessions[0].Usage.Turns != 3 {
+		t.Fatalf("zero-usage upsert clobbered stored usage: %+v", sessions[0].Usage)
+	}
+
+	// A non-zero usage write still overwrites.
+	if err := db.UpsertSession("s1", "claudecode", "m", "", "/tmp/p", "/tmp/.claude/t.jsonl",
+		"2026-06-13T00:02:00Z", "", domain.SessionUsage{InputTokens: 200, OutputTokens: 80, Turns: 4}); err != nil {
+		t.Fatal(err)
+	}
+	sessions, _ = db.ListSessions()
+	if sessions[0].Usage.InputTokens != 200 {
+		t.Fatalf("non-zero usage upsert did not overwrite: %+v", sessions[0].Usage)
 	}
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -25,10 +26,17 @@ type EventService struct {
 	hookRequests    atomic.Int64
 	ingestionErrors atomic.Int64
 
+	// usageScannedAt tracks the last transcript usage scan per session so
+	// mid-session events don't re-scan the whole JSONL on every hook.
+	usageScannedAt sync.Map // session ID (string) → time.Time
+
 	diagMu         sync.RWMutex
 	diagCache      *domain.Diagnostics
 	diagCachedAt   time.Time
 	diagAgentStats []domain.DiagnosticsAgentStats
+
+	statsMu    sync.RWMutex
+	statsCache map[string]cachedDashboardStats
 }
 
 type DiagnosticsOptions struct {
@@ -43,10 +51,26 @@ type DiagnosticsOptions struct {
 
 const exportSensitivityWarning = "Exports may include prompts, diffs, file paths, tool outputs, raw payloads, and exports; handle exported data as sensitive."
 
+// usageRescanInterval bounds transcript scans for live sessions: usage is
+// recomputed at most this often per session, plus always on terminal events.
+const usageRescanInterval = 30 * time.Second
+
+// cachedDashboardStats is a TTL-cached GetDashboardStats response. The cached
+// value is never mutated after store, so shallow copies are safe to hand out.
+type cachedDashboardStats struct {
+	stats    domain.DashboardStats
+	cachedAt time.Time
+}
+
+// dashboardStatsTTL bounds how often dashboard aggregates and transcript
+// scans run. 5s staleness is invisible for a local single-user dashboard.
+const dashboardStatsTTL = 5 * time.Second
+
 func New(repo repository.EventRepository) *EventService {
 	return &EventService{
-		repo:      repo,
-		startTime: time.Now(),
+		repo:       repo,
+		startTime:  time.Now(),
+		statsCache: map[string]cachedDashboardStats{},
 	}
 }
 
@@ -81,11 +105,14 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 	}
 	if e.Session != "" {
 		var usage domain.SessionUsage
-		switch e.Agent {
-		case "claudecode":
-			usage = claudecode.ComputeUsage(e.TranscriptPath)
-		default:
-			usage = codex.ComputeUsage(e.TranscriptPath)
+		if s.shouldComputeUsage(e) {
+			switch e.Agent {
+			case "claudecode":
+				usage = claudecode.ComputeUsage(e.TranscriptPath)
+			default:
+				usage = codex.ComputeUsage(e.TranscriptPath)
+			}
+			s.usageScannedAt.Store(e.Session, time.Now())
 		}
 		if err := s.repo.UpsertSession(
 			e.Session,
@@ -100,9 +127,32 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		); err != nil {
 			return err
 		}
+		// Ended sessions receive no further events; drop their scan timestamp
+		// so the map size tracks active sessions, not lifetime sessions.
+		if endedAtForEvent(e) != "" {
+			s.usageScannedAt.Delete(e.Session)
+		}
 	}
 	s.broadcast(e)
 	return nil
+}
+
+// shouldComputeUsage reports whether this event warrants a transcript scan.
+// Terminal events always scan (final numbers must be exact); other events
+// scan at most once per usageRescanInterval per session.
+func (s *EventService) shouldComputeUsage(e domain.NormalizedEvent) bool {
+	if e.TranscriptPath == "" {
+		return false
+	}
+	if endedAtForEvent(e) != "" {
+		return true
+	}
+	if v, ok := s.usageScannedAt.Load(e.Session); ok {
+		if last, isTime := v.(time.Time); isTime && time.Since(last) < usageRescanInterval {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *EventService) ListEvents(limit int) ([]domain.NormalizedEvent, error) {
@@ -336,33 +386,26 @@ func (s *EventService) DeleteProject(cwd string) (sessionsDeleted, eventsDeleted
 }
 
 func (s *EventService) ListSessions() ([]domain.Session, error) {
-	sessions, err := s.repo.ListSessions()
-	if err != nil {
-		return nil, err
-	}
-	if err := s.backfillSessionUsage(sessions); err != nil {
-		return nil, err
-	}
-	return sessions, nil
+	return s.repo.ListSessions()
 }
 
 func (s *EventService) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
-	sessions, err := s.repo.ListSessionsByCWD(cwd, since)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.backfillSessionUsage(sessions); err != nil {
-		return nil, err
-	}
-	return sessions, nil
+	return s.repo.ListSessionsByCWD(cwd, since)
 }
 
 func (s *EventService) GetDashboardStats(since, until string) (*domain.DashboardStats, error) {
+	key := since + "|" + until
+
+	s.statsMu.RLock()
+	if c, ok := s.statsCache[key]; ok && time.Since(c.cachedAt) < dashboardStatsTTL {
+		result := c.stats // shallow copy — cached value is never mutated after store
+		s.statsMu.RUnlock()
+		return &result, nil
+	}
+	s.statsMu.RUnlock()
+
 	sessions, err := s.repo.ListSessions()
 	if err != nil {
-		return nil, err
-	}
-	if err := s.backfillSessionUsage(sessions); err != nil {
 		return nil, err
 	}
 	stats, err := s.repo.GetDashboardStats(since, until)
@@ -380,10 +423,34 @@ func (s *EventService) GetDashboardStats(since, until string) (*domain.Dashboard
 		}
 	}
 	enrichDashboardStats(stats, sessions, since, until)
+
+	s.statsMu.Lock()
+	s.statsCache[key] = cachedDashboardStats{stats: *stats, cachedAt: time.Now()}
+	s.statsMu.Unlock()
 	return stats, nil
 }
 
-func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
+// SetStatsCachedAt sets a stats cache entry's timestamp for testing TTL
+// expiry. Testing only — do not call in production code.
+func (s *EventService) SetStatsCachedAt(key string, t time.Time) {
+	s.statsMu.Lock()
+	if c, ok := s.statsCache[key]; ok {
+		c.cachedAt = t
+		s.statsCache[key] = c
+	}
+	s.statsMu.Unlock()
+}
+
+// BackfillMissingSessionUsage computes usage for sessions persisted before
+// write-time usage existed. Called once at startup in a background goroutine;
+// errors are logged per session and never fatal.
+func (s *EventService) BackfillMissingSessionUsage() {
+	sessions, err := s.repo.ListSessions()
+	if err != nil {
+		slog.Warn("usage backfill: list sessions", "err", err)
+		return
+	}
+	updated := 0
 	for i := range sessions {
 		if hasUsage(sessions[i].Usage) || sessions[i].TranscriptPath == "" {
 			continue
@@ -392,7 +459,6 @@ func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
 		if !hasUsage(usage) {
 			continue
 		}
-		sessions[i].Usage = usage
 		if err := s.repo.UpsertSession(
 			sessions[i].SessionID,
 			sessions[i].Agent,
@@ -404,10 +470,14 @@ func (s *EventService) backfillSessionUsage(sessions []domain.Session) error {
 			sessions[i].EndedAt,
 			usage,
 		); err != nil {
-			return err
+			slog.Warn("usage backfill: upsert", "session", sessions[i].SessionID, "err", err)
+			continue
 		}
+		updated++
 	}
-	return nil
+	if updated > 0 {
+		slog.Info("usage backfill complete", "updated", updated)
+	}
 }
 
 func computeUsage(agent, transcriptPath string) domain.SessionUsage {
@@ -607,24 +677,40 @@ func (s *EventService) SweepStaleSessions(cutoff time.Time) error {
 	return nil
 }
 
-func (s *EventService) Subscribe() <-chan domain.NormalizedEvent {
-	ch := make(chan domain.NormalizedEvent, 64)
-	recv := (<-chan domain.NormalizedEvent)(ch)
+// BroadcastEvent is a pre-marshaled event delivered to SSE subscribers.
+// Marshaling happens once in broadcast() instead of once per subscriber.
+// Session is carried alongside so the SSE handler can filter without
+// re-decoding the payload.
+type BroadcastEvent struct {
+	Session string
+	Payload []byte // immutable after construction; safe to share across subscribers
+}
+
+func (s *EventService) Subscribe() <-chan BroadcastEvent {
+	ch := make(chan BroadcastEvent, 64)
+	recv := (<-chan BroadcastEvent)(ch)
 	s.subscribers.Store(recv, ch)
 	return recv
 }
 
-func (s *EventService) Unsubscribe(ch <-chan domain.NormalizedEvent) {
+func (s *EventService) Unsubscribe(ch <-chan BroadcastEvent) {
 	if v, ok := s.subscribers.LoadAndDelete(ch); ok {
-		close(v.(chan domain.NormalizedEvent))
+		close(v.(chan BroadcastEvent))
 	}
 }
 
 func (s *EventService) broadcast(e domain.NormalizedEvent) {
+	payload, err := json.Marshal(e)
+	if err != nil {
+		// Event is already persisted; only the live push is dropped.
+		slog.Error("broadcast marshal", "err", err)
+		return
+	}
+	ev := BroadcastEvent{Session: e.Session, Payload: payload}
 	s.subscribers.Range(func(_, v any) bool {
-		ch := v.(chan domain.NormalizedEvent)
+		ch := v.(chan BroadcastEvent)
 		select {
-		case ch <- e:
+		case ch <- ev:
 		default:
 		}
 		return true

@@ -79,6 +79,7 @@ export interface DashboardStats {
 }
 
 const statsCache = new Map<string, DashboardStats>()
+const rawTextCache = new Map<string, string>()
 
 function normalizeDashboardStats(raw: Partial<DashboardStats>): DashboardStats {
   const agentUsage = Array.isArray(raw.agent_usage)
@@ -191,10 +192,16 @@ export function useDashboardStats(query: string = '') {
         const params = query ? `?${query}` : ''
         const res = await fetch(`/api/dashboard/stats${params}`)
         if (res.ok) {
-          const data = normalizeDashboardStats((await res.json()) as Partial<DashboardStats>)
-          statsCache.set(cacheKey, data)
-          if (mounted) {
-            setSnapshot({ cacheKey, stats: data })
+          const text = await res.text()
+          // Identical payload → keep the existing object identity so every
+          // downstream memo and chart skips re-rendering.
+          if (rawTextCache.get(cacheKey) !== text) {
+            rawTextCache.set(cacheKey, text)
+            const data = normalizeDashboardStats(JSON.parse(text) as Partial<DashboardStats>)
+            statsCache.set(cacheKey, data)
+            if (mounted) {
+              setSnapshot({ cacheKey, stats: data })
+            }
           }
         }
       } catch (err) {

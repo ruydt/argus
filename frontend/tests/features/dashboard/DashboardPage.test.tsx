@@ -43,7 +43,7 @@ beforeEach(() => {
     'fetch',
     vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => minimalStats,
+      text: async () => JSON.stringify(minimalStats),
     })
   )
 })
@@ -70,7 +70,7 @@ describe('DashboardPage', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => minimalStats,
+        text: async () => JSON.stringify(minimalStats),
       })
     )
 

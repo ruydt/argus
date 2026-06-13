@@ -409,6 +409,11 @@ export function EventsPage() {
       </div>
       <EventFilters
         id="event-filters"
+        searchQuery={searchQuery}
+        setSearchQuery={(value) => {
+          clearLink()
+          setSearchQuery(value)
+        }}
         actionFilter={actionFilter}
         setActionFilter={(value) => {
           clearLink()

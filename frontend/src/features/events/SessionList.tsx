@@ -19,6 +19,14 @@ type SessionListProps = {
   isEventDraggable?: boolean
 }
 
+type SessionAccumulator = {
+  sessionId: string
+  transcriptPath: string
+  cwd: string
+  entries: { event: EventRecord; timeMs: number }[]
+  lastTimeMs: number
+}
+
 export function SessionList({
   events,
   sortOrder,
@@ -33,45 +41,41 @@ export function SessionList({
   onTargetVisible,
   isEventDraggable = false,
 }: SessionListProps) {
-  const sessionList = useMemo(() => {
-    const grouped = new Map<string, SessionGroup>()
-
-    events.forEach((event) => {
+  const grouped = useMemo(() => {
+    const map = new Map<string, SessionAccumulator>()
+    for (const event of events) {
       const key = event.session || event.transcript_path || 'ungrouped'
-      const existing = grouped.get(key)
-
+      const timeMs = new Date(event.time).getTime()
+      const existing = map.get(key)
       if (existing) {
-        existing.events.push(event)
+        existing.entries.push({ event, timeMs })
+        if (timeMs > existing.lastTimeMs) existing.lastTimeMs = timeMs
         if (!existing.cwd && event.cwd) existing.cwd = event.cwd
-        return
+        continue
       }
-
-      grouped.set(key, {
+      map.set(key, {
         sessionId: key,
         transcriptPath: event.transcript_path ?? '',
         cwd: event.cwd ?? '',
-        events: [event],
+        entries: [{ event, timeMs }],
+        lastTimeMs: timeMs,
       })
-    })
+    }
+    return map
+  }, [events])
 
-    const list = Array.from(grouped.values()).map((session) => {
-      const sortedEvents = session.events.toSorted((a, b) =>
-        sortOrder === 'newest'
-          ? new Date(b.time).getTime() - new Date(a.time).getTime()
-          : new Date(a.time).getTime() - new Date(b.time).getTime()
+  const sessionList = useMemo(() => {
+    const list = Array.from(grouped.values()).map((acc) => {
+      const sortedEntries = acc.entries.toSorted((a, b) =>
+        sortOrder === 'newest' ? b.timeMs - a.timeMs : a.timeMs - b.timeMs
       )
-
-      const lastTime = new Date(
-        Math.max(...sortedEvents.map((event) => new Date(event.time).getTime()))
-      )
-
-      return {
-        session: {
-          ...session,
-          events: sortedEvents,
-        },
-        lastTime,
+      const session: SessionGroup = {
+        sessionId: acc.sessionId,
+        transcriptPath: acc.transcriptPath,
+        cwd: acc.cwd,
+        events: sortedEntries.map((entry) => entry.event),
       }
+      return { session, lastTime: new Date(acc.lastTimeMs) }
     })
 
     list.sort((a, b) =>
@@ -81,7 +85,7 @@ export function SessionList({
     )
 
     return list
-  }, [events, sortOrder])
+  }, [grouped, sortOrder])
 
   if (sessionList.length === 0) {
     return (

@@ -160,20 +160,30 @@ func enrichContext(e domain.NormalizedEvent) domain.NormalizedEvent {
 	}
 
 	startLine := e.StartLine
-	// If startLine is 0 or 1, it might be missing or snippet-relative.
-	// Try to find the actual position in the file.
-	if startLine <= 1 {
-		if found := fileutil.FindStartLine(e.Path, searchStr); found > 0 {
+	needFind := startLine <= 1
+	needCtx := len(e.CtxBefore) == 0 && len(e.CtxAfter) == 0
+
+	if !needFind && !needCtx {
+		return e
+	}
+
+	// One read serves both the start-line search and the context window.
+	lines := fileutil.ReadFileLines(e.Path)
+	if lines == nil {
+		return e
+	}
+
+	if needFind {
+		if found := fileutil.FindStartLineInLines(lines, searchStr); found > 0 {
 			startLine = found
 		}
 	}
 
 	if startLine > 0 {
 		e.StartLine = startLine
-		// Only compute context if not already present or if we found a better startLine
-		if len(e.CtxBefore) == 0 && len(e.CtxAfter) == 0 {
+		if needCtx {
 			lineCount := len(strings.Split(strings.TrimRight(searchStr, "\n"), "\n"))
-			e.CtxBefore, e.CtxAfter = fileutil.ComputeContext(e.Path, startLine, lineCount, 3)
+			e.CtxBefore, e.CtxAfter = fileutil.ComputeContextFromLines(lines, startLine, lineCount, 3)
 		}
 	}
 

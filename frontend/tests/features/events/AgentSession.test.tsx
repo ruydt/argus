@@ -90,15 +90,15 @@ describe('AgentSession copy session ID', () => {
 })
 
 describe('AgentSession project label', () => {
-  it('shows shortened project cwd in the header', () => {
+  it('shows the project folder name in the header', () => {
     renderSession({ session: buildSession({ cwd: '/Users/dev/GitHub/argus' }) })
-    const label = screen.getByText('~/GitHub/argus')
+    const label = screen.getByText('argus')
     expect(label).toBeInTheDocument()
     expect(label).toHaveAttribute('title', '/Users/dev/GitHub/argus')
   })
 
   it('omits project label when session has no cwd', () => {
     renderSession({ session: buildSession({ cwd: '' }) })
-    expect(screen.queryByText(/^~\//)).not.toBeInTheDocument()
+    expect(screen.queryByTitle(/^\//)).not.toBeInTheDocument()
   })
 })

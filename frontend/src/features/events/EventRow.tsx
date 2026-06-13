@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react'
 import type { DragEvent, ReactNode } from 'react'
 import { cn, displayModel } from '@/lib/utils'
-import { highlight } from '@/lib/format'
+import { formatEventTime, highlight } from '@/lib/format'
 import type { EventRecord } from '@/types/events'
 import { buildEventKey } from './eventKey'
 import { DiffBlock } from './renderers/DiffBlock'
@@ -104,7 +104,7 @@ export const EventRow = memo(function EventRow({
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
         <div className="flex items-center gap-3 pt-[2px] text-[#666] sm:block sm:w-[75px] sm:shrink-0">
-          <span>{new Date(e.time).toLocaleTimeString([], { hour12: false })}</span>
+          <span>{formatEventTime(e.time)}</span>
           <span className={cn('font-bold sm:hidden', e.action)}>{e.action}</span>
         </div>
         <div className={cn('hidden pt-[2px] font-bold sm:block sm:w-[96px] sm:shrink-0', e.action)}>
