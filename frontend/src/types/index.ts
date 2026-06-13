@@ -10,3 +10,5 @@ export type {
 } from './events'
 
 export type { Session, SessionUsageType, SessionTreeNode } from './sessions'
+
+export type { ScriptPackage, ScriptBundle, ScriptCatalog, BundleInstallResult } from './scripts'
