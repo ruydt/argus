@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { ScriptCard } from '@/features/scripts/ScriptCard'
+import { ScriptRow } from '@/features/scripts/ScriptRow'
 import type { ScriptPackage } from '@/types'
 
 const base: ScriptPackage = {
@@ -23,10 +23,12 @@ const base: ScriptPackage = {
   runtime_available: true,
 }
 
-describe('ScriptCard', () => {
+describe('ScriptRow', () => {
   it('shows Install when available and fires onInstall', () => {
     const onInstall = vi.fn()
-    render(<ScriptCard script={base} onInstall={onInstall} onDelete={vi.fn()} busy={false} />)
+    render(
+      <ScriptRow script={base} index={1} onInstall={onInstall} onDelete={vi.fn()} busy={false} />
+    )
     expect(screen.getByText('Available')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Install' }))
     expect(onInstall).toHaveBeenCalledWith('block-dangerous')
@@ -35,8 +37,9 @@ describe('ScriptCard', () => {
   it('shows Added + Delete when installed', () => {
     const onDelete = vi.fn()
     render(
-      <ScriptCard
+      <ScriptRow
         script={{ ...base, installed: true }}
+        index={1}
         onInstall={vi.fn()}
         onDelete={onDelete}
         busy={false}
@@ -49,13 +52,14 @@ describe('ScriptCard', () => {
 
   it('warns when runtime missing', () => {
     render(
-      <ScriptCard
+      <ScriptRow
         script={{ ...base, runtime_available: false }}
+        index={1}
         onInstall={vi.fn()}
         onDelete={vi.fn()}
         busy={false}
       />
     )
-    expect(screen.getByText(/Needs/)).toBeInTheDocument()
+    expect(screen.getByText(/needs node/i)).toBeInTheDocument()
   })
 })
