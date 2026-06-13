@@ -1,16 +1,31 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import type { CollectionScript } from '@/types'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import type { CollectionEntry } from '@/types'
 
 type CollectionRowProps = {
-  script: CollectionScript
+  entry: CollectionEntry
   index: number
-  onInstall: (id: string) => void
-  onRemove: (id: string) => void
   busy: boolean
+  onSaveToGist: (filename: string) => void
+  onInstall: (id: string) => void
+  onPublish: (entry: CollectionEntry) => void
+  onRemoveLocal: (filename: string) => void
+  onRemoveGist: (id: string) => void
+  onRemoveBoth: (entry: CollectionEntry) => void
 }
 
-export function CollectionRow({ script, index, onInstall, onRemove, busy }: CollectionRowProps) {
+export function CollectionRow({
+  entry,
+  index,
+  busy,
+  onSaveToGist,
+  onInstall,
+  onPublish,
+  onRemoveLocal,
+  onRemoveGist,
+  onRemoveBoth,
+}: CollectionRowProps) {
   return (
     <div className="flex items-center gap-4 border-b border-white/[0.06] px-3 py-3 hover:bg-white/[0.02]">
       <span className="w-6 shrink-0 text-right text-[0.72rem] tabular-nums text-[#555]">
@@ -18,27 +33,86 @@ export function CollectionRow({ script, index, onInstall, onRemove, busy }: Coll
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-[#e5e5e5]">{script.title}</span>
-          <span className="truncate font-mono text-[0.7rem] text-[#666]">{script.filename}</span>
+          <span className="truncate text-sm font-semibold text-[#e5e5e5]">{entry.title}</span>
+          <span className="truncate font-mono text-[0.7rem] text-[#666]">{entry.filename}</span>
         </div>
-        {script.purpose ? (
-          <p className="mt-0.5 truncate text-[0.72rem] text-[#888]">{script.purpose}</p>
-        ) : null}
       </div>
       <div className="hidden shrink-0 items-center gap-1 md:flex">
-        <Badge variant="outline">{script.origin}</Badge>
+        <Badge
+          variant={entry.local ? 'secondary' : 'outline'}
+          className={entry.local ? '' : 'opacity-40'}
+        >
+          Local
+        </Badge>
+        <Badge
+          variant={entry.gist ? 'secondary' : 'outline'}
+          className={entry.gist ? '' : 'opacity-40'}
+        >
+          Gist
+        </Badge>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {script.installed ? (
-          <Badge variant="secondary">Installed</Badge>
-        ) : (
-          <Button size="sm" disabled={busy} onClick={() => onInstall(script.id)}>
+        {entry.local && !entry.gist ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => onSaveToGist(entry.filename)}
+          >
+            Save to gist
+          </Button>
+        ) : null}
+        {entry.gist && !entry.local ? (
+          <Button size="sm" disabled={busy} onClick={() => onInstall(entry.id)}>
             Install
           </Button>
-        )}
-        <Button variant="outline" size="sm" disabled={busy} onClick={() => onRemove(script.id)}>
-          Remove
-        </Button>
+        ) : null}
+        {entry.local ? (
+          <Button variant="outline" size="sm" disabled={busy} onClick={() => onPublish(entry)}>
+            Publish
+          </Button>
+        ) : null}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" disabled={busy}>
+              Remove ▾
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-44 p-1">
+            <div className="flex flex-col">
+              {entry.local ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => onRemoveLocal(entry.filename)}
+                >
+                  Remove local
+                </Button>
+              ) : null}
+              {entry.gist ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => onRemoveGist(entry.id)}
+                >
+                  Remove from gist
+                </Button>
+              ) : null}
+              {entry.local && entry.gist ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start text-destructive"
+                  onClick={() => onRemoveBoth(entry)}
+                >
+                  Remove both
+                </Button>
+              ) : null}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   )

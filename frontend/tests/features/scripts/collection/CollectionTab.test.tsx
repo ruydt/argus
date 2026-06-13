@@ -5,42 +5,27 @@ import { CollectionTab } from '@/features/scripts/collection/CollectionTab'
 
 afterEach(() => vi.restoreAllMocks())
 
+const view = {
+  authenticated: false,
+  entries: [
+    { id: 'a', filename: 'a.js', title: 'Alpha', local: true, gist: false },
+    { id: 'b', filename: 'b.js', title: 'Beta', local: false, gist: true },
+  ],
+}
+
 describe('CollectionTab', () => {
-  it('shows the login panel when unauthenticated', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(() =>
-        Promise.resolve({ ok: true, json: () => Promise.resolve({ authenticated: false }) })
-      )
-    )
-    render(<CollectionTab />)
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Login with GitHub' })).toBeInTheDocument()
-    )
+  it('lists union entries and shows Sign in when logged out', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => view }))
+    render(<CollectionTab query="" />)
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument())
+    expect(screen.getByText('Beta')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /sign in with github/i })).toBeInTheDocument()
   })
 
-  it('lists collection scripts when authenticated', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((url: string) => {
-        if (url === '/api/github/status')
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({ authenticated: true, login: 'ruy' }),
-          })
-        return Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              scripts: [
-                { id: 'g', filename: 'g.js', title: 'Guard', origin: 'local', installed: false },
-              ],
-            }),
-        })
-      })
-    )
-    render(<CollectionTab />)
-    await waitFor(() => expect(screen.getByText('Guard')).toBeInTheDocument())
-    expect(screen.getByText((_, el) => el?.textContent === '@ruy')).toBeInTheDocument()
+  it('filters by query', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => view }))
+    render(<CollectionTab query="alpha" />)
+    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument())
+    expect(screen.queryByText('Beta')).not.toBeInTheDocument()
   })
 })
