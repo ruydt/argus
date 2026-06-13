@@ -1,3 +1,4 @@
+import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { formatEventTime, highlight } from '@/lib/format'
 
@@ -20,5 +21,13 @@ describe('highlight regex cache', () => {
     const second = highlight('alpha beta', 'beta')
     expect(first).toBeTruthy()
     expect(second).toBeTruthy()
+  })
+
+  it('escapes regex-special characters in the query', () => {
+    // A literal '.' must match only the dot, not every character.
+    const { container } = render(highlight('a.b', '.') as React.ReactElement)
+    const marks = container.querySelectorAll('mark')
+    expect(marks).toHaveLength(1)
+    expect(marks[0].textContent).toBe('.')
   })
 })
