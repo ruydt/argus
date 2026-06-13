@@ -18,6 +18,8 @@ export type {
   Collection,
   GitHubAuthStatus,
   DeviceCodeResponse,
+  CollectionEntry,
+  CollectionView,
 } from './collection'
 
 export type { CommunityScript } from './community'

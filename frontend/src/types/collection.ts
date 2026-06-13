@@ -27,3 +27,19 @@ export type DeviceCodeResponse = {
   expires_in: number
   interval: number
 }
+
+export type CollectionEntry = {
+  id: string
+  filename: string
+  title: string
+  event?: string
+  runtime?: string
+  local: boolean
+  gist: boolean
+}
+
+export type CollectionView = {
+  authenticated: boolean
+  gist_url?: string
+  entries: CollectionEntry[]
+}

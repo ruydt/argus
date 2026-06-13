@@ -1,58 +1,50 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { Collection, DeviceCodeResponse, GitHubAuthStatus } from '@/types'
+import type { CollectionEntry, CollectionView, DeviceCodeResponse } from '@/types'
 
 type State = {
-  status: GitHubAuthStatus | null
-  collection: Collection | null
+  authenticated: boolean
+  gistUrl?: string
+  entries: CollectionEntry[]
   loading: boolean
   error: string | null
 }
 
 export function useCollection() {
   const [state, setState] = useState<State>({
-    status: null,
-    collection: null,
+    authenticated: false,
+    entries: [],
     loading: true,
     error: null,
   })
   const [deviceCode, setDeviceCode] = useState<DeviceCodeResponse | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const fetchStatus = useCallback(async (): Promise<GitHubAuthStatus> => {
-    const resp = await fetch('/api/github/status')
-    const status: GitHubAuthStatus = await resp.json()
-    return status
-  }, [])
-
-  const loadCollection = useCallback(async (status: GitHubAuthStatus) => {
-    if (!status.authenticated) {
-      setState({ status, collection: null, loading: false, error: null })
-      return
-    }
+  const reload = useCallback(async () => {
     try {
       const resp = await fetch('/api/collection')
       if (!resp.ok) throw new Error(`collection ${resp.status}`)
-      const collection: Collection = await resp.json()
-      setState({ status, collection, loading: false, error: null })
+      const view: CollectionView = await resp.json()
+      setState({
+        authenticated: view.authenticated,
+        gistUrl: view.gist_url,
+        entries: view.entries ?? [],
+        loading: false,
+        error: null,
+      })
     } catch (e) {
-      setState({ status, collection: null, loading: false, error: (e as Error).message })
+      setState((s) => ({ ...s, loading: false, error: (e as Error).message }))
     }
   }, [])
 
-  const refresh = useCallback(async () => {
-    const status = await fetchStatus()
-    await loadCollection(status)
-  }, [fetchStatus, loadCollection])
-
   useEffect(() => {
     void (async () => {
-      await refresh()
+      await reload()
     })()
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
     }
-  }, [refresh])
+  }, [reload])
 
   const startLogin = useCallback(async () => {
     const resp = await fetch('/api/github/device', { method: 'POST' })
@@ -62,28 +54,40 @@ export function useCollection() {
     if (pollRef.current) clearInterval(pollRef.current)
     pollRef.current = setInterval(
       async () => {
-        const status = await fetchStatus()
+        const status = await (await fetch('/api/github/status')).json()
         if (status.authenticated) {
           if (pollRef.current) clearInterval(pollRef.current)
           setDeviceCode(null)
-          await loadCollection(status)
+          await reload()
         }
       },
       (dc.interval || 5) * 1000
     )
-  }, [fetchStatus, loadCollection])
+  }, [reload])
 
-  const logout = useCallback(async () => {
-    await fetch('/api/github/logout', { method: 'POST' })
-    await refresh()
-  }, [refresh])
-
-  // cancelLogin aborts an in-progress device flow (user dismissed the modal).
   const cancelLogin = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current)
     pollRef.current = null
     setDeviceCode(null)
   }, [])
+
+  const logout = useCallback(async () => {
+    await fetch('/api/github/logout', { method: 'POST' })
+    await reload()
+  }, [reload])
+
+  const saveToGist = useCallback(
+    async (filename: string) => {
+      const resp = await fetch('/api/collection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ origin: 'local', filename }),
+      })
+      if (!resp.ok && resp.status !== 409) throw new Error(`save ${resp.status}`)
+      await reload()
+    },
+    [reload]
+  )
 
   const install = useCallback(
     async (id: string) => {
@@ -92,20 +96,68 @@ export function useCollection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       })
-      if (!resp.ok) throw new Error(`install ${resp.status}`)
-      await refresh()
+      if (!resp.ok && resp.status !== 409) throw new Error(`install ${resp.status}`)
+      await reload()
     },
-    [refresh]
+    [reload]
   )
 
-  const remove = useCallback(
+  const removeLocal = useCallback(async (filename: string) => {
+    const resp = await fetch(`/api/collection/local?filename=${encodeURIComponent(filename)}`, {
+      method: 'DELETE',
+    })
+    if (!resp.ok) throw new Error(`remove local ${resp.status}`)
+  }, [])
+
+  const removeGist = useCallback(async (id: string) => {
+    const resp = await fetch(`/api/collection?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    if (!resp.ok) throw new Error(`remove gist ${resp.status}`)
+  }, [])
+
+  const removeBoth = useCallback(
+    async (entry: CollectionEntry) => {
+      if (entry.local) await removeLocal(entry.filename)
+      if (entry.gist) await removeGist(entry.id)
+      await reload()
+    },
+    [removeLocal, removeGist, reload]
+  )
+
+  const removeLocalOnly = useCallback(
+    async (filename: string) => {
+      await removeLocal(filename)
+      await reload()
+    },
+    [removeLocal, reload]
+  )
+
+  const removeGistOnly = useCallback(
     async (id: string) => {
-      const resp = await fetch(`/api/collection?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
-      if (!resp.ok) throw new Error(`remove ${resp.status}`)
-      await refresh()
+      await removeGist(id)
+      await reload()
     },
-    [refresh]
+    [removeGist, reload]
   )
 
-  return { ...state, deviceCode, startLogin, cancelLogin, logout, install, remove, refresh }
+  const getLocalBody = useCallback(async (filename: string): Promise<string> => {
+    const resp = await fetch(`/api/collection/local?filename=${encodeURIComponent(filename)}`)
+    if (!resp.ok) throw new Error(`body ${resp.status}`)
+    const data: { filename: string; body: string } = await resp.json()
+    return data.body
+  }, [])
+
+  return {
+    ...state,
+    deviceCode,
+    reload,
+    startLogin,
+    cancelLogin,
+    logout,
+    saveToGist,
+    install,
+    removeLocal: removeLocalOnly,
+    removeGist: removeGistOnly,
+    removeBoth,
+    getLocalBody,
+  }
 }
