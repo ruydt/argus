@@ -27,6 +27,9 @@ const Diagnostics = lazy(() =>
 const HooksConfig = lazy(() =>
   import('./features/hooks-config/HooksConfigPage').then((m) => ({ default: m.HooksConfigPage }))
 )
+const ScriptsPage = lazy(() =>
+  import('./features/scripts/ScriptsPage').then((m) => ({ default: m.ScriptsPage }))
+)
 
 export default function App() {
   return (
@@ -87,6 +90,14 @@ export default function App() {
             element={
               <Suspense fallback={null}>
                 <HooksConfig />
+              </Suspense>
+            }
+          />
+          <Route
+            path="scripts"
+            element={
+              <Suspense fallback={null}>
+                <ScriptsPage />
               </Suspense>
             }
           />
