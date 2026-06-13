@@ -21,12 +21,12 @@ export function ScriptSourceDialog({ script }: ScriptSourceDialogProps) {
           View source
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl border border-white/15 bg-[#141414] shadow-2xl shadow-black/60">
         <DialogHeader>
-          <DialogTitle>{script.filename}</DialogTitle>
+          <DialogTitle className="font-mono">{script.filename}</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] rounded-md border">
-          <pre className="p-4 text-xs leading-relaxed">{script.body}</pre>
+        <ScrollArea className="max-h-[60vh] rounded-md border border-white/10 bg-[#0a0a0a]">
+          <pre className="p-4 text-xs leading-relaxed text-[#ccc]">{script.body}</pre>
         </ScrollArea>
       </DialogContent>
     </Dialog>
