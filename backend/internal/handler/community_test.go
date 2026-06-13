@@ -114,3 +114,40 @@ func TestCommunitySimulateRejectsUnsafeRuntime(t *testing.T) {
 		t.Fatalf("expected 400 for non-allowlisted runtime, got %d", rr.Code)
 	}
 }
+
+// TestCommunitySimulateIgnoresSourceExtension proves the sandbox does not derive
+// the temp filename (and thus the exec path) from the untrusted source field: a
+// quote-laden extension must not break out of execution. The script just runs.
+func TestCommunitySimulateIgnoresSourceExtension(t *testing.T) {
+	body := "echo ran\n"
+	sum := sha256.Sum256([]byte(body))
+	sha := hex.EncodeToString(sum[:])
+	mux := http.NewServeMux()
+	mux.HandleFunc("/index.json", func(w http.ResponseWriter, _ *http.Request) {
+		// source carries a single quote in its "extension"; runtime is allowlisted.
+		_, _ = fmt.Fprintf(w, `{"schema_version":1,"scripts":[{"id":"q","author":"a","title":"Q","runtime":"sh","tier":"community","sha256":%q,"source":"scripts/a/q.j'sh"}]}`, sha)
+	})
+	mux.HandleFunc("/scripts/a/q.j'sh", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, body)
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	src := community.NewSource(srv.URL, srv.Client())
+
+	rr := httptest.NewRecorder()
+	req := bytes.NewBufferString(`{"id":"q","payload":{"hook_event_name":"PreToolUse"}}`)
+	handler.CommunitySimulate(src).ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/api/community/simulate", req))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	var resp struct {
+		Stdout   string `json:"stdout"`
+		ExitCode int    `json:"exit_code"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if resp.ExitCode != 0 || resp.Stdout != "ran\n" {
+		t.Fatalf("unexpected result: %+v", resp)
+	}
+}

@@ -20,6 +20,19 @@ import (
 // an arbitrary string from ever reaching exec.LookPath or the sandbox command.
 var allowedRuntimes = map[string]bool{"sh": true, "node": true, "python3": true}
 
+// runtimeExt maps an allowlisted runtime to the temp-file extension used for the
+// sandbox. Derived from the runtime, never from the untrusted source path.
+func runtimeExt(runtime string) string {
+	switch runtime {
+	case "node":
+		return ".js"
+	case "python3":
+		return ".py"
+	default:
+		return ".sh"
+	}
+}
+
 // communityState fills Installed + RuntimeAvailable for each script. The install
 // filename is the basename of the registry source path (e.g. demo.sh).
 func communityState(scripts []domain.CommunityScript, argusDir string) []domain.CommunityScript {
@@ -150,7 +163,9 @@ func CommunitySimulate(src *community.Source) http.Handler {
 			http.Error(w, "unsupported runtime", http.StatusBadRequest)
 			return
 		}
-		tmp, err := os.CreateTemp("", "argus-community-*"+path.Ext(cs.Source))
+		// Derive the temp suffix from the (allowlisted) runtime, never from the
+		// unverified registry source path.
+		tmp, err := os.CreateTemp("", "argus-community-*"+runtimeExt(cs.Runtime))
 		if err != nil {
 			http.Error(w, "sandbox error", http.StatusInternalServerError)
 			return
@@ -170,9 +185,9 @@ func CommunitySimulate(src *community.Source) http.Handler {
 			http.Error(w, "sandbox error", http.StatusInternalServerError)
 			return
 		}
-		// cs.Runtime is allowlisted above, so it is a safe literal; tmpName comes
-		// from os.CreateTemp (no shell metacharacters) and is single-quoted.
-		resp := runHookCommand(r.Context(), cs.Runtime+" '"+tmpName+"'", req.Payload, 10)
+		// Run the interpreter directly with no shell, so the temp path (even if it
+		// somehow contained shell metacharacters) is passed as a literal argument.
+		resp := runHookExec(r.Context(), cs.Runtime, []string{tmpName}, req.Payload, 10)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
 	})

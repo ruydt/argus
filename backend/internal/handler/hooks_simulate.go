@@ -23,17 +23,32 @@ type simulateResponse struct {
 	DurationMs int64  `json:"duration_ms"`
 }
 
-// runHookCommand executes `sh -c command` with payload on stdin under a timeout,
-// capturing stdout/stderr/exit code. Shared by the hook simulator and the
-// community sandbox.
+// runHookCommand executes `sh -c command` with payload on stdin under a timeout.
+// The hook simulator runs user-typed shell commands, so a shell is intentional.
 func runHookCommand(ctx context.Context, command string, payload []byte, timeoutSeconds int) simulateResponse {
+	cctx, cancel := withTimeout(ctx, timeoutSeconds)
+	defer cancel()
+	return runCmd(cctx, exec.CommandContext(cctx, "sh", "-c", command), payload, timeoutSeconds)
+}
+
+// runHookExec executes name with args directly (NO shell) under a timeout. Used
+// for the community sandbox so attacker-controlled filenames/args can never be
+// reinterpreted by a shell.
+func runHookExec(ctx context.Context, name string, args []string, payload []byte, timeoutSeconds int) simulateResponse {
+	cctx, cancel := withTimeout(ctx, timeoutSeconds)
+	defer cancel()
+	return runCmd(cctx, exec.CommandContext(cctx, name, args...), payload, timeoutSeconds)
+}
+
+func withTimeout(ctx context.Context, timeoutSeconds int) (context.Context, context.CancelFunc) {
 	if timeoutSeconds <= 0 {
 		timeoutSeconds = 10
 	}
-	cctx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
-	defer cancel()
+	return context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
+}
 
-	cmd := exec.CommandContext(cctx, "sh", "-c", command)
+// runCmd runs cmd with payload on stdin, capturing stdout/stderr/exit code.
+func runCmd(cctx context.Context, cmd *exec.Cmd, payload []byte, timeoutSeconds int) simulateResponse {
 	cmd.Stdin = bytes.NewReader(payload)
 
 	var stdout, stderr bytes.Buffer

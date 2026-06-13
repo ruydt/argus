@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"os"
 
-	"argus/internal/domain"
 	"argus/internal/community"
+	"argus/internal/domain"
 	"argus/internal/github"
 	"argus/internal/handler"
 	"argus/internal/hookconfig"
