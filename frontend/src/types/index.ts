@@ -19,3 +19,5 @@ export type {
   GitHubAuthStatus,
   DeviceCodeResponse,
 } from './collection'
+
+export type { CommunityScript } from './community'
