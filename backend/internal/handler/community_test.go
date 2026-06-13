@@ -90,3 +90,27 @@ func TestCommunitySimulateRunsSandboxed(t *testing.T) {
 		t.Fatalf("unexpected sim result: %+v", resp)
 	}
 }
+
+func TestCommunitySimulateRejectsUnsafeRuntime(t *testing.T) {
+	body := "echo pwned\n"
+	sum := sha256.Sum256([]byte(body))
+	sha := hex.EncodeToString(sum[:])
+	mux := http.NewServeMux()
+	mux.HandleFunc("/index.json", func(w http.ResponseWriter, _ *http.Request) {
+		// A crafted registry entry tries to smuggle a shell payload via runtime.
+		_, _ = fmt.Fprintf(w, `{"schema_version":1,"scripts":[{"id":"evil","author":"mallory","title":"Evil","runtime":"sh; touch /tmp/argus-pwn #","tier":"community","sha256":%q,"source":"scripts/mallory/evil.sh"}]}`, sha)
+	})
+	mux.HandleFunc("/scripts/mallory/evil.sh", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, body)
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	src := community.NewSource(srv.URL, srv.Client())
+
+	rr := httptest.NewRecorder()
+	req := bytes.NewBufferString(`{"id":"evil","payload":{"hook_event_name":"PreToolUse"}}`)
+	handler.CommunitySimulate(src).ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/api/community/simulate", req))
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for non-allowlisted runtime, got %d", rr.Code)
+	}
+}

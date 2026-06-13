@@ -14,6 +14,12 @@ import (
 	"argus/internal/domain"
 )
 
+// allowedRuntimes are the only interpreters a community script may declare.
+// The registry index.json is fetched over HTTPS but its metadata is not
+// checksum-verified, so the runtime field is untrusted: gating it here prevents
+// an arbitrary string from ever reaching exec.LookPath or the sandbox command.
+var allowedRuntimes = map[string]bool{"sh": true, "node": true, "python3": true}
+
 // communityState fills Installed + RuntimeAvailable for each script. The install
 // filename is the basename of the registry source path (e.g. demo.sh).
 func communityState(scripts []domain.CommunityScript, argusDir string) []domain.CommunityScript {
@@ -23,11 +29,15 @@ func communityState(scripts []domain.CommunityScript, argusDir string) []domain.
 	for i, c := range scripts {
 		_, statErr := os.Stat(filepath.Join(dir, path.Base(c.Source)))
 		c.Installed = statErr == nil
-		avail, ok := runtimeCache[c.Runtime]
-		if !ok {
-			_, lookErr := exec.LookPath(c.Runtime)
-			avail = lookErr == nil
-			runtimeCache[c.Runtime] = avail
+		avail := false
+		if allowedRuntimes[c.Runtime] {
+			cached, ok := runtimeCache[c.Runtime]
+			if !ok {
+				_, lookErr := exec.LookPath(c.Runtime)
+				cached = lookErr == nil
+				runtimeCache[c.Runtime] = cached
+			}
+			avail = cached
 		}
 		c.RuntimeAvailable = avail
 		out[i] = c
@@ -136,6 +146,10 @@ func CommunitySimulate(src *community.Source) http.Handler {
 			http.Error(w, "failed to load script", http.StatusBadGateway)
 			return
 		}
+		if !allowedRuntimes[cs.Runtime] {
+			http.Error(w, "unsupported runtime", http.StatusBadRequest)
+			return
+		}
 		tmp, err := os.CreateTemp("", "argus-community-*"+path.Ext(cs.Source))
 		if err != nil {
 			http.Error(w, "sandbox error", http.StatusInternalServerError)
@@ -156,11 +170,9 @@ func CommunitySimulate(src *community.Source) http.Handler {
 			http.Error(w, "sandbox error", http.StatusInternalServerError)
 			return
 		}
-		runtimeBin := cs.Runtime
-		if runtimeBin == "" {
-			runtimeBin = "sh"
-		}
-		resp := runHookCommand(r.Context(), runtimeBin+" '"+tmpName+"'", req.Payload, 10)
+		// cs.Runtime is allowlisted above, so it is a safe literal; tmpName comes
+		// from os.CreateTemp (no shell metacharacters) and is single-quoted.
+		resp := runHookCommand(r.Context(), cs.Runtime+" '"+tmpName+"'", req.Payload, 10)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
 	})
