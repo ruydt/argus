@@ -49,19 +49,26 @@ func (s *Source) Catalog(ctx context.Context) ([]domain.CommunityScript, error) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.hasCache && time.Since(s.fetchedAt) < s.ttl {
-		return s.cached, nil
+		return s.snapshot(), nil
 	}
 	scripts, err := s.fetchIndex(ctx)
 	if err != nil {
 		if s.hasCache {
-			return s.cached, nil // serve stale
+			return s.snapshot(), nil // serve stale
 		}
 		return nil, err
 	}
 	s.cached = scripts
 	s.fetchedAt = time.Now()
 	s.hasCache = true
-	return scripts, nil
+	return s.snapshot(), nil
+}
+
+// snapshot returns a copy of the cached slice so callers can't mutate the cache.
+func (s *Source) snapshot() []domain.CommunityScript {
+	out := make([]domain.CommunityScript, len(s.cached))
+	copy(out, s.cached)
+	return out
 }
 
 func (s *Source) fetchIndex(ctx context.Context) ([]domain.CommunityScript, error) {
