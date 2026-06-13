@@ -120,23 +120,26 @@ describe('SessionList', () => {
     expect(screen.getByText('project')).toBeInTheDocument()
   })
 
+  // Returns the DOM positions of the two session headers by their (verbatim)
+  // session IDs. Session IDs render in full, so this is deterministic.
+  function sessionOrder() {
+    const html = document.body.innerHTML
+    return {
+      newerIdx: html.indexOf('sess-newer'),
+      olderIdx: html.indexOf('sess-older'),
+    }
+  }
+
   it('orders sessions newest-first when sortOrder is newest', () => {
-    // Session A has more-recent lastTime than session B.
     const events = [
       makeEvent({ session: 'sess-older', time: '2026-06-13T08:00:00.000Z' }),
       makeEvent({ session: 'sess-newer', time: '2026-06-13T12:00:00.000Z' }),
     ]
     renderWith(events, 'newest')
-    const buttons = screen.getAllByRole('button')
-    const labels = buttons.map((b) => b.textContent ?? '')
-    // The newer session button text should appear before the older one in the DOM.
-    const newerIdx = labels.findIndex((t) => t.includes('sess-newer'.slice(-6)))
-    const olderIdx = labels.findIndex((t) => t.includes('sess-older'.slice(-6)))
-    if (newerIdx !== -1 && olderIdx !== -1) {
-      expect(newerIdx).toBeLessThan(olderIdx)
-    }
-    // If shortIds aren't directly visible, at least confirm two sessions rendered.
-    expect(buttons.length).toBeGreaterThanOrEqual(2)
+    const { newerIdx, olderIdx } = sessionOrder()
+    expect(newerIdx).toBeGreaterThanOrEqual(0)
+    expect(olderIdx).toBeGreaterThanOrEqual(0)
+    expect(newerIdx).toBeLessThan(olderIdx)
   })
 
   it('orders sessions oldest-first when sortOrder is oldest', () => {
@@ -145,8 +148,9 @@ describe('SessionList', () => {
       makeEvent({ session: 'sess-newer', time: '2026-06-13T12:00:00.000Z' }),
     ]
     renderWith(events, 'oldest')
-    // Both sessions render.
-    const buttons = screen.getAllByRole('button')
-    expect(buttons.length).toBeGreaterThanOrEqual(2)
+    const { newerIdx, olderIdx } = sessionOrder()
+    expect(newerIdx).toBeGreaterThanOrEqual(0)
+    expect(olderIdx).toBeGreaterThanOrEqual(0)
+    expect(olderIdx).toBeLessThan(newerIdx)
   })
 })
