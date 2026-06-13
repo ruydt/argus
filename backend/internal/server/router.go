@@ -7,6 +7,7 @@ import (
 	"argus/internal/handler"
 	"argus/internal/hookconfig"
 	"argus/internal/repository"
+	"argus/internal/scriptcatalog"
 	"argus/internal/service"
 	"argus/internal/ui"
 )
@@ -107,6 +108,11 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
 	mux.Handle("PUT /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
 	mux.Handle("POST /api/hooks/simulate", handler.HooksSimulate())
+	scriptSrc := scriptcatalog.NewBundledSource()
+	mux.Handle("GET /api/scripts/catalog", handler.ScriptsCatalog(scriptSrc, opts.ArgusDir))
+	mux.Handle("POST /api/scripts/install", handler.ScriptsInstall(scriptSrc, opts.ArgusDir))
+	mux.Handle("POST /api/scripts/install-bundle", handler.ScriptsInstallBundle(scriptSrc, opts.ArgusDir))
+	mux.Handle("DELETE /api/scripts/installed", handler.ScriptsDelete(scriptSrc, opts.ArgusDir))
 	mux.Handle("GET /", ui.Handler())
 
 	return panicRecovery(hostHeader(corsAllowlist(corsOrigins)(logging(mux))))

@@ -32,7 +32,8 @@ across a thousand gists. Argus fixes all three, locally:
   ships battle-tested, zero-dependency guardrails free for everyone: dangerous-command
   blocker, secrets protection, branch guard, auto-format with lint feedback,
   prompt-injection scanner, webhook notifications, and more. Every script works
-  with Claude Code and Codex.
+  with Claude Code and Codex — and the in-app **Scripts library** lets you browse,
+  search, and one-click install any of them into `~/.argus/hooks/`.
 
 Backing it up: a **live observability layer** — every hook payload is normalized to a
 canonical event model, persisted to SQLite, and streamed to a real-time dashboard
@@ -68,6 +69,7 @@ simulator. Take the full visual tour at **[getargus.org](https://getargus.org)**
 | **Dashboard** | Token-usage roll-ups (input/output/cache) charted over time and by model — computed locally. |
 | **Projects** | Cards grouping sessions by working directory, searchable, with cascade delete. |
 | **Diagnostics** | Health, storage, hook-preset detection, `~/.argus` inventory, and log tails. |
+| **Scripts library** | Browse, search, and one-click install the bundled hook scripts into `~/.argus/hooks/` — with an Installed tab and per-script source view. |
 | **Script collection** | Free zero-dependency guardrails in [`my-custom-hook-scripts/`](my-custom-hook-scripts/). |
 
 ## Uninstall

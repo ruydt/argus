@@ -323,21 +323,22 @@ export function EventsPage() {
     until: fetchUntil,
   })
   const histState = useHistoricalEvents(fetchSince, fetchUntil, sessionFilterOverride, true)
+  // Collapse every newly-seen session by default — including ones appended via
+  // "load more" (which keeps loadVersion unchanged), so they appear closed.
   useEffect(() => {
-    if (histState.loadVersion === 0) return
+    if (histState.events.length === 0) return
     const allIds = histState.events.map((e) => e.session || e.transcript_path || 'ungrouped')
     const known = loadKnownSessions()
     const newIds = allIds.filter((id) => !known.has(id))
+    if (newIds.length === 0) return
     saveKnownSessions(new Set([...known, ...allIds]))
-    if (newIds.length > 0) {
-      setCollapsedSessions((prev) => {
-        const next = new Set(prev)
-        newIds.forEach((id) => next.add(id))
-        return next
-      })
-    }
+    setCollapsedSessions((prev) => {
+      const next = new Set(prev)
+      newIds.forEach((id) => next.add(id))
+      return next
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [histState.loadVersion])
+  }, [histState.events])
   const activeEvents = useMemo(
     () => (isLive ? mergeByKey(histState.events, liveState.events) : histState.events),
     [isLive, histState.events, liveState.events]

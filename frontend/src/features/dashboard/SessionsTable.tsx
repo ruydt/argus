@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ArrowUpRight, Check, Copy } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -24,6 +27,25 @@ const DEFAULT_PAGE_SIZE = 10
 function shortSessionId(sessionId: string) {
   if (!sessionId) return 'unknown'
   return sessionId.slice(0, 8)
+}
+
+function CopySessionIdButton({ sessionId }: { sessionId: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      className="size-5 text-muted-foreground hover:text-foreground [&_svg]:size-3"
+      aria-label="Copy session ID"
+      onClick={() => {
+        void navigator.clipboard.writeText(sessionId)
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1200)
+      }}
+    >
+      {copied ? <Check /> : <Copy />}
+    </Button>
+  )
 }
 
 function formatSessionTime(value: string) {
@@ -99,12 +121,30 @@ export function SessionsTable({ stats }: SessionsTableProps) {
                     session.input + session.output + sessionCacheRead + sessionCacheWrite
 
                   return (
-                    <TableRow key={session.session_id}>
+                    <TableRow key={session.session_id} className="group">
                       <TableCell className="px-5 font-medium">
                         <div className="grid gap-1">
-                          <span className="font-mono text-xs text-foreground">
-                            {shortSessionId(session.session_id)}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-xs text-foreground">
+                              {shortSessionId(session.session_id)}
+                            </span>
+                            {session.session_id && (
+                              <span className="flex items-center gap-1 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">
+                                <CopySessionIdButton sessionId={session.session_id} />
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  asChild
+                                  className="size-5 text-muted-foreground hover:text-foreground [&_svg]:size-3"
+                                  aria-label="View session events"
+                                >
+                                  <Link to={`/?session=${encodeURIComponent(session.session_id)}`}>
+                                    <ArrowUpRight />
+                                  </Link>
+                                </Button>
+                              </span>
+                            )}
+                          </div>
                           <span className="text-xs text-muted-foreground">
                             {formatSessionTime(session.last_seen_at)}
                           </span>

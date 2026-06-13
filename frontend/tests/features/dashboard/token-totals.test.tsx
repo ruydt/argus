@@ -1,8 +1,17 @@
 import { render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { SummaryStats } from '@/features/dashboard/SummaryStats'
 import { SessionsTable } from '@/features/dashboard/SessionsTable'
 import type { DashboardStats } from '@/features/dashboard/hooks/useDashboardStats'
+
+function renderSessionsTable(stats: DashboardStats) {
+  return render(
+    <MemoryRouter>
+      <SessionsTable stats={stats} />
+    </MemoryRouter>
+  )
+}
 
 function makeStats(): DashboardStats {
   return {
@@ -64,7 +73,7 @@ describe('dashboard token totals', () => {
   })
 
   it('shows cache columns and total = input + output + cache_read + cache_write in breakdown', () => {
-    render(<SessionsTable stats={makeStats()} />)
+    renderSessionsTable(makeStats())
 
     expect(screen.getByText('Cache read')).toBeInTheDocument()
     expect(screen.getByText('Cache write')).toBeInTheDocument()
@@ -78,5 +87,16 @@ describe('dashboard token totals', () => {
     expect(scope.getByText('100')).toBeInTheDocument()
     expect(scope.getByText('50')).toBeInTheDocument()
     expect(scope.getByText('165')).toBeInTheDocument()
+  })
+
+  it('renders copy and view-events controls per session', () => {
+    renderSessionsTable(makeStats())
+
+    const row = screen.getByText('claudecode').closest('tr') as HTMLElement
+    const scope = within(row)
+
+    expect(scope.getByLabelText('Copy session ID')).toBeInTheDocument()
+    const viewLink = scope.getByLabelText('View session events')
+    expect(viewLink).toHaveAttribute('href', '/?session=session-1')
   })
 })

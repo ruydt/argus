@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EventsPage } from '@/features/events/EventsPage'
-import type { LayoutOutletContext } from '@/types'
+import type { EventRecord, LayoutOutletContext } from '@/types'
 
 const refreshSessionUsage = vi.fn()
 const setActionFilter = vi.fn()
@@ -13,6 +13,9 @@ const setSearchParams = vi.fn()
 const clearLink = vi.fn()
 const toggleSession = vi.fn()
 const setIsLive = vi.fn()
+const setCollapsedSessions = vi.fn()
+
+let mockHistEvents: EventRecord[] = []
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
@@ -21,7 +24,7 @@ vi.mock('react-router-dom', async () => {
     useOutletContext: () =>
       ({
         collapsedSessions: new Set<string>(),
-        setCollapsedSessions: vi.fn(),
+        setCollapsedSessions,
         sessionUsage: {},
         searchQuery: '',
         setSearchQuery: vi.fn(),
@@ -70,12 +73,13 @@ vi.mock('@/features/events/hooks/useLiveEvents', () => ({
 
 vi.mock('@/features/events/hooks/useHistoricalEvents', () => ({
   useHistoricalEvents: () => ({
-    events: [],
+    events: mockHistEvents,
     hasMore: false,
     loading: false,
     error: null,
     loadMore: vi.fn(),
     refresh: histRefresh,
+    loadVersion: 0,
   }),
 }))
 
@@ -124,6 +128,7 @@ vi.mock('@/features/events/hooks/useEventsPageInteractions', () => ({
 describe('EventsPage refresh', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockHistEvents = []
   })
 
   it('resets action, agent, and project filters before refresh', () => {
@@ -137,5 +142,34 @@ describe('EventsPage refresh', () => {
     expect(histRefresh).toHaveBeenCalledTimes(1)
     expect(refreshSessionUsage).toHaveBeenCalledTimes(1)
     expect(refreshProjects).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('EventsPage session collapse', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    sessionStorage.clear()
+    mockHistEvents = []
+  })
+
+  it('collapses newly-seen sessions by default (covers load-more appends)', () => {
+    mockHistEvents = [{ session: 'sess-new' } as EventRecord]
+
+    render(<EventsPage />)
+
+    expect(setCollapsedSessions).toHaveBeenCalled()
+    const updater = setCollapsedSessions.mock.calls.at(-1)?.[0] as (
+      prev: Set<string>
+    ) => Set<string>
+    expect(updater(new Set()).has('sess-new')).toBe(true)
+  })
+
+  it('does not re-collapse sessions already known', () => {
+    sessionStorage.setItem('events_known_sessions', JSON.stringify(['sess-old']))
+    mockHistEvents = [{ session: 'sess-old' } as EventRecord]
+
+    render(<EventsPage />)
+
+    expect(setCollapsedSessions).not.toHaveBeenCalled()
   })
 })

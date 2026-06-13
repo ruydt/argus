@@ -4,9 +4,10 @@ export function VersionBadge() {
   const info = useVersion()
   if (!info) return null
 
-  const short = info.commit !== 'none' ? info.commit.slice(0, 7) : null
-  const v = info.version.startsWith('v') ? info.version : `v${info.version}`
-  const label = short ? `${v} (${short})` : v
+  // Show the version verbatim: a release built on a tag reads clean (v0.1.2),
+  // while a dev build (make build-local) keeps git-describe's commit suffix
+  // (v0.1.2-29-g021a77e) so the running build is identifiable.
+  const label = info.version.startsWith('v') ? info.version : `v${info.version}`
 
   return (
     <span
