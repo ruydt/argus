@@ -78,8 +78,11 @@ type gistFileOut struct {
 	Content  string `json:"content"`
 }
 type gistIn struct {
-	Description string                 `json:"description"`
-	Public      bool                   `json:"public"`
+	// omitempty so AddScript/RemoveScript (which PATCH only Files) don't send
+	// description:"" — GitHub would otherwise wipe the [argus-collection] marker
+	// the collection is discovered by, breaking cross-machine portability.
+	Description string                 `json:"description,omitempty"`
+	Public      bool                   `json:"public,omitempty"`
 	Files       map[string]*gistFileIn `json:"files"`
 }
 type gistOut struct {

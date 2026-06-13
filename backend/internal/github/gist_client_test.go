@@ -54,13 +54,25 @@ func newFakeServer(t *testing.T, state *fakeGist) *httptest.Server {
 		case strings.HasPrefix(r.URL.Path, "/gists/") && r.Method == http.MethodGet:
 			write(render())
 		case strings.HasPrefix(r.URL.Path, "/gists/") && r.Method == http.MethodPatch:
-			var in gistIn
-			_ = json.NewDecoder(r.Body).Decode(&in)
-			for n, f := range in.Files {
-				if f == nil {
-					delete(state.files, n)
-				} else {
-					state.files[n] = f.Content
+			// Decode into a raw map so we can mimic GitHub: a present
+			// "description" key is applied even when empty (which would wipe the
+			// marker); an absent key leaves the description untouched.
+			var raw map[string]json.RawMessage
+			_ = json.NewDecoder(r.Body).Decode(&raw)
+			if d, ok := raw["description"]; ok {
+				var desc string
+				_ = json.Unmarshal(d, &desc)
+				state.desc = desc
+			}
+			if fr, ok := raw["files"]; ok {
+				var files map[string]*gistFileIn
+				_ = json.Unmarshal(fr, &files)
+				for n, f := range files {
+					if f == nil {
+						delete(state.files, n)
+					} else {
+						state.files[n] = f.Content
+					}
 				}
 			}
 			write(render())
@@ -129,6 +141,31 @@ func TestGistAddReadRemove(t *testing.T) {
 	col, _ = c.ReadCollection(context.Background(), "gist1")
 	if len(col.Scripts) != 0 {
 		t.Errorf("after remove, scripts = %d, want 0", len(col.Scripts))
+	}
+}
+
+func TestGistAddPreservesDescription(t *testing.T) {
+	state := &fakeGist{id: "gist1", desc: collectionMarker + " argus hook script collection", files: map[string]string{
+		"manifest.json": `{"version":1,"scripts":[]}`,
+	}}
+	srv := newFakeServer(t, state)
+	defer srv.Close()
+	c := newClient(t, srv)
+
+	// Adding a script must not wipe the [argus-collection] marker — the
+	// collection is discovered by that description on other machines.
+	s := domain.CollectionScript{ID: "g", Filename: "g.js", Origin: "local", Body: "x"}
+	if err := c.AddScript(context.Background(), "gist1", s); err != nil {
+		t.Fatalf("AddScript: %v", err)
+	}
+	if !strings.HasPrefix(state.desc, collectionMarker) {
+		t.Fatalf("description wiped after AddScript: %q", state.desc)
+	}
+	if err := c.RemoveScript(context.Background(), "gist1", "g"); err != nil {
+		t.Fatalf("RemoveScript: %v", err)
+	}
+	if !strings.HasPrefix(state.desc, collectionMarker) {
+		t.Fatalf("description wiped after RemoveScript: %q", state.desc)
 	}
 }
 
