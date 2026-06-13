@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { DateRange } from 'react-day-picker'
-import { RefreshCw } from 'lucide-react'
+import { Download, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -14,6 +14,7 @@ import {
   type DashboardRangePreset,
 } from '@/features/dashboard/date-range'
 import { DashboardDateRangePicker } from '@/features/dashboard/date-range-picker'
+import { downloadStatsCsv } from '@/features/dashboard/dashboard-export'
 import { useDashboardStats } from '@/features/dashboard/hooks/useDashboardStats'
 import { cn } from '@/lib/utils'
 
@@ -30,6 +31,15 @@ export function DashboardPage() {
         title="Summary"
         actions={
           <>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => stats && downloadStatsCsv(stats, range)}
+              disabled={!stats}
+              aria-label="Download dashboard stats as CSV"
+            >
+              <Download data-icon="inline-start" />
+            </Button>
             <DashboardDateRangePicker
               value={range}
               preset={preset}
