@@ -38,13 +38,26 @@ func TestDeviceFlowStartAndPoll(t *testing.T) {
 		t.Fatalf("unexpected device code %+v", dc)
 	}
 
-	tok, pending, err := d.Poll(context.Background(), dc.DeviceCode)
+	tok, pending, _, err := d.Poll(context.Background(), dc.DeviceCode)
 	if err != nil || !pending || tok != "" {
 		t.Fatalf("first Poll = %q %v %v, want pending", tok, pending, err)
 	}
-	tok, pending, err = d.Poll(context.Background(), dc.DeviceCode)
+	tok, pending, _, err = d.Poll(context.Background(), dc.DeviceCode)
 	if err != nil || pending || tok != "gho_abc" {
 		t.Fatalf("second Poll = %q %v %v, want token", tok, pending, err)
+	}
+}
+
+func TestDeviceFlowPollSlowDown(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"error":"slow_down"}`))
+	}))
+	defer srv.Close()
+	d := NewDeviceFlow("c", srv.Client())
+	d.baseURL = srv.URL
+	tok, pending, slowDown, err := d.Poll(context.Background(), "dev")
+	if err != nil || !pending || !slowDown || tok != "" {
+		t.Fatalf("slow_down Poll = %q pending=%v slow=%v err=%v, want pending+slowDown", tok, pending, slowDown, err)
 	}
 }
 
@@ -55,7 +68,7 @@ func TestDeviceFlowPollError(t *testing.T) {
 	defer srv.Close()
 	d := NewDeviceFlow("c", srv.Client())
 	d.baseURL = srv.URL
-	if _, pending, err := d.Poll(context.Background(), "dev"); err == nil || pending {
+	if _, pending, _, err := d.Poll(context.Background(), "dev"); err == nil || pending {
 		t.Fatalf("expected hard error, got pending=%v err=%v", pending, err)
 	}
 }

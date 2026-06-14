@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"argus/internal/domain"
 )
@@ -22,6 +23,12 @@ type Service struct {
 	mu         sync.Mutex
 	deviceCode string // pending device flow, "" when none
 	gistID     string // cached after first resolve
+	// pollEvery is the minimum spacing between real GitHub token-poll calls; it
+	// grows on slow_down. lastPollAt is when we last actually hit GitHub. These
+	// let the backend own the device-flow cadence regardless of how fast the SPA
+	// polls /api/github/status (prevents slow_down spirals → "waiting forever").
+	pollEvery  time.Duration
+	lastPollAt time.Time
 }
 
 func NewService(clientID, argusDir string) *Service {
@@ -62,8 +69,14 @@ func (s *Service) StartDevice(ctx context.Context) (domain.DeviceCodeResponse, e
 	if err != nil {
 		return domain.DeviceCodeResponse{}, err
 	}
+	every := time.Duration(dc.Interval) * time.Second
+	if every < 5*time.Second {
+		every = 5 * time.Second
+	}
 	s.mu.Lock()
 	s.deviceCode = dc.DeviceCode
+	s.pollEvery = every
+	s.lastPollAt = time.Time{}
 	s.mu.Unlock()
 	return domain.DeviceCodeResponse{
 		UserCode: dc.UserCode, VerificationURI: dc.VerificationURI,
@@ -78,11 +91,30 @@ func (s *Service) Status(ctx context.Context) domain.GitHubAuthStatus {
 	}
 	s.mu.Lock()
 	dc := s.deviceCode
+	every := s.pollEvery
+	last := s.lastPollAt
 	s.mu.Unlock()
 	if dc == "" {
 		return domain.GitHubAuthStatus{}
 	}
-	tok, pending, err := s.deviceFlow().Poll(ctx, dc)
+	if every <= 0 {
+		every = 5 * time.Second
+	}
+	// Throttle: never hit GitHub's token endpoint faster than the interval,
+	// regardless of how often the SPA calls Status. Otherwise GitHub returns
+	// slow_down indefinitely and the token never arrives.
+	if !last.IsZero() && time.Since(last) < every {
+		return domain.GitHubAuthStatus{}
+	}
+	s.mu.Lock()
+	s.lastPollAt = time.Now()
+	s.mu.Unlock()
+	tok, pending, slowDown, err := s.deviceFlow().Poll(ctx, dc)
+	if slowDown {
+		s.mu.Lock()
+		s.pollEvery = every + 5*time.Second
+		s.mu.Unlock()
+	}
 	if err != nil || pending || tok == "" {
 		if err != nil {
 			s.mu.Lock()
@@ -104,6 +136,8 @@ func (s *Service) Logout() error {
 	s.mu.Lock()
 	s.gistID = ""
 	s.deviceCode = ""
+	s.pollEvery = 0
+	s.lastPollAt = time.Time{}
 	s.mu.Unlock()
 	return s.tokens.Delete()
 }

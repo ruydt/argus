@@ -60,9 +60,10 @@ func (d *DeviceFlow) Start(ctx context.Context) (DeviceCode, error) {
 	return dc, nil
 }
 
-// Poll exchanges the device code for a token. Returns (token, pending, error):
-// pending=true means the user has not authorized yet (keep polling).
-func (d *DeviceFlow) Poll(ctx context.Context, deviceCode string) (string, bool, error) {
+// Poll exchanges the device code for a token. Returns (token, pending, slowDown,
+// error): pending=true means the user has not authorized yet (keep polling);
+// slowDown=true means GitHub wants a longer interval (back off +5s).
+func (d *DeviceFlow) Poll(ctx context.Context, deviceCode string) (string, bool, bool, error) {
 	var body struct {
 		AccessToken string `json:"access_token"`
 		Error       string `json:"error"`
@@ -73,15 +74,17 @@ func (d *DeviceFlow) Poll(ctx context.Context, deviceCode string) (string, bool,
 		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
 	}
 	if err := d.post(ctx, "/login/oauth/access_token", form, &body); err != nil {
-		return "", false, err
+		return "", false, false, err
 	}
 	if body.AccessToken != "" {
-		return body.AccessToken, false, nil
+		return body.AccessToken, false, false, nil
 	}
 	switch body.Error {
-	case "authorization_pending", "slow_down":
-		return "", true, nil
+	case "authorization_pending":
+		return "", true, false, nil
+	case "slow_down":
+		return "", true, true, nil
 	default:
-		return "", false, fmt.Errorf("device flow: %s", body.Error)
+		return "", false, false, fmt.Errorf("device flow: %s", body.Error)
 	}
 }
