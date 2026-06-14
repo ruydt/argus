@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { Activity, AlertTriangle, Clock, RefreshCw, Zap } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
+import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -136,7 +137,49 @@ function HookConfigCell({ hookConfigStatus, label }: { hookConfigStatus: string;
   return <span className="text-[12px] text-muted-foreground">{hookConfigStatus}</span>
 }
 
-function LoadedContent({ data }: { data: Diagnostics }) {
+function CompactDatabaseButton({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const compact = async () => {
+    setBusy(true)
+    setError(null)
+    setResult(null)
+    try {
+      const res = await fetch('/api/diagnostics/compact', { method: 'POST' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data: { rows_compressed: number; before_bytes: number; after_bytes: number } =
+        await res.json()
+      const saved = Math.max(0, data.before_bytes - data.after_bytes)
+      setResult(
+        `Reclaimed ${formatBytes(saved)} (${formatBytes(data.before_bytes)} → ${formatBytes(
+          data.after_bytes
+        )})`
+      )
+      onDone()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 pt-3">
+      <Button variant="outline" size="sm" onClick={compact} disabled={busy}>
+        {busy ? 'Compacting…' : 'Compact database'}
+      </Button>
+      <p className="text-[12px] text-muted-foreground">
+        Compresses stored payloads and reclaims free pages. Safe — no events are deleted.
+      </p>
+      {result && <p className="text-[12px] text-[var(--worktree)]">{result}</p>}
+      {error && <p className="text-[12px] text-[var(--destructive)]">Compaction failed: {error}</p>}
+    </div>
+  )
+}
+
+function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: () => void }) {
   const hookConfigLabels = useHookConfigLabels(data.agents)
   const agentWarningCount = data.agents.filter(
     (a) =>
@@ -414,6 +457,8 @@ function LoadedContent({ data }: { data: Diagnostics }) {
                 <span className="text-muted-foreground">Migration</span>
                 <span>v{data.dbHealth.migrationVersion}</span>
               </div>
+              <Separator />
+              <CompactDatabaseButton onDone={onCompacted} />
             </CardContent>
           </Card>
         </div>
@@ -429,12 +474,12 @@ export function DiagnosticsPage() {
   const { data, loading, refreshing, error, lastUpdatedAt, reload } = useDiagnostics()
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
-        {/* Page header — always visible in all states */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-[22px] font-semibold text-foreground">Diagnostics</h1>
-          <div className="flex items-center gap-2">
+    <PageShell>
+      {/* Page header — always visible in all states */}
+      <PageHeader
+        title="Diagnostics"
+        actions={
+          <>
             {lastUpdatedAt && (
               <span className="text-[12px] text-muted-foreground">
                 Updated {formatDistanceToNow(lastUpdatedAt, { addSuffix: true })}
@@ -449,45 +494,45 @@ export function DiagnosticsPage() {
             >
               <RefreshCw data-icon="inline-start" className={cn(refreshing && 'animate-spin')} />
             </Button>
+          </>
+        }
+      />
+
+      {/* Loading branch — skeleton only on first fetch, NOT on refresh (D-14, D-16) */}
+      {loading && (
+        <div aria-busy="true" className="flex flex-col gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Skeleton className="h-[80px] rounded-lg" />
+            <Skeleton className="h-[80px] rounded-lg" />
+            <Skeleton className="h-[80px] rounded-lg" />
+            <Skeleton className="h-[80px] rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
+            <Skeleton className="h-[160px]" />
+            <div className="flex flex-col gap-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Loading branch — skeleton only on first fetch, NOT on refresh (D-14, D-16) */}
-        {loading && (
-          <div aria-busy="true" className="flex flex-col gap-6">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Skeleton className="h-[80px] rounded-lg" />
-              <Skeleton className="h-[80px] rounded-lg" />
-              <Skeleton className="h-[80px] rounded-lg" />
-              <Skeleton className="h-[80px] rounded-lg" />
-            </div>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
-              <Skeleton className="h-[160px]" />
-              <div className="flex flex-col gap-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Error branch — retry panel (D-09) */}
+      {error !== null && !loading && (
+        <Card className="p-6 flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-foreground">Failed to load diagnostics</p>
+          <p className="text-xs text-muted-foreground">Could not reach /api/diagnostics</p>
+          <Button variant="outline" size="sm" onClick={reload}>
+            Retry Load
+          </Button>
+        </Card>
+      )}
 
-        {/* Error branch — retry panel (D-09) */}
-        {error !== null && !loading && (
-          <Card className="p-6 flex flex-col items-center gap-3 text-center">
-            <p className="text-sm text-foreground">Failed to load diagnostics</p>
-            <p className="text-xs text-muted-foreground">Could not reach /api/diagnostics</p>
-            <Button variant="outline" size="sm" onClick={reload}>
-              Retry Load
-            </Button>
-          </Card>
-        )}
-
-        {/* Loaded branch — full page content */}
-        {data !== null && !loading && <LoadedContent data={data} />}
-      </div>
-    </div>
+      {/* Loaded branch — full page content */}
+      {data !== null && !loading && <LoadedContent data={data} onCompacted={reload} />}
+    </PageShell>
   )
 }
