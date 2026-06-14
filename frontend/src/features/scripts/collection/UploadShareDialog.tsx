@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react'
+import { Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 
@@ -57,8 +58,21 @@ export function UploadShareDialog({ onPublish, onNeedsLogin, onResult }: UploadS
         onChange={onPick}
         aria-label="Choose scripts to share"
       />
-      <Button variant="outline" size="sm" disabled={busy} onClick={() => inputRef.current?.click()}>
-        Upload & share
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-1"
+      >
+        {busy ? (
+          <>
+            <Loader2 className="size-3 animate-spin" />
+            Sharing…
+          </>
+        ) : (
+          'Upload & share'
+        )}
       </Button>
       {pending ? (
         <UploadShareForm files={pending} onSubmit={submit} onCancel={() => setPending(null)} />
