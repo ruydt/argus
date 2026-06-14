@@ -170,3 +170,12 @@ func (s *Service) RemoveScript(ctx context.Context, scriptID string) error {
 	}
 	return gc.RemoveScript(ctx, id, scriptID)
 }
+
+// PublishToRegistry forks + commits + opens a PR for the given files.
+func (s *Service) PublishToRegistry(ctx context.Context, files []PublishFile) (string, error) {
+	gc, ok := s.gist()
+	if !ok {
+		return "", ErrNotAuthenticated
+	}
+	return gc.PublishRegistry(ctx, files)
+}
