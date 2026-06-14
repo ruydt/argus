@@ -45,6 +45,16 @@ export function CollectionTab({ query }: CollectionTabProps) {
     }
   }
 
+  // Upgrading scope (gist -> public_repo) needs fresh consent. An existing
+  // gist-only token makes /api/github/status report authenticated, which would
+  // short-circuit the device-flow poll, so log out first then start a new login.
+  function reauthForSharing() {
+    void run(async () => {
+      await logout()
+      await startLogin()
+    })
+  }
+
   function guardedSave(filename: string) {
     if (!authenticated) {
       setNotice('Sign in with GitHub to back up to your gist.')
@@ -91,7 +101,7 @@ export function CollectionTab({ query }: CollectionTabProps) {
             </a>
           ) : null}
           {authenticated ? (
-            <UploadShareDialog onPublish={publishFiles} onNeedsLogin={() => run(startLogin)} />
+            <UploadShareDialog onPublish={publishFiles} onNeedsLogin={reauthForSharing} />
           ) : null}
           {authenticated ? (
             <Button variant="outline" size="sm" disabled={busy} onClick={() => run(logout)}>
