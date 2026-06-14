@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Argus liveness banner
+// event: SessionStart
+// runtime: node
+// purpose: Argus liveness banner with event/session counts at session start.
+// @end
+
 const { execSync } = require('child_process');
 const os = require('os');
 const path = require('path');

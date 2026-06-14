@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Block dangerous commands
+// event: PreToolUse
+// runtime: node
+// matcher: Bash
+// purpose: Deny dangerous shell commands (rm -rf ~, curl | sh, force-push to main, mkfs) with a reason the agent can act on.
+// @end
+
 // PreToolUse hook (matcher: Bash): blocks dangerous shell commands for Claude Code and Codex.
 // Deny + reason so the agent can self-correct. Fail-open: any script error exits 0 silently.
 // Config (optional): ~/.argus/dangerous-patterns.json { "extra": ["<regex>"], "allow": ["<regex>"] }

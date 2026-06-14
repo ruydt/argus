@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Format & lint on edit
+// event: PostToolUse
+// runtime: node
+// matcher: Edit|Write|MultiEdit
+// purpose: Auto-format the edited file (prettier/ruff/gofmt, single-file) and feed lint errors back so the agent fixes them.
+// @end
+
 // PostToolUse hook (matcher: Edit|Write|MultiEdit): auto-formats the edited file and
 // feeds lint errors back to the agent so it self-corrects. Scoped to the single touched
 // file (tool_input.file_path) — never the whole repo — to keep the loop fast. Missing

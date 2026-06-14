@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Notify webhook
+// event: Stop
+// runtime: node
+// purpose: Slack / Discord / ntfy / Telegram / custom webhook when the agent finishes or needs attention. Rate-limited; silent without config.
+// @end
+
 // Stop / SubagentStop / Notification hook: posts a message to a Slack, Discord, ntfy,
 // Telegram, or custom webhook when the agent finishes or needs attention. Complements
 // stop.js (local macOS notification) for when you are away from the machine.

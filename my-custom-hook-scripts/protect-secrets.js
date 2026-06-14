@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Protect secret files
+// event: PreToolUse
+// runtime: node
+// matcher: Read|Edit|Write|Bash
+// purpose: Deny access to secret files (.env, *.pem, ~/.ssh/, ~/.aws/). .env.example/sample/template and secrets.test/spec.* are allowed.
+// @end
+
 // PreToolUse hook (matcher: Read|Edit|Write|Bash): blocks access to secret files
 // for Claude Code and Codex. For file tools it checks tool_input.file_path; for Bash
 // it tokenizes the command and checks each token. Fail-open on any script error.

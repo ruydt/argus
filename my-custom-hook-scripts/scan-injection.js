@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Prompt-injection scanner
+// event: PostToolUse
+// runtime: node
+// matcher: Read|WebFetch|WebSearch|Grep|Bash|Task|mcp__.*
+// purpose: Warn-only prompt-injection scanner on tool output. Injects a caution into context instead of blocking.
+// @end
+
 // PostToolUse hook (matcher: Read|WebFetch|WebSearch|Grep|Bash or mcp__.*): scans tool
 // output for prompt-injection patterns before the agent acts on it. WARN-ONLY by design
 // (the Lasso pattern): blocking is futile post-hoc and regexes are a safety net, not a

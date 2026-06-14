@@ -1,4 +1,12 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Protect branches
+// event: PreToolUse
+// runtime: node
+// matcher: Bash
+// purpose: Deny git commit/push/branch-deletion on protected branches (main, master); suggests a feature branch.
+// @end
+
 // PreToolUse hook (matcher: Bash): blocks git commit/push/destructive ops on protected
 // branches and suggests a feature branch instead. Resolves the CURRENT branch by shelling
 // out to git in the hook payload's cwd — worktree-safe (`git branch --show-current` is

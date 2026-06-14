@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Cost warning
+// event: SessionStart
+// runtime: node
+// purpose: Warn when token usage in the rolling 5h window crosses a threshold. Silent otherwise.
+// @end
+
 // SessionStart hook: warns when token usage in the rolling 5-hour window crosses a
 // threshold, using the local argus database. Approximates the billing window — it
 // does not track exact billing-block boundaries. Silent when under the warn level

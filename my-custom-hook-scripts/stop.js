@@ -1,4 +1,11 @@
 #!/usr/bin/env node
+// @argus-meta
+// title: Stop notification
+// event: Stop
+// runtime: node
+// purpose: Local notification when the agent finishes.
+// @end
+
 // Stop hook: posts a macOS notification when the agent session stops, so you know
 // it's time to come back to the terminal. Reads the Stop payload from stdin, builds
 // title/subtitle/message from it (last assistant message, cwd, session id), and
