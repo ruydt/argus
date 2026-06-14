@@ -28,7 +28,7 @@ async function walk(dir) {
     const p = join(dir, name)
     const s = await stat(p)
     if (s.isDirectory()) out.push(...(await walk(p)))
-    else if (name.endsWith('.js')) out.push(p)
+    else if (/\.(js|sh|py)$/.test(name)) out.push(p)
   }
   return out
 }
@@ -42,7 +42,7 @@ export async function buildIndex(root = '.') {
     if (!meta || !meta.title) continue
     const rel = relative(root, file).split('\\').join('/')
     const author = rel.split('/')[1]
-    const id = rel.split('/').pop().replace(/\.js$/, '')
+    const id = rel.split('/').pop().replace(/\.(js|sh|py)$/, '')
     const sha256 = createHash('sha256').update(text).digest('hex')
     scripts.push({
       id,

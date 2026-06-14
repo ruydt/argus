@@ -36,3 +36,25 @@ test('buildIndex parses the header and computes sha256', async () => {
   assert.equal(s.source, 'scripts/alice/demo.js')
   assert.equal(s.sha256, createHash('sha256').update(body).digest('hex'))
 })
+
+test('buildIndex indexes .sh and .py scripts, stripping their extension for the id', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'reg-'))
+  await mkdir(join(root, 'scripts', 'bob'), { recursive: true })
+  const shBody = ['// @argus-meta', '// title: Shell', '// runtime: sh', '// @end', '', 'echo hi', ''].join(
+    '\n'
+  )
+  const pyBody = ['// @argus-meta', '// title: Py', '// runtime: python3', '// @end', '', 'print(1)', ''].join(
+    '\n'
+  )
+  await writeFile(join(root, 'scripts', 'bob', 'notify.sh'), shBody)
+  await writeFile(join(root, 'scripts', 'bob', 'scan.py'), pyBody)
+
+  const index = await buildIndex(root)
+
+  const byId = Object.fromEntries(index.scripts.map((s) => [s.id, s]))
+  assert.equal(index.scripts.length, 2)
+  assert.equal(byId['notify'].source, 'scripts/bob/notify.sh')
+  assert.equal(byId['notify'].runtime, 'sh')
+  assert.equal(byId['scan'].source, 'scripts/bob/scan.py')
+  assert.equal(byId['scan'].runtime, 'python3')
+})
