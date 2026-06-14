@@ -180,7 +180,16 @@ func (s *EventService) GetRawPayload(dedupKey string) ([]byte, error) {
 
 // CompactDatabase compresses legacy raw_payload rows and VACUUMs to reclaim disk.
 func (s *EventService) CompactDatabase(ctx context.Context) (domain.CompactResult, error) {
-	return s.repo.Compact(ctx)
+	res, err := s.repo.Compact(ctx)
+	if err != nil {
+		return res, err
+	}
+	// Invalidate the diagnostics TTL cache so the next read reports the freshly
+	// reclaimed DB size instead of the pre-compaction value.
+	s.diagMu.Lock()
+	s.diagCache = nil
+	s.diagMu.Unlock()
+	return res, nil
 }
 
 // PruneEvents deletes events older than before and/or beyond the maxEvents
