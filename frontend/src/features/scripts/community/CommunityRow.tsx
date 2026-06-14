@@ -77,7 +77,7 @@ export function CommunityRow({
         </div>
         <div className="hidden shrink-0 items-center gap-1 md:flex">
           <Badge variant="outline" className="border-amber-600/40 text-amber-500">
-            community
+            by {script.author}
           </Badge>
           {script.event ? <Badge variant="outline">{script.event}</Badge> : null}
           {!script.runtime_available ? (

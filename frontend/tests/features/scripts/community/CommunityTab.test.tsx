@@ -1,75 +1,51 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CommunityTab } from '@/features/scripts/community/CommunityTab'
 
+beforeEach(() => {
+  class IO {
+    observe() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('IntersectionObserver', IO as unknown as typeof IntersectionObserver)
+})
 afterEach(() => vi.restoreAllMocks())
 
-const officialCatalog = {
-  packages: [
-    {
-      id: 'block-dangerous',
-      filename: 'block-dangerous.js',
-      version: '1.0.0',
-      title: 'Block dangerous commands',
-      purpose: 'deny dangerous shell',
-      event: 'PreToolUse',
-      runtime: 'node',
-      agents: ['claude-code'],
-      author: 'argus',
-      source: '',
-      tier: 'official',
-      checksum: '',
-      body: '',
-      installed: false,
-      runtime_available: true,
-    },
-  ],
-  bundles: [],
-}
-
-const communityScripts = [
-  {
-    id: 'git-autostash',
+function makeScripts(n: number) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `s${i}`,
     author: 'alice',
-    title: 'Auto-stash',
-    purpose: 'stash',
+    title: `Script ${i}`,
+    purpose: 'p',
     event: 'PreToolUse',
     runtime: 'node',
     tier: 'community',
-    sha256: 'abc',
-    source: 'scripts/alice/git-autostash.js',
+    sha256: 'x',
+    source: `scripts/alice/s${i}.js`,
     installed: false,
     runtime_available: true,
-  },
-]
-
-function stubFetch() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((url: string) => {
-      if (url === '/api/scripts/catalog')
-        return Promise.resolve({ ok: true, json: async () => officialCatalog })
-      if (url === '/api/community/catalog')
-        return Promise.resolve({ ok: true, json: async () => communityScripts })
-      return Promise.resolve({ ok: true, json: async () => ({}) })
-    })
-  )
+  }))
 }
 
 describe('CommunityTab', () => {
-  it('renders official and community single scripts together', async () => {
-    stubFetch()
+  it('renders only the first 50 of a large list', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => makeScripts(120) })
+    )
     render(<CommunityTab query="" />)
-    await waitFor(() => expect(screen.getByText('Block dangerous commands')).toBeInTheDocument())
-    expect(screen.getByText('Auto-stash')).toBeInTheDocument()
-    expect(screen.getByText('community')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Script 0')).toBeInTheDocument())
+    expect(screen.getByText('Script 49')).toBeInTheDocument()
+    expect(screen.queryByText('Script 50')).not.toBeInTheDocument()
   })
 
-  it('filters across both sources', async () => {
-    stubFetch()
-    render(<CommunityTab query="autostash" />)
-    await waitFor(() => expect(screen.getByText('Auto-stash')).toBeInTheDocument())
-    expect(screen.queryByText('Block dangerous commands')).not.toBeInTheDocument()
+  it('search finds a script beyond the first 50 (whole-registry search)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => makeScripts(120) })
+    )
+    render(<CommunityTab query="Script 99" />)
+    await waitFor(() => expect(screen.getByText('Script 99')).toBeInTheDocument())
   })
 })
