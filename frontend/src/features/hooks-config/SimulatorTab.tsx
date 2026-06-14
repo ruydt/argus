@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
 import { Check, RefreshCw, Terminal } from 'lucide-react'
@@ -43,6 +43,7 @@ type SimulateResult = {
 export type SimulatorTabProps = {
   agent: AgentKey
   config: HooksConfig | null
+  initialScript?: string
   // Lifted state — persists across tab switches and page navigation (sessionStorage)
   eventType: string
   onEventTypeChange: (et: string) => void
@@ -63,6 +64,7 @@ function truncate(s: string, n: number): string {
 export function SimulatorTab({
   agent,
   config,
+  initialScript,
   eventType,
   onEventTypeChange,
   commandValue,
@@ -95,6 +97,16 @@ export function SimulatorTab({
       cancelled = true
     }
   }, [])
+
+  const preselectApplied = useRef(false)
+  useEffect(() => {
+    if (preselectApplied.current) return
+    if (!initialScript || hookScripts.length === 0) return
+    const match = hookScripts.find((h) => h.name === initialScript)
+    if (!match) return
+    preselectApplied.current = true
+    onCommandValueChange(composeScriptCommand(match, agent))
+  }, [initialScript, hookScripts, agent, onCommandValueChange])
 
   const eventTypes = Object.keys(HOOK_TEMPLATES[agent]).sort()
 

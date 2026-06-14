@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
 import { AppWindowIcon, CodeIcon, ExternalLink, RefreshCw, Save, Terminal } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -64,6 +65,7 @@ type SimulatorCacheProps = {
   onCustomCommandTextChange: (v: string) => void
   onApply: (eventType: string, command: string) => Promise<void>
   applying: boolean
+  initialScript?: string
 }
 
 type AgentTabContentProps = {
@@ -157,6 +159,7 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
         <SimulatorTab
           agent={agent}
           config={config}
+          initialScript={sim.initialScript}
           eventType={sim.eventType}
           onEventTypeChange={sim.onEventTypeChange}
           commandValue={sim.commandValue}
@@ -191,6 +194,20 @@ export function HooksConfigPage() {
 
   // Simulator cached state — lifted + sessionStorage so it survives page navigation
   const [simEventType, setSimEventType] = useState<string>(() => readSimCache()?.eventType ?? '')
+
+  const [searchParams] = useSearchParams()
+  const [initialScript, setInitialScript] = useState<string | undefined>(undefined)
+  const deepLinkApplied = useRef(false)
+  useEffect(() => {
+    if (deepLinkApplied.current) return
+    deepLinkApplied.current = true
+    if (searchParams.get('view') === 'simulator') setViewMode('simulator')
+    const ev = searchParams.get('event')
+    if (ev) setSimEventType(ev)
+    const sc = searchParams.get('script')
+    if (sc) setInitialScript(sc)
+  }, [searchParams])
+
   const [simCommandValue, setSimCommandValue] = useState<string>(
     () => readSimCache()?.commandValue ?? ''
   )
@@ -272,6 +289,7 @@ export function HooksConfigPage() {
     onCustomCommandTextChange: setSimCustomCommandText,
     onApply: handleSimulatorApply,
     applying,
+    initialScript,
   }
 
   const jsonIsValid = (() => {
