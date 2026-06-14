@@ -15,6 +15,7 @@ type publishRequest struct {
 		Name string `json:"name"`
 		Body string `json:"body"`
 	} `json:"files"`
+	Description string `json:"description"`
 }
 
 // RegistryPublish uploads local files to argus-hooks/registry via a PR.
@@ -37,7 +38,7 @@ func RegistryPublish(svc *github.Service) http.Handler {
 			}
 			files = append(files, github.PublishFile{Name: f.Name, Body: f.Body})
 		}
-		url, err := svc.PublishToRegistry(r.Context(), files)
+		url, err := svc.PublishToRegistry(r.Context(), files, req.Description)
 		switch {
 		case errors.Is(err, github.ErrNotAuthenticated):
 			http.Error(w, "not authenticated", http.StatusUnauthorized)

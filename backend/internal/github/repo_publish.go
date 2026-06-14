@@ -66,7 +66,7 @@ func shortSHA(s string) string {
 
 // PublishRegistry forks argus-hooks/registry (if needed), commits all files under
 // scripts/<login>/ in one commit on a new branch, and opens a PR. Returns PR URL.
-func (g *GistClient) PublishRegistry(ctx context.Context, files []PublishFile) (string, error) {
+func (g *GistClient) PublishRegistry(ctx context.Context, files []PublishFile, description string) (string, error) {
 	if len(files) == 0 {
 		return "", errors.New("no files to publish")
 	}
@@ -182,6 +182,7 @@ func (g *GistClient) PublishRegistry(ctx context.Context, files []PublishFile) (
 			"title": "Add scripts from " + login,
 			"head":  login + ":" + branch,
 			"base":  "main",
+			"body":  description,
 		}, &pr); err != nil {
 		return "", err
 	}

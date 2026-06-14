@@ -52,7 +52,14 @@ func fakeGitHub(t *testing.T, scopes string) *httptest.Server {
 	mux.HandleFunc("/repos/alice/registry/git/refs", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"ref":"refs/heads/x"}`))
 	})
-	mux.HandleFunc("/repos/argus-hooks/registry/pulls", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/repos/argus-hooks/registry/pulls", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Body string `json:"body"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body.Body != "my description" {
+			t.Errorf("PR body = %q, want %q", body.Body, "my description")
+		}
 		_, _ = w.Write([]byte(`{"html_url":"https://github.com/argus-hooks/registry/pull/1"}`))
 	})
 	srv := httptest.NewServer(mux)
@@ -65,7 +72,7 @@ func TestPublishRegistryHappyPath(t *testing.T) {
 	gc := github.NewGistClient("tok", srv.Client())
 	gc.SetBaseURL(srv.URL)
 	url, err := gc.PublishRegistry(context.Background(),
-		[]github.PublishFile{{Name: "foo.js", Body: "console.log(1)\n"}})
+		[]github.PublishFile{{Name: "foo.js", Body: "console.log(1)\n"}}, "my description")
 	if err != nil {
 		t.Fatalf("PublishRegistry: %v", err)
 	}
@@ -79,7 +86,7 @@ func TestPublishRegistryNeedsRepoScope(t *testing.T) {
 	gc := github.NewGistClient("tok", srv.Client())
 	gc.SetBaseURL(srv.URL)
 	_, err := gc.PublishRegistry(context.Background(),
-		[]github.PublishFile{{Name: "foo.js", Body: "x"}})
+		[]github.PublishFile{{Name: "foo.js", Body: "x"}}, "")
 	if err != github.ErrNeedsRepoScope {
 		t.Fatalf("expected ErrNeedsRepoScope, got %v", err)
 	}
