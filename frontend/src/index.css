@@ -15,8 +15,6 @@
   --dim: #666;
   --brand: #a78bfa;
   --app-border: #222;
-  --delete: #ff5f56;
-  --create: #a78bfa;
   --edit: #60a5fa;
   --bash: #f5a623;
   --stop: #ff6b9d;
@@ -101,8 +99,6 @@ body {
   --color-dim: var(--dim);
   --color-brand: var(--brand);
   --color-app-border: var(--app-border);
-  --color-delete: var(--delete);
-  --color-create: var(--create);
   --color-edit: var(--edit);
   --color-bash: var(--bash);
 
@@ -176,11 +172,6 @@ body {
   --sidebar-label-max-width: 10rem;
   white-space: nowrap;
   font-size: 0.8rem;
-}
-
-.sidebar-label-toggle {
-  --sidebar-label-gap: 0.75rem;
-  --sidebar-label-max-width: 9rem;
 }
 
 .sidebar-label-open {

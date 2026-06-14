@@ -1,12 +1,6 @@
 /* ─── Action color classes (referenced by event rows) ─── */
-.CREATE {
-  color: var(--create);
-}
 .EDIT {
   color: var(--edit);
-}
-.DELETE {
-  color: var(--delete);
 }
 .BASH {
   color: var(--bash);
@@ -276,116 +270,10 @@ mark {
   background: rgba(34, 197, 94, 0.18);
 }
 
-/* ─── Floating tooltip ─── */
-.floating-tip {
-  position: fixed;
-  background: #1a1a1a;
-  color: #ccc;
-  border: 1px solid #444;
-  padding: 7px 11px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  line-height: 1.6;
-  max-width: 260px;
-  pointer-events: none;
-  z-index: 9999;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-thumb {
   background: #333;
-}
-
-/* ─── Stop response markdown ─── */
-.stop-md {
-  font-size: 0.78rem;
-  line-height: 1.65;
-  color: #c9d1d9;
-}
-.stop-md p {
-  margin: 0 0 0.6em;
-}
-.stop-md p:last-child {
-  margin-bottom: 0;
-}
-.stop-md h1,
-.stop-md h2,
-.stop-md h3,
-.stop-md h4 {
-  color: #e2e8f0;
-  font-weight: 700;
-  margin: 0.9em 0 0.4em;
-  line-height: 1.3;
-}
-.stop-md h1 {
-  font-size: 1em;
-}
-.stop-md h2 {
-  font-size: 0.92em;
-}
-.stop-md h3 {
-  font-size: 0.85em;
-}
-.stop-md h4 {
-  font-size: 0.8em;
-  color: #aaa;
-}
-.stop-md strong {
-  color: #e2e8f0;
-  font-weight: 600;
-}
-.stop-md em {
-  color: #a0a0a0;
-  font-style: italic;
-}
-.stop-md ul,
-.stop-md ol {
-  margin: 0 0 0.6em 1.2em;
-  padding: 0;
-}
-.stop-md li {
-  margin-bottom: 0.2em;
-}
-.stop-md code {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 3px;
-  padding: 0.1em 0.35em;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.88em;
-  color: #79c0ff;
-}
-.stop-md pre {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 5px;
-  padding: 0.7em 1em;
-  overflow-x: auto;
-  margin: 0.5em 0;
-}
-.stop-md pre code {
-  background: none;
-  border: none;
-  padding: 0;
-  color: #a0a0a0;
-  font-size: 0.82em;
-}
-.stop-md blockquote {
-  border-left: 3px solid #444;
-  margin: 0.5em 0;
-  padding: 0.2em 0.8em;
-  color: #888;
-}
-.stop-md a {
-  color: #58a6ff;
-  text-decoration: underline;
-}
-.stop-md hr {
-  border: none;
-  border-top: 1px solid #333;
-  margin: 0.8em 0;
 }

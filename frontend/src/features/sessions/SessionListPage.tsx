@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { EventRecord } from '@/types/events'
 import type { Session } from '@/types/sessions'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
-import { formatDuration, isRunning, sessionDurationMs } from './utils'
+import { formatDuration, isRunning, projectName, sessionDurationMs } from './utils'
 
 const PAGE_SIZE = 20
 
@@ -19,7 +19,7 @@ function totalTokens(session: Session) {
 export function SessionListPage() {
   const { encodedCwd = '' } = useParams()
   const cwd = useMemo(() => decodeURIComponent(encodedCwd), [encodedCwd])
-  const cwdBasename = cwd.split('/').filter(Boolean).at(-1) || cwd
+  const cwdBasename = projectName(cwd)
   const navigate = useNavigate()
   const [refreshKey, setRefreshKey] = useState(0)
   const [nowMs, setNowMs] = useState(() => Date.now())

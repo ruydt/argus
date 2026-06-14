@@ -1,4 +1,4 @@
-import type { AgentModelUsage, DashboardStats } from './hooks/useDashboardStats'
+import type { DashboardStats } from './hooks/useDashboardStats'
 import { displayModel } from '@/lib/utils'
 import { AGENTS } from '@/agents'
 
@@ -164,9 +164,6 @@ export function toTokenTimelineByAgentData(stats: DashboardStats | null, query: 
 
   return { data, series: orderedSeries }
 }
-
-export type TokenChartDatum = ReturnType<typeof toTokenChartData>[number]
-export type AgentUsageRow = AgentModelUsage
 
 export function formatSharePercent(value: number, total: number) {
   if (!total) return '0%'

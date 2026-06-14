@@ -8,13 +8,6 @@ type State = {
   error: string | null
 }
 
-export type SimulateResult = {
-  stdout: string
-  stderr: string
-  exit_code: number
-  duration_ms: number
-}
-
 // Session cache: survives tab switches / remounts within the SPA session so the
 // Community list shows instantly on return; reload() revalidates in the
 // background and refreshes it. Reset via __resetCommunityCache (tests only).
@@ -70,15 +63,5 @@ export function useCommunity() {
     return data.body
   }, [])
 
-  const simulate = useCallback(async (id: string, payload: unknown): Promise<SimulateResult> => {
-    const resp = await fetch('/api/community/simulate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, payload }),
-    })
-    if (!resp.ok) throw new Error(`simulate ${resp.status}`)
-    return resp.json()
-  }, [])
-
-  return { ...state, reload, install, getBody, simulate }
+  return { ...state, reload, install, getBody }
 }

@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/card'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DiffBlock } from '@/features/events/renderers/DiffBlock'
+import { shortenCwd } from './utils'
 import type { FileChangeEvent, FileChangeGroup } from '@/types/sessions'
 
 const DEFAULT_PAGE_SIZE = 25
@@ -75,10 +76,6 @@ function FileIcon({ tool }: { tool?: string }) {
     default:
       return <FilePen className={className} />
   }
-}
-
-function shortenPath(path: string): string {
-  return path.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~')
 }
 
 function formatRelativeTime(iso: string, sessionStart: string): string {
@@ -292,7 +289,7 @@ function FileChangeRow({ group, sessionStartedAt, expanded, onToggle }: FileChan
           className="min-w-0 flex-1 truncate font-mono text-[12px] text-white/80"
           title={group.path}
         >
-          {shortenPath(group.path)}
+          {shortenCwd(group.path)}
         </span>
         <Badge
           variant="outline"

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import type { Session } from '@/types/sessions'
 import { FileChangesList } from './FileChangesList'
 import { useFileChanges } from './hooks/useFileChanges'
-import { formatDuration, sessionDurationMs, shortenCwd } from './utils'
+import { formatDuration, projectName, sessionDurationMs, shortenCwd } from './utils'
 
 type SessionsResponse = Session[] | { sessions?: Session[] }
 
@@ -40,7 +40,7 @@ function formatSessionDuration(session: Session | null): string {
 export function SessionFileChangesPage() {
   const { encodedCwd = '', sessionId = '' } = useParams()
   const cwd = useMemo(() => decodeURIComponent(encodedCwd), [encodedCwd])
-  const cwdBasename = cwd.split('/').filter(Boolean).at(-1) || cwd
+  const cwdBasename = projectName(cwd)
   const [session, setSession] = useState<Session | null>(null)
   const { groups: fileGroups, loading, error } = useFileChanges(sessionId)
 
