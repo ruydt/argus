@@ -6,26 +6,22 @@ import { CollectionTab } from '@/features/scripts/collection/CollectionTab'
 afterEach(() => vi.restoreAllMocks())
 
 const view = {
-  authenticated: false,
-  entries: [
-    { id: 'a', filename: 'a.js', title: 'Alpha', local: true, gist: false },
-    { id: 'b', filename: 'b.js', title: 'Beta', local: false, gist: true },
-  ],
+  authenticated: true,
+  entries: [{ id: 'a', filename: 'a.js', title: 'Alpha', local: true, gist: false }],
 }
 
 describe('CollectionTab', () => {
-  it('lists union entries and shows Sign in when logged out', async () => {
+  it('shows entries and the Upload & share control when authenticated', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => view }))
     render(<CollectionTab query="" />)
     await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument())
-    expect(screen.getByText('Beta')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /sign in with github/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /upload & share/i })).toBeInTheDocument()
   })
 
-  it('filters by query', async () => {
+  it('does not render a Publish button on rows', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => view }))
-    render(<CollectionTab query="alpha" />)
+    render(<CollectionTab query="" />)
     await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument())
-    expect(screen.queryByText('Beta')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^publish$/i })).not.toBeInTheDocument()
   })
 })

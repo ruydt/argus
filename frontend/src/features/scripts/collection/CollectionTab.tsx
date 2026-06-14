@@ -3,12 +3,11 @@ import { ExternalLink } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { CollectionEntry } from '@/types'
 
 import { useCollection } from './useCollection'
 import { DeviceFlowModal } from './DeviceFlowModal'
 import { CollectionRow } from './CollectionRow'
-import { buildMetaHeader, buildPublishUrl } from '../community/publishUrl'
+import { UploadShareDialog } from './UploadShareDialog'
 
 type CollectionTabProps = {
   query: string
@@ -30,7 +29,7 @@ export function CollectionTab({ query }: CollectionTabProps) {
     removeLocal,
     removeGist,
     removeBoth,
-    getLocalBody,
+    publishFiles,
   } = useCollection()
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -53,37 +52,6 @@ export function CollectionTab({ query }: CollectionTabProps) {
       return
     }
     void run(() => saveToGist(filename))
-  }
-
-  async function publish(entry: CollectionEntry) {
-    if (!authenticated) {
-      setNotice('Sign in with GitHub to publish.')
-      void run(startLogin)
-      return
-    }
-    try {
-      const status = await (await fetch('/api/github/status')).json()
-      if (!status.authenticated || !status.login) {
-        setNotice('Sign in with GitHub to publish.')
-        return
-      }
-      const body = await getLocalBody(entry.filename)
-      const fields = {
-        id: entry.id,
-        title: entry.title,
-        event: entry.event,
-        runtime: entry.runtime,
-        body,
-      }
-      const { url, prefilled } = buildPublishUrl(status.login, fields)
-      if (!prefilled) {
-        await navigator.clipboard.writeText(buildMetaHeader(fields) + '\n' + body)
-        setNotice('Script copied — paste it into the new file on GitHub.')
-      }
-      window.open(url, '_blank', 'noopener')
-    } catch {
-      setNotice('Could not start publishing.')
-    }
   }
 
   const filtered = entries.filter((e) => {
@@ -121,6 +89,9 @@ export function CollectionTab({ query }: CollectionTabProps) {
               <ExternalLink className="size-3" />
               View scripts on GitHub
             </a>
+          ) : null}
+          {authenticated ? (
+            <UploadShareDialog onPublish={publishFiles} onNeedsLogin={() => run(startLogin)} />
           ) : null}
           {authenticated ? (
             <Button variant="outline" size="sm" disabled={busy} onClick={() => run(logout)}>
@@ -166,7 +137,6 @@ export function CollectionTab({ query }: CollectionTabProps) {
               busy={busy}
               onSaveToGist={guardedSave}
               onInstall={(id) => run(() => install(id))}
-              onPublish={publish}
               onRemoveLocal={(filename) => run(() => removeLocal(filename))}
               onRemoveGist={(id) => run(() => removeGist(id))}
               onRemoveBoth={(entry) => run(() => removeBoth(entry))}

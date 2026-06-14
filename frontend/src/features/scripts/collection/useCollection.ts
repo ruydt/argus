@@ -146,6 +146,22 @@ export function useCollection() {
     return data.body
   }, [])
 
+  const publishFiles = useCallback(
+    async (files: { name: string; body: string }[]): Promise<string> => {
+      const resp = await fetch('/api/registry/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files }),
+      })
+      if (resp.status === 401) throw new Error('unauthenticated')
+      if (resp.status === 403) throw new Error('needs-scope')
+      if (!resp.ok) throw new Error(`publish ${resp.status}`)
+      const data: { pull_request_url: string } = await resp.json()
+      return data.pull_request_url
+    },
+    []
+  )
+
   return {
     ...state,
     deviceCode,
@@ -159,5 +175,6 @@ export function useCollection() {
     removeGist: removeGistOnly,
     removeBoth,
     getLocalBody,
+    publishFiles,
   }
 }

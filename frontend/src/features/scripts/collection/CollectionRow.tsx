@@ -1,3 +1,5 @@
+import { MoreVertical } from 'lucide-react'
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -9,7 +11,6 @@ type CollectionRowProps = {
   busy: boolean
   onSaveToGist: (filename: string) => void
   onInstall: (id: string) => void
-  onPublish: (entry: CollectionEntry) => void
   onRemoveLocal: (filename: string) => void
   onRemoveGist: (id: string) => void
   onRemoveBoth: (entry: CollectionEntry) => void
@@ -21,7 +22,6 @@ export function CollectionRow({
   busy,
   onSaveToGist,
   onInstall,
-  onPublish,
   onRemoveLocal,
   onRemoveGist,
   onRemoveBoth,
@@ -52,34 +52,29 @@ export function CollectionRow({
         </Badge>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {entry.local && !entry.gist ? (
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            onClick={() => onSaveToGist(entry.filename)}
-          >
-            Save to gist
-          </Button>
-        ) : null}
         {entry.gist && !entry.local ? (
           <Button size="sm" disabled={busy} onClick={() => onInstall(entry.id)}>
             Install
           </Button>
         ) : null}
-        {entry.local ? (
-          <Button variant="outline" size="sm" disabled={busy} onClick={() => onPublish(entry)}>
-            Publish
-          </Button>
-        ) : null}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" disabled={busy}>
-              Remove ▾
+            <Button variant="outline" size="sm" disabled={busy} aria-label="Actions">
+              <MoreVertical className="size-4" />
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-44 p-1">
             <div className="flex flex-col">
+              {entry.local && !entry.gist ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => onSaveToGist(entry.filename)}
+                >
+                  Save to gist
+                </Button>
+              ) : null}
               {entry.local ? (
                 <Button
                   variant="ghost"
