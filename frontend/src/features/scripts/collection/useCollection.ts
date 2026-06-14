@@ -147,11 +147,11 @@ export function useCollection() {
   }, [])
 
   const publishFiles = useCallback(
-    async (files: { name: string; body: string }[]): Promise<string> => {
+    async (files: { name: string; body: string }[], description: string): Promise<string> => {
       const resp = await fetch('/api/registry/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files }),
+        body: JSON.stringify({ files, description }),
       })
       if (resp.status === 401) throw new Error('unauthenticated')
       if (resp.status === 403) throw new Error('needs-scope')
