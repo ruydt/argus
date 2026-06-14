@@ -147,14 +147,13 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               />
             </label>
             <div className="flex justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={step === 0}
-                onClick={() => setStep((s) => s - 1)}
-              >
-                Back
-              </Button>
+              {step > 0 ? (
+                <Button variant="outline" size="sm" onClick={() => setStep((s) => s - 1)}>
+                  Back
+                </Button>
+              ) : (
+                <span />
+              )}
               <Button size="sm" disabled={!requiredFilled} onClick={() => setStep((s) => s + 1)}>
                 Next
               </Button>
