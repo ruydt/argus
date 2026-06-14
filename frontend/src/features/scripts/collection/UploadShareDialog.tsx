@@ -5,34 +5,30 @@ import { Button } from '@/components/ui/button'
 type UploadShareDialogProps = {
   onPublish: (files: { name: string; body: string }[]) => Promise<string>
   onNeedsLogin: () => void
+  onResult: (notice: { text: string; href?: string }) => void
 }
 
-export function UploadShareDialog({ onPublish, onNeedsLogin }: UploadShareDialogProps) {
+export function UploadShareDialog({ onPublish, onNeedsLogin, onResult }: UploadShareDialogProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [status, setStatus] = useState<string | null>(null)
-  const [prUrl, setPrUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   async function onPick(e: ChangeEvent<HTMLInputElement>) {
     const list = e.target.files
     if (!list || list.length === 0) return
     setBusy(true)
-    setStatus(null)
-    setPrUrl(null)
     try {
       const files = await Promise.all(
         Array.from(list).map(async (f) => ({ name: f.name, body: await f.text() }))
       )
       const url = await onPublish(files)
-      setPrUrl(url)
-      setStatus(`Opened a pull request with ${files.length} file(s).`)
+      onResult({ text: `Opened a pull request with ${files.length} file(s).`, href: url })
     } catch (err) {
       const msg = (err as Error).message
       if (msg === 'unauthenticated' || msg === 'needs-scope') {
-        setStatus('Sign in with GitHub (sharing permission) to publish.')
+        onResult({ text: 'Sign in with GitHub (sharing permission) to publish.' })
         onNeedsLogin()
       } else {
-        setStatus('Upload failed. Try again.')
+        onResult({ text: 'Upload failed. Try again.' })
       }
     } finally {
       setBusy(false)
@@ -41,7 +37,7 @@ export function UploadShareDialog({ onPublish, onNeedsLogin }: UploadShareDialog
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <>
       <input
         ref={inputRef}
         type="file"
@@ -54,24 +50,6 @@ export function UploadShareDialog({ onPublish, onNeedsLogin }: UploadShareDialog
       <Button variant="outline" size="sm" disabled={busy} onClick={() => inputRef.current?.click()}>
         Upload & share
       </Button>
-      {status ? (
-        <span className="text-[0.72rem] text-[#999]">
-          {status}
-          {prUrl ? (
-            <>
-              {' '}
-              <a
-                className="text-foreground underline"
-                href={prUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View PR
-              </a>
-            </>
-          ) : null}
-        </span>
-      ) : null}
-    </div>
+    </>
   )
 }

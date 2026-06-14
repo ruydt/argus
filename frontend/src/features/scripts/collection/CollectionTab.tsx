@@ -41,14 +41,14 @@ export function CollectionTab({ query }: CollectionTabProps) {
     publishFiles,
   } = useCollection()
   const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ text: string; href?: string } | null>(null)
 
   async function run(fn: () => Promise<void>) {
     setBusy(true)
     try {
       await fn()
     } catch {
-      setNotice('Action failed. Try again.')
+      setNotice({ text: 'Action failed. Try again.' })
     } finally {
       setBusy(false)
     }
@@ -66,7 +66,7 @@ export function CollectionTab({ query }: CollectionTabProps) {
 
   function guardedSave(filename: string) {
     if (!authenticated) {
-      setNotice('Sign in with GitHub to back up to your gist.')
+      setNotice({ text: 'Sign in with GitHub to back up to your gist.' })
       void run(startLogin)
       return
     }
@@ -110,7 +110,11 @@ export function CollectionTab({ query }: CollectionTabProps) {
             </a>
           ) : null}
           {authenticated ? (
-            <UploadShareDialog onPublish={publishFiles} onNeedsLogin={reauthForSharing} />
+            <UploadShareDialog
+              onPublish={publishFiles}
+              onNeedsLogin={reauthForSharing}
+              onResult={setNotice}
+            />
           ) : null}
           {authenticated ? (
             <Button variant="outline" size="sm" disabled={busy} onClick={() => run(logout)}>
@@ -126,7 +130,22 @@ export function CollectionTab({ query }: CollectionTabProps) {
 
       {notice ? (
         <div className="flex items-center justify-between rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[0.78rem] text-[#bbb]">
-          <span>{notice}</span>
+          <span>
+            {notice.text}
+            {notice.href ? (
+              <>
+                {' '}
+                <a
+                  className="text-foreground underline"
+                  href={notice.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View PR
+                </a>
+              </>
+            ) : null}
+          </span>
           <Button
             variant="ghost"
             size="sm"
