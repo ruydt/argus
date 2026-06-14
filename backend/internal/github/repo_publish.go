@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // ErrNeedsRepoScope means the token lacks public_repo and cannot open a PR.
@@ -93,9 +94,22 @@ func (g *GistClient) PublishRegistry(ctx context.Context, files []PublishFile) (
 		fmt.Sprintf("/repos/%s/%s/forks", registryOwner, registryRepo), map[string]any{}, nil); err != nil {
 		return "", err
 	}
-	if err := g.decode(ctx, http.MethodGet,
-		fmt.Sprintf("/repos/%s/%s", login, registryRepo), nil, nil); err != nil {
-		return "", fmt.Errorf("fork not ready: %w", err)
+	// GitHub forks asynchronously (the POST returns 202), so the fork repo may
+	// not exist yet. Poll, bounded, before using it.
+	forkPath := fmt.Sprintf("/repos/%s/%s", login, registryRepo)
+	var forkErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		if forkErr = g.decode(ctx, http.MethodGet, forkPath, nil, nil); forkErr == nil {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case <-time.After(time.Duration(attempt+1) * time.Second):
+		}
+	}
+	if forkErr != nil {
+		return "", fmt.Errorf("fork not ready: %w", forkErr)
 	}
 
 	var ref struct {
