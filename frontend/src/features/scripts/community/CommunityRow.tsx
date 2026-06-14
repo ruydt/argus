@@ -42,12 +42,16 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
           {index}
         </span>
         <div className="min-w-0 flex-1">
-          <span className="truncate font-mono text-sm text-[#e5e5e5]">{filenameOf(script)}</span>
+          <div className="flex items-baseline gap-2">
+            <span className="truncate font-mono text-sm font-semibold text-[#e5e5e5]">
+              {filenameOf(script)}
+            </span>
+            <span className="truncate font-mono text-[0.8rem] text-[#666]">
+              {script.author}/{script.id}
+            </span>
+          </div>
         </div>
         <div className="hidden shrink-0 items-center gap-1 md:flex">
-          <Badge variant="outline" className="border-amber-600/40 text-amber-500">
-            by {script.author}
-          </Badge>
           {script.event ? <Badge variant="outline">{script.event}</Badge> : null}
           {!script.runtime_available ? (
             <Badge variant="outline" className="border-amber-600/40 text-amber-500">

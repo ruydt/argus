@@ -36,7 +36,7 @@ describe('CommunityTab', () => {
     )
     render(<CommunityTab query="" />)
     await waitFor(() => expect(screen.getByText('s0.js')).toBeInTheDocument())
-    expect(screen.getAllByText('by alice').length).toBeGreaterThan(0)
+    expect(screen.getByText('alice/s0')).toBeInTheDocument()
     expect(screen.getAllByText('PreToolUse').length).toBeGreaterThan(0)
     expect(screen.queryByText('Script 0')).not.toBeInTheDocument()
     expect(screen.queryByText('a purpose line')).not.toBeInTheDocument()
