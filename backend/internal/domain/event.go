@@ -238,6 +238,14 @@ func BuildUsageBreakdown(byModel map[string]*ModelUsageBreakdown) UsageBreakdown
 	return breakdown
 }
 
+// CompactResult reports the outcome of a database compaction (gzip-backfill of
+// legacy raw_payload rows + VACUUM).
+type CompactResult struct {
+	RowsCompressed int   `json:"rows_compressed"`
+	BeforeBytes    int64 `json:"before_bytes"`
+	AfterBytes     int64 `json:"after_bytes"`
+}
+
 type DashboardSessionUsage struct {
 	SessionID  string                `json:"session_id"`
 	Agent      string                `json:"agent"`

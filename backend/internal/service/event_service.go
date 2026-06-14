@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"log/slog"
 	"os"
@@ -175,6 +176,17 @@ func (s *EventService) ListEventsBySessionsTimeRange(since, until, search string
 
 func (s *EventService) GetRawPayload(dedupKey string) ([]byte, error) {
 	return s.repo.GetRawPayload(dedupKey)
+}
+
+// CompactDatabase compresses legacy raw_payload rows and VACUUMs to reclaim disk.
+func (s *EventService) CompactDatabase(ctx context.Context) (domain.CompactResult, error) {
+	return s.repo.Compact(ctx)
+}
+
+// PruneEvents deletes events older than before and/or beyond the maxEvents
+// newest. Used by the optional retention sweep.
+func (s *EventService) PruneEvents(ctx context.Context, before string, maxEvents int) (int64, error) {
+	return s.repo.PruneEvents(ctx, before, maxEvents)
 }
 
 func (s *EventService) SessionModel(sessionID string) (string, error) {

@@ -32,6 +32,8 @@ type EventRepository interface {
 	ExportEvents(ctx context.Context, w io.Writer) error
 	ExportSnapshot(ctx context.Context, destPath string) error
 	GetRawPayload(dedupKey string) ([]byte, error)
+	Compact(ctx context.Context) (domain.CompactResult, error)
+	PruneEvents(ctx context.Context, before string, maxEvents int) (int64, error)
 	MarkStaleSessions(cutoff time.Time) (int64, error)
 	Ready() bool
 	DBHealth() (domain.DiagnosticsDBHealth, error)

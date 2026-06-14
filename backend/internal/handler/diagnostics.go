@@ -22,3 +22,21 @@ func Diagnostics(svc *service.EventService, ready func() bool, opts service.Diag
 		}
 	})
 }
+
+// CompactDatabase compresses legacy raw_payload rows and VACUUMs to reclaim disk
+// space. Synchronous: a VACUUM rewrites the whole file, so the response only
+// returns once compaction completes.
+func CompactDatabase(svc *service.EventService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		result, err := svc.CompactDatabase(r.Context())
+		if err != nil {
+			log.Printf("[handler] CompactDatabase: %v", err)
+			http.Error(w, "compact failed", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(result); err != nil {
+			log.Printf("[handler] encode compact result: %v", err)
+		}
+	})
+}

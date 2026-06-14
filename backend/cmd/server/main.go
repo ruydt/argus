@@ -83,15 +83,15 @@ func run() int {
 	}
 
 	h := server.NewRouter(svc, repo, repo.Ready, server.Options{
-		Matcher:     matcher,
-		CORSOrigins: cfg.CORSOrigins,
-		DBPath:      cfg.DBPath,
-		IgnoreFile:  domainIgnoreFile(ignoreStatus),
-		Addr:        cfg.Addr,
+		Matcher:            matcher,
+		CORSOrigins:        cfg.CORSOrigins,
+		DBPath:             cfg.DBPath,
+		IgnoreFile:         domainIgnoreFile(ignoreStatus),
+		Addr:               cfg.Addr,
 		AllowRemote:        cfg.AllowRemote,
 		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
 		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
-		ArgusDir:          filepath.Join(home, ".argus"),
+		ArgusDir:           filepath.Join(home, ".argus"),
 	})
 
 	slog.Info("argus", "version", version.Version, "commit", version.Commit)
@@ -139,6 +139,40 @@ func run() int {
 			}
 		}
 	}()
+
+	// Optional retention sweep: prune old events when ARGUS_RETENTION_DAYS or
+	// ARGUS_MAX_EVENTS is set. Disabled by default — nothing is ever deleted
+	// unless the operator opts in.
+	if cfg.RetentionDays > 0 || cfg.MaxEvents > 0 {
+		slog.Info("event retention enabled", "days", cfg.RetentionDays, "max_events", cfg.MaxEvents)
+		go func() {
+			prune := func() {
+				before := ""
+				if cfg.RetentionDays > 0 {
+					before = time.Now().AddDate(0, 0, -cfg.RetentionDays).UTC().Format(time.RFC3339)
+				}
+				n, err := svc.PruneEvents(ctx, before, cfg.MaxEvents)
+				if err != nil {
+					slog.Warn("event retention prune", "err", err)
+					return
+				}
+				if n > 0 {
+					slog.Info("pruned old events", "deleted", n)
+				}
+			}
+			prune()
+			t := time.NewTicker(6 * time.Hour)
+			defer t.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-t.C:
+					prune()
+				}
+			}
+		}()
+	}
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		if isAddrInUse(err) {

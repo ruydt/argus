@@ -99,6 +99,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 		ArgusDir: opts.ArgusDir,
 	}))
 	mux.Handle("POST /api/diagnostics/reveal", handler.Reveal())
+	mux.Handle("POST /api/diagnostics/compact", handler.CompactDatabase(svc))
 	mux.Handle("GET /api/projects", handler.Projects(svc))
 	mux.Handle("DELETE /api/projects", handler.Projects(svc))
 	mux.Handle("GET /api/sessions", handler.Sessions(svc))

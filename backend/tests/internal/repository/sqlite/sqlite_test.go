@@ -1456,6 +1456,98 @@ func TestRawPayload_storedCompressed(t *testing.T) {
 	}
 }
 
+// TestCompact_compressesLegacyRowsAndIsIdempotent inserts an uncompressed
+// (legacy) raw_payload row, compacts, and verifies it is now gzipped while still
+// reading back the original; a second Compact finds nothing to do.
+func TestCompact_compressesLegacyRowsAndIsIdempotent(t *testing.T) {
+	db := newTestDB(t)
+	legacy := `{"a":"` + strings.Repeat("x", 400) + `"}`
+	if _, err := db.RawDB().Exec(
+		`INSERT INTO hook_events (created_at, agent, session_id, hook_event_name, raw_payload, dedup_key)
+		 VALUES (?,?,?,?,?,?)`,
+		"2026-01-01T00:00:00Z", "claudecode", "s1", "PreToolUse", legacy, "k1",
+	); err != nil {
+		t.Fatalf("insert legacy: %v", err)
+	}
+
+	res, err := db.Compact(context.Background())
+	if err != nil {
+		t.Fatalf("Compact: %v", err)
+	}
+	if res.RowsCompressed != 1 {
+		t.Errorf("RowsCompressed = %d, want 1", res.RowsCompressed)
+	}
+
+	got, err := db.GetRawPayload("k1")
+	if err != nil || string(got) != legacy {
+		t.Fatalf("GetRawPayload after compact: got %q err %v", got, err)
+	}
+
+	var isGzip int
+	if err := db.RawDB().QueryRow(
+		`SELECT hex(substr(raw_payload,1,2))='1F8B' FROM hook_events WHERE dedup_key='k1'`,
+	).Scan(&isGzip); err != nil {
+		t.Fatalf("gzip check: %v", err)
+	}
+	if isGzip != 1 {
+		t.Error("row not gzip-compressed after Compact")
+	}
+
+	res2, err := db.Compact(context.Background())
+	if err != nil {
+		t.Fatalf("Compact 2: %v", err)
+	}
+	if res2.RowsCompressed != 0 {
+		t.Errorf("second Compact RowsCompressed = %d, want 0 (idempotent)", res2.RowsCompressed)
+	}
+}
+
+// TestPruneEvents covers both retention bounds: age cutoff and max-events cap.
+func TestPruneEvents(t *testing.T) {
+	db := newTestDB(t)
+	add := func(id, ts string) {
+		e := domain.NormalizedEvent{
+			Time: ts, Agent: "codex", Session: "s", HookEventName: "PreToolUse",
+			TurnID: id, ToolUseID: id, RawPayload: []byte(`{}`),
+		}
+		if err := db.Add(e); err != nil {
+			t.Fatalf("Add %s: %v", id, err)
+		}
+	}
+	add("a", "2026-01-01T00:00:00Z")
+	add("b", "2026-02-01T00:00:00Z")
+	add("c", "2026-03-01T00:00:00Z")
+
+	// Age cutoff: delete events before 2026-02-15 (removes a and b).
+	deleted, err := db.PruneEvents(context.Background(), "2026-02-15T00:00:00Z", 0)
+	if err != nil {
+		t.Fatalf("PruneEvents age: %v", err)
+	}
+	if deleted != 2 {
+		t.Errorf("age prune deleted %d, want 2", deleted)
+	}
+
+	// Refill to 4 rows, then cap to 2 newest.
+	add("d", "2026-04-01T00:00:00Z")
+	add("e", "2026-05-01T00:00:00Z")
+	add("f", "2026-06-01T00:00:00Z")
+	deleted, err = db.PruneEvents(context.Background(), "", 2)
+	if err != nil {
+		t.Fatalf("PruneEvents max: %v", err)
+	}
+	// Had c,d,e,f (4 rows); cap to 2 newest -> delete 2.
+	if deleted != 2 {
+		t.Errorf("max prune deleted %d, want 2", deleted)
+	}
+	events, err := db.List(10)
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(events) != 2 {
+		t.Errorf("remaining events = %d, want 2", len(events))
+	}
+}
+
 func TestGetRawPayload_unknownKeyReturnsNil(t *testing.T) {
 	db := newTestDB(t)
 	got, err := db.GetRawPayload("nonexistentkey")

@@ -13,6 +13,31 @@ import (
 	"argus/internal/service"
 )
 
+func TestCompactDatabaseHandler(t *testing.T) {
+	repo := newTestRepo(t)
+	svc := service.New(repo)
+	h := handler.CompactDatabase(svc)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/compact", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var resp struct {
+		RowsCompressed int   `json:"rows_compressed"`
+		BeforeBytes    int64 `json:"before_bytes"`
+		AfterBytes     int64 `json:"after_bytes"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
+		t.Fatalf("decode compact result: %v", err)
+	}
+	if resp.BeforeBytes <= 0 || resp.AfterBytes <= 0 {
+		t.Errorf("expected non-zero byte sizes, got %+v", resp)
+	}
+}
+
 func TestDiagnosticsHandlerReturnsGroupedShape(t *testing.T) {
 	repo := newTestRepo(t)
 	svc := service.New(repo)

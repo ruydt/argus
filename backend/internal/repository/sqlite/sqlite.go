@@ -1223,6 +1223,119 @@ func (d *DB) GetRawPayload(dedupKey string) ([]byte, error) {
 	return gunzipPayload(raw)
 }
 
+// fileSizeBytes returns the on-disk size of the main database file derived from
+// the page count and size (works for both file and :memory: databases).
+func (d *DB) fileSizeBytes() (int64, error) {
+	var pageCount, pageSize int64
+	if err := d.db.QueryRow(`PRAGMA page_count`).Scan(&pageCount); err != nil {
+		return 0, err
+	}
+	if err := d.db.QueryRow(`PRAGMA page_size`).Scan(&pageSize); err != nil {
+		return 0, err
+	}
+	return pageCount * pageSize, nil
+}
+
+// Compact gzip-compresses any raw_payload rows still stored uncompressed (rows
+// written before compression existed) in batches, then VACUUMs to release the
+// freed pages back to the filesystem. Lossless: only the storage encoding of
+// raw_payload changes. Safe to run repeatedly — already-compressed rows are
+// skipped via the gzip-magic filter.
+func (d *DB) Compact(ctx context.Context) (domain.CompactResult, error) {
+	var res domain.CompactResult
+	before, err := d.fileSizeBytes()
+	if err != nil {
+		return res, err
+	}
+	res.BeforeBytes = before
+
+	const batchSize = 500
+	for {
+		var ids []int64
+		var raws [][]byte
+		rows, err := d.db.QueryContext(ctx, `
+			SELECT id, raw_payload FROM hook_events
+			WHERE LENGTH(raw_payload) > 0 AND hex(substr(raw_payload, 1, 2)) != '1F8B'
+			LIMIT ?`, batchSize)
+		if err != nil {
+			return res, err
+		}
+		for rows.Next() {
+			var id int64
+			var raw []byte
+			if err := rows.Scan(&id, &raw); err != nil {
+				_ = rows.Close()
+				return res, err
+			}
+			ids = append(ids, id)
+			raws = append(raws, raw)
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return res, err
+		}
+		_ = rows.Close()
+		if len(ids) == 0 {
+			break
+		}
+
+		tx, err := d.db.BeginTx(ctx, nil)
+		if err != nil {
+			return res, err
+		}
+		for i, id := range ids {
+			if _, err := tx.ExecContext(ctx, `UPDATE hook_events SET raw_payload = ? WHERE id = ?`, gzipPayload(raws[i]), id); err != nil {
+				_ = tx.Rollback()
+				return res, err
+			}
+		}
+		if err := tx.Commit(); err != nil {
+			return res, err
+		}
+		res.RowsCompressed += len(ids)
+	}
+
+	// VACUUM rewrites the file, releasing freelist pages. Cannot run in a tx.
+	if _, err := d.db.ExecContext(ctx, `VACUUM`); err != nil {
+		return res, err
+	}
+
+	after, err := d.fileSizeBytes()
+	if err != nil {
+		return res, err
+	}
+	res.AfterBytes = after
+	return res, nil
+}
+
+// PruneEvents deletes events older than the before cutoff (RFC3339 UTC, matching
+// created_at's stored form) and/or trims the table to the maxEvents newest rows.
+// Either bound is skipped when empty/zero. Returns the number of rows deleted.
+// Sessions are left intact; only the high-volume hook_events table is pruned.
+func (d *DB) PruneEvents(ctx context.Context, before string, maxEvents int) (int64, error) {
+	var total int64
+	if before != "" {
+		res, err := d.db.ExecContext(ctx, `DELETE FROM hook_events WHERE created_at < ?`, before)
+		if err != nil {
+			return total, err
+		}
+		n, _ := res.RowsAffected()
+		total += n
+	}
+	if maxEvents > 0 {
+		res, err := d.db.ExecContext(ctx, `
+			DELETE FROM hook_events WHERE id < (
+				SELECT MIN(id) FROM (SELECT id FROM hook_events ORDER BY id DESC LIMIT ?)
+			)`, maxEvents)
+		if err != nil {
+			return total, err
+		}
+		n, _ := res.RowsAffected()
+		total += n
+	}
+	return total, nil
+}
+
 // gzipPayload compresses a raw hook payload for storage. raw_payload is a
 // near-verbatim duplicate of the normalized columns and is read only on demand
 // by the "view raw" endpoint, so gzip (~85% smaller on JSON) costs nothing on

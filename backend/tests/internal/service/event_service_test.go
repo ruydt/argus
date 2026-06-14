@@ -152,6 +152,12 @@ func (m *mockRepo) ListBySessionsTimeRange(_, _, _ string, _ int64, _ int) ([]do
 
 func (m *mockRepo) MarkStaleSessions(_ time.Time) (int64, error) { return 0, nil }
 
+func (m *mockRepo) Compact(_ context.Context) (domain.CompactResult, error) {
+	return domain.CompactResult{}, nil
+}
+
+func (m *mockRepo) PruneEvents(_ context.Context, _ string, _ int) (int64, error) { return 0, nil }
+
 func (m *mockRepo) Ready() bool { return true }
 
 func (m *mockRepo) DBHealth() (domain.DiagnosticsDBHealth, error) {

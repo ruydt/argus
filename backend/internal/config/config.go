@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -13,6 +14,12 @@ type Config struct {
 	IgnorePath  string
 	CORSOrigins []string
 	AllowRemote bool
+
+	// RetentionDays prunes hook events older than this many days. 0 = disabled
+	// (default) — no events are ever deleted automatically.
+	RetentionDays int
+	// MaxEvents caps the hook_events table to this many newest rows. 0 = disabled.
+	MaxEvents int
 }
 
 func Load() Config {
@@ -22,12 +29,28 @@ func Load() Config {
 		origins = append(origins, extra...)
 	}
 	return Config{
-		Addr:        addr,
-		DBPath:      envOr("DB_PATH", defaultDBPath()),
-		IgnorePath:  envOr("ARGUS_IGNORE", defaultIgnorePath()),
-		CORSOrigins: origins,
-		AllowRemote: os.Getenv("ARGUS_ALLOW_REMOTE") == "1",
+		Addr:          addr,
+		DBPath:        envOr("DB_PATH", defaultDBPath()),
+		IgnorePath:    envOr("ARGUS_IGNORE", defaultIgnorePath()),
+		CORSOrigins:   origins,
+		AllowRemote:   os.Getenv("ARGUS_ALLOW_REMOTE") == "1",
+		RetentionDays: envInt("ARGUS_RETENTION_DAYS", 0),
+		MaxEvents:     envInt("ARGUS_MAX_EVENTS", 0),
 	}
+}
+
+// envInt reads a non-negative integer env var, returning fallback when unset,
+// empty, or invalid.
+func envInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return fallback
+	}
+	return n
 }
 
 // defaultCORSOrigins derives the three canonical loopback CORS origins from the configured addr.
