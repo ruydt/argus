@@ -390,7 +390,7 @@ func (d *DB) listWithWhere(where string, args []any, limit, offset int) ([]domai
 	return events, nil
 }
 
-func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, sessionLimit int) ([]domain.NormalizedEvent, int64, bool, error) {
+func (d *DB) ListBySessionsTimeRange(since, until, search string, beforeCursor int64, sessionLimit int) ([]domain.NormalizedEvent, int64, bool, error) {
 	var sb strings.Builder
 	var sessionArgs []any
 
@@ -402,6 +402,13 @@ func (d *DB) ListBySessionsTimeRange(since, until string, beforeCursor int64, se
 	if until != "" {
 		sb.WriteString(" AND created_at < ?")
 		sessionArgs = append(sessionArgs, normalizeToUTC(until))
+	}
+	// Match a session if its id or project path contains the query. LIKE is
+	// ASCII case-insensitive in SQLite by default, which suits hex ids + paths.
+	if search != "" {
+		sb.WriteString(" AND (session_id LIKE ? OR cwd LIKE ?)")
+		like := "%" + search + "%"
+		sessionArgs = append(sessionArgs, like, like)
 	}
 	sb.WriteString(" GROUP BY session_id")
 	if beforeCursor > 0 {
@@ -480,7 +487,36 @@ func (d *DB) SessionModel(sessionID string) (string, error) {
 }
 
 func (d *DB) ListProjects() ([]domain.Project, error) {
-	rows, err := d.db.Query(`
+	projects, _, err := d.ListProjectsPage("", 1, 1_000_000)
+	return projects, err
+}
+
+// ListProjectsPage returns one page of projects ordered by last activity, with
+// an optional substring filter on cwd (which also covers the derived project
+// name). total is the full count of matching projects, used by the handler to
+// compute has_more. LIKE is ASCII case-insensitive in SQLite, which suits paths.
+func (d *DB) ListProjectsPage(search string, page, size int) ([]domain.Project, int, error) {
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 {
+		size = 20
+	}
+
+	where := ""
+	var whereArgs []any
+	if s := strings.TrimSpace(search); s != "" {
+		where = "WHERE cwd LIKE ?"
+		whereArgs = append(whereArgs, "%"+s+"%")
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*) FROM (SELECT cwd FROM sessions " + where + " GROUP BY cwd)"
+	if err := d.db.QueryRow(countQuery, whereArgs...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	query := `
 		SELECT
 			COALESCE(cwd, '') AS cwd,
 			COUNT(session_id) AS session_count,
@@ -493,11 +529,15 @@ func (d *DB) ListProjects() ([]domain.Project, error) {
 			) AS total_tokens,
 			GROUP_CONCAT(DISTINCT agent) AS agents,
 			SUM(CASE WHEN (ended_at IS NULL OR ended_at = '') THEN 1 ELSE 0 END) AS live_count
-		FROM sessions
+		FROM sessions ` + where + `
 		GROUP BY cwd
-		ORDER BY last_activity DESC`)
+		ORDER BY last_activity DESC
+		LIMIT ? OFFSET ?`
+	args := append(append([]any{}, whereArgs...), size, (page-1)*size)
+
+	rows, err := d.db.Query(query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -506,84 +546,16 @@ func (d *DB) ListProjects() ([]domain.Project, error) {
 		var p domain.Project
 		var agents string
 		if err := rows.Scan(&p.CWD, &p.SessionCount, &p.LastActivity, &p.TotalTokens, &agents, &p.LiveCount); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		p.Name = projectName(p.CWD)
 		p.Agents = splitAgents(agents)
 		projects = append(projects, p)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return mergeChildProjects(projects), nil
-}
-
-// mergeChildProjects collapses sessions from subdirectory CWDs into their
-// nearest parent project so e.g. /foo/bar doesn't show alongside /foo.
-// Lexicographic order puts every parent path immediately before its children,
-// so one pass with an ancestor stack replaces the quadratic prefix search.
-func mergeChildProjects(projects []domain.Project) []domain.Project {
-	slices.SortStableFunc(projects, func(a, b domain.Project) int {
-		return strings.Compare(a.CWD, b.CWD)
-	})
-
-	merged := make([]domain.Project, 0, len(projects))
-	var stack []int // indexes into merged forming the current ancestor chain
-	for _, p := range projects {
-		for len(stack) > 0 {
-			top := merged[stack[len(stack)-1]].CWD
-			if top != "" && strings.HasPrefix(p.CWD, top+"/") {
-				break
-			}
-			stack = stack[:len(stack)-1]
-		}
-
-		// Deepest eligible ancestor wins. Require ≥4 path components so home
-		// dirs like /Users/foo don't absorb all projects as a side-effect of
-		// prefix matching.
-		parentIdx := -1
-		for i := len(stack) - 1; i >= 0; i-- {
-			if len(strings.Split(merged[stack[i]].CWD, "/")) >= 4 {
-				parentIdx = stack[i]
-				break
-			}
-		}
-
-		if parentIdx >= 0 {
-			par := &merged[parentIdx]
-			par.SessionCount += p.SessionCount
-			par.TotalTokens += p.TotalTokens
-			par.LiveCount += p.LiveCount
-			if p.LastActivity > par.LastActivity {
-				par.LastActivity = p.LastActivity
-			}
-			seen := make(map[string]struct{}, len(par.Agents))
-			for _, a := range par.Agents {
-				seen[a] = struct{}{}
-			}
-			for _, a := range p.Agents {
-				if _, ok := seen[a]; !ok {
-					par.Agents = append(par.Agents, a)
-				}
-			}
-			continue
-		}
-
-		merged = append(merged, p)
-		stack = append(stack, len(merged)-1)
-	}
-
-	slices.SortStableFunc(merged, func(a, b domain.Project) int {
-		switch {
-		case a.LastActivity > b.LastActivity:
-			return -1
-		case a.LastActivity < b.LastActivity:
-			return 1
-		default:
-			return 0
-		}
-	})
-	return merged
+	return projects, total, nil
 }
 
 func (d *DB) ListSessions() ([]domain.Session, error) {

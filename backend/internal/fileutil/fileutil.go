@@ -203,11 +203,17 @@ func FindStartLine(filePath, oldStr string) int {
 // FindStartLineInLines is FindStartLine over already-read file lines, so a
 // caller that needs both the start line and the context only reads once.
 func FindStartLineInLines(fileLines []string, oldStr string) int {
-	if len(fileLines) == 0 || oldStr == "" {
+	if oldStr == "" {
 		return 0
 	}
-	searchLines := strings.Split(strings.TrimRight(oldStr, "\n"), "\n")
-	if len(searchLines) == 0 {
+	return FindStartLineInSearchLines(fileLines, strings.Split(strings.TrimRight(oldStr, "\n"), "\n"))
+}
+
+// FindStartLineInSearchLines is FindStartLineInLines over already-split search
+// lines, so a caller that also needs the search line count (e.g. for the context
+// window) only splits the search string once.
+func FindStartLineInSearchLines(fileLines, searchLines []string) int {
+	if len(fileLines) == 0 || len(searchLines) == 0 {
 		return 0
 	}
 	for i := 0; i <= len(fileLines)-len(searchLines); i++ {

@@ -4,24 +4,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"os"
-	"slices"
 	"strings"
 
 	"argus/internal/domain"
 	"argus/internal/fileutil"
 )
 
-type DiffInput struct {
-	OldString string
-	NewString string
-}
-
 func MatchesTranscript(transcriptPath string) bool {
 	return strings.Contains(transcriptPath, "/.claude/")
-}
-
-func Diff(input DiffInput) (oldStr, newStr string) {
-	return input.OldString, input.NewString
 }
 
 // ModelFromTranscript scans a Claude Code session JSONL for the first
@@ -88,26 +78,7 @@ func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
 			usage.Turns++
 		}
 	}
-	breakdown := domain.UsageBreakdown{
-		Models: make([]domain.ModelUsageBreakdown, 0, len(byModel)),
-	}
-	for _, usage := range byModel {
-		breakdown.Total.InputTokens += usage.InputTokens
-		breakdown.Total.OutputTokens += usage.OutputTokens
-		breakdown.Total.CacheCreationTokens += usage.CacheCreationTokens
-		breakdown.Total.CacheReadTokens += usage.CacheReadTokens
-		breakdown.Total.Turns += usage.Turns
-		breakdown.Models = append(breakdown.Models, *usage)
-	}
-	slices.SortFunc(breakdown.Models, func(a, b domain.ModelUsageBreakdown) int {
-		at := a.InputTokens + a.OutputTokens
-		bt := b.InputTokens + b.OutputTokens
-		if at != bt {
-			return bt - at
-		}
-		return strings.Compare(a.Model, b.Model)
-	})
-	return breakdown
+	return domain.BuildUsageBreakdown(byModel)
 }
 
 const claudecodeNormalizerVersion = "claudecode/1"
@@ -143,54 +114,54 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 	newStr := fileutil.FirstNonEmpty(p.ToolInput.NewString, p.ToolInput.NewStr, p.ToolInput.Content)
 
 	return domain.NormalizedEvent{
-		Agent:               AgentName(),
-		Session:             p.SessionID,
-		HookEventName:       p.HookEventName,
-		TurnID:              p.TurnID,
-		ToolUseID:           p.ToolUseID,
-		Tool:                p.ToolName,
-		Model:               p.Model,
-		Source:              p.Source,
-		CWD:                 p.CWD,
-		TranscriptPath:      p.TranscriptPath,
-		Prompt:              p.Prompt,
+		Agent:                     AgentName(),
+		Session:                   p.SessionID,
+		HookEventName:             p.HookEventName,
+		TurnID:                    p.TurnID,
+		ToolUseID:                 p.ToolUseID,
+		Tool:                      p.ToolName,
+		Model:                     p.Model,
+		Source:                    p.Source,
+		CWD:                       p.CWD,
+		TranscriptPath:            p.TranscriptPath,
+		Prompt:                    p.Prompt,
 		Description:               p.ToolInput.Description,
 		ToolInputQuestionsJSON:    marshalRawJSON(p.ToolInput.Questions),
 		PermissionSuggestionsJSON: marshalRawJSON(p.PermissionSuggestions),
-		Action:              action,
-		Path:                displayPath,
-		Command:             cmd,
-		OldString:           oldStr,
-		NewString:           newStr,
-		RawPayload:          raw,
-		PermissionMode:      p.PermissionMode,
-		Response:            fileutil.FirstNonEmpty(p.Response, p.LastAssistantMessage),
-		ErrorMessage:        fileutil.FirstNonEmpty(p.ErrorMessage, p.Error),
-		ErrorType:           p.ErrorType,
-		SubagentID:          p.AgentID,
-		SubagentType:        p.AgentType,
-		TaskID:              p.TaskID,
-		TaskTitle:           p.TaskTitle,
-		TaskDescription:     p.TaskDescription,
-		NotificationType:    p.NotificationType,
-		NotificationTitle:   p.Title,
-		NotificationMessage: p.Message,
-		ChangeType:          p.ChangeType,
-		OldCWD:              p.OldCWD,
-		NewCWD:              p.NewCWD,
-		ToolCallsJSON:       fileutil.MarshalToolCalls(p.ToolCalls),
-		ToolResultStdout:    fileutil.ToolResultStdout(p.ToolResponse),
-		ToolResultStderr:    fileutil.ToolResultStderr(p.ToolResponse),
-		DurationMS:          p.DurationMS,
-		Trigger:             p.Trigger,
-		ExpansionType:       p.ExpansionType,
-		CommandName:         p.CommandName,
-		MemoryType:          p.MemoryType,
-		LoadReason:          p.LoadReason,
-		Branch:              p.Branch,
-		ServerName:          p.ServerName,
-		NormalizerVersion:   claudecodeNormalizerVersion,
-		NormalizationStatus: "ok",
+		Action:                    action,
+		Path:                      displayPath,
+		Command:                   cmd,
+		OldString:                 oldStr,
+		NewString:                 newStr,
+		RawPayload:                raw,
+		PermissionMode:            p.PermissionMode,
+		Response:                  fileutil.FirstNonEmpty(p.Response, p.LastAssistantMessage),
+		ErrorMessage:              fileutil.FirstNonEmpty(p.ErrorMessage, p.Error),
+		ErrorType:                 p.ErrorType,
+		SubagentID:                p.AgentID,
+		SubagentType:              p.AgentType,
+		TaskID:                    p.TaskID,
+		TaskTitle:                 p.TaskTitle,
+		TaskDescription:           p.TaskDescription,
+		NotificationType:          p.NotificationType,
+		NotificationTitle:         p.Title,
+		NotificationMessage:       p.Message,
+		ChangeType:                p.ChangeType,
+		OldCWD:                    p.OldCWD,
+		NewCWD:                    p.NewCWD,
+		ToolCallsJSON:             fileutil.MarshalToolCalls(p.ToolCalls),
+		ToolResultStdout:          fileutil.ToolResultStdout(p.ToolResponse),
+		ToolResultStderr:          fileutil.ToolResultStderr(p.ToolResponse),
+		DurationMS:                p.DurationMS,
+		Trigger:                   p.Trigger,
+		ExpansionType:             p.ExpansionType,
+		CommandName:               p.CommandName,
+		MemoryType:                p.MemoryType,
+		LoadReason:                p.LoadReason,
+		Branch:                    p.Branch,
+		ServerName:                p.ServerName,
+		NormalizerVersion:         claudecodeNormalizerVersion,
+		NormalizationStatus:       "ok",
 	}, nil
 }
 

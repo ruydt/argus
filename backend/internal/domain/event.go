@@ -3,6 +3,8 @@ package domain
 import (
 	"crypto/sha256"
 	"fmt"
+	"slices"
+	"strings"
 )
 
 // NormalizedEvent is the canonical representation of a hook event from any agent.
@@ -36,25 +38,25 @@ type NormalizedEvent struct {
 	PermissionMode            string `json:"permission_mode,omitempty"`
 	ToolInputQuestionsJSON    string `json:"tool_input_questions_json,omitempty"`
 	PermissionSuggestionsJSON string `json:"permission_suggestions_json,omitempty"`
-	Response            string `json:"response,omitempty"`
-	ErrorMessage        string `json:"error_message,omitempty"`
-	ErrorType           string `json:"error_type,omitempty"`
-	SubagentID          string `json:"subagent_id,omitempty"`
-	SubagentType        string `json:"subagent_type,omitempty"`
-	TaskID              string `json:"task_id,omitempty"`
-	TaskTitle           string `json:"task_title,omitempty"`
-	TaskDescription     string `json:"task_description,omitempty"`
-	NotificationType    string `json:"notification_type,omitempty"`
-	NotificationTitle   string `json:"notification_title,omitempty"`
-	NotificationMessage string `json:"notification_message,omitempty"`
-	ChangeType          string `json:"change_type,omitempty"`
-	OldCWD              string `json:"old_cwd,omitempty"`
-	NewCWD              string `json:"new_cwd,omitempty"`
-	ToolCallsJSON       string `json:"tool_calls_json,omitempty"`
-	ToolResultStdout    string `json:"tool_result_stdout,omitempty"`
-	ToolResultStderr    string `json:"tool_result_stderr,omitempty"`
-	DurationMS          int    `json:"duration_ms,omitempty"`
-	Trigger             string `json:"trigger,omitempty"`
+	Response                  string `json:"response,omitempty"`
+	ErrorMessage              string `json:"error_message,omitempty"`
+	ErrorType                 string `json:"error_type,omitempty"`
+	SubagentID                string `json:"subagent_id,omitempty"`
+	SubagentType              string `json:"subagent_type,omitempty"`
+	TaskID                    string `json:"task_id,omitempty"`
+	TaskTitle                 string `json:"task_title,omitempty"`
+	TaskDescription           string `json:"task_description,omitempty"`
+	NotificationType          string `json:"notification_type,omitempty"`
+	NotificationTitle         string `json:"notification_title,omitempty"`
+	NotificationMessage       string `json:"notification_message,omitempty"`
+	ChangeType                string `json:"change_type,omitempty"`
+	OldCWD                    string `json:"old_cwd,omitempty"`
+	NewCWD                    string `json:"new_cwd,omitempty"`
+	ToolCallsJSON             string `json:"tool_calls_json,omitempty"`
+	ToolResultStdout          string `json:"tool_result_stdout,omitempty"`
+	ToolResultStderr          string `json:"tool_result_stderr,omitempty"`
+	DurationMS                int    `json:"duration_ms,omitempty"`
+	Trigger                   string `json:"trigger,omitempty"`
 
 	// New event type fields
 	ExpansionType string `json:"expansion_type,omitempty"`
@@ -207,6 +209,33 @@ type ModelUsageBreakdown struct {
 type UsageBreakdown struct {
 	Total  SessionUsage          `json:"total"`
 	Models []ModelUsageBreakdown `json:"models"`
+}
+
+// BuildUsageBreakdown finalizes a per-model accumulation map into a
+// UsageBreakdown: it sums every model into Total and returns Models sorted by
+// (input+output) tokens descending, then model name. Shared by every agent's
+// ComputeUsageBreakdown so the finalization logic lives in one place.
+func BuildUsageBreakdown(byModel map[string]*ModelUsageBreakdown) UsageBreakdown {
+	breakdown := UsageBreakdown{
+		Models: make([]ModelUsageBreakdown, 0, len(byModel)),
+	}
+	for _, usage := range byModel {
+		breakdown.Total.InputTokens += usage.InputTokens
+		breakdown.Total.OutputTokens += usage.OutputTokens
+		breakdown.Total.CacheCreationTokens += usage.CacheCreationTokens
+		breakdown.Total.CacheReadTokens += usage.CacheReadTokens
+		breakdown.Total.Turns += usage.Turns
+		breakdown.Models = append(breakdown.Models, *usage)
+	}
+	slices.SortFunc(breakdown.Models, func(a, b ModelUsageBreakdown) int {
+		at := a.InputTokens + a.OutputTokens
+		bt := b.InputTokens + b.OutputTokens
+		if at != bt {
+			return bt - at
+		}
+		return strings.Compare(a.Model, b.Model)
+	})
+	return breakdown
 }
 
 type DashboardSessionUsage struct {

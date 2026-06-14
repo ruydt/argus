@@ -57,6 +57,74 @@ func TestAdd_and_List(t *testing.T) {
 	}
 }
 
+func TestListBySessionsTimeRangeSearch(t *testing.T) {
+	db := newTestDB(t)
+
+	// Two sessions, distinct ids + project paths, both timestamped in the past.
+	old := time.Now().Add(-48 * time.Hour).UTC().Format(time.RFC3339)
+	add := func(session, cwd string) {
+		if err := db.Add(domain.NormalizedEvent{
+			Time: old, Agent: "claudecode", Session: session,
+			HookEventName: "SessionStart", CWD: cwd, RawPayload: []byte(`{}`),
+		}); err != nil {
+			t.Fatalf("Add: %v", err)
+		}
+	}
+	add("799d393e-e548-41f3-98ad-f08bb6ce4738", "/Users/duytran/Desktop/Nghich")
+	add("aaaa1111-bbbb-2222-cccc-333344445555", "/Users/duytran/GitHub/argus")
+
+	// The handler clears the time window when searching, so the repo is called
+	// with empty since/until. Verify the old sessions still surface.
+	future := time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339)
+
+	sessionsIn := func(events []domain.NormalizedEvent) map[string]bool {
+		m := map[string]bool{}
+		for _, e := range events {
+			m[e.Session] = true
+		}
+		return m
+	}
+
+	// A future window with no search excludes the old sessions — this is the
+	// case that motivated clearing the window on search.
+	got, _, _, err := db.ListBySessionsTimeRange(future, "", "", 0, 10)
+	if err != nil {
+		t.Fatalf("future window: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("future window returned %d events, want 0", len(got))
+	}
+
+	// Search by session-id substring (time window cleared, as the handler does).
+	got, _, _, err = db.ListBySessionsTimeRange("", "", "799d393e", 0, 10)
+	if err != nil {
+		t.Fatalf("search by id: %v", err)
+	}
+	m := sessionsIn(got)
+	if !m["799d393e-e548-41f3-98ad-f08bb6ce4738"] || len(m) != 1 {
+		t.Fatalf("id search sessions = %v, want only 799d393e session", m)
+	}
+
+	// Search by project path substring.
+	got, _, _, err = db.ListBySessionsTimeRange("", "", "GitHub/argus", 0, 10)
+	if err != nil {
+		t.Fatalf("search by cwd: %v", err)
+	}
+	m = sessionsIn(got)
+	if !m["aaaa1111-bbbb-2222-cccc-333344445555"] || len(m) != 1 {
+		t.Fatalf("cwd search sessions = %v, want only argus session", m)
+	}
+
+	// No match → empty.
+	got, _, _, err = db.ListBySessionsTimeRange("", "", "no-such-thing", 0, 10)
+	if err != nil {
+		t.Fatalf("search no-match: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("no-match search returned %d events, want 0", len(got))
+	}
+}
+
 func TestAddDoesNotWaitForUnrelatedOpenReadRows(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "argus-test.db")
 	db, err := sqlite.New(dbPath)
@@ -491,13 +559,16 @@ func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
 		t.Fatalf("UpsertSession other: %v", err)
 	}
 
-	projects, err := db.ListProjects()
+	projects, total, err := db.ListProjectsPage("", 1, 50)
 	if err != nil {
-		t.Fatalf("ListProjects: %v", err)
+		t.Fatalf("ListProjectsPage: %v", err)
 	}
 
 	if len(projects) != 2 {
 		t.Fatalf("projects len = %d, want 2", len(projects))
+	}
+	if total != 2 {
+		t.Fatalf("total = %d, want 2", total)
 	}
 	if projects[0].CWD != "/work/argus" {
 		t.Fatalf("first cwd = %q, want /work/argus", projects[0].CWD)

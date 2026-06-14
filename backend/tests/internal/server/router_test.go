@@ -24,7 +24,9 @@ func (noopRepo) ListBySession(string, int) ([]domain.NormalizedEvent, error) { r
 
 func (noopRepo) SessionModel(string) (string, error) { return "", nil }
 
-func (noopRepo) ListProjects() ([]domain.Project, error) { return nil, nil }
+func (noopRepo) ListProjectsPage(string, int, int) ([]domain.Project, int, error) {
+	return nil, 0, nil
+}
 
 func (noopRepo) ListSessions() ([]domain.Session, error) { return nil, nil }
 
@@ -70,7 +72,7 @@ func (noopRepo) ListByTimeRange(_, _, _ string, _ int64, _ int) ([]domain.Normal
 	return nil, 0, false, nil
 }
 
-func (noopRepo) ListBySessionsTimeRange(_, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
+func (noopRepo) ListBySessionsTimeRange(_, _, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
 	return nil, 0, false, nil
 }
 

@@ -173,8 +173,12 @@ func enrichContext(e domain.NormalizedEvent) domain.NormalizedEvent {
 		return e
 	}
 
+	// Split the search string into lines once and reuse for both the start-line
+	// search and the context line count.
+	searchLines := strings.Split(strings.TrimRight(searchStr, "\n"), "\n")
+
 	if needFind {
-		if found := fileutil.FindStartLineInLines(lines, searchStr); found > 0 {
+		if found := fileutil.FindStartLineInSearchLines(lines, searchLines); found > 0 {
 			startLine = found
 		}
 	}
@@ -182,8 +186,7 @@ func enrichContext(e domain.NormalizedEvent) domain.NormalizedEvent {
 	if startLine > 0 {
 		e.StartLine = startLine
 		if needCtx {
-			lineCount := len(strings.Split(strings.TrimRight(searchStr, "\n"), "\n"))
-			e.CtxBefore, e.CtxAfter = fileutil.ComputeContextFromLines(lines, startLine, lineCount, 3)
+			e.CtxBefore, e.CtxAfter = fileutil.ComputeContextFromLines(lines, startLine, len(searchLines), 3)
 		}
 	}
 

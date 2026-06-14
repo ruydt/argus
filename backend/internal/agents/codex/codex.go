@@ -6,25 +6,11 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"slices"
 	"strings"
 
 	"argus/internal/domain"
 	"argus/internal/fileutil"
 )
-
-type DiffInput struct {
-	OldStr string
-	NewStr string
-}
-
-func MatchesTranscript(transcriptPath string) bool {
-	return !strings.Contains(transcriptPath, "/.claude/")
-}
-
-func Diff(input DiffInput) (oldStr, newStr string) {
-	return input.OldStr, input.NewStr
-}
 
 var hunkHeader = regexp.MustCompile(`^@@(?:\s*-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?)?`)
 var lineNumPrefix = regexp.MustCompile(`^\s*\d+\s+`)
@@ -202,7 +188,7 @@ func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
 		usage.Turns++
 		prevTotal = entry.Payload.Info.Total
 	}
-	return codexBreakdown(byModel)
+	return domain.BuildUsageBreakdown(byModel)
 }
 
 type usageSnapshot struct {
@@ -223,29 +209,6 @@ func (u usageSnapshot) minus(prev usageSnapshot) usageSnapshot {
 	}
 }
 
-func codexBreakdown(byModel map[string]*domain.ModelUsageBreakdown) domain.UsageBreakdown {
-	breakdown := domain.UsageBreakdown{
-		Models: make([]domain.ModelUsageBreakdown, 0, len(byModel)),
-	}
-	for _, usage := range byModel {
-		breakdown.Total.InputTokens += usage.InputTokens
-		breakdown.Total.OutputTokens += usage.OutputTokens
-		breakdown.Total.CacheReadTokens += usage.CacheReadTokens
-		breakdown.Total.CacheCreationTokens += usage.CacheCreationTokens
-		breakdown.Total.Turns += usage.Turns
-		breakdown.Models = append(breakdown.Models, *usage)
-	}
-	slices.SortFunc(breakdown.Models, func(a, b domain.ModelUsageBreakdown) int {
-		at := a.InputTokens + a.OutputTokens
-		bt := b.InputTokens + b.OutputTokens
-		if at != bt {
-			return bt - at
-		}
-		return strings.Compare(a.Model, b.Model)
-	})
-	return breakdown
-}
-
 const codexNormalizerVersion = "codex/1"
 
 func AgentName() string {
@@ -258,7 +221,7 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		return domain.NormalizedEvent{}, err
 	}
 
-	path := fileutil.ResolvePath(p.CWD, firstNonEmpty(p.ToolInput.FilePath, p.FilePath))
+	path := fileutil.ResolvePath(p.CWD, fileutil.FirstNonEmpty(p.ToolInput.FilePath, p.FilePath))
 	cmd := p.ToolInput.Command
 
 	action := fileutil.HookEventAction(p.HookEventName)
@@ -277,10 +240,8 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 		displayPath = "cmd: " + cmd
 	}
 
-	oldStr, newStr := Diff(DiffInput{
-		OldStr: firstNonEmpty(p.ToolInput.OldStr, p.ToolInput.OldString),
-		NewStr: firstNonEmpty(p.ToolInput.NewStr, p.ToolInput.NewString),
-	})
+	oldStr := fileutil.FirstNonEmpty(p.ToolInput.OldStr, p.ToolInput.OldString)
+	newStr := fileutil.FirstNonEmpty(p.ToolInput.NewStr, p.ToolInput.NewString)
 	var startLine int
 	if isApplyPatchTool {
 		patchPath, hunks := ParseApplyPatch(cmd)
@@ -370,104 +331,50 @@ func Normalize(raw []byte) (domain.NormalizedEvent, error) {
 	}
 
 	return domain.NormalizedEvent{
-		Agent:               AgentName(),
-		Session:             p.SessionID,
-		HookEventName:       p.HookEventName,
-		TurnID:              p.TurnID,
-		ToolUseID:           p.ToolUseID,
-		Tool:                p.ToolName,
-		Model:               p.Model,
-		Source:              p.Source,
-		CWD:                 p.CWD,
-		TranscriptPath:      p.TranscriptPath,
-		Prompt:              p.Prompt,
+		Agent:                     AgentName(),
+		Session:                   p.SessionID,
+		HookEventName:             p.HookEventName,
+		TurnID:                    p.TurnID,
+		ToolUseID:                 p.ToolUseID,
+		Tool:                      p.ToolName,
+		Model:                     p.Model,
+		Source:                    p.Source,
+		CWD:                       p.CWD,
+		TranscriptPath:            p.TranscriptPath,
+		Prompt:                    p.Prompt,
 		Description:               p.ToolInput.Description,
 		ToolInputQuestionsJSON:    marshalRawJSON(p.ToolInput.Questions),
 		PermissionSuggestionsJSON: marshalRawJSON(p.PermissionSuggestions),
-		Action:              action,
-		Path:                displayPath,
-		Command:             cmd,
-		OldString:           oldStr,
-		NewString:           newStr,
-		StartLine:           startLine,
-		RawPayload:          raw,
-		PermissionMode:      p.PermissionMode,
-		Response:            firstNonEmpty(p.Response, p.LastAssistantMessage),
-		ErrorMessage:        firstNonEmpty(p.ErrorMessage, p.Error),
-		ErrorType:           p.ErrorType,
-		SubagentID:          p.AgentID,
-		SubagentType:        p.AgentType,
-		TaskID:              p.TaskID,
-		TaskTitle:           p.TaskTitle,
-		TaskDescription:     p.TaskDescription,
-		NotificationType:    p.NotificationType,
-		NotificationTitle:   p.Title,
-		NotificationMessage: p.Message,
-		ChangeType:          p.ChangeType,
-		OldCWD:              p.OldCWD,
-		NewCWD:              p.NewCWD,
-		ToolCallsJSON:       marshalToolCalls(p.ToolCalls),
-		ToolResultStdout:    toolResultStdout(p.ToolResponse),
-		ToolResultStderr:    toolResultStderr(p.ToolResponse),
-		DurationMS:          p.DurationMS,
-		Trigger:             p.Trigger,
-		NormalizerVersion:   codexNormalizerVersion,
-		NormalizationStatus: "ok",
+		Action:                    action,
+		Path:                      displayPath,
+		Command:                   cmd,
+		OldString:                 oldStr,
+		NewString:                 newStr,
+		StartLine:                 startLine,
+		RawPayload:                raw,
+		PermissionMode:            p.PermissionMode,
+		Response:                  fileutil.FirstNonEmpty(p.Response, p.LastAssistantMessage),
+		ErrorMessage:              fileutil.FirstNonEmpty(p.ErrorMessage, p.Error),
+		ErrorType:                 p.ErrorType,
+		SubagentID:                p.AgentID,
+		SubagentType:              p.AgentType,
+		TaskID:                    p.TaskID,
+		TaskTitle:                 p.TaskTitle,
+		TaskDescription:           p.TaskDescription,
+		NotificationType:          p.NotificationType,
+		NotificationTitle:         p.Title,
+		NotificationMessage:       p.Message,
+		ChangeType:                p.ChangeType,
+		OldCWD:                    p.OldCWD,
+		NewCWD:                    p.NewCWD,
+		ToolCallsJSON:             fileutil.MarshalToolCalls(p.ToolCalls),
+		ToolResultStdout:          fileutil.ToolResultStdout(p.ToolResponse),
+		ToolResultStderr:          fileutil.ToolResultStderr(p.ToolResponse),
+		DurationMS:                p.DurationMS,
+		Trigger:                   p.Trigger,
+		NormalizerVersion:         codexNormalizerVersion,
+		NormalizationStatus:       "ok",
 	}, nil
-}
-
-func toolResultStdout(raw json.RawMessage) string {
-	if len(raw) == 0 {
-		return ""
-	}
-	var obj struct {
-		Stdout string `json:"stdout"`
-	}
-	if json.Unmarshal(raw, &obj) == nil && obj.Stdout != "" {
-		return truncate(obj.Stdout, 4096)
-	}
-	var s string
-	if json.Unmarshal(raw, &s) == nil {
-		return truncate(s, 4096)
-	}
-	return ""
-}
-
-func toolResultStderr(raw json.RawMessage) string {
-	if len(raw) == 0 {
-		return ""
-	}
-	var obj struct {
-		Stderr string `json:"stderr"`
-	}
-	if json.Unmarshal(raw, &obj) == nil {
-		return truncate(obj.Stderr, 1024)
-	}
-	return ""
-}
-
-func truncate(s string, limit int) string {
-	if len(s) <= limit {
-		return s
-	}
-	return s[:limit] + "\n...[truncated]"
-}
-
-func marshalToolCalls(calls []domain.ToolCall) string {
-	if len(calls) == 0 {
-		return ""
-	}
-	b, _ := json.Marshal(calls)
-	return string(b)
-}
-
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
 
 func marshalRawJSON(b json.RawMessage) string {

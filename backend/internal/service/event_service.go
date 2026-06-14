@@ -46,7 +46,7 @@ type DiagnosticsOptions struct {
 	Addr               string
 	AllowRemote        bool
 	CORSOrigins        []string
-	ArgusDir          string
+	ArgusDir           string
 }
 
 const exportSensitivityWarning = "Exports may include prompts, diffs, file paths, tool outputs, raw payloads, and exports; handle exported data as sensitive."
@@ -104,8 +104,10 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		return err
 	}
 	if e.Session != "" {
+		// Compute the terminal timestamp once; it is read up to three times below.
+		endedAt := endedAtForEvent(e)
 		var usage domain.SessionUsage
-		if s.shouldComputeUsage(e) {
+		if s.shouldComputeUsage(e, endedAt) {
 			switch e.Agent {
 			case "claudecode":
 				usage = claudecode.ComputeUsage(e.TranscriptPath)
@@ -122,14 +124,14 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 			e.CWD,
 			e.TranscriptPath,
 			e.Time,
-			endedAtForEvent(e),
+			endedAt,
 			usage,
 		); err != nil {
 			return err
 		}
 		// Ended sessions receive no further events; drop their scan timestamp
 		// so the map size tracks active sessions, not lifetime sessions.
-		if endedAtForEvent(e) != "" {
+		if endedAt != "" {
 			s.usageScannedAt.Delete(e.Session)
 		}
 	}
@@ -140,11 +142,11 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 // shouldComputeUsage reports whether this event warrants a transcript scan.
 // Terminal events always scan (final numbers must be exact); other events
 // scan at most once per usageRescanInterval per session.
-func (s *EventService) shouldComputeUsage(e domain.NormalizedEvent) bool {
+func (s *EventService) shouldComputeUsage(e domain.NormalizedEvent, endedAt string) bool {
 	if e.TranscriptPath == "" {
 		return false
 	}
-	if endedAtForEvent(e) != "" {
+	if endedAt != "" {
 		return true
 	}
 	if v, ok := s.usageScannedAt.Load(e.Session); ok {
@@ -167,8 +169,8 @@ func (s *EventService) ListEventsByTimeRange(since, until, sessionID string, bef
 	return s.repo.ListByTimeRange(since, until, sessionID, beforeID, limit)
 }
 
-func (s *EventService) ListEventsBySessionsTimeRange(since, until string, beforeCursor int64, sessionLimit int) ([]domain.NormalizedEvent, int64, bool, error) {
-	return s.repo.ListBySessionsTimeRange(since, until, beforeCursor, sessionLimit)
+func (s *EventService) ListEventsBySessionsTimeRange(since, until, search string, beforeCursor int64, sessionLimit int) ([]domain.NormalizedEvent, int64, bool, error) {
+	return s.repo.ListBySessionsTimeRange(since, until, search, beforeCursor, sessionLimit)
 }
 
 func (s *EventService) GetRawPayload(dedupKey string) ([]byte, error) {
@@ -376,8 +378,11 @@ func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domai
 	return agents
 }
 
-func (s *EventService) ListProjects() ([]domain.Project, error) {
-	return s.repo.ListProjects()
+// ListProjectsPage returns one page of projects (size at a time) ordered by last
+// activity, with an optional substring filter on cwd. total is the full match
+// count for has_more.
+func (s *EventService) ListProjectsPage(search string, page, size int) ([]domain.Project, int, error) {
+	return s.repo.ListProjectsPage(search, page, size)
 }
 
 // DeleteProject removes all sessions and events recorded under cwd.
@@ -836,7 +841,7 @@ func scanDirMatching(dir string, match func(string) bool) ([]domain.DiagnosticsF
 func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 	fs := domain.DiagnosticsFileSystem{
 		ArgusDir: argusDir,
-		Binary:    statEntry("argus", filepath.Join(argusDir, "bin", "argus")),
+		Binary:   statEntry("argus", filepath.Join(argusDir, "bin", "argus")),
 		Logs: []domain.DiagnosticsFileEntry{
 			statEntry("argus.log", filepath.Join(argusDir, "argus.log")),
 			statEntry("build.log", filepath.Join(argusDir, "build.log")),

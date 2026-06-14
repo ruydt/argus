@@ -77,10 +77,10 @@ func (m *mockRepo) SessionModel(sessionID string) (string, error) {
 	return m.models[sessionID], nil
 }
 
-func (m *mockRepo) ListProjects() ([]domain.Project, error) {
+func (m *mockRepo) ListProjectsPage(string, int, int) ([]domain.Project, int, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return nil, nil
+	return nil, 0, nil
 }
 
 func (m *mockRepo) ListSessions() ([]domain.Session, error) {
@@ -146,7 +146,7 @@ func (m *mockRepo) ListByTimeRange(_, _, _ string, _ int64, _ int) ([]domain.Nor
 	return nil, 0, false, nil
 }
 
-func (m *mockRepo) ListBySessionsTimeRange(_, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
+func (m *mockRepo) ListBySessionsTimeRange(_, _, _ string, _ int64, _ int) ([]domain.NormalizedEvent, int64, bool, error) {
 	return nil, 0, false, nil
 }
 

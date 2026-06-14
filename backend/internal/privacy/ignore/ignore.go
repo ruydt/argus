@@ -117,13 +117,16 @@ func (m *Matcher) MatchEvent(e domain.NormalizedEvent) (bool, string) {
 		return false, ""
 	}
 
-	// Collect the candidate strings: non-empty CWD and Path only.
-	var candidates []string
+	// Collect the candidate strings: non-empty CWD and Path only. Clean + split
+	// each candidate ONCE here instead of inside matchesPath per rule — the path
+	// form is rule-independent, so re-deriving it for every rule is wasted work
+	// on the per-event ingest path.
+	var candidates []preparedPath
 	if e.CWD != "" {
-		candidates = append(candidates, e.CWD)
+		candidates = append(candidates, preparePath(e.CWD))
 	}
 	if e.Path != "" {
-		candidates = append(candidates, e.Path)
+		candidates = append(candidates, preparePath(e.Path))
 	}
 	if len(candidates) == 0 {
 		return false, ""
@@ -151,10 +154,20 @@ func (m *Matcher) MatchEvent(e domain.NormalizedEvent) (bool, string) {
 	return matched, matchedReason
 }
 
-// matchesPath reports whether rule r matches candidate (a file path string).
-func matchesPath(r rule, candidate string) bool {
-	// Clean the candidate to a consistent slash-separated form.
-	candidate = filepath.ToSlash(filepath.Clean(candidate))
+// preparedPath is a candidate file path cleaned and split into segments once,
+// so it can be reused across every rule without re-deriving the form per rule.
+type preparedPath struct {
+	cleaned string
+	segs    []string
+}
+
+func preparePath(candidate string) preparedPath {
+	cleaned := filepath.ToSlash(filepath.Clean(candidate))
+	return preparedPath{cleaned: cleaned, segs: splitPath(cleaned)}
+}
+
+// matchesPath reports whether rule r matches the prepared candidate path.
+func matchesPath(r rule, candidate preparedPath) bool {
 	patternSegs := r.segments
 
 	if len(patternSegs) == 0 {
@@ -167,17 +180,17 @@ func matchesPath(r rule, candidate string) bool {
 	//   /home/user/project/node_modules
 	//   /home/user/project/node_modules/lodash/index.js
 	if r.dirOnly {
-		return matchDirPattern(patternSegs, candidate)
+		return matchDirPattern(patternSegs, candidate.segs)
 	}
 
 	// For regular patterns, match against the full candidate path.
-	return matchGlob(patternSegs, splitPath(candidate))
+	return matchGlobRec(patternSegs, candidate.segs, 0, 0)
 }
 
-// matchDirPattern matches a directory-only pattern against a candidate path.
-// It checks whether any path prefix or infix matches the pattern segments.
-func matchDirPattern(patternSegs []string, candidate string) bool {
-	candidateSegs := splitPath(candidate)
+// matchDirPattern matches a directory-only pattern against a candidate path's
+// already-split segments. It checks whether any path prefix or infix matches the
+// pattern segments.
+func matchDirPattern(patternSegs, candidateSegs []string) bool {
 	if len(candidateSegs) == 0 {
 		return false
 	}
@@ -186,7 +199,7 @@ func matchDirPattern(patternSegs []string, candidate string) bool {
 	// For absolute patterns (starting with /), require prefix match.
 	if len(patternSegs) > 0 && patternSegs[0] == "" {
 		// Absolute pattern: match from start.
-		return matchGlob(patternSegs[1:], candidateSegs)
+		return matchGlobRec(patternSegs[1:], candidateSegs, 0, 0)
 	}
 
 	// Relative pattern: try anchoring the pattern at every start offset.
@@ -242,20 +255,9 @@ func matchGlobPrefixRec(pattern, candidate []string, pi, ci int) bool {
 	return true
 }
 
-// matchGlob matches pattern segments against candidate segments, supporting ** for
-// zero or more path segments and * for any single-segment substring.
-func matchGlob(patternSegs, candidateSegs []string) bool {
-	return matchGlobDP(patternSegs, candidateSegs)
-}
-
-// matchGlobDP uses dynamic programming to match pattern segments that may contain **
-// against candidate segments.
-func matchGlobDP(pattern, candidate []string) bool {
-	// dp[i][j] = can pattern[:i] match candidate[:j]?
-	// We use a simple recursive approach with memoization via a closure.
-	return matchGlobRec(pattern, candidate, 0, 0)
-}
-
+// matchGlobRec matches pattern segments against candidate segments via recursive
+// backtracking, supporting ** for zero or more path segments and * for any
+// single-segment substring.
 func matchGlobRec(pattern, candidate []string, pi, ci int) bool {
 	for pi < len(pattern) && ci < len(candidate) {
 		if pattern[pi] == "**" {
@@ -280,7 +282,6 @@ func matchGlobRec(pattern, candidate []string, pi, ci int) bool {
 	}
 	return pi == len(pattern) && ci == len(candidate)
 }
-
 
 // matchSegment matches a single path segment against a glob pattern that may
 // contain * (zero or more non-slash characters).
