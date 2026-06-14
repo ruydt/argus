@@ -161,7 +161,7 @@ wiring, and the `useScriptCatalog`-driven `ScriptRow` list. Renders `<CommunityT
 - **Publish** reuses `buildPublishUrl`/`buildMetaHeader`. The union entry carries no body, so Publish
   fetches it lazily via `GET /api/collection/local?filename=` (§4.3) before building the URL.
 - Login panel (existing device-flow) shown to drive Save-to-gist / Publish when logged out; the
-  "View scripts on GitHub" gist link stays when `gist_url` is present.
+  "View scripts on Gist" gist link stays when `gist_url` is present.
 
 ### 5.4 `useCollection.ts` (rewrite)
 

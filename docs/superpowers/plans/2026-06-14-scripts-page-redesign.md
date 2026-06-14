@@ -987,7 +987,7 @@ export function CollectionTab({ query }: CollectionTabProps) {
               className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
             >
               <ExternalLink className="size-3" />
-              View scripts on GitHub
+              View scripts on Gist
             </a>
           ) : null}
           {authenticated ? (
