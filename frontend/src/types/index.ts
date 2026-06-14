@@ -11,8 +11,6 @@ export type {
 
 export type { Session, SessionUsageType, SessionTreeNode } from './sessions'
 
-export type { ScriptPackage, ScriptBundle, ScriptCatalog, BundleInstallResult } from './scripts'
-
 export type {
   CollectionScript,
   Collection,
