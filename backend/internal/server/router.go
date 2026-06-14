@@ -123,6 +123,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("POST /api/github/device", handler.GitHubDevice(ghSvc))
 	mux.Handle("GET /api/github/status", handler.GitHubStatus(ghSvc))
 	mux.Handle("POST /api/github/logout", handler.GitHubLogout(ghSvc))
+	mux.Handle("POST /api/registry/publish", handler.RegistryPublish(ghSvc))
 	mux.Handle("GET /api/collection", handler.Collection(ghSvc, communitySrc, opts.ArgusDir))
 	mux.Handle("POST /api/collection", handler.CollectionAdd(ghSvc, opts.ArgusDir))
 	mux.Handle("DELETE /api/collection", handler.CollectionRemove(ghSvc))

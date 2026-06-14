@@ -50,7 +50,7 @@ func (d *DeviceFlow) post(ctx context.Context, path string, form url.Values, out
 // Start requests a device + user code.
 func (d *DeviceFlow) Start(ctx context.Context) (DeviceCode, error) {
 	var dc DeviceCode
-	form := url.Values{"client_id": {d.clientID}, "scope": {"gist"}}
+	form := url.Values{"client_id": {d.clientID}, "scope": {"gist public_repo"}}
 	if err := d.post(ctx, "/login/device/code", form, &dc); err != nil {
 		return DeviceCode{}, err
 	}
