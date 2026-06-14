@@ -6,12 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 
+	"argus/internal/community"
 	"argus/internal/domain"
 	"argus/internal/github"
-	"argus/internal/scriptcatalog"
 )
 
 // listLocalHooks returns the basenames of installed hook scripts in ~/.argus/hooks.
@@ -54,7 +55,7 @@ func runtimeFromExt(filename string) string {
 // Collection returns the unified collection view: every script installed locally
 // or saved in the gist, with independent Local/Gist flags. Auth is OPTIONAL — a
 // logged-out user still sees their local scripts (never a 401).
-func Collection(svc *github.Service, src scriptcatalog.ScriptSource, argusDir string) http.Handler {
+func Collection(svc *github.Service, registrySrc *community.Source, argusDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		view := domain.CollectionView{}
 
@@ -79,10 +80,10 @@ func Collection(svc *github.Service, src scriptcatalog.ScriptSource, argusDir st
 			localSet[f] = true
 		}
 
-		metaByFile := map[string]domain.ScriptPackage{}
-		if cat, err := src.Catalog(r.Context()); err == nil {
-			for _, p := range cat.Packages {
-				metaByFile[p.Filename] = p
+		metaByFile := map[string]domain.CommunityScript{}
+		if scripts, err := registrySrc.Catalog(r.Context()); err == nil {
+			for _, p := range scripts {
+				metaByFile[path.Base(p.Source)] = p
 			}
 		}
 
@@ -127,14 +128,8 @@ func Collection(svc *github.Service, src scriptcatalog.ScriptSource, argusDir st
 	})
 }
 
-type addCollectionRequest struct {
-	Origin   string `json:"origin"`   // "bundled" | "local"
-	ID       string `json:"id"`       // for bundled
-	Filename string `json:"filename"` // for local
-}
-
-// CollectionAdd adds a bundled or local script to the collection.
-func CollectionAdd(svc *github.Service, src scriptcatalog.ScriptSource, argusDir string) http.Handler {
+// CollectionAdd adds a local script (from ~/.argus/hooks) to the gist collection.
+func CollectionAdd(svc *github.Service, argusDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -145,10 +140,19 @@ func CollectionAdd(svc *github.Service, src scriptcatalog.ScriptSource, argusDir
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		script, err := buildCollectionScript(r, src, argusDir, req)
+		target, err := hookTarget(argusDir, req.Filename)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "invalid filename", http.StatusBadRequest)
 			return
+		}
+		body, err := os.ReadFile(target)
+		if err != nil {
+			http.Error(w, "local script not found", http.StatusBadRequest)
+			return
+		}
+		script := domain.CollectionScript{
+			ID: idFromFilename(req.Filename), Filename: req.Filename,
+			Title: req.Filename, Origin: "local", Body: string(body),
 		}
 		switch err := svc.AddScript(r.Context(), script); {
 		case errors.Is(err, github.ErrNotAuthenticated):
@@ -164,44 +168,8 @@ func CollectionAdd(svc *github.Service, src scriptcatalog.ScriptSource, argusDir
 	})
 }
 
-func buildCollectionScript(r *http.Request, src scriptcatalog.ScriptSource, argusDir string, req addCollectionRequest) (domain.CollectionScript, error) {
-	switch req.Origin {
-	case "bundled":
-		cat, err := src.Catalog(r.Context())
-		if err != nil {
-			return domain.CollectionScript{}, errors.New("catalog error")
-		}
-		p, ok := findPackage(cat, req.ID)
-		if !ok {
-			return domain.CollectionScript{}, errors.New("unknown script")
-		}
-		body, err := src.ReadScript(r.Context(), p.ID)
-		if err != nil {
-			return domain.CollectionScript{}, errors.New("read script error")
-		}
-		return domain.CollectionScript{
-			ID: p.ID, Filename: p.Filename, Title: p.Title, Purpose: p.Purpose,
-			Event: p.Event, Matcher: p.Matcher, Runtime: p.Runtime, Origin: "bundled", Body: string(body),
-		}, nil
-	case "local":
-		target, err := hookTarget(argusDir, req.Filename)
-		if err != nil {
-			return domain.CollectionScript{}, errors.New("invalid filename")
-		}
-		body, err := os.ReadFile(target)
-		if err != nil {
-			return domain.CollectionScript{}, errors.New("local script not found")
-		}
-		id := req.Filename
-		if ext := filepath.Ext(id); ext != "" {
-			id = id[:len(id)-len(ext)]
-		}
-		return domain.CollectionScript{
-			ID: id, Filename: req.Filename, Title: req.Filename, Origin: "local", Body: string(body),
-		}, nil
-	default:
-		return domain.CollectionScript{}, errors.New("unknown origin")
-	}
+type addCollectionRequest struct {
+	Filename string `json:"filename"`
 }
 
 // CollectionRemove removes a script from the collection.

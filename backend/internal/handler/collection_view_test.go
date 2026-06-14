@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"argus/internal/community"
 	"argus/internal/github"
 	"argus/internal/handler"
-	"argus/internal/scriptcatalog"
 )
 
 // writeLocal drops a fake installed hook script into <argusDir>/hooks.
@@ -30,8 +30,16 @@ func TestCollectionViewLoggedOutListsLocalOnly(t *testing.T) {
 	writeLocal(t, dir, "block-dangerous.js", "// hi\n")
 	svc := github.NewService("test-client-id", dir)
 
+	mux := http.NewServeMux()
+	mux.HandleFunc("/index.json", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"schema_version":1,"scripts":[]}`))
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	registrySrc := community.NewSource(srv.URL, srv.Client())
+
 	rr := httptest.NewRecorder()
-	h := handler.Collection(svc, scriptcatalog.NewBundledSource(), dir)
+	h := handler.Collection(svc, registrySrc, dir)
 	h.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/api/collection", nil))
 
 	if rr.Code != http.StatusOK {
@@ -59,7 +67,8 @@ func TestCollectionViewLoggedOutListsLocalOnly(t *testing.T) {
 	if e.Filename != "block-dangerous.js" || !e.Local || e.Gist {
 		t.Fatalf("unexpected entry: %+v", e)
 	}
-	if e.Title != "Block dangerous commands" {
-		t.Fatalf("expected enriched title, got %q", e.Title)
+	// Registry returns empty index → falls back to filename as title.
+	if e.Title != "block-dangerous.js" {
+		t.Fatalf("expected filename-fallback title, got %q", e.Title)
 	}
 }

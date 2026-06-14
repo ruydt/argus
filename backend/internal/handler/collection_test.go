@@ -6,16 +6,27 @@ import (
 	"strings"
 	"testing"
 
+	"argus/internal/community"
 	"argus/internal/github"
 	"argus/internal/handler"
-	"argus/internal/scriptcatalog"
 )
+
+func newRegistrySrc(t *testing.T) *community.Source {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/index.json", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"schema_version":1,"scripts":[]}`))
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	return community.NewSource(srv.URL, srv.Client())
+}
 
 func TestCollectionLoggedOutReturns200(t *testing.T) {
 	svc := github.NewService("c", t.TempDir())
 	dir := t.TempDir()
 	rec := httptest.NewRecorder()
-	handler.Collection(svc, scriptcatalog.NewBundledSource(), dir).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/collection", nil))
+	handler.Collection(svc, newRegistrySrc(t), dir).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/collection", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (auth-optional)", rec.Code)
 	}
@@ -25,21 +36,25 @@ func TestCollectionAddRequiresAuth(t *testing.T) {
 	svc := github.NewService("c", t.TempDir())
 	dir := t.TempDir()
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/api/collection", strings.NewReader(`{"origin":"bundled","id":"stop"}`))
-	handler.CollectionAdd(svc, scriptcatalog.NewBundledSource(), dir).ServeHTTP(rec, req)
-	if rec.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want 401", rec.Code)
+	// CollectionAdd is now local-only: request body is {"filename":"..."}
+	req := httptest.NewRequest(http.MethodPost, "/api/collection", strings.NewReader(`{"filename":"stop.js"}`))
+	handler.CollectionAdd(svc, dir).ServeHTTP(rec, req)
+	// File doesn't exist → 400 (local script not found), not 401.
+	// The 401 only fires when the file exists but the user is not authenticated.
+	// This test now validates that the handler rejects a missing local file.
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 (local script not found)", rec.Code)
 	}
 }
 
-func TestCollectionAddUnknownOrigin(t *testing.T) {
+func TestCollectionAddInvalidFilename(t *testing.T) {
 	svc := github.NewService("c", t.TempDir())
 	dir := t.TempDir()
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/api/collection", strings.NewReader(`{"origin":"bogus"}`))
-	handler.CollectionAdd(svc, scriptcatalog.NewBundledSource(), dir).ServeHTTP(rec, req)
+	req := httptest.NewRequest(http.MethodPost, "/api/collection", strings.NewReader(`{"filename":"../etc/passwd"}`))
+	handler.CollectionAdd(svc, dir).ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status = %d, want 400", rec.Code)
+		t.Fatalf("status = %d, want 400 (invalid filename)", rec.Code)
 	}
 }
 

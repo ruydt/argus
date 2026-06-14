@@ -10,7 +10,6 @@ import (
 	"argus/internal/handler"
 	"argus/internal/hookconfig"
 	"argus/internal/repository"
-	"argus/internal/scriptcatalog"
 	"argus/internal/service"
 	"argus/internal/ui"
 )
@@ -111,11 +110,11 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
 	mux.Handle("PUT /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
 	mux.Handle("POST /api/hooks/simulate", handler.HooksSimulate())
-	scriptSrc := scriptcatalog.NewBundledSource()
-	mux.Handle("GET /api/scripts/catalog", handler.ScriptsCatalog(scriptSrc, opts.ArgusDir))
-	mux.Handle("POST /api/scripts/install", handler.ScriptsInstall(scriptSrc, opts.ArgusDir))
-	mux.Handle("POST /api/scripts/install-bundle", handler.ScriptsInstallBundle(scriptSrc, opts.ArgusDir))
-	mux.Handle("DELETE /api/scripts/installed", handler.ScriptsDelete(scriptSrc, opts.ArgusDir))
+	registryURL := os.Getenv("ARGUS_REGISTRY_RAW_URL")
+	if registryURL == "" {
+		registryURL = defaultRegistryRawURL
+	}
+	communitySrc := community.NewSource(registryURL, nil)
 	githubClientID := os.Getenv("ARGUS_GITHUB_CLIENT_ID")
 	if githubClientID == "" {
 		githubClientID = defaultGitHubClientID
@@ -124,17 +123,12 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("POST /api/github/device", handler.GitHubDevice(ghSvc))
 	mux.Handle("GET /api/github/status", handler.GitHubStatus(ghSvc))
 	mux.Handle("POST /api/github/logout", handler.GitHubLogout(ghSvc))
-	mux.Handle("GET /api/collection", handler.Collection(ghSvc, scriptSrc, opts.ArgusDir))
-	mux.Handle("POST /api/collection", handler.CollectionAdd(ghSvc, scriptSrc, opts.ArgusDir))
+	mux.Handle("GET /api/collection", handler.Collection(ghSvc, communitySrc, opts.ArgusDir))
+	mux.Handle("POST /api/collection", handler.CollectionAdd(ghSvc, opts.ArgusDir))
 	mux.Handle("DELETE /api/collection", handler.CollectionRemove(ghSvc))
 	mux.Handle("POST /api/collection/install", handler.CollectionInstall(ghSvc, opts.ArgusDir))
 	mux.Handle("GET /api/collection/local", handler.CollectionLocal(opts.ArgusDir))
 	mux.Handle("DELETE /api/collection/local", handler.CollectionLocal(opts.ArgusDir))
-	registryURL := os.Getenv("ARGUS_REGISTRY_RAW_URL")
-	if registryURL == "" {
-		registryURL = defaultRegistryRawURL
-	}
-	communitySrc := community.NewSource(registryURL, nil)
 	mux.Handle("GET /api/community/catalog", handler.CommunityCatalog(communitySrc, opts.ArgusDir))
 	mux.Handle("GET /api/community/script", handler.CommunityScriptBody(communitySrc))
 	mux.Handle("POST /api/community/install", handler.CommunityInstall(communitySrc, opts.ArgusDir))
