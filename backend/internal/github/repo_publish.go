@@ -2,8 +2,6 @@ package github
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -59,13 +57,11 @@ type treeEntry struct {
 	SHA  string `json:"sha"`
 }
 
-func branchSuffix(files []PublishFile) string {
-	h := sha256.New()
-	for _, f := range files {
-		h.Write([]byte(f.Name))
-		h.Write([]byte{0})
+func shortSHA(s string) string {
+	if len(s) > 7 {
+		return s[:7]
 	}
-	return hex.EncodeToString(h.Sum(nil))[:8]
+	return s
 }
 
 // PublishRegistry forks argus-hooks/registry (if needed), commits all files under
@@ -167,7 +163,10 @@ func (g *GistClient) PublishRegistry(ctx context.Context, files []PublishFile) (
 		return "", err
 	}
 
-	branch := "argus-share-" + branchSuffix(files)
+	// Derive the branch from the new commit SHA so re-publishing the same file
+	// set still gets a unique branch (GitHub sets a fresh commit timestamp, so
+	// the SHA differs each call) — avoids "reference already exists" on retry.
+	branch := "argus-share-" + shortSHA(newCommit.SHA)
 	if err := g.decode(ctx, http.MethodPost,
 		fmt.Sprintf("/repos/%s/%s/git/refs", login, registryRepo),
 		map[string]string{"ref": "refs/heads/" + branch, "sha": newCommit.SHA}, nil); err != nil {
