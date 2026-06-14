@@ -9,6 +9,7 @@ type CollectionRowProps = {
   entry: CollectionEntry
   index: number
   busy: boolean
+  onTest: (entry: CollectionEntry) => void
   onSaveToGist: (filename: string) => void
   onInstall: (id: string) => void
   onRemoveLocal: (filename: string) => void
@@ -20,6 +21,7 @@ export function CollectionRow({
   entry,
   index,
   busy,
+  onTest,
   onSaveToGist,
   onInstall,
   onRemoveLocal,
@@ -65,6 +67,16 @@ export function CollectionRow({
           </PopoverTrigger>
           <PopoverContent align="end" className="w-44 p-1">
             <div className="flex flex-col">
+              {entry.local ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  onClick={() => onTest(entry)}
+                >
+                  Test
+                </Button>
+              ) : null}
               {entry.local && !entry.gist ? (
                 <Button
                   variant="ghost"

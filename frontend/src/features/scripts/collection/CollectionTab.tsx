@@ -1,19 +1,28 @@
 import { useState } from 'react'
 import { ExternalLink } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { CollectionEntry } from '@/types'
 
 import { useCollection } from './useCollection'
 import { DeviceFlowModal } from './DeviceFlowModal'
 import { CollectionRow } from './CollectionRow'
 import { UploadShareDialog } from './UploadShareDialog'
+import { simulatorPath } from './simulatorLink'
 
 type CollectionTabProps = {
   query: string
 }
 
 export function CollectionTab({ query }: CollectionTabProps) {
+  const navigate = useNavigate()
+
+  function testInSimulator(entry: CollectionEntry) {
+    navigate(simulatorPath(entry))
+  }
+
   const {
     authenticated,
     gistUrl,
@@ -145,6 +154,7 @@ export function CollectionTab({ query }: CollectionTabProps) {
               entry={e}
               index={i + 1}
               busy={busy}
+              onTest={testInSimulator}
               onSaveToGist={guardedSave}
               onInstall={(id) => run(() => install(id))}
               onRemoveLocal={(filename) => run(() => removeLocal(filename))}
