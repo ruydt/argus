@@ -1,6 +1,8 @@
 package sqlite
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"database/sql"
 	_ "embed"
@@ -63,6 +65,9 @@ var schema013 string
 
 //go:embed migrations/014_normalize_hook_events_created_at.sql
 var schema014 string
+
+//go:embed migrations/015_drop_redundant_created_index.sql
+var schema015 string
 
 type DB struct {
 	db     *sql.DB
@@ -143,6 +148,7 @@ func (d *DB) migrate() error {
 		{12, schema012},
 		{13, schema013},
 		{14, schema014},
+		{15, schema015},
 	}
 	for _, m := range migrations {
 		var count int
@@ -232,7 +238,7 @@ func (d *DB) Add(e domain.NormalizedEvent) error {
 		nullStr(e.Action), nullStr(e.Path), nullStr(e.Command),
 		nullStr(e.OldString), nullStr(e.NewString), nullInt(e.StartLine),
 		jsonSlice(e.CtxBefore), jsonSlice(e.CtxAfter),
-		string(e.RawPayload), dedupKey(e),
+		gzipPayload(e.RawPayload), dedupKey(e),
 		nullStr(e.Prompt), nullStr(e.Description), nullStr(e.PermissionMode), nullStr(e.Response),
 		nullStr(e.ErrorMessage), nullStr(e.ErrorType),
 		nullStr(e.SubagentID), nullStr(e.SubagentType),
@@ -1203,18 +1209,54 @@ func dedupKey(e domain.NormalizedEvent) string {
 }
 
 func (d *DB) GetRawPayload(dedupKey string) ([]byte, error) {
-	var raw string
+	var raw []byte
 	err := d.db.QueryRow(
-		`SELECT COALESCE(raw_payload,'') FROM hook_events WHERE dedup_key = ? LIMIT 1`,
+		`SELECT raw_payload FROM hook_events WHERE dedup_key = ? LIMIT 1`,
 		dedupKey,
 	).Scan(&raw)
-	if err == sql.ErrNoRows || raw == "" {
+	if err == sql.ErrNoRows || len(raw) == 0 {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return []byte(raw), nil
+	return gunzipPayload(raw)
+}
+
+// gzipPayload compresses a raw hook payload for storage. raw_payload is a
+// near-verbatim duplicate of the normalized columns and is read only on demand
+// by the "view raw" endpoint, so gzip (~85% smaller on JSON) costs nothing on
+// hot paths. Returns a non-nil empty slice for empty input to satisfy the
+// NOT NULL column (INSERT OR IGNORE would silently drop a NULL row).
+func gzipPayload(raw []byte) []byte {
+	if len(raw) == 0 {
+		return []byte{}
+	}
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	if _, err := zw.Write(raw); err != nil {
+		_ = zw.Close()
+		return raw // fall back to storing uncompressed on error
+	}
+	if err := zw.Close(); err != nil {
+		return raw
+	}
+	return buf.Bytes()
+}
+
+// gunzipPayload reverses gzipPayload. Rows written before compression was
+// introduced are plain JSON without the gzip magic bytes and pass through
+// unchanged, so old and new rows are both readable.
+func gunzipPayload(stored []byte) ([]byte, error) {
+	if len(stored) < 2 || stored[0] != 0x1f || stored[1] != 0x8b {
+		return stored, nil
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(stored))
+	if err != nil {
+		return nil, err
+	}
+	defer zr.Close()
+	return io.ReadAll(zr)
 }
 
 func nullStr(s string) any {

@@ -3,6 +3,7 @@ package sqlite_test
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -1343,14 +1344,14 @@ func TestMigrationRunner_Idempotent(t *testing.T) {
 	db := newTestDB(t)
 
 	// A second call to New on the same DB would re-run migrate(). Instead,
-	// verify idempotency by checking schema_migrations has exactly 14 versions.
+	// verify idempotency by checking schema_migrations has exactly 15 versions.
 	rawDB := db.RawDB()
 	var count int
 	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("count schema_migrations: %v", err)
 	}
-	if count != 14 {
-		t.Errorf("schema_migrations has %d rows, want 14 (migrations 1–14)", count)
+	if count != 15 {
+		t.Errorf("schema_migrations has %d rows, want 15 (migrations 1–15)", count)
 	}
 }
 
@@ -1385,6 +1386,73 @@ func TestGetRawPayload_returnsStoredBytes(t *testing.T) {
 	want := `{"tool":"Bash","input":"echo hi"}`
 	if string(got) != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+// TestGetRawPayload_readsLegacyUncompressedRow proves the gunzip read path is
+// backward compatible: rows written before compression existed are plain JSON
+// (no gzip magic bytes) and must still read back unchanged.
+func TestGetRawPayload_readsLegacyUncompressedRow(t *testing.T) {
+	db := newTestDB(t)
+	legacy := `{"legacy":"plaintext","n":1}`
+	if _, err := db.RawDB().Exec(
+		`INSERT INTO hook_events (created_at, agent, session_id, hook_event_name, raw_payload, dedup_key)
+		 VALUES (?,?,?,?,?,?)`,
+		"2026-01-01T00:00:00Z", "claudecode", "sess-legacy", "PreToolUse", legacy, "legacykey",
+	); err != nil {
+		t.Fatalf("insert legacy row: %v", err)
+	}
+
+	got, err := db.GetRawPayload("legacykey")
+	if err != nil {
+		t.Fatalf("GetRawPayload: %v", err)
+	}
+	if string(got) != legacy {
+		t.Errorf("legacy row: got %q, want %q", got, legacy)
+	}
+}
+
+// TestRawPayload_storedCompressed verifies a large payload round-trips intact
+// AND is physically smaller on disk than the original (gzip actually applied).
+func TestRawPayload_storedCompressed(t *testing.T) {
+	db := newTestDB(t)
+	// Highly compressible payload (repeated content), like a real diff/transcript.
+	original := []byte(`{"diff":"` + strings.Repeat("the quick brown fox ", 500) + `"}`)
+	e := domain.NormalizedEvent{
+		Time:          "2026-01-01T00:00:00Z",
+		Agent:         "claudecode",
+		Session:       "sess-zip",
+		HookEventName: "PreToolUse",
+		TurnID:        "t1",
+		ToolUseID:     "u1",
+		RawPayload:    original,
+	}
+	if err := db.Add(e); err != nil {
+		t.Fatalf("Add: %v", err)
+	}
+
+	events, err := db.List(10)
+	if err != nil || len(events) == 0 {
+		t.Fatalf("List: %v len=%d", err, len(events))
+	}
+	key := events[0].DedupKey
+
+	got, err := db.GetRawPayload(key)
+	if err != nil {
+		t.Fatalf("GetRawPayload: %v", err)
+	}
+	if string(got) != string(original) {
+		t.Errorf("round-trip mismatch: got %d bytes, want %d", len(got), len(original))
+	}
+
+	var stored int
+	if err := db.RawDB().QueryRow(
+		`SELECT LENGTH(raw_payload) FROM hook_events WHERE dedup_key = ?`, key,
+	).Scan(&stored); err != nil {
+		t.Fatalf("length query: %v", err)
+	}
+	if stored >= len(original) {
+		t.Errorf("stored %d bytes not smaller than original %d — not compressed", stored, len(original))
 	}
 }
 
