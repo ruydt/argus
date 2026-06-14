@@ -9,9 +9,28 @@ import { CollectionTab } from './collection/CollectionTab'
 
 type Tab = 'community' | 'collection'
 
+const TAB_KEY = 'argus:scripts-tab'
+
+function readTab(): Tab {
+  try {
+    return sessionStorage.getItem(TAB_KEY) === 'collection' ? 'collection' : 'community'
+  } catch {
+    return 'community'
+  }
+}
+
 export function ScriptsPage() {
   const [query, setQuery] = useState('')
-  const [tab, setTab] = useState<Tab>('community')
+  const [tab, setTab] = useState<Tab>(readTab)
+
+  function changeTab(next: Tab) {
+    setTab(next)
+    try {
+      sessionStorage.setItem(TAB_KEY, next)
+    } catch {
+      // ignore storage failures
+    }
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -31,7 +50,7 @@ export function ScriptsPage() {
           <ToggleGroup
             type="single"
             value={tab}
-            onValueChange={(v) => v && setTab(v as Tab)}
+            onValueChange={(v) => v && changeTab(v as Tab)}
             className="justify-start"
           >
             <ToggleGroupItem value="community">Community</ToggleGroupItem>

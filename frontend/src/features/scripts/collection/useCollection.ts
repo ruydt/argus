@@ -10,11 +10,21 @@ type State = {
   error: string | null
 }
 
+// Session cache: survives tab switches / remounts so My Collection shows
+// instantly on return (avoids a refetch + GitHub gist round-trip every time);
+// reload() revalidates in the background. Reset via __resetCollectionCache (tests).
+type CachedView = { authenticated: boolean; gistUrl?: string; entries: CollectionEntry[] }
+let cache: CachedView | null = null
+export function __resetCollectionCache() {
+  cache = null
+}
+
 export function useCollection() {
   const [state, setState] = useState<State>({
-    authenticated: false,
-    entries: [],
-    loading: true,
+    authenticated: cache?.authenticated ?? false,
+    gistUrl: cache?.gistUrl,
+    entries: cache?.entries ?? [],
+    loading: cache === null,
     error: null,
   })
   const [deviceCode, setDeviceCode] = useState<DeviceCodeResponse | null>(null)
@@ -25,13 +35,12 @@ export function useCollection() {
       const resp = await fetch('/api/collection')
       if (!resp.ok) throw new Error(`collection ${resp.status}`)
       const view: CollectionView = await resp.json()
-      setState({
+      cache = {
         authenticated: view.authenticated,
         gistUrl: view.gist_url,
         entries: view.entries ?? [],
-        loading: false,
-        error: null,
-      })
+      }
+      setState({ ...cache, loading: false, error: null })
     } catch (e) {
       setState((s) => ({ ...s, loading: false, error: (e as Error).message }))
     }

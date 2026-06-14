@@ -3,8 +3,12 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CollectionTab } from '@/features/scripts/collection/CollectionTab'
+import { __resetCollectionCache } from '@/features/scripts/collection/useCollection'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  __resetCollectionCache()
+})
 
 const view = {
   authenticated: true,

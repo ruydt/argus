@@ -15,17 +15,31 @@ export type SimulateResult = {
   duration_ms: number
 }
 
+// Session cache: survives tab switches / remounts within the SPA session so the
+// Community list shows instantly on return; reload() revalidates in the
+// background and refreshes it. Reset via __resetCommunityCache (tests only).
+let cache: CommunityScript[] | null = null
+export function __resetCommunityCache() {
+  cache = null
+}
+
 export function useCommunity() {
-  const [state, setState] = useState<State>({ scripts: [], loading: true, error: null })
+  const [state, setState] = useState<State>({
+    scripts: cache ?? [],
+    loading: cache === null,
+    error: null,
+  })
 
   const reload = useCallback(async () => {
     try {
       const resp = await fetch('/api/community/catalog')
       if (!resp.ok) throw new Error(`community ${resp.status}`)
       const scripts: CommunityScript[] = await resp.json()
+      cache = scripts
       setState({ scripts, loading: false, error: null })
     } catch (e) {
-      setState({ scripts: [], loading: false, error: (e as Error).message })
+      // Keep any cached scripts on a transient error; just surface the message.
+      setState((s) => ({ ...s, loading: false, error: (e as Error).message }))
     }
   }, [])
 

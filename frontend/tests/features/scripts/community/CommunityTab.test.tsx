@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { CommunityTab } from '@/features/scripts/community/CommunityTab'
+import { __resetCommunityCache } from '@/features/scripts/community/useCommunity'
 
 beforeEach(() => {
   class IO {
@@ -10,7 +11,10 @@ beforeEach(() => {
   }
   vi.stubGlobal('IntersectionObserver', IO as unknown as typeof IntersectionObserver)
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  __resetCommunityCache()
+})
 
 function makeScripts(n: number) {
   return Array.from({ length: n }, (_, i) => ({

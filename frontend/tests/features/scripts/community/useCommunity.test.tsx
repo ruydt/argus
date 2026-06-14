@@ -1,9 +1,12 @@
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { useCommunity } from '@/features/scripts/community/useCommunity'
+import { useCommunity, __resetCommunityCache } from '@/features/scripts/community/useCommunity'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  __resetCommunityCache()
+})
 
 const sample = [
   {

@@ -1,9 +1,12 @@
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { useCollection } from '@/features/scripts/collection/useCollection'
+import { useCollection, __resetCollectionCache } from '@/features/scripts/collection/useCollection'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  __resetCollectionCache()
+})
 
 const view = {
   authenticated: true,
