@@ -62,4 +62,13 @@ describe('CommunityTab', () => {
     render(<CommunityTab query="s99" />)
     await waitFor(() => expect(screen.getByText('s99.js')).toBeInTheDocument())
   })
+
+  it('search matches the filename extension (so .js/.sh/.py are findable)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => makeScripts(3) })
+    )
+    render(<CommunityTab query="js" />)
+    await waitFor(() => expect(screen.getByText('s0.js')).toBeInTheDocument())
+  })
 })

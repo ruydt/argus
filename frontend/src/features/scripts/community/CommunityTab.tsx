@@ -34,6 +34,8 @@ export function CommunityTab({ query }: CommunityTabProps) {
         s.title.toLowerCase().includes(q) ||
         s.id.toLowerCase().includes(q) ||
         s.author.toLowerCase().includes(q) ||
+        s.source.toLowerCase().includes(q) ||
+        (s.event ?? '').toLowerCase().includes(q) ||
         (s.purpose ?? '').toLowerCase().includes(q)
     )
   }, [scripts, query])
