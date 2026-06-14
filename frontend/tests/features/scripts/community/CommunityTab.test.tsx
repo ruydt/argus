@@ -17,7 +17,7 @@ function makeScripts(n: number) {
     id: `s${i}`,
     author: 'alice',
     title: `Script ${i}`,
-    purpose: 'p',
+    purpose: 'a purpose line',
     event: 'PreToolUse',
     runtime: 'node',
     tier: 'community',
@@ -29,23 +29,37 @@ function makeScripts(n: number) {
 }
 
 describe('CommunityTab', () => {
+  it('renders filenames (not titles/purpose) and no Test button', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => makeScripts(3) })
+    )
+    render(<CommunityTab query="" />)
+    await waitFor(() => expect(screen.getByText('s0.js')).toBeInTheDocument())
+    expect(screen.getAllByText('by alice').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('PreToolUse').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Script 0')).not.toBeInTheDocument()
+    expect(screen.queryByText('a purpose line')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^test$/i })).not.toBeInTheDocument()
+  })
+
   it('renders only the first 50 of a large list', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, json: async () => makeScripts(120) })
     )
     render(<CommunityTab query="" />)
-    await waitFor(() => expect(screen.getByText('Script 0')).toBeInTheDocument())
-    expect(screen.getByText('Script 49')).toBeInTheDocument()
-    expect(screen.queryByText('Script 50')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('s0.js')).toBeInTheDocument())
+    expect(screen.getByText('s49.js')).toBeInTheDocument()
+    expect(screen.queryByText('s50.js')).not.toBeInTheDocument()
   })
 
-  it('search finds a script beyond the first 50 (whole-registry search)', async () => {
+  it('search filters the whole list (finds a script past the first 50)', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({ ok: true, json: async () => makeScripts(120) })
     )
-    render(<CommunityTab query="Script 99" />)
-    await waitFor(() => expect(screen.getByText('Script 99')).toBeInTheDocument())
+    render(<CommunityTab query="s99" />)
+    await waitFor(() => expect(screen.getByText('s99.js')).toBeInTheDocument())
   })
 })

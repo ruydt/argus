@@ -12,7 +12,7 @@ type CommunityTabProps = {
 const PAGE = 50
 
 export function CommunityTab({ query }: CommunityTabProps) {
-  const { scripts, loading, error, install, getBody, simulate } = useCommunity()
+  const { scripts, loading, error, install, getBody } = useCommunity()
   const [busy, setBusy] = useState(false)
   const [visible, setVisible] = useState(PAGE)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -90,7 +90,6 @@ export function CommunityTab({ query }: CommunityTabProps) {
               busy={busy}
               onInstall={(id) => run(() => install(id))}
               getBody={getBody}
-              simulate={simulate}
             />
           ))}
           <div ref={sentinelRef} className="h-8" aria-hidden />
