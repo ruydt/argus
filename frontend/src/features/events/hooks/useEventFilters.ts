@@ -25,8 +25,10 @@ function eventMatchesFilters(
 ): boolean {
   if (actionFilter !== 'all' && e.action !== actionFilter) return false
   if (agentFilter !== 'all' && e.agent !== agentFilter) return false
-  if (projectFilter !== 'all' && e.cwd !== projectFilter && !e.cwd?.startsWith(projectFilter + '/'))
-    return false
+  // Exact cwd match only: each distinct cwd is its own project (see
+  // ListProjectsPage — subdirectory cwds are NOT collapsed into a parent), so a
+  // parent dir like /Users/duytran must not capture nested project sessions.
+  if (projectFilter !== 'all' && e.cwd !== projectFilter) return false
   if (sessionFilter && e.session !== sessionFilter) return false
   return true
 }

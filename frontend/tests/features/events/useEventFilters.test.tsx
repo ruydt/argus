@@ -53,6 +53,30 @@ describe('useEventFilters — search is backend-resolved', () => {
   })
 })
 
+describe('useEventFilters — project filter is exact cwd', () => {
+  it('does not match nested project cwds under the selected parent dir', () => {
+    // Regression: a parent dir (/Users/duytran) must not capture sessions whose
+    // cwd is a nested project (/Users/duytran/GitHub/argus). Each cwd is its own
+    // project — no prefix match.
+    const events = [
+      makeEvent({ cwd: '/Users/duytran', session: 'home' }),
+      makeEvent({ cwd: '/Users/duytran/GitHub/argus', session: 'argus' }),
+      makeEvent({ cwd: '/Users/duytran/GitHub/htcstone', session: 'htcstone' }),
+    ]
+    const { result } = renderHook(
+      ({ q }) =>
+        useEventFilters(events, q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
+      { wrapper, initialProps: { q: '' } }
+    )
+
+    act(() => {
+      result.current.setProjectFilter('/Users/duytran')
+    })
+
+    expect(result.current.filteredEvents.map((e) => e.session)).toEqual(['home'])
+  })
+})
+
 describe('useEventFilters — sessionStorage cache', () => {
   beforeEach(() => {
     sessionStorage.clear()
