@@ -337,12 +337,10 @@ export function Sidebar({
             )
           })}
         </nav>
-      </TooltipProvider>
 
-      {/* Bottom divider line + version badge */}
-      <div className="mt-auto">
-        {!isFirstVisitTourActive && (
-          <TooltipProvider delayDuration={100}>
+        {/* Bottom divider line + version badge */}
+        <div className="mt-auto">
+          {!isFirstVisitTourActive && (
             <div className="mb-1">
               {showCollapsedTooltips ? (
                 <Tooltip>
@@ -351,7 +349,7 @@ export function Sidebar({
                       type="button"
                       variant="ghost"
                       disabled={!hasTourForRoute}
-                      onClick={onStartTour}
+                      onClick={() => onStartTour?.()}
                       className={cn(
                         'h-9 w-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
                         'justify-center rounded-lg px-0',
@@ -373,7 +371,7 @@ export function Sidebar({
                   type="button"
                   variant="ghost"
                   disabled={!hasTourForRoute}
-                  onClick={onStartTour}
+                  onClick={() => onStartTour?.()}
                   className={cn(
                     'h-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
                     collapsed ? 'w-9 justify-center rounded-lg px-0' : 'w-full justify-start rounded-lg px-0',
@@ -392,15 +390,15 @@ export function Sidebar({
                 </Button>
               )}
             </div>
-          </TooltipProvider>
-        )}
-        <div className="sidebar-bottom-divider" />
-        {!collapsed && (
-          <div className="flex items-center px-2 pt-2 pb-1">
-            <VersionBadge />
-          </div>
-        )}
-      </div>
+          )}
+          <div className="sidebar-bottom-divider" />
+          {!collapsed && (
+            <div className="flex items-center px-2 pt-2 pb-1">
+              <VersionBadge />
+            </div>
+          )}
+        </div>
+      </TooltipProvider>
     </aside>
   )
 }
