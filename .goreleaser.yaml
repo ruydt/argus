@@ -83,6 +83,6 @@ release:
     Download the binary for your platform from the assets below, or build from source:
 
     ```bash
-    git clone https://github.com/duytrandt04-afk/argus
+    git clone https://github.com/ruydt/argus
     cd argus && make build-local   # builds to ~/.argus/bin/argus
     ```

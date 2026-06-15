@@ -1,8 +1,8 @@
 # Argus installer for Windows (PowerShell 5+).
-#   irm https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/ruydt/argus/main/install.ps1 | iex
 $ErrorActionPreference = 'Stop'
 
-$Repo        = 'duytrandt04-afk/argus'
+$Repo        = 'ruydt/argus'
 $ArgusDir    = Join-Path $env:USERPROFILE '.argus'
 $BinDir      = Join-Path $ArgusDir 'bin'
 $Binary      = Join-Path $BinDir 'argus.exe'

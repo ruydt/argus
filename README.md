@@ -6,9 +6,9 @@
 
 **the watchman whose eyes never all close**
 
-[![Release](https://img.shields.io/github/v/release/duytrandt04-afk/argus)](https://github.com/duytrandt04-afk/argus/releases/latest)
+[![Release](https://img.shields.io/github/v/release/ruydt/argus)](https://github.com/ruydt/argus/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/duytrandt04-afk/argus?style=flat)](https://github.com/duytrandt04-afk/argus/stargazers)
+[![Stars](https://img.shields.io/github/stars/ruydt/argus?style=flat)](https://github.com/ruydt/argus/stargazers)
 [![Website](https://img.shields.io/badge/website-getargus.org-863bff)](https://getargus.org)
 
 [Quick start](#quick-start) · [What it looks like](#what-it-looks-like) · [Hook scripts](my-custom-hook-scripts/) · [Docs](#documentation) · [getargus.org](https://getargus.org)
@@ -49,13 +49,13 @@ agents — actually working. No cloud, no telemetry, your data stays local.
 **macOS / Linux:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ruydt/argus/main/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-irm https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/ruydt/argus/main/install.ps1 | iex
 ```
 
 > **Requirements:** Node.js 18+ (plus curl/tar on macOS/Linux) — no Go or pnpm needed.
@@ -87,7 +87,7 @@ simulator. Take the full visual tour at **[getargus.org](https://getargus.org)**
 ## Uninstall
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ruydt/argus/main/uninstall.sh | bash
 ```
 
 Stops the server, removes binaries and scripts, unwires hooks from `~/.claude/settings.json`, and optionally deletes your data.

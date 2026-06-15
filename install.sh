@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="duytrandt04-afk/argus"
+REPO="ruydt/argus"
 ARGUS_DIR="$HOME/.argus"
 BINARY_DIR="$ARGUS_DIR/bin"
 BINARY="$BINARY_DIR/argus"

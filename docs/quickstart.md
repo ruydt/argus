@@ -7,13 +7,13 @@ Target: first successful local run in 5 to 10 minutes.
 macOS / Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ruydt/argus/main/install.sh | bash
 ```
 
 Windows (PowerShell):
 
 ```powershell
-irm https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/ruydt/argus/main/install.ps1 | iex
 ```
 
 Installs the argus binary to `~/.argus/bin/argus`, adds it to your PATH, and wires

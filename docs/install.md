@@ -5,13 +5,13 @@
 macOS / Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ruydt/argus/main/install.sh | bash
 ```
 
 Windows (PowerShell):
 
 ```powershell
-irm https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/ruydt/argus/main/install.ps1 | iex
 ```
 
 Requires: Node.js 18+ (plus curl/tar on macOS/Linux). No Go or pnpm needed.
@@ -44,7 +44,7 @@ Read [docs/privacy.md](privacy.md) and [docs/security.md](security.md) before
 changing defaults.
 
 ```bash
-git clone https://github.com/duytrandt04-afk/argus
+git clone https://github.com/ruydt/argus
 cd argus
 ./scripts/argus setup
 ```
