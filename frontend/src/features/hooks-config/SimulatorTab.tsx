@@ -148,7 +148,7 @@ export function SimulatorTab({
       ? undefined
       : commandOptions.find((opt) => opt.value === commandValue)?.timeout
   const canRun = effectiveCommand.length > 0 && !running
-  const canApply = commandValue === CUSTOM_VALUE && customCommandText.trim().length > 0 && !applying
+  const canApply = effectiveCommand.length > 0 && !!eventType && !applying
 
   function handleEventTypeChange(et: string) {
     onEventTypeChange(et)
@@ -200,9 +200,8 @@ export function SimulatorTab({
   }
 
   async function handleApply() {
-    const cmd = customCommandText.trim()
-    if (!cmd || !eventType) return
-    await onApply(eventType, cmd)
+    if (!effectiveCommand || !eventType) return
+    await onApply(eventType, effectiveCommand)
     setApplied(true)
     setTimeout(() => setApplied(false), 1500)
   }
@@ -265,21 +264,19 @@ export function SimulatorTab({
 
       {eventType && (
         <div className="flex items-center justify-end gap-2">
-          {commandValue === CUSTOM_VALUE && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void handleApply()}
-              disabled={!canApply}
-            >
-              {applying ? (
-                <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
-              ) : applied ? (
-                <Check className="size-3.5 mr-1.5 text-green-400" />
-              ) : null}
-              Apply to config
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleApply()}
+            disabled={!canApply}
+          >
+            {applying ? (
+              <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
+            ) : applied ? (
+              <Check className="size-3.5 mr-1.5 text-green-400" />
+            ) : null}
+            Apply
+          </Button>
           <Button variant="default" size="sm" onClick={() => void handleRun()} disabled={!canRun}>
             {running ? (
               <RefreshCw className="size-3.5 mr-1.5 animate-spin" />

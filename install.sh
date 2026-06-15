@@ -86,6 +86,13 @@ mkdir -p "$HOOKS_DIR"
 # BINARY path is interpolated by the shell; all \${...} are JS template literals.
 cat > "$ACTIVATE_SCRIPT" << SCRIPTEOF
 #!/usr/bin/env node
+// @argus-meta
+// title: Argus session start
+// author: argus
+// event: SessionStart
+// runtime: node
+// purpose: Start the Argus server and show a liveness banner at session start.
+// @end
 const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const net = require('net');

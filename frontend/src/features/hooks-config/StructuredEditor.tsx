@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   HOOK_PRESETS,
   ARGUS_STATUS_MESSAGE,
@@ -106,6 +107,7 @@ export function StructuredEditor({
   onChange,
 }: StructuredEditorProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [selectedPreset, setSelectedPreset] = useState<string>('')
 
   const knownEvents = agent === 'claudecode' ? CLAUDE_EVENT_TYPES : CODEX_EVENT_TYPES
   const usedEvents = Object.keys(config.hooks)
@@ -130,6 +132,7 @@ export function StructuredEditor({
   }
 
   function handleApplyPreset(key: string) {
+    setSelectedPreset(key)
     const preset = HOOK_PRESETS[agent][key as keyof (typeof HOOK_PRESETS)[typeof agent]]
     onChange(applyPreset(config, preset))
   }
@@ -203,49 +206,63 @@ export function StructuredEditor({
           </Select>
         )}
 
-        <Select key={`preset-${usedEvents.length}`} onValueChange={handleApplyPreset}>
+        <Select value={selectedPreset} onValueChange={handleApplyPreset}>
           <SelectTrigger className="h-8 text-[13px] w-[160px]">
-            <SelectValue placeholder="Apply preset…" />
+            <span className={selectedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}>
+              {selectedPreset
+                ? PRESET_LABELS[selectedPreset as keyof typeof PRESET_LABELS]?.label
+                : 'Apply preset…'}
+            </span>
           </SelectTrigger>
           <SelectContent>
             {PRESET_KEYS.map((key) => (
               <SelectItem key={key} value={key} className="text-[13px]">
                 <span className="font-medium">{PRESET_LABELS[key].label}</span>
                 <span className="ml-1.5 text-muted-foreground text-[12px]">
-                  , overwrites current Argus config with {PRESET_LABELS[key].description}
+                  — overwrites current config with {PRESET_LABELS[key].description}
                 </span>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 text-[13px] text-muted-foreground"
-          disabled={!isDirty}
-          onClick={onDiscardChanges}
-          aria-label="Discard changes"
-          title="Discard unsaved changes and restore the last saved config"
-        >
-          <RotateCcw className="size-3.5 mr-1.5" />
-          Discard changes
-        </Button>
+        <TooltipProvider delayDuration={100}>
+          <div className="flex items-center gap-1 ml-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground"
+                  disabled={!isDirty}
+                  onClick={onDiscardChanges}
+                  aria-label="Discard changes"
+                >
+                  <RotateCcw className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Discard changes</TooltipContent>
+            </Tooltip>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 text-[13px] text-muted-foreground hover:text-destructive"
-          disabled={!hasAnyArgusHooks(config)}
-          onClick={handleRemoveArgusHooks}
-          aria-label="Remove Argus hooks"
-          title="Remove all hooks installed by Argus"
-        >
-          <Trash2 className="size-3.5 mr-1.5" />
-          Remove Argus hooks
-        </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                  disabled={!hasAnyArgusHooks(config)}
+                  onClick={handleRemoveArgusHooks}
+                  aria-label="Remove Argus hooks"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Remove Argus hooks</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
       </div>
 
       {usedEvents.length === 0 && (

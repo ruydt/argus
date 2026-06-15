@@ -84,9 +84,6 @@ export function ScriptsPage() {
           aria-label="Search scripts"
           className="min-w-0 flex-1 bg-transparent font-mono text-base text-[#e5e5e5] placeholder:text-[#555] focus:outline-none"
         />
-        <kbd className="hidden h-6 w-6 shrink-0 items-center justify-center rounded border border-white/[0.12] font-mono text-xs text-[#777] sm:flex">
-          /
-        </kbd>
       </div>
 
       <div className="space-y-4">

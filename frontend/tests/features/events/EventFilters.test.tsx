@@ -89,7 +89,7 @@ describe('EventFilters search', () => {
     renderEventFilters()
 
     fireEvent.click(screen.getByRole('button', { name: /search events/i }))
-    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
+    fireEvent.click(screen.getByRole('button', { name: /show filters/i }))
 
     expect(screen.getByRole('textbox', { name: /search events/i })).not.toHaveClass('w-0')
   })
@@ -102,42 +102,47 @@ describe('EventFilters search', () => {
 })
 
 describe('EventFilters collapsible filter group', () => {
-  it('hides the filter selects when the funnel button is clicked and shows them again', () => {
+  it('shows the filter selects when the funnel button is clicked and hides them again', () => {
     renderEventFilters()
 
-    expect(screen.getByText('Action')).toBeInTheDocument()
-
-    const funnel = screen.getByRole('button', { name: /hide filters/i })
-    fireEvent.click(funnel)
-
-    expect(screen.queryByText('Action')).not.toBeInTheDocument()
-    expect(screen.queryByText('Sort')).not.toBeInTheDocument()
+    // starts collapsed
+    expect(screen.queryByText('Event')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /show filters/i }))
-    expect(screen.getByText('Action')).toBeInTheDocument()
+
+    expect(screen.getByText('Event')).toBeInTheDocument()
+    expect(screen.getByText('Sort')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
+    expect(screen.queryByText('Event')).not.toBeInTheDocument()
   })
 
   it('persists the collapsed state in sessionStorage', () => {
     renderEventFilters()
-    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
+    // default is collapsed; expand then re-collapse to verify both states
+    fireEvent.click(screen.getByRole('button', { name: /show filters/i }))
+    expect(sessionStorage.getItem('events_filters_collapsed')).toBe('0')
 
+    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
     expect(sessionStorage.getItem('events_filters_collapsed')).toBe('1')
   })
 
   it('shows an active-filters dot when collapsed with a non-default filter', () => {
     renderEventFilters({ actionFilter: 'BASH' })
 
-    expect(screen.queryByTestId('active-filters-dot')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
-
+    // starts collapsed with a non-default filter → dot visible
     expect(screen.getByTestId('active-filters-dot')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /show filters/i }))
+
+    // expanded → no dot
+    expect(screen.queryByTestId('active-filters-dot')).not.toBeInTheDocument()
   })
 
   it('shows no dot when collapsed with all filters default', () => {
     renderEventFilters()
-    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
 
+    // starts collapsed with default filters → no dot
     expect(screen.queryByTestId('active-filters-dot')).not.toBeInTheDocument()
   })
 })

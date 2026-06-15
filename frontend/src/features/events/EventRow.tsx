@@ -105,18 +105,15 @@ export const EventRow = memo(function EventRow({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
         <div className="flex items-center gap-3 pt-[2px] text-[#666] sm:block sm:w-[75px] sm:shrink-0">
           <span>{formatEventTime(e.time)}</span>
-          <span className={cn('font-bold sm:hidden', e.action)}>{e.action}</span>
+          <span className={cn('font-bold sm:hidden', e.action)}>{e.hook_event_name ?? e.action}</span>
         </div>
-        <div className={cn('hidden pt-[2px] font-bold sm:block sm:w-[96px] sm:shrink-0', e.action)}>
-          {e.action}
+        <div className={cn('hidden pt-[2px] font-bold sm:block sm:w-[140px] sm:shrink-0 truncate', e.action)}>
+          {e.hook_event_name ?? e.action}
         </div>
         <div className="min-w-0 flex-1 break-words text-[0.85rem] text-[#e2e8f0] sm:break-all">
-          {/* Header line: hook, model, path */}
+          {/* Header line: model, path */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              {e.hook_event_name && (
-                <span className={`hook hook-${e.hook_event_name}`}>{e.hook_event_name}</span>
-              )}
               {(e.hook_event_name === 'PreToolUse' ||
                 e.hook_event_name === 'PostToolUse' ||
                 e.hook_event_name === 'PreCompact' ||

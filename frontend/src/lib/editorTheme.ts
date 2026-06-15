@@ -1,6 +1,6 @@
 import { indentWithTab } from '@codemirror/commands'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { EditorView, keymap } from '@codemirror/view'
+import { drawSelection, EditorView, keymap } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
 const bg = '#0d1117'
@@ -44,8 +44,8 @@ export const argusEditorTheme = EditorView.theme(
   { dark: true }
 )
 
-export const readOnlyExtensions = [EditorView.lineWrapping, EditorView.editable.of(false)]
-export const editableExtensions = [EditorView.lineWrapping, keymap.of([indentWithTab])]
+export const readOnlyExtensions = [EditorView.lineWrapping, EditorView.editable.of(false), drawSelection()]
+export const editableExtensions = [EditorView.lineWrapping, keymap.of([indentWithTab]), drawSelection()]
 
 export const argusHighlighting = syntaxHighlighting(
   HighlightStyle.define([

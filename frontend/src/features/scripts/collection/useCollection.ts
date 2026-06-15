@@ -175,6 +175,18 @@ export function useCollection() {
     return data.body
   }, [])
 
+  const gistBodyCache = useRef<Map<string, string>>(new Map())
+
+  const getGistBody = useCallback(async (id: string): Promise<string> => {
+    const cached = gistBodyCache.current.get(id)
+    if (cached !== undefined) return cached
+    const resp = await fetch(`/api/collection/gist?id=${encodeURIComponent(id)}`)
+    if (!resp.ok) throw new Error(`gist body ${resp.status}`)
+    const data: { id: string; body: string } = await resp.json()
+    gistBodyCache.current.set(id, data.body)
+    return data.body
+  }, [])
+
   const publishFiles = useCallback(
     async (files: { name: string; body: string }[], description: string): Promise<string> => {
       const resp = await fetch('/api/registry/publish', {
@@ -204,6 +216,7 @@ export function useCollection() {
     removeGist: removeGistOnly,
     removeBoth,
     getLocalBody,
+    getGistBody,
     publishFiles,
   }
 }

@@ -1147,12 +1147,12 @@ func (d *DB) GetDashboardStats(since, until string) (*domain.DashboardStats, err
 		slog.Warn("dashboard: token timeline by agent query", "err", err)
 	}
 
-	// Top Actions
+	// Top Events (hook_event_name when available, falls back to action)
 	if rows, err := d.db.Query(`
-		SELECT action, COUNT(*) as count
+		SELECT COALESCE(NULLIF(hook_event_name, ''), action) AS event_name, COUNT(*) as count
 		FROM hook_events
-		WHERE action IS NOT NULL AND action != ''`+buildAndClause(eventClauses)+`
-		GROUP BY action
+		WHERE (hook_event_name IS NOT NULL AND hook_event_name != '') OR (action IS NOT NULL AND action != '')`+buildAndClause(eventClauses)+`
+		GROUP BY event_name
 		ORDER BY count DESC
 		LIMIT 10
 	`, eventArgs...); err == nil {

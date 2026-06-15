@@ -121,6 +121,14 @@ function HookConfigCell({ hookConfigStatus, label }: { hookConfigStatus: string;
   }
   if (hookConfigStatus === 'configured') {
     const display = label ?? 'Configured'
+    // detectHookConfigLabel returns 'Missing' when config file exists but has no hooks
+    if (display === 'Missing') {
+      return (
+        <Badge variant="outline" className={BADGE_AMBER}>
+          No hooks
+        </Badge>
+      )
+    }
     return (
       <Badge variant="outline" className={BADGE_GREEN}>
         {display}
@@ -332,18 +340,24 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                       />
                     </TableCell>
                     <TableCell>
-                      {(agent.warnings ?? []).length === 0 ? (
-                        '—'
-                      ) : (
-                        <span>
-                          {(agent.warnings ?? []).slice(0, 2).join(', ')}
-                          {(agent.warnings ?? []).length > 2 && (
-                            <span className="text-muted-foreground ml-1">
-                              +{(agent.warnings ?? []).length - 2} more
-                            </span>
-                          )}
-                        </span>
-                      )}
+                      {agent.hookConfigStatus === 'missing' ? (
+                        <span className="text-[12px] text-amber-400">missing hook config</span>
+                      ) : (() => {
+                        const realWarnings = (agent.warnings ?? []).filter(
+                          (w) => w !== 'no events'
+                        )
+                        if (realWarnings.length === 0) return '—'
+                        return (
+                          <span>
+                            {realWarnings.slice(0, 2).join(', ')}
+                            {realWarnings.length > 2 && (
+                              <span className="text-muted-foreground ml-1">
+                                +{realWarnings.length - 2} more
+                              </span>
+                            )}
+                          </span>
+                        )
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))}

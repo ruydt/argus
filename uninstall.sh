@@ -3,12 +3,8 @@ set -e
 
 ARGUS_DIR="$HOME/.argus"
 BINARY_DIR="$ARGUS_DIR/bin"
-BINARY="$BINARY_DIR/argus"
 START_SCRIPT="$BINARY_DIR/start-argus.sh"
-STOP_SCRIPT="$BINARY_DIR/argus-stop.sh"
-HOOKS_DIR="$ARGUS_DIR/hooks"
-ACTIVATE_SCRIPT="$HOOKS_DIR/argus-activate.js"
-DATA_DIR="$ARGUS_DIR"
+ACTIVATE_SCRIPT="$ARGUS_DIR/hooks/argus-activate.js"
 SETTINGS="$HOME/.claude/settings.json"
 ARGUS_PORT=10804
 
@@ -22,20 +18,7 @@ if [ -n "$PID" ]; then
   echo "  → stopped argus (port $ARGUS_PORT)"
 fi
 
-# ── 2. remove binaries and scripts ────────────────────────────────────────────
-
-for f in "$BINARY" "$START_SCRIPT" "$STOP_SCRIPT" "$ACTIVATE_SCRIPT"; do
-  if [ -f "$f" ]; then
-    rm -f "$f"
-    echo "  → removed $f"
-  fi
-done
-
-if [ -d "$HOOKS_DIR" ] && [ -z "$(ls -A "$HOOKS_DIR" 2>/dev/null)" ]; then
-  rmdir "$HOOKS_DIR"
-fi
-
-# ── 3. remove hooks from ~/.claude/settings.json ─────────────────────────────
+# ── 2. remove hooks from ~/.claude/settings.json ─────────────────────────────
 
 if command -v python3 &>/dev/null && [ -f "$SETTINGS" ]; then
   python3 - "$SETTINGS" "$START_SCRIPT" "$ACTIVATE_SCRIPT" << 'PYEOF'
@@ -73,7 +56,7 @@ if removed:
 PYEOF
 fi
 
-# ── 4. remove PATH line from shell rc ────────────────────────────────────────
+# ── 3. remove PATH line from shell rc ────────────────────────────────────────
 
 for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
   if [ -f "$rc" ] && grep -q '.argus/bin' "$rc" 2>/dev/null; then
@@ -82,20 +65,11 @@ for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
   fi
 done
 
-# ── 5. data directory ─────────────────────────────────────────────────────────
+# ── 4. remove ~/.argus ───────────────────────────────────────────────────────
 
-if [ -d "$DATA_DIR" ]; then
-  echo ""
-  echo "Data directory: $DATA_DIR"
-  echo "  Contains: argus.db (events), argus.log, bin/, hooks/"
-  printf "  Remove all data? [y/N] "
-  read -r answer
-  if [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
-    rm -rf "$DATA_DIR"
-    echo "  → removed $DATA_DIR"
-  else
-    echo "  → kept (delete manually: rm -rf $DATA_DIR)"
-  fi
+if [ -d "$ARGUS_DIR" ]; then
+  rm -rf "$ARGUS_DIR"
+  echo "  → removed $ARGUS_DIR"
 fi
 
 echo ""

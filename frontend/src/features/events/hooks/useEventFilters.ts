@@ -23,7 +23,7 @@ function eventMatchesFilters(
   projectFilter: string,
   sessionFilter: string
 ): boolean {
-  if (actionFilter !== 'all' && e.action !== actionFilter) return false
+  if (actionFilter !== 'all' && e.hook_event_name !== actionFilter) return false
   if (agentFilter !== 'all' && e.agent !== agentFilter) return false
   // Exact cwd match only: each distinct cwd is its own project (see
   // ListProjectsPage — subdirectory cwds are NOT collapsed into a parent), so a

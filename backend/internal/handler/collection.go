@@ -256,6 +256,34 @@ func CollectionLocal(argusDir string) http.Handler {
 	})
 }
 
+// CollectionGistBody returns the body of a single gist script by ID.
+func CollectionGistBody(svc *github.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			http.Error(w, "id is required", http.StatusBadRequest)
+			return
+		}
+		col, err := svc.Collection(r.Context())
+		if errors.Is(err, github.ErrNotAuthenticated) {
+			http.Error(w, "not authenticated", http.StatusUnauthorized)
+			return
+		}
+		if err != nil {
+			log.Printf("[collection] gist body id=%s err=%v", id, err)
+			http.Error(w, "github error", http.StatusBadGateway)
+			return
+		}
+		for _, s := range col.Scripts {
+			if s.ID == id {
+				writeJSON(w, map[string]string{"id": id, "body": s.Body})
+				return
+			}
+		}
+		http.Error(w, "not found", http.StatusNotFound)
+	})
+}
+
 // CollectionInstall writes a collection script into ~/.argus/hooks/.
 func CollectionInstall(svc *github.Service, argusDir string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

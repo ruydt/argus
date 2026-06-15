@@ -40,7 +40,7 @@ export function useHistoricalEvents(
         params.set('limit', '200')
       } else {
         // Multi-session view: session-based pagination
-        params.set('session_limit', '5')
+        params.set('session_limit', '100')
         if (cursor > 0) params.set('before_session_cursor', String(cursor))
       }
       const qs = params.toString()

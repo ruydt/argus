@@ -130,13 +130,13 @@ export const ActivityPanel = memo(function ActivityPanel({ stats, query }: Activ
 
       <Card className="overflow-hidden">
         <CardHeader>
-          <CardTitle className="text-sm font-medium text-muted-foreground">Top actions</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">Top events</CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="px-5">Action</TableHead>
+                <TableHead className="px-5">Event</TableHead>
                 <TableHead className="px-5 text-right">Count</TableHead>
                 <TableHead className="w-[40%] px-5 text-right">Distribution</TableHead>
               </TableRow>

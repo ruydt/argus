@@ -13,32 +13,41 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const ACTION_VALUES = [
-  'EDIT',
-  'READ',
-  'BASH',
-  'TOOL',
-  'SESSION',
-  'STOP',
-  'PROMPT',
-  'AGENT',
-  'TASK',
-  'NOTIFY',
-  'COMPACT',
-  'FILE',
-  'CONFIG',
-  'WORKTREE',
-  'PERMISSION',
-  'CWD',
-  'BATCH',
-  'INSTRUCT',
-  'DISPLAY',
-  'ELICIT',
+const HOOK_EVENT_VALUES = [
+  'SessionStart',
+  'SessionEnd',
+  'Setup',
+  'UserPromptSubmit',
+  'UserPromptExpansion',
+  'PreToolUse',
+  'PostToolUse',
+  'PostToolUseFailure',
+  'PostToolBatch',
+  'PermissionRequest',
+  'PermissionDenied',
+  'Stop',
+  'StopFailure',
+  'SubagentStart',
+  'SubagentStop',
+  'TaskCreated',
+  'TaskCompleted',
+  'PreCompact',
+  'PostCompact',
+  'FileChanged',
+  'CwdChanged',
+  'ConfigChange',
+  'InstructionsLoaded',
+  'MessageDisplay',
+  'Notification',
+  'WorktreeCreate',
+  'WorktreeRemove',
+  'Elicitation',
+  'ElicitationResult',
 ]
 
 const ACTION_OPTIONS = [
   { label: 'All', value: 'all' },
-  ...ACTION_VALUES.map((a) => ({ label: a, value: a })),
+  ...HOOK_EVENT_VALUES.map((e) => ({ label: e, value: e })),
 ]
 
 type EventFiltersProps = {
@@ -103,9 +112,10 @@ export function EventFilters({
 
   const [filtersCollapsed, setFiltersCollapsed] = useState(() => {
     try {
-      return sessionStorage.getItem('events_filters_collapsed') === '1'
+      const stored = sessionStorage.getItem('events_filters_collapsed')
+      return stored === null ? true : stored === '1'
     } catch {
-      return false
+      return true
     }
   })
 
@@ -199,53 +209,49 @@ export function EventFilters({
         {!filtersCollapsed && (
           <>
             <div className="flex w-full items-center gap-2 sm:w-auto">
-              <span className="text-[0.7rem] text-[#666]">Action</span>
+              <span className="text-[0.7rem] text-[#666]">Event</span>
               <SearchableSelect
                 value={actionFilter}
                 onValueChange={setActionFilter}
                 options={ACTION_OPTIONS}
                 placeholder="All"
-                ariaLabel="Filter by action"
-                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[100px]"
+                ariaLabel="Filter by event"
+                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[160px]"
               />
             </div>
 
-            {availableAgents.length > 0 && (
-              <div className="flex w-full items-center gap-2 sm:w-auto">
-                <span className="text-[0.7rem] text-[#666]">Agent</span>
-                <SearchableSelect
-                  value={agentFilter}
-                  onValueChange={setAgentFilter}
-                  options={[
-                    { label: 'All', value: 'all' },
-                    ...availableAgents.map((agent) => ({ label: agent, value: agent })),
-                  ]}
-                  placeholder="All"
-                  ariaLabel="Filter by agent"
-                  className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[120px]"
-                />
-              </div>
-            )}
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <span className="text-[0.7rem] text-[#666]">Agent</span>
+              <SearchableSelect
+                value={agentFilter}
+                onValueChange={setAgentFilter}
+                options={[
+                  { label: 'All', value: 'all' },
+                  ...availableAgents.map((agent) => ({ label: agent, value: agent })),
+                ]}
+                placeholder="All"
+                ariaLabel="Filter by agent"
+                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[120px]"
+              />
+            </div>
 
-            {availableProjects.length > 0 && (
-              <div className="flex w-full items-center gap-2 sm:w-auto">
-                <span className="text-[0.7rem] text-[#666]">Project</span>
-                <SearchableSelect
-                  value={projectFilter}
-                  onValueChange={setProjectFilter}
-                  options={[
-                    { label: 'All', value: 'all' },
-                    ...availableProjects.map((cwd) => ({
-                      label: cwd.split('/').filter(Boolean).pop() ?? cwd,
-                      value: cwd,
-                    })),
-                  ]}
-                  placeholder="All"
-                  ariaLabel="Filter by project"
-                  className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[140px]"
-                />
-              </div>
-            )}
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <span className="text-[0.7rem] text-[#666]">Project</span>
+              <SearchableSelect
+                value={projectFilter}
+                onValueChange={setProjectFilter}
+                options={[
+                  { label: 'All', value: 'all' },
+                  ...availableProjects.map((cwd) => ({
+                    label: cwd.split('/').filter(Boolean).pop() ?? cwd,
+                    value: cwd,
+                  })),
+                ]}
+                placeholder="All"
+                ariaLabel="Filter by project"
+                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[140px]"
+              />
+            </div>
 
             <div className="flex w-full items-center gap-2 sm:w-auto">
               <span className="text-[0.7rem] text-[#666]">Sort</span>

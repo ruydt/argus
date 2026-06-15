@@ -141,7 +141,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
               getBody={(entry) =>
                 entry.local
                   ? collection.getLocalBody(entry.filename)
-                  : Promise.reject(new Error('no local source'))
+                  : collection.getGistBody(entry.id)
               }
             />
           ))

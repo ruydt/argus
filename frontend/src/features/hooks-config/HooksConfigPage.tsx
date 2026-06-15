@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { argusEditorTheme, argusHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { StructuredEditor } from './StructuredEditor'
 import { SimulatorTab } from './SimulatorTab'
+import { getTemplate } from './hookTemplates'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig, HooksConfigState } from './types'
 
@@ -207,7 +208,14 @@ export function HooksConfigPage() {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (searchParams.get('view') === 'simulator') setViewMode('simulator')
     const ev = searchParams.get('event')
-    if (ev) setSimEventType(ev)
+    if (ev) {
+      setSimEventType(ev)
+      setSimPayloadJSON((current) => {
+        if (current && current.trim()) return current
+        const ag = readStorageString(AGENT_TAB_KEY) === 'codex' ? 'codex' : 'claudecode'
+        return JSON.stringify(getTemplate(ag, ev), null, 2)
+      })
+    }
     const sc = searchParams.get('script')
     if (sc) setInitialScript(sc)
     /* eslint-enable react-hooks/set-state-in-effect */

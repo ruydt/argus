@@ -111,11 +111,6 @@ export function CollectionRow({
         }}
         onClick={openFromAction}
       >
-        {entry.gist && !entry.local ? (
-          <Button size="sm" disabled={busy} onClick={() => onInstall(entry.id)}>
-            Install
-          </Button>
-        ) : null}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" disabled={busy} aria-label="Actions">
@@ -134,6 +129,16 @@ export function CollectionRow({
                   Test
                 </Button>
               ) : null}
+              {entry.gist && !entry.local ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="menu-item justify-start"
+                  onClick={() => onInstall(entry.id)}
+                >
+                  Install
+                </Button>
+              ) : null}
               {entry.local && !entry.gist ? (
                 <Button
                   variant="ghost"
@@ -148,7 +153,7 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="menu-item justify-start"
+                  className="menu-item justify-start hover:text-destructive"
                   onClick={() => onRemoveLocal(entry.filename)}
                 >
                   Uninstall
@@ -158,7 +163,7 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="menu-item justify-start"
+                  className="menu-item justify-start hover:text-destructive"
                   onClick={() => onRemoveGist(entry.id)}
                 >
                   Remove from gist
@@ -168,7 +173,7 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="menu-item justify-start text-destructive"
+                  className="menu-item justify-start hover:text-destructive"
                   onClick={() => onRemoveBoth(entry)}
                 >
                   Remove both

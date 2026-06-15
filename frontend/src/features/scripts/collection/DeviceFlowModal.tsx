@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { Check, Copy } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { DeviceCodeResponse } from '@/types'
@@ -8,7 +10,16 @@ type DeviceFlowModalProps = {
 }
 
 export function DeviceFlowModal({ device, onClose }: DeviceFlowModalProps) {
+  const [copied, setCopied] = useState(false)
+
   if (!device) return null
+
+  function handleCopy() {
+    navigator.clipboard?.writeText(device!.user_code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md border border-white/15 bg-[#141414] shadow-2xl">
@@ -32,12 +43,12 @@ export function DeviceFlowModal({ device, onClose }: DeviceFlowModalProps) {
             <span className="font-mono text-lg tracking-[0.3em] text-[#e5e5e5]">
               {device.user_code}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigator.clipboard?.writeText(device.user_code)}
-            >
-              Copy
+            <Button variant="outline" size="sm" onClick={handleCopy}>
+              {copied ? (
+                <Check className="size-3.5 text-green-400" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
             </Button>
           </div>
           <p className="text-xs text-[#777]">Waiting for authorization…</p>

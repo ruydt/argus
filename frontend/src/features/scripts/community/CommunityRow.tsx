@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react'
+import { CheckCircle2, Download } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CommunityScript } from '@/types'
 
 import { ScriptViewerModal } from '../ScriptViewerModal'
@@ -72,15 +74,34 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
         }}
         onClick={openFromAction}
       >
-        {!script.installed ? (
-          <Button size="sm" disabled={busy} onClick={() => onInstall(script.id)}>
-            Install
-          </Button>
-        ) : (
-          <Badge variant="secondary" className="px-2.5 py-1">
-            Installed
-          </Badge>
-        )}
+        <TooltipProvider delayDuration={100}>
+          {!script.installed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => onInstall(script.id)}
+                  aria-label="Install script"
+                  className="size-8 p-0"
+                >
+                  <Download className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Install</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="flex size-8 items-center justify-center text-green-500">
+                  <CheckCircle2 className="size-4" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Installed</TooltipContent>
+            </Tooltip>
+          )}
+        </TooltipProvider>
       </div>
 
       <ScriptViewerModal

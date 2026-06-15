@@ -185,19 +185,19 @@ describe('useEventFilters append short-circuit', () => {
   it('append path excludes an appended event that fails the active filter', () => {
     // The highest-risk path: the appended slice must be filtered with the
     // same predicate as a full re-filter, not blindly concatenated.
-    const base = [makeAppendEvent({ session: 's1', action: 'EDIT' })]
+    const base = [makeAppendEvent({ session: 's1', hook_event_name: 'PreToolUse' })]
     const { result, rerender } = renderHook(
       ({ evts }) =>
         useEventFilters(evts, '', vi.fn(), '', 'all', vi.fn(), '', vi.fn(), '', vi.fn(), true),
       { wrapper, initialProps: { evts: base } }
     )
     act(() => {
-      result.current.setActionFilter('EDIT')
+      result.current.setActionFilter('PreToolUse')
     })
     expect(result.current.filteredEvents).toHaveLength(1)
 
-    // Append a BASH event — excluded by the active EDIT filter.
-    const appended = [...base, makeAppendEvent({ session: 's2', action: 'BASH' })]
+    // Append a PostToolUse event — excluded by the active PreToolUse filter.
+    const appended = [...base, makeAppendEvent({ session: 's2', hook_event_name: 'PostToolUse' })]
     rerender({ evts: appended })
     expect(result.current.filteredEvents).toHaveLength(1)
     expect(result.current.filteredEvents.map((e) => e.session)).toEqual(['s1'])
