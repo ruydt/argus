@@ -21,9 +21,11 @@ scope, but it means network exposure changes the risk model immediately.
 Argus uses multiple local-first guards:
 
 - loopback bind default: `127.0.0.1:10804`
-- Host header guard for local hosts
+- Host header guard for local hosts (blocks DNS rebinding)
 - CORS allowlist for local browser origins
-- existing export endpoint browser checks
+- cross-site (`Sec-Fetch-Site`) guard on all sensitive and state-changing
+  endpoints — raw payloads, exports, the hook simulator, reveal, hooks-config
+  writes, and the collection/registry/GitHub endpoints
 
 Remote bind is an explicit opt-in:
 
@@ -34,6 +36,11 @@ ARGUS_ALLOW_REMOTE=1 ADDR=0.0.0.0:10804 ./argus
 Using `ARGUS_ALLOW_REMOTE=1` means you accept that argus may be reachable
 outside the loopback interface. It does not add authentication, encryption, or a
 public-sharing access-control layer.
+
+**The hook simulator (`/api/hooks/simulate`) and reveal (`/api/diagnostics/reveal`)
+run local commands by design.** Direct remote requests are still rejected by the
+Host-header guard, but exposing the backend beyond localhost is dangerous — a
+reachable simulator is arbitrary command execution. Keep argus on loopback.
 
 ## Unsupported Sharing
 

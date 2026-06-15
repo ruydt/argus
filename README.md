@@ -34,6 +34,10 @@ across a thousand gists. Argus fixes all three, locally:
   prompt-injection scanner, webhook notifications, and more. Every script works
   with Claude Code and Codex — and the in-app **Scripts library** lets you browse,
   search, and one-click install any of them into `~/.argus/hooks/`.
+- **Community sharing** — browse and install the whole community registry, and (with
+  an optional GitHub login) **publish your own** scripts via a pull request or back
+  up your collection to a private gist. Nothing is uploaded except the scripts you
+  choose to share.
 
 Backing it up: a **live observability layer** — every hook payload is normalized to a
 canonical event model, persisted to SQLite, and streamed to a real-time dashboard

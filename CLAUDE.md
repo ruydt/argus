@@ -105,7 +105,8 @@ Browser ← GET /api/events/stream (SSE) ← EventService.subscribers (sync.Map)
         → POST /api/community/simulate       (verified registry script in simulator sandbox)
         ← GET /api/diagnostics               (health/storage/file system; also feeds the
                                               simulator's ~/.argus/hooks script picker)
-        → POST /api/github/device            (start GitHub device-flow login)
+        → POST /api/diagnostics/compact      (gzip-backfill raw_payload + VACUUM; reclaims disk)
+        → POST /api/github/device            (start GitHub device-flow login; ?share=1 for publish scope)
         ← GET /api/github/status             (auth state; advances device-flow poll)
         → POST /api/github/logout            (delete local token)
         ← GET /api/collection                (local ∪ gist collection view; auth optional)
@@ -239,7 +240,8 @@ function renderWith(props) {
 - **Frontend components:** Check `src/components/ui/` before writing any raw HTML element. If a shadcn primitive covers the case, use it.
 - **Backend changes:** Always run `go build ./...` + `go test ./...` + `golangci-lint run ./...` before marking done. Add tests for any new handler/service/repository function.
 - **Domain types:** Keep `backend/internal/domain/event.go` JSON tags in sync with `frontend/src/types/events.ts`. No transformation layer exists — any mismatch silently breaks the data contract.
-- **Migrations:** New migration = new `.sql` file with the next sequence number. Never edit existing migrations.
+- **Migrations:** New migration = new `.sql` file with the next sequence number. Never edit existing migrations. Argus refuses to open a DB whose recorded migration version exceeds the binary's (downgrade guard).
+- **Storage:** `raw_payload` is stored gzip-compressed (transparent on read). Per-model usage is persisted in `session_model_usage` on ingest so the dashboard never re-scans transcripts. `POST /api/diagnostics/compact` reclaims disk; `ARGUS_RETENTION_DAYS`/`ARGUS_MAX_EVENTS` (default off) prune old events.
 - **Agent normalization:** Edit `internal/agents/claudecode/` or `internal/agents/codex/` for payload shape changes. Never parse agent-specific fields in the handler or service.
 - **Single sources of truth:** Session display formatting lives in `features/sessions/utils.ts`. Architecture/conventions reference lives in `.planning/codebase/`. Design specs live in `docs/superpowers/specs/`. Plans live in `docs/superpowers/plans/`.
 - **No barrel files in features.** Import from the specific file, not a feature `index.ts`.

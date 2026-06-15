@@ -82,10 +82,23 @@ Backend environment variables:
 | `ARGUS_IGNORE`        | `~/.config/argus/ignore`        | Path to gitignore-style privacy exclusion file                                |
 | `ARGUS_CORS_ORIGINS`  | _(derived from ADDR)_            | Extra comma-separated CORS origins allowed beyond the loopback defaults       |
 | `ARGUS_ALLOW_REMOTE`  | _(unset)_                        | Set to `1` to allow binding to non-loopback addresses (see security.md)      |
+| `ARGUS_RETENTION_DAYS`| `0` (disabled)                   | Prune hook events older than N days (sweep runs every 6h). `0` keeps everything. |
+| `ARGUS_MAX_EVENTS`    | `0` (disabled)                   | Cap the hook-events table to the N newest rows. `0` keeps everything.          |
 
 See [docs/privacy.md](privacy.md) for ignore rules and export handling. See
 [docs/security.md](security.md) for loopback defaults, remote opt-in, and
 unsupported remote sharing guidance.
+
+## Database size
+
+The database grows with hook activity. Two controls bound it:
+
+- **Compaction (lossless):** the **Compact database** button on the Diagnostics
+  page gzip-compresses stored payloads and `VACUUM`s to reclaim free pages. No
+  events are deleted. Run it whenever the DB feels large.
+- **Retention (deletes data):** set `ARGUS_RETENTION_DAYS` and/or
+  `ARGUS_MAX_EVENTS` to automatically prune old events on a 6-hour sweep. Both
+  default to off, so nothing is ever deleted unless you opt in.
 
 Use `DB_PATH` when you want data stored outside the repo:
 
