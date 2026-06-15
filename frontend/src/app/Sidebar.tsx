@@ -36,6 +36,27 @@ function ArgusEye({ className }: { className?: string }) {
   )
 }
 
+function SteeringWheel({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="2.5" />
+      <line x1="12" y1="9.5" x2="12" y2="3" />
+      <line x1="9.83" y1="10.17" x2="5.02" y2="18.38" />
+      <line x1="14.17" y1="10.17" x2="18.98" y2="18.38" />
+    </svg>
+  )
+}
+
 interface SidebarProps {
   id?: string
   collapsed: boolean
@@ -46,6 +67,9 @@ interface SidebarProps {
   onClose?: () => void
   className?: string
   containerRef?: RefObject<HTMLElement | null>
+  onStartTour?: () => void
+  hasTourForRoute?: boolean
+  isFirstVisitTourActive?: boolean
 }
 
 interface NavItem {
@@ -165,6 +189,9 @@ export function Sidebar({
   onClose,
   className,
   containerRef,
+  onStartTour,
+  hasTourForRoute = false,
+  isFirstVisitTourActive = false,
 }: SidebarProps) {
   const showCollapsedTooltips = mode === 'desktop' && collapsed
   const isMobile = mode === 'mobile'
@@ -314,6 +341,59 @@ export function Sidebar({
 
       {/* Bottom divider line + version badge */}
       <div className="mt-auto">
+        {!isFirstVisitTourActive && (
+          <TooltipProvider delayDuration={100}>
+            <div className="mb-1">
+              {showCollapsedTooltips ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={!hasTourForRoute}
+                      onClick={onStartTour}
+                      className={cn(
+                        'h-9 w-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
+                        'justify-center rounded-lg px-0',
+                        hasTourForRoute
+                          ? 'text-[#666] hover:bg-white/[0.06] hover:text-[#aaa]'
+                          : 'cursor-not-allowed opacity-40'
+                      )}
+                      aria-label="Start page tour"
+                    >
+                      <SteeringWheel className="size-[15px] shrink-0" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={10}>
+                    Tour
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={!hasTourForRoute}
+                  onClick={onStartTour}
+                  className={cn(
+                    'h-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
+                    collapsed ? 'w-9 justify-center rounded-lg px-0' : 'w-full justify-start rounded-lg px-0',
+                    hasTourForRoute
+                      ? 'text-[#666] hover:bg-white/[0.06] hover:text-[#aaa]'
+                      : 'cursor-not-allowed opacity-40'
+                  )}
+                  aria-label="Start page tour"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center">
+                    <SteeringWheel className="size-[15px] shrink-0" />
+                  </span>
+                  <span aria-hidden="true" className={desktopNavLabelClassName}>
+                    Tour
+                  </span>
+                </Button>
+              )}
+            </div>
+          </TooltipProvider>
+        )}
         <div className="sidebar-bottom-divider" />
         {!collapsed && (
           <div className="flex items-center px-2 pt-2 pb-1">
