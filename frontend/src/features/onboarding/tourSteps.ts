@@ -24,8 +24,7 @@ export function buildFirstVisitSteps({
       element: '[data-tour="hooks-config-link"]',
       popover: {
         title: 'Configure your hooks',
-        description:
-          'First, wire up your agent. Click <strong>Next</strong> to open Hooks Config.',
+        description: 'First, wire up your agent. Click <strong>Next</strong> to open Hooks Config.',
         onNextClick: () => {
           navigate('/hooks-config')
           // Poll until the preset selector renders (page is lazy-loaded)

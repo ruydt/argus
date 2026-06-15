@@ -55,7 +55,7 @@ describe('useOnboarding', () => {
     localStorageMock.getItem.mockReturnValue(null)
 
     renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock }),
+      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
     )
 
     act(() => vi.advanceTimersByTime(900))
@@ -69,7 +69,7 @@ describe('useOnboarding', () => {
     localStorageMock.getItem.mockReturnValue('1')
 
     renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock }),
+      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
     )
 
     act(() => vi.advanceTimersByTime(900))
@@ -82,7 +82,7 @@ describe('useOnboarding', () => {
     localStorageMock.getItem.mockReturnValue(null)
 
     const { result } = renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock }),
+      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
     )
 
     act(() => vi.advanceTimersByTime(900))
@@ -99,7 +99,7 @@ describe('useOnboarding', () => {
     localStorageMock.getItem.mockReturnValue('1')
 
     const { result } = renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock }),
+      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
     )
 
     act(() => vi.advanceTimersByTime(900))
@@ -114,7 +114,7 @@ describe('useOnboarding', () => {
     localStorageMock.getItem.mockReturnValue('1')
 
     const { result } = renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock }),
+      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
     )
 
     act(() => vi.advanceTimersByTime(900))

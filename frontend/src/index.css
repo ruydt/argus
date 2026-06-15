@@ -321,7 +321,3 @@ mark {
 .argus-tour-popover .driver-popover-close-btn:hover {
   color: #e5e5e5;
 }
-
-.driver-overlay {
-  background: rgba(0, 0, 0, 0.72) !important;
-}
