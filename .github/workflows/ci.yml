@@ -113,6 +113,26 @@ jobs:
           working-directory: backend
           version: v2.12.2
 
+  # ── PowerShell installer lint (install.ps1 can't be tested on Linux/macOS) ─
+  powershell-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Lint install.ps1 (PSScriptAnalyzer)
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          $results = Invoke-ScriptAnalyzer -Path install.ps1 -Severity Error,Warning
+          if ($results) { $results | Format-Table -AutoSize | Out-String | Write-Host }
+          $errors = @($results | Where-Object { $_.Severity -eq 'Error' })
+          if ($errors.Count -gt 0) {
+            Write-Host "::error::PSScriptAnalyzer found $($errors.Count) error(s) in install.ps1"
+            exit 1
+          }
+          Write-Host "install.ps1: no PSScriptAnalyzer errors"
+
   # ── Playwright e2e (needs both backend checks + built frontend) ───────────
   playwright:
     runs-on: ubuntu-latest
