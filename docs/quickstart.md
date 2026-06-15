@@ -8,8 +8,10 @@ Target: first successful local run in 5 to 10 minutes.
 curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
 ```
 
-Installs the argus binary to `~/.argus/bin/argus`, wires the `SessionStart` hook in
-`~/.claude/settings.json`, and creates `~/.argus/bin/start-argus.sh`.
+Installs the argus binary to `~/.argus/bin/argus`, adds it to your PATH, and wires
+the `SessionStart` hook (`~/.argus/hooks/argus-activate.js`) in
+`~/.claude/settings.json`. The hook starts the server on its own when an agent
+session begins.
 
 Before you send the first hook event, know what argus captures: prompts, diffs,
 file paths, tool outputs, raw payloads, and exports are sensitive local data.
@@ -25,9 +27,9 @@ SessionStart hook (completed)
   hook context: ARGUS live @ http://127.0.0.1:10804
 ```
 
-Or start manually:
+Or start manually (the binary is on your PATH after install):
 ```bash
-~/.argus/bin/start-argus.sh
+argus
 ```
 
 Open **http://127.0.0.1:10804**.

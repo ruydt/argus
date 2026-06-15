@@ -5,8 +5,6 @@ REPO="duytrandt04-afk/argus"
 ARGUS_DIR="$HOME/.argus"
 BINARY_DIR="$ARGUS_DIR/bin"
 BINARY="$BINARY_DIR/argus"
-START_SCRIPT="$BINARY_DIR/start-argus.sh"
-STOP_SCRIPT="$BINARY_DIR/argus-stop.sh"
 HOOKS_DIR="$ARGUS_DIR/hooks"
 ACTIVATE_SCRIPT="$HOOKS_DIR/argus-activate.js"
 SETTINGS="$HOME/.claude/settings.json"
@@ -82,76 +80,22 @@ mv "$WORK_DIR/argus" "$BINARY"
 chmod +x "$BINARY"
 echo "  → $BINARY"
 
-# ── 5. Write start-argus.sh ───────────────────────────────────────────────
-
-cat > "$START_SCRIPT" << EOF
-#!/bin/bash
-BINARY_PATH="$BINARY"
-ARGUS_PORT=$ARGUS_PORT
-DB_DIR="\$HOME/.argus"
-DB_PATH="\$DB_DIR/argus.db"
-LOG_PATH="\$DB_DIR/argus.log"
-SCRIPT_LOG_PATH="\$DB_DIR/hook-scripts.log"
-
-log_script() {
-  mkdir -p "\$DB_DIR" 2>/dev/null || true
-  printf '%s start-argus.sh %s %s\n' "\$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "\$1" "\$2" >> "\$SCRIPT_LOG_PATH" 2>/dev/null || true
-}
-
-mkdir -p "\$DB_DIR"
-log_script INFO "start"
-
-RUNNING_PID=\$(lsof -ti:"\$ARGUS_PORT" 2>/dev/null)
-if [ -n "\$RUNNING_PID" ]; then
-  RUNNING_BIN=\$(lsof -p "\$RUNNING_PID" 2>/dev/null | awk '\$4=="txt" {print \$NF}' | head -1)
-  if [ "\$RUNNING_BIN" = "\$BINARY_PATH" ]; then
-    log_script INFO "server already running"
-    echo '{"continue":true,"suppressOutput":true}'
-    exit 0
-  fi
-  # Different binary on port (dev build or old version) — replace with installed binary
-  log_script WARN "replacing pid \$RUNNING_PID on port \$ARGUS_PORT"
-  kill "\$RUNNING_PID"
-  sleep 0.5
-fi
-
-log_script INFO "launching server"
-DB_PATH="\$DB_PATH" ADDR="127.0.0.1:\$ARGUS_PORT" \\
-  nohup "\$BINARY_PATH" >> "\$LOG_PATH" 2>&1 &
-
-echo '{"continue":true,"suppressOutput":true}'
-EOF
-chmod +x "$START_SCRIPT"
-echo "  → $START_SCRIPT"
-
-# ── 6. Write argus-stop.sh ────────────────────────────────────────────────
-
-cat > "$STOP_SCRIPT" << EOF
-#!/bin/bash
-PID=\$(lsof -ti:$ARGUS_PORT)
-if [ -z "\$PID" ]; then
-  echo "argus not running"
-  exit 0
-fi
-echo "\$PID" | xargs kill && echo "argus stopped"
-EOF
-chmod +x "$STOP_SCRIPT"
-echo "  → $STOP_SCRIPT"
-
-# ── 7. Write argus-activate.js ────────────────────────────────────────────
+# ── 5. Write argus-activate.js (SessionStart hook; starts the server itself) ──
 
 mkdir -p "$HOOKS_DIR"
-# Write activate script with START_SCRIPT path interpolated, rest heredoc-quoted
+# BINARY path is interpolated by the shell; all \${...} are JS template literals.
 cat > "$ACTIVATE_SCRIPT" << SCRIPTEOF
 #!/usr/bin/env node
-const { execSync, spawnSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
+const fs = require('fs');
 const net = require('net');
 const os = require('os');
 const path = require('path');
 const db = path.join(os.homedir(), '.argus', 'argus.db');
+const logPath = path.join(os.homedir(), '.argus', 'argus.log');
 const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
 const url = 'http://127.0.0.1:10804';
-const startScript = '${START_SCRIPT}';
+const binary = '${BINARY}';
 const isClaudeCode = process.env.CLAUDECODE === '1';
 
 function isServerUp() {
@@ -178,16 +122,36 @@ function emit(msg) {
 
 function logScript(level, msg) {
   try {
-    require('fs').appendFileSync(scriptLog, \`\${new Date().toISOString()} argus-activate.js \${level} \${msg}\n\`);
+    fs.appendFileSync(scriptLog, \`\${new Date().toISOString()} argus-activate.js \${level} \${msg}\n\`);
   } catch (_) {}
+}
+
+// Launch the server detached so it outlives this hook process. Output goes to
+// argus.log; the child is fully unref'd so the agent isn't held open.
+function startServer() {
+  try {
+    fs.mkdirSync(path.dirname(db), { recursive: true });
+  } catch (_) {}
+  let out;
+  try {
+    out = fs.openSync(logPath, 'a');
+  } catch (_) {
+    out = 'ignore';
+  }
+  const child = spawn(binary, [], {
+    detached: true,
+    stdio: ['ignore', out, out],
+    env: { ...process.env, DB_PATH: db, ADDR: '127.0.0.1:10804' },
+  });
+  child.unref();
 }
 
 async function main() {
   logScript('INFO', 'start');
   let up = await isServerUp();
   if (!up) {
-    logScript('WARN', 'server offline; invoking start script');
-    spawnSync('bash', [startScript], { stdio: 'ignore' });
+    logScript('WARN', 'server offline; launching');
+    startServer();
     await sleep(1200);
     up = await isServerUp();
   }
@@ -219,7 +183,7 @@ SCRIPTEOF
 chmod +x "$ACTIVATE_SCRIPT"
 echo "  → $ACTIVATE_SCRIPT"
 
-# ── 8. Wire SessionStart hooks in ~/.claude/settings.json ───────────────────
+# ── 6. Wire SessionStart hooks in ~/.claude/settings.json ───────────────────
 
 if ! command -v python3 &>/dev/null; then
   echo "warning: python3 not found — add hook manually to ~/.claude/settings.json"
@@ -263,7 +227,7 @@ else:
 PYEOF
 fi
 
-# ── 9. Add ~/.argus/bin to PATH in shell rc ──────────────────────────────
+# ── 7. Add ~/.argus/bin to PATH in shell rc ──────────────────────────────
 
 PATH_LINE="export PATH=\"\$HOME/.argus/bin:\$PATH\""
 SHELL_RC=""
@@ -283,8 +247,8 @@ fi
 
 echo ""
 echo "argus $VERSION installed."
-echo "Start:  $START_SCRIPT"
-echo "Stop:   $STOP_SCRIPT"
+echo "Hook:   $ACTIVATE_SCRIPT"
+echo "Start:  argus            # or just start a Claude Code / Codex session"
 echo "UI:     http://127.0.0.1:$ARGUS_PORT"
 echo ""
 echo "Restart Claude Code or Codex — argus starts automatically."
