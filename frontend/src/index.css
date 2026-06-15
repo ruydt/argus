@@ -258,3 +258,70 @@ mark {
   padding: 0 1px;
   box-shadow: 0 0 4px rgba(167, 139, 250, 0.2);
 }
+
+/* ─── Driver.js tour popover — Argus dark theme ─────────────────────────── */
+.argus-tour-popover.driver-popover {
+  background-color: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  color: #e5e5e5;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.argus-tour-popover .driver-popover-title {
+  color: #f0f0f0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.argus-tour-popover .driver-popover-description {
+  color: #b0b0b0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.argus-tour-popover .driver-popover-progress-text {
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.argus-tour-popover .driver-popover-navigation-btns button {
+  background-color: #a78bfa;
+  border: none;
+  border-radius: 6px;
+  color: #111;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.argus-tour-popover .driver-popover-navigation-btns button:hover {
+  background-color: #c4b5fd;
+}
+
+.argus-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn {
+  background-color: transparent;
+  border: 1px solid #2a2a2a;
+  color: #9a9a9a;
+}
+
+.argus-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #d4d4d4;
+}
+
+.argus-tour-popover .driver-popover-close-btn {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.argus-tour-popover .driver-popover-close-btn:hover {
+  color: #e5e5e5;
+}
+
+.driver-overlay {
+  background: rgba(0, 0, 0, 0.72) !important;
+}
