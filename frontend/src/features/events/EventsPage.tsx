@@ -380,9 +380,7 @@ export function EventsPage() {
   // append unrelated sessions and pollute the result set.
   const activeEvents = useMemo(
     () =>
-      isLive && !searching
-        ? mergeByKey(histState.events, liveState.events)
-        : histState.events,
+      isLive && !searching ? mergeByKey(histState.events, liveState.events) : histState.events,
     [isLive, searching, histState.events, liveState.events]
   )
   const activeError = isLive ? liveState.error : histState.error

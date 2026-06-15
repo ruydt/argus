@@ -18,6 +18,9 @@ export function ScriptViewerModal({ title, open, onOpenChange, load }: ScriptVie
   useEffect(() => {
     if (!open) return
     let cancelled = false
+    // Reset to the loading state each time the modal (re)opens. The sync setState
+    // is intentional here (no stale content flash); the async results set below.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBody(null)
     setError(false)
     load()

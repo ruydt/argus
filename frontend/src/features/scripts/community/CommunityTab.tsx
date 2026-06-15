@@ -42,6 +42,8 @@ export function CommunityTab({ query, community }: CommunityTabProps) {
   }, [scripts, query])
 
   useEffect(() => {
+    // Reset the infinite-scroll window when the search query changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(PAGE)
   }, [query])
 

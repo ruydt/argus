@@ -202,11 +202,15 @@ export function HooksConfigPage() {
   useEffect(() => {
     if (deepLinkApplied.current) return
     deepLinkApplied.current = true
+    // One-time deep-link application from URL params on first mount; the ref guard
+    // ensures it runs once, so the sync setState can't cascade.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (searchParams.get('view') === 'simulator') setViewMode('simulator')
     const ev = searchParams.get('event')
     if (ev) setSimEventType(ev)
     const sc = searchParams.get('script')
     if (sc) setInitialScript(sc)
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [searchParams])
 
   const [simCommandValue, setSimCommandValue] = useState<string>(

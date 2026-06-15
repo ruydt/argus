@@ -1272,31 +1272,34 @@ func (d *DB) Compact(ctx context.Context) (domain.CompactResult, error) {
 	res.BeforeBytes = before
 
 	const batchSize = 500
-	for {
-		var ids []int64
-		var raws [][]byte
+	// fetchBatch reads one page of still-uncompressed rows. Kept in a closure so
+	// rows.Close() can be deferred (the result set is fully read before the tx).
+	fetchBatch := func() (ids []int64, raws [][]byte, err error) {
 		rows, err := d.db.QueryContext(ctx, `
 			SELECT id, raw_payload FROM hook_events
 			WHERE LENGTH(raw_payload) > 0 AND hex(substr(raw_payload, 1, 2)) != '1F8B'
 			LIMIT ?`, batchSize)
 		if err != nil {
-			return res, err
+			return nil, nil, err
 		}
+		defer func() { _ = rows.Close() }()
 		for rows.Next() {
 			var id int64
 			var raw []byte
 			if err := rows.Scan(&id, &raw); err != nil {
-				_ = rows.Close()
-				return res, err
+				return nil, nil, err
 			}
 			ids = append(ids, id)
 			raws = append(raws, raw)
 		}
-		if err := rows.Err(); err != nil {
-			_ = rows.Close()
+		return ids, raws, rows.Err()
+	}
+
+	for {
+		ids, raws, err := fetchBatch()
+		if err != nil {
 			return res, err
 		}
-		_ = rows.Close()
 		if len(ids) == 0 {
 			break
 		}
@@ -1439,7 +1442,7 @@ func gunzipPayload(stored []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer zr.Close()
+	defer func() { _ = zr.Close() }()
 	return io.ReadAll(zr)
 }
 

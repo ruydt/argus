@@ -72,24 +72,27 @@ export function useCollection() {
 
   // share=true requests the broader publish scope (gist + public_repo); a plain
   // login asks for gist only so signing in never grants public-repo write access.
-  const startLogin = useCallback(async (share = false) => {
-    const resp = await fetch(`/api/github/device${share ? '?share=1' : ''}`, { method: 'POST' })
-    if (!resp.ok) throw new Error(`device ${resp.status}`)
-    const dc: DeviceCodeResponse = await resp.json()
-    setDeviceCode(dc)
-    if (pollRef.current) clearInterval(pollRef.current)
-    pollRef.current = setInterval(
-      async () => {
-        const status = await (await fetch('/api/github/status')).json()
-        if (status.authenticated) {
-          if (pollRef.current) clearInterval(pollRef.current)
-          setDeviceCode(null)
-          await reload()
-        }
-      },
-      (dc.interval || 5) * 1000
-    )
-  }, [reload])
+  const startLogin = useCallback(
+    async (share = false) => {
+      const resp = await fetch(`/api/github/device${share ? '?share=1' : ''}`, { method: 'POST' })
+      if (!resp.ok) throw new Error(`device ${resp.status}`)
+      const dc: DeviceCodeResponse = await resp.json()
+      setDeviceCode(dc)
+      if (pollRef.current) clearInterval(pollRef.current)
+      pollRef.current = setInterval(
+        async () => {
+          const status = await (await fetch('/api/github/status')).json()
+          if (status.authenticated) {
+            if (pollRef.current) clearInterval(pollRef.current)
+            setDeviceCode(null)
+            await reload()
+          }
+        },
+        (dc.interval || 5) * 1000
+      )
+    },
+    [reload]
+  )
 
   const cancelLogin = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current)

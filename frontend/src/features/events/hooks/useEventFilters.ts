@@ -136,7 +136,9 @@ export function useEventFilters(
     if (isAppendOnly) {
       const appended: EventRecord[] = []
       for (let i = prevLen; i < events.length; i++) {
-        if (eventMatchesFilters(events[i], actionFilter, agentFilter, projectFilter, sessionFilter)) {
+        if (
+          eventMatchesFilters(events[i], actionFilter, agentFilter, projectFilter, sessionFilter)
+        ) {
           appended.push(events[i])
         }
       }
