@@ -2,10 +2,13 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { SetStateAction } from 'react'
 import { PanelLeft } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSessions } from '@/hooks/useSessions'
 import type { LayoutOutletContext } from '@/types'
+import { useOnboarding } from '@/features/onboarding/useOnboarding'
+import { PAGE_TOURS } from '@/features/onboarding/pageTours'
 import { HeaderClock } from './HeaderClock'
 import { Sidebar } from './Sidebar'
 
@@ -90,6 +93,15 @@ export function Layout() {
     isDesktopViewport,
   } = state
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const { isFirstVisitTourActive, startPageTour } = useOnboarding({
+    navigate,
+    forceSidebarOpen: () => dispatch({ type: 'SET_SIDEBAR_COLLAPSED', collapsed: false }),
+  })
+
+  const hasTourForRoute = Boolean(PAGE_TOURS[location.pathname])
+
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null)
   const mobileSidebarRef = useRef<HTMLElement | null>(null)
   const shellContentRef = useRef<HTMLDivElement | null>(null)
@@ -248,6 +260,9 @@ export function Layout() {
         onToggleCollapse={() => dispatch({ type: 'TOGGLE_SIDEBAR_COLLAPSED' })}
         mode="desktop"
         className="hidden md:flex"
+        onStartTour={() => startPageTour(location.pathname)}
+        hasTourForRoute={hasTourForRoute}
+        isFirstVisitTourActive={isFirstVisitTourActive}
       />
 
       <button
@@ -270,6 +285,9 @@ export function Layout() {
         onClose={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: null })}
         containerRef={mobileSidebarRef}
         className="fixed inset-y-0 left-0 z-50 flex w-[240px] max-w-[calc(100vw-2rem)] md:hidden"
+        onStartTour={() => startPageTour(location.pathname)}
+        hasTourForRoute={hasTourForRoute}
+        isFirstVisitTourActive={isFirstVisitTourActive}
       />
 
       <div
