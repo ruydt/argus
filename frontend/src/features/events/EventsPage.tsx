@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { Columns2, SlidersHorizontal } from 'lucide-react'
 import { useOutletContext } from 'react-router-dom'
@@ -254,8 +254,29 @@ function SinglePanel({
   highlightedEventKey,
   onTargetVisible,
 }: SinglePanelProps) {
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const autoLoad = !isLive && hasMore
+
+  // Auto-load the next page when the bottom sentinel scrolls into view (matches
+  // the infinite scroll on the other pages). loadMore is a no-op while a fetch
+  // is in flight, so repeat intersections are safe.
+  useEffect(() => {
+    if (!autoLoad) return
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) onLoadMore()
+      },
+      { root: scrollRef.current, rootMargin: '400px' }
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [autoLoad, onLoadMore])
+
   return (
-    <div className="relative min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
+    <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
       {activeError && (
         <Alert variant="destructive" className="mb-4 bg-red-950/50 border-red-900">
           <AlertTitle>Connection Error</AlertTitle>
@@ -288,11 +309,9 @@ function SinglePanel({
         />
       )}
 
-      {!isLive && hasMore && (
-        <div className="flex justify-center py-4">
-          <Button variant="outline" size="sm" onClick={onLoadMore} disabled={histLoading}>
-            {histLoading ? 'Loading...' : 'Load more'}
-          </Button>
+      {autoLoad && (
+        <div ref={sentinelRef} className="flex justify-center py-4 text-xs text-[#666]">
+          {histLoading ? 'Loading...' : ''}
         </div>
       )}
     </div>
