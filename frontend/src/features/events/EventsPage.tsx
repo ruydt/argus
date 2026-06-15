@@ -144,6 +144,7 @@ function SplitPanels({
       <ResizablePanel minSize={20} defaultSize={50}>
         <div
           data-testid="events-panel-1"
+          data-tour="events-feed"
           className={cn(
             'relative h-full overflow-y-auto p-3 sm:p-4 lg:p-5 transition-colors',
             dragOverPanel === 1 && 'bg-sky-500/[0.04] ring-1 ring-inset ring-sky-500/20'

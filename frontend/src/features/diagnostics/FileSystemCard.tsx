@@ -23,6 +23,7 @@ function UninstalledBadge() {
 
 type FileSystemCardProps = {
   fileSystem: DiagnosticsFileSystem
+  'data-tour'?: string
 }
 
 function RevealButton({ entry }: { entry: DiagnosticsFileEntry }) {
@@ -199,7 +200,7 @@ function SubSection({ label, entries, dirExists, emptyLabel, total }: SubSection
   )
 }
 
-export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
+export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystemCardProps) {
   const argusTail = useLogTail('argus', 50)
   const buildTail = useLogTail('build', 50)
   const hookScriptsTail = useLogTail('hook-scripts', 50)
@@ -234,7 +235,7 @@ export function FileSystemCard({ fileSystem }: FileSystemCardProps) {
   }
 
   return (
-    <Card>
+    <Card data-tour={dataTour}>
       <CardHeader>
         <CardTitle>File System</CardTitle>
       </CardHeader>

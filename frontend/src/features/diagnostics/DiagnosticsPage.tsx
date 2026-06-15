@@ -205,7 +205,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
       {/* Summary tile row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {/* Tile 1 — Readiness */}
-        <Card>
+        <Card data-tour="diagnostics-health">
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
               <Activity className="inline size-4 mr-1 text-muted-foreground" />
@@ -479,7 +479,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
       </div>
 
       {/* File System — full width */}
-      <FileSystemCard fileSystem={data.fileSystem} />
+      <FileSystemCard fileSystem={data.fileSystem} data-tour="diagnostics-filesystem" />
     </>
   )
 }

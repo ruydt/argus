@@ -87,18 +87,20 @@ export function ScriptsPage() {
       </div>
 
       <div className="space-y-6">
-        <Tabs value={tab} onValueChange={(v) => changeTab(v as Tab)}>
+        <Tabs value={tab} onValueChange={(v) => changeTab(v as Tab)} data-tour="scripts-tabs">
           <TabsList variant="line">
             <TabsTrigger value="community">Community</TabsTrigger>
             <TabsTrigger value="collection">My Collection</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        {tab === 'community' ? (
-          <CommunityTab query={query} community={community} />
-        ) : (
-          <CollectionTab query={query} collection={collection} />
-        )}
+        <div data-tour="scripts-content">
+          {tab === 'community' ? (
+            <CommunityTab query={query} community={community} />
+          ) : (
+            <CollectionTab query={query} collection={collection} />
+          )}
+        </div>
       </div>
     </PageShell>
   )

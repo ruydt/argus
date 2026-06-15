@@ -37,6 +37,7 @@ export function DashboardPage() {
               onClick={() => stats && downloadStatsCsv(stats, range)}
               disabled={!stats}
               aria-label="Download dashboard stats as CSV"
+              data-tour="dashboard-export"
             >
               <Download data-icon="inline-start" />
             </Button>
@@ -70,8 +71,14 @@ export function DashboardPage() {
         <DashboardSkeleton />
       ) : (
         <>
-          <SummaryStats stats={stats} />
-          <Tabs value={view} onValueChange={(value) => setView(value as 'activity' | 'tokens')}>
+          <div data-tour="dashboard-stats">
+            <SummaryStats stats={stats} />
+          </div>
+          <Tabs
+            value={view}
+            onValueChange={(value) => setView(value as 'activity' | 'tokens')}
+            data-tour="dashboard-chart"
+          >
             <TabsList variant="line" className="w-full flex-wrap justify-start sm:w-auto">
               <TabsTrigger value="tokens">Token usage</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
