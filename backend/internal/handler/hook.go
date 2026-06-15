@@ -56,6 +56,12 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 		case claudecode.MatchesTranscript(meta.TranscriptPath):
 			e, normalizeErr = claudecode.Normalize(raw)
 		default:
+			// No ".claude" marker → treated as Codex. Log (path-presence only, no
+			// path value per D-04) so a CLAUDE_CONFIG_DIR misclassification is
+			// diagnosable rather than silent.
+			if meta.TranscriptPath != "" {
+				slog.Debug("agent detection: no .claude marker in transcript path, defaulting to codex")
+			}
 			e, normalizeErr = codex.Normalize(raw)
 		}
 

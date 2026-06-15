@@ -70,8 +70,10 @@ export function useCollection() {
     }
   }, [reload])
 
-  const startLogin = useCallback(async () => {
-    const resp = await fetch('/api/github/device', { method: 'POST' })
+  // share=true requests the broader publish scope (gist + public_repo); a plain
+  // login asks for gist only so signing in never grants public-repo write access.
+  const startLogin = useCallback(async (share = false) => {
+    const resp = await fetch(`/api/github/device${share ? '?share=1' : ''}`, { method: 'POST' })
     if (!resp.ok) throw new Error(`device ${resp.status}`)
     const dc: DeviceCodeResponse = await resp.json()
     setDeviceCode(dc)

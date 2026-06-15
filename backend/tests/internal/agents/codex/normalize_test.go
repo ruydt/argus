@@ -6,6 +6,21 @@ import (
 	"argus/internal/agents/codex"
 )
 
+func TestNormalizeEdgeCases(t *testing.T) {
+	// Invalid JSON must return an error (degraded-mode contract), never panic.
+	if _, err := codex.Normalize([]byte(`{not json`)); err == nil {
+		t.Error("invalid JSON: expected error, got nil")
+	}
+	// Empty object is valid JSON — must normalize without panic.
+	if _, err := codex.Normalize([]byte(`{}`)); err != nil {
+		t.Errorf("empty object: unexpected error %v", err)
+	}
+	// Wrong-typed field must not panic.
+	if _, err := codex.Normalize([]byte(`{"session_id": 123}`)); err == nil {
+		t.Error("wrong-typed field: expected error, got nil")
+	}
+}
+
 func TestNormalizeApplyPatchExtractsFileChangeSnippets(t *testing.T) {
 	raw := []byte(`{
 		"session_id":"s2",

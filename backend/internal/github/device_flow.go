@@ -47,10 +47,10 @@ func (d *DeviceFlow) post(ctx context.Context, path string, form url.Values, out
 	return json.NewDecoder(resp.Body).Decode(out)
 }
 
-// Start requests a device + user code.
-func (d *DeviceFlow) Start(ctx context.Context) (DeviceCode, error) {
+// Start requests a device + user code for the given OAuth scope string.
+func (d *DeviceFlow) Start(ctx context.Context, scope string) (DeviceCode, error) {
 	var dc DeviceCode
-	form := url.Values{"client_id": {d.clientID}, "scope": {"gist public_repo"}}
+	form := url.Values{"client_id": {d.clientID}, "scope": {scope}}
 	if err := d.post(ctx, "/login/device/code", form, &dc); err != nil {
 		return DeviceCode{}, err
 	}

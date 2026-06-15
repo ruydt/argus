@@ -38,7 +38,7 @@ func TestServiceDeviceFlowToAuthenticated(t *testing.T) {
 	s.deviceCodeBase = srv.URL
 	s.apiBase = srv.URL
 
-	if _, err := s.StartDevice(context.Background()); err != nil {
+	if _, err := s.StartDevice(context.Background(), false); err != nil {
 		t.Fatalf("StartDevice: %v", err)
 	}
 	st := s.Status(context.Background())

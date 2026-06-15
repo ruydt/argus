@@ -22,6 +22,9 @@ func (r *countingUsageRepo) UpsertSession(_, _, _, _, _, _, _, _ string, usage d
 	r.usages = append(r.usages, usage)
 	return nil
 }
+func (r *countingUsageRepo) ReplaceSessionModelUsage(string, []domain.ModelUsageBreakdown) error {
+	return nil
+}
 
 func TestAddEventThrottlesUsageComputation(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), ".claude")

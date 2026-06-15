@@ -18,15 +18,16 @@ import (
 )
 
 type mockRepo struct {
-	mu        sync.Mutex
-	events    []domain.NormalizedEvent
-	sessions  []domain.Session
-	models    map[string]string
-	addErr    error
-	upsertErr error
-	upserts   int
-	lastUsage domain.SessionUsage
-	lastEnded string
+	mu         sync.Mutex
+	events     []domain.NormalizedEvent
+	sessions   []domain.Session
+	models     map[string]string
+	modelUsage map[string][]domain.ModelUsageBreakdown
+	addErr     error
+	upsertErr  error
+	upserts    int
+	lastUsage  domain.SessionUsage
+	lastEnded  string
 
 	diagnosticsStats domain.DiagnosticsStorageStats
 	agentStats       []domain.DiagnosticsAgentStats
@@ -184,6 +185,22 @@ func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string
 
 func (m *mockRepo) DeleteProjectByCWD(string) (int64, int64, error) {
 	return 0, 0, nil
+}
+
+func (m *mockRepo) ReplaceSessionModelUsage(sessionID string, models []domain.ModelUsageBreakdown) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.modelUsage == nil {
+		m.modelUsage = map[string][]domain.ModelUsageBreakdown{}
+	}
+	m.modelUsage[sessionID] = models
+	return nil
+}
+
+func (m *mockRepo) GetSessionModelUsage() (map[string][]domain.ModelUsageBreakdown, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.modelUsage, nil
 }
 
 func TestDiagnosticsReportsNotReadyAndUnavailableMemoryDB(t *testing.T) {

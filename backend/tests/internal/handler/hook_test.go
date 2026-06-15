@@ -45,6 +45,20 @@ func newHook(svc *service.EventService) http.Handler {
 	return handler.Hook(svc, matchNoneMatcher{})
 }
 
+func TestHookHandlerRejectsOversizedBody(t *testing.T) {
+	h := newHook(newTestService(t))
+	// >1 MiB body — exceeds the MaxBytesReader cap on the ingest path.
+	big := bytes.Repeat([]byte("a"), (1<<20)+1)
+	req := httptest.NewRequest(http.MethodPost, "/api/hook", bytes.NewReader(big))
+	rec := httptest.NewRecorder()
+
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want 413", rec.Code)
+	}
+}
+
 func TestHookHandlerRejectsGET(t *testing.T) {
 	h := newHook(newTestService(t))
 	req := httptest.NewRequest(http.MethodGet, "/api/hook", nil)

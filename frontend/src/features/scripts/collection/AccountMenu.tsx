@@ -58,7 +58,7 @@ export function AccountMenu({ collection }: AccountMenuProps) {
   function reauthForSharing() {
     void run(async () => {
       await logout()
-      await startLogin()
+      await startLogin(true)
     })
   }
 

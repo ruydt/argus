@@ -69,6 +69,9 @@ var schema014 string
 //go:embed migrations/015_drop_redundant_created_index.sql
 var schema015 string
 
+//go:embed migrations/016_session_model_usage.sql
+var schema016 string
+
 type DB struct {
 	db     *sql.DB
 	ready  atomic.Bool
@@ -149,6 +152,7 @@ func (d *DB) migrate() error {
 		{13, schema013},
 		{14, schema014},
 		{15, schema015},
+		{16, schema016},
 	}
 
 	// Downgrade guard: refuse to start against a DB stamped with a higher
@@ -975,6 +979,12 @@ func (d *DB) DeleteProjectByCWD(cwd string) (int64, int64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
+	// Drop per-model usage for the sessions about to be deleted (no cwd column,
+	// so scope by the session ids under this cwd).
+	if _, err := tx.ExecContext(ctx,
+		`DELETE FROM session_model_usage WHERE session_id IN (SELECT session_id FROM sessions WHERE cwd = ?)`, cwd); err != nil {
+		return 0, 0, err
+	}
 	sessRes, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE cwd = ?`, cwd)
 	if err != nil {
 		return 0, 0, err
@@ -1346,6 +1356,55 @@ func (d *DB) PruneEvents(ctx context.Context, before string, maxEvents int) (int
 		total += n
 	}
 	return total, nil
+}
+
+// ReplaceSessionModelUsage replaces all per-model usage rows for a session in one
+// transaction (delete-then-insert), so the stored breakdown always reflects the
+// latest computed values.
+func (d *DB) ReplaceSessionModelUsage(sessionID string, models []domain.ModelUsageBreakdown) error {
+	ctx, cancel := context.WithTimeout(context.Background(), sqliteWriteTimeout)
+	defer cancel()
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM session_model_usage WHERE session_id = ?`, sessionID); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	for _, m := range models {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO session_model_usage
+				(session_id, model, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, turns)
+			VALUES (?,?,?,?,?,?,?)`,
+			sessionID, m.Model, m.InputTokens, m.OutputTokens, m.CacheCreationTokens, m.CacheReadTokens, m.Turns); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// GetSessionModelUsage returns all persisted per-model usage rows keyed by
+// session ID. Used by the dashboard to avoid re-scanning transcripts.
+func (d *DB) GetSessionModelUsage() (map[string][]domain.ModelUsageBreakdown, error) {
+	rows, err := d.db.Query(`
+		SELECT session_id, model, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, turns
+		FROM session_model_usage`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string][]domain.ModelUsageBreakdown{}
+	for rows.Next() {
+		var sid string
+		var m domain.ModelUsageBreakdown
+		if err := rows.Scan(&sid, &m.Model, &m.InputTokens, &m.OutputTokens, &m.CacheCreationTokens, &m.CacheReadTokens, &m.Turns); err != nil {
+			return nil, err
+		}
+		out[sid] = append(out[sid], m)
+	}
+	return out, rows.Err()
 }
 
 // gzipPayload compresses a raw hook payload for storage. raw_payload is a

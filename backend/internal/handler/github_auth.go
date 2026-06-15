@@ -15,7 +15,10 @@ func GitHubDevice(svc *github.Service) http.Handler {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		dc, err := svc.StartDevice(r.Context())
+		// ?share=1 requests the broader scope needed to publish to the registry.
+		// A plain login omits it and is granted gist-only access.
+		share := r.URL.Query().Get("share") == "1"
+		dc, err := svc.StartDevice(r.Context(), share)
 		if err != nil {
 			log.Printf("[github] device err=%v", err)
 			http.Error(w, "github unreachable", http.StatusBadGateway)

@@ -63,9 +63,16 @@ func (s *Service) gist() (*GistClient, bool) {
 	return s.newGist(tok), true
 }
 
-// StartDevice begins a device flow and stores the pending device code.
-func (s *Service) StartDevice(ctx context.Context) (domain.DeviceCodeResponse, error) {
-	dc, err := s.deviceFlow().Start(ctx)
+// StartDevice begins a device flow and stores the pending device code. When
+// share is true the broader `gist public_repo` scope is requested (needed to
+// fork the registry and open a PR); otherwise only `gist` is requested so a
+// plain login never asks for write access to the user's public repos.
+func (s *Service) StartDevice(ctx context.Context, share bool) (domain.DeviceCodeResponse, error) {
+	scope := "gist"
+	if share {
+		scope = "gist public_repo"
+	}
+	dc, err := s.deviceFlow().Start(ctx, scope)
 	if err != nil {
 		return domain.DeviceCodeResponse{}, err
 	}

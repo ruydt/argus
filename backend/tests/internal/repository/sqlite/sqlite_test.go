@@ -1344,14 +1344,14 @@ func TestMigrationRunner_Idempotent(t *testing.T) {
 	db := newTestDB(t)
 
 	// A second call to New on the same DB would re-run migrate(). Instead,
-	// verify idempotency by checking schema_migrations has exactly 15 versions.
+	// verify idempotency by checking schema_migrations has exactly 16 versions.
 	rawDB := db.RawDB()
 	var count int
 	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("count schema_migrations: %v", err)
 	}
-	if count != 15 {
-		t.Errorf("schema_migrations has %d rows, want 15 (migrations 1–15)", count)
+	if count != 16 {
+		t.Errorf("schema_migrations has %d rows, want 16 (migrations 1–16)", count)
 	}
 }
 
@@ -1613,6 +1613,66 @@ func TestMigrate_RefusesNewerSchema(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "newer than this binary") {
 		t.Errorf("error = %v, want newer-than-binary message", err)
+	}
+}
+
+// TestSessionModelUsage_replaceAndGet covers the persisted per-model breakdown:
+// replace is delete-then-insert, GetSessionModelUsage returns rows keyed by
+// session, and deleting a project clears its model rows.
+func TestSessionModelUsage_replaceAndGet(t *testing.T) {
+	db := newTestDB(t)
+	if err := db.UpsertSession("s1", "claudecode", "m", "", "/work/argus", "", "2026-01-01T00:00:00Z", "", domain.SessionUsage{}); err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+	models := []domain.ModelUsageBreakdown{
+		{Model: "opus", InputTokens: 100, OutputTokens: 50, CacheReadTokens: 10, Turns: 3},
+		{Model: "sonnet", InputTokens: 20, OutputTokens: 5, Turns: 1},
+	}
+	if err := db.ReplaceSessionModelUsage("s1", models); err != nil {
+		t.Fatalf("replace: %v", err)
+	}
+
+	all, err := db.GetSessionModelUsage()
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if got := len(all["s1"]); got != 2 {
+		t.Fatalf("s1 models = %d, want 2", got)
+	}
+
+	// Replace is authoritative — fewer rows replace the prior set.
+	if err := db.ReplaceSessionModelUsage("s1", models[:1]); err != nil {
+		t.Fatalf("replace 2: %v", err)
+	}
+	all, _ = db.GetSessionModelUsage()
+	if got := len(all["s1"]); got != 1 {
+		t.Fatalf("after shrink, s1 models = %d, want 1", got)
+	}
+
+	// Deleting the project clears its model-usage rows.
+	if _, _, err := db.DeleteProjectByCWD("/work/argus"); err != nil {
+		t.Fatalf("delete project: %v", err)
+	}
+	all, _ = db.GetSessionModelUsage()
+	if got := len(all["s1"]); got != 0 {
+		t.Fatalf("after project delete, s1 models = %d, want 0", got)
+	}
+}
+
+// TestGetRawPayload_corruptGzipReturnsError proves a valid-magic-but-garbage
+// blob yields an error (not a panic) on read.
+func TestGetRawPayload_corruptGzipReturnsError(t *testing.T) {
+	db := newTestDB(t)
+	garbage := append([]byte{0x1f, 0x8b}, []byte("not really gzip")...)
+	if _, err := db.RawDB().Exec(
+		`INSERT INTO hook_events (created_at, agent, session_id, hook_event_name, raw_payload, dedup_key)
+		 VALUES (?,?,?,?,?,?)`,
+		"2026-01-01T00:00:00Z", "claudecode", "s-bad", "PreToolUse", garbage, "badkey",
+	); err != nil {
+		t.Fatalf("insert: %v", err)
+	}
+	if _, err := db.GetRawPayload("badkey"); err == nil {
+		t.Error("expected error reading corrupt gzip blob, got nil")
 	}
 }
 

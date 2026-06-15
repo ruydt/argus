@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -38,6 +39,25 @@ type EventService struct {
 
 	statsMu    sync.RWMutex
 	statsCache map[string]cachedDashboardStats
+
+	// compacting serializes database compaction so two concurrent requests can't
+	// both run VACUUM.
+	compacting atomic.Bool
+}
+
+// ErrCompactionInProgress is returned when a compaction is already running.
+var ErrCompactionInProgress = errors.New("compaction already in progress")
+
+// invalidateCaches clears the dashboard-stats and diagnostics TTL caches so the
+// next read recomputes. Call after any operation that mutates stored events
+// (compact, prune, delete) so cached totals don't lag behind the DB.
+func (s *EventService) invalidateCaches() {
+	s.statsMu.Lock()
+	s.statsCache = map[string]cachedDashboardStats{}
+	s.statsMu.Unlock()
+	s.diagMu.Lock()
+	s.diagCache = nil
+	s.diagMu.Unlock()
 }
 
 type DiagnosticsOptions struct {
@@ -108,13 +128,14 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		// Compute the terminal timestamp once; it is read up to three times below.
 		endedAt := endedAtForEvent(e)
 		var usage domain.SessionUsage
+		var models []domain.ModelUsageBreakdown
+		computed := false
 		if s.shouldComputeUsage(e, endedAt) {
-			switch e.Agent {
-			case "claudecode":
-				usage = claudecode.ComputeUsage(e.TranscriptPath)
-			default:
-				usage = codex.ComputeUsage(e.TranscriptPath)
-			}
+			// One shared dispatch (also fixes the prior ingest/read-path mismatch).
+			breakdown := computeUsageBreakdown(e.Agent, e.TranscriptPath)
+			usage = breakdown.Total
+			models = breakdown.Models
+			computed = true
 			s.usageScannedAt.Store(e.Session, time.Now())
 		}
 		if err := s.repo.UpsertSession(
@@ -129,6 +150,14 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 			usage,
 		); err != nil {
 			return err
+		}
+		// Persist the per-model breakdown so the dashboard reads it from the DB
+		// instead of re-scanning every transcript on each load. Non-fatal: the
+		// dashboard falls back to a lazy transcript scan if rows are missing.
+		if computed {
+			if err := s.repo.ReplaceSessionModelUsage(e.Session, models); err != nil {
+				slog.Warn("persist model usage", "session", e.Session, "err", err)
+			}
 		}
 		// Ended sessions receive no further events; drop their scan timestamp
 		// so the map size tracks active sessions, not lifetime sessions.
@@ -179,23 +208,31 @@ func (s *EventService) GetRawPayload(dedupKey string) ([]byte, error) {
 }
 
 // CompactDatabase compresses legacy raw_payload rows and VACUUMs to reclaim disk.
+// Only one compaction runs at a time (VACUUM takes an exclusive lock); a
+// concurrent call returns ErrCompactionInProgress.
 func (s *EventService) CompactDatabase(ctx context.Context) (domain.CompactResult, error) {
+	if !s.compacting.CompareAndSwap(false, true) {
+		return domain.CompactResult{}, ErrCompactionInProgress
+	}
+	defer s.compacting.Store(false)
+
 	res, err := s.repo.Compact(ctx)
 	if err != nil {
 		return res, err
 	}
-	// Invalidate the diagnostics TTL cache so the next read reports the freshly
-	// reclaimed DB size instead of the pre-compaction value.
-	s.diagMu.Lock()
-	s.diagCache = nil
-	s.diagMu.Unlock()
+	// Reclaimed size + row count changed — drop cached stats/diagnostics.
+	s.invalidateCaches()
 	return res, nil
 }
 
 // PruneEvents deletes events older than before and/or beyond the maxEvents
 // newest. Used by the optional retention sweep.
 func (s *EventService) PruneEvents(ctx context.Context, before string, maxEvents int) (int64, error) {
-	return s.repo.PruneEvents(ctx, before, maxEvents)
+	n, err := s.repo.PruneEvents(ctx, before, maxEvents)
+	if err == nil && n > 0 {
+		s.invalidateCaches()
+	}
+	return n, err
 }
 
 func (s *EventService) SessionModel(sessionID string) (string, error) {
@@ -408,7 +445,11 @@ func (s *EventService) ListProjectsPage(search string, page, size int) ([]domain
 
 // DeleteProject removes all sessions and events recorded under cwd.
 func (s *EventService) DeleteProject(cwd string) (sessionsDeleted, eventsDeleted int64, err error) {
-	return s.repo.DeleteProjectByCWD(cwd)
+	sessionsDeleted, eventsDeleted, err = s.repo.DeleteProjectByCWD(cwd)
+	if err == nil && (sessionsDeleted > 0 || eventsDeleted > 0) {
+		s.invalidateCaches()
+	}
+	return sessionsDeleted, eventsDeleted, err
 }
 
 func (s *EventService) ListSessions() ([]domain.Session, error) {
@@ -448,7 +489,11 @@ func (s *EventService) GetDashboardStats(since, until string) (*domain.Dashboard
 			SessionUsage:        []domain.DashboardSessionUsage{},
 		}
 	}
-	enrichDashboardStats(stats, sessions, since, until)
+	modelUsage, err := s.repo.GetSessionModelUsage()
+	if err != nil {
+		return nil, err
+	}
+	s.enrichDashboardStats(stats, sessions, since, until, modelUsage)
 
 	s.statsMu.Lock()
 	s.statsCache[key] = cachedDashboardStats{stats: *stats, cachedAt: time.Now()}
@@ -525,7 +570,7 @@ func hasUsage(usage domain.SessionUsage) bool {
 		usage.Turns > 0
 }
 
-func enrichDashboardStats(stats *domain.DashboardStats, sessions []domain.Session, since, until string) {
+func (s *EventService) enrichDashboardStats(stats *domain.DashboardStats, sessions []domain.Session, since, until string, modelUsage map[string][]domain.ModelUsageBreakdown) {
 	filteredSessions := make([]domain.Session, 0, len(sessions))
 	for _, session := range sessions {
 		if sessionOutsideRange(session, since, until) {
@@ -542,9 +587,21 @@ func enrichDashboardStats(stats *domain.DashboardStats, sessions []domain.Sessio
 
 	agentUsage := map[string]*domain.AgentModelUsage{}
 	for _, session := range filteredSessions {
-		breakdown := computeUsageBreakdown(session.Agent, session.TranscriptPath)
-		if !hasUsage(breakdown.Total) {
-			breakdown.Total = session.Usage
+		// Prefer the persisted per-model breakdown (written on ingest). Only sessions
+		// recorded before this existed lack rows — scan their transcript once and
+		// write through, so the dashboard never re-scans the same session twice.
+		breakdown := domain.UsageBreakdown{Total: session.Usage, Models: modelUsage[session.SessionID]}
+		if len(breakdown.Models) == 0 && session.TranscriptPath != "" {
+			scanned := computeUsageBreakdown(session.Agent, session.TranscriptPath)
+			if len(scanned.Models) > 0 {
+				breakdown.Models = scanned.Models
+				if !hasUsage(breakdown.Total) {
+					breakdown.Total = scanned.Total
+				}
+				if err := s.repo.ReplaceSessionModelUsage(session.SessionID, scanned.Models); err != nil {
+					slog.Warn("dashboard model-usage backfill", "session", session.SessionID, "err", err)
+				}
+			}
 		}
 		sessionModels := dashboardModels(session, breakdown)
 		if len(sessionModels) == 0 && hasUsage(session.Usage) {

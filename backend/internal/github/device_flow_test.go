@@ -30,7 +30,7 @@ func TestDeviceFlowStartAndPoll(t *testing.T) {
 	d := NewDeviceFlow("client123", srv.Client())
 	d.baseURL = srv.URL
 
-	dc, err := d.Start(context.Background())
+	dc, err := d.Start(context.Background(), "gist")
 	if err != nil {
 		t.Fatalf("Start: %v", err)
 	}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -29,6 +30,10 @@ func Diagnostics(svc *service.EventService, ready func() bool, opts service.Diag
 func CompactDatabase(svc *service.EventService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		result, err := svc.CompactDatabase(r.Context())
+		if errors.Is(err, service.ErrCompactionInProgress) {
+			http.Error(w, "compaction already in progress", http.StatusConflict)
+			return
+		}
 		if err != nil {
 			log.Printf("[handler] CompactDatabase: %v", err)
 			http.Error(w, "compact failed", http.StatusInternalServerError)

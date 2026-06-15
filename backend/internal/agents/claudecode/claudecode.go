@@ -10,8 +10,17 @@ import (
 	"argus/internal/fileutil"
 )
 
+// MatchesTranscript reports whether a transcript path belongs to Claude Code.
+// Detection is path-based: Claude Code stores transcripts under a ".claude"
+// directory. Both POSIX (/) and Windows (\) separators are recognized.
+//
+// LIMITATION: if CLAUDE_CONFIG_DIR points the transcript outside a ".claude"
+// directory, Claude Code events fall through to the Codex default and are
+// misclassified. This is the documented single detection mechanism; corroborating
+// it would require agent-specific payload-shape signals.
 func MatchesTranscript(transcriptPath string) bool {
-	return strings.Contains(transcriptPath, "/.claude/")
+	return strings.Contains(transcriptPath, "/.claude/") ||
+		strings.Contains(transcriptPath, `\.claude\`)
 }
 
 // ModelFromTranscript scans a Claude Code session JSONL for the first

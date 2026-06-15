@@ -57,6 +57,10 @@ func (noopRepo) GetSessionFileChangeCounts([]string) (map[string]int, error) {
 func (noopRepo) UpsertSession(string, string, string, string, string, string, string, string, domain.SessionUsage) error {
 	return nil
 }
+func (noopRepo) ReplaceSessionModelUsage(string, []domain.ModelUsageBreakdown) error { return nil }
+func (noopRepo) GetSessionModelUsage() (map[string][]domain.ModelUsageBreakdown, error) {
+	return map[string][]domain.ModelUsageBreakdown{}, nil
+}
 
 func (noopRepo) DeleteProjectByCWD(string) (int64, int64, error) {
 	return 0, 0, nil
