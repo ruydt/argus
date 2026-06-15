@@ -2,14 +2,23 @@
 
 ## Binary install (recommended)
 
+macOS / Linux:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
 ```
 
-Requires: Node.js 18+, curl, tar. No Go or pnpm needed.
+Windows (PowerShell):
 
-The installer places the binary at `~/.argus/bin/argus` and wires a `SessionStart` hook
-in `~/.claude/settings.json` so argus starts automatically with each Claude Code session.
+```powershell
+irm https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.ps1 | iex
+```
+
+Requires: Node.js 18+ (plus curl/tar on macOS/Linux). No Go or pnpm needed.
+
+The installer places the binary at `~/.argus/bin/argus` (`argus.exe` on Windows) and wires
+a `SessionStart` hook in `~/.claude/settings.json` so argus starts automatically with each
+Claude Code session.
 
 ## Support matrix
 
@@ -18,7 +27,7 @@ in `~/.claude/settings.json` so argus starts automatically with each Claude Code
 | macOS                    | First-class                              |
 | Linux                    | First-class                              |
 | WSL                      | First-class                              |
-| Native Windows           | Not first-class yet                      |
+| Native Windows           | Supported (install.ps1; Node.js required) |
 | Go                       | 1.25.0 or newer                          |
 | Node.js                  | 18 or newer                              |
 | Frontend package manager | pnpm 10.x                                |

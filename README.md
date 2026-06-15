@@ -46,11 +46,19 @@ agents — actually working. No cloud, no telemetry, your data stays local.
 
 ## Quick start
 
+**macOS / Linux:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.sh | bash
 ```
 
-> **Requirements:** Node.js 18+, curl, tar — no Go or pnpm needed.
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/duytrandt04-afk/argus/main/install.ps1 | iex
+```
+
+> **Requirements:** Node.js 18+ (plus curl/tar on macOS/Linux) — no Go or pnpm needed.
 >
 > The installer downloads a pre-built binary for your OS and arch, wires the Claude Code
 > `SessionStart` hook, and places `argus` in `~/.argus/bin`.
