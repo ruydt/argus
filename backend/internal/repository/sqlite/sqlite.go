@@ -150,6 +150,18 @@ func (d *DB) migrate() error {
 		{14, schema014},
 		{15, schema015},
 	}
+
+	// Downgrade guard: refuse to start against a DB stamped with a higher
+	// migration version than this binary knows. Running an older binary against a
+	// newer schema risks silent corruption — fail loud instead (no upgrade
+	// surprises). New/empty DBs report 0 and pass.
+	knownMax := migrations[len(migrations)-1].version
+	var storedMax int
+	_ = d.db.QueryRow(`SELECT COALESCE(MAX(version), 0) FROM schema_migrations`).Scan(&storedMax)
+	if storedMax > knownMax {
+		return fmt.Errorf("database schema version %d is newer than this binary supports (%d); upgrade argus to open it", storedMax, knownMax)
+	}
+
 	for _, m := range migrations {
 		var count int
 		_ = d.db.QueryRow(`SELECT COUNT(*) FROM schema_migrations WHERE version = ?`, m.version).Scan(&count)

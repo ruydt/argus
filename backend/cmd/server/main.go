@@ -217,6 +217,7 @@ func warnRemoteBind(cfg config.Config) {
 	slog.Warn("REMOTE BIND ACTIVE — argus is reachable beyond localhost",
 		"addr", cfg.Addr,
 		"captures", "prompts, diffs, file paths, tool outputs, raw payloads, exports",
+		"command_execution", "the hook simulator (/api/hooks/simulate) and reveal (/api/diagnostics/reveal) run local commands — exposing these beyond localhost is dangerous",
 		"note", "public internet exposure is unsupported",
 	)
 }

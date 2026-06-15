@@ -1548,6 +1548,74 @@ func TestPruneEvents(t *testing.T) {
 	}
 }
 
+// TestMigration014_NormalizesLegacyCreatedAt proves the only data-mutating
+// migration rewrites legacy timestamp forms to RFC3339 'Z' (so string compare ==
+// time compare, which PruneEvents/ORDER BY rely on) and leaves already-normalized
+// rows untouched. Mirrors the UPDATE in 014_normalize_hook_events_created_at.sql.
+func TestMigration014_NormalizesLegacyCreatedAt(t *testing.T) {
+	db := newTestDB(t)
+	raw := db.RawDB()
+	if _, err := raw.Exec(`CREATE TABLE t14 (id INTEGER PRIMARY KEY, created_at TEXT)`); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+	legacy := map[int]string{
+		1: "2026-01-01T10:00:00+02:00", // tz offset -> 08:00Z
+		2: "2026-01-01T10:00:00.123Z",  // fractional seconds -> dropped
+		3: "2026-01-01T10:00:00Z",      // already normalized -> untouched
+	}
+	for id, ts := range legacy {
+		if _, err := raw.Exec(`INSERT INTO t14 (id, created_at) VALUES (?, ?)`, id, ts); err != nil {
+			t.Fatalf("insert %d: %v", id, err)
+		}
+	}
+	if _, err := raw.Exec(`
+		UPDATE t14
+		SET created_at = strftime('%Y-%m-%dT%H:%M:%SZ', created_at)
+		WHERE created_at IS NOT NULL AND created_at != ''
+		  AND strftime('%Y-%m-%dT%H:%M:%SZ', created_at) IS NOT NULL
+		  AND created_at != strftime('%Y-%m-%dT%H:%M:%SZ', created_at)`); err != nil {
+		t.Fatalf("normalize update: %v", err)
+	}
+	want := map[int]string{
+		1: "2026-01-01T08:00:00Z",
+		2: "2026-01-01T10:00:00Z",
+		3: "2026-01-01T10:00:00Z",
+	}
+	for id, exp := range want {
+		var got string
+		if err := raw.QueryRow(`SELECT created_at FROM t14 WHERE id = ?`, id).Scan(&got); err != nil {
+			t.Fatalf("scan %d: %v", id, err)
+		}
+		if got != exp {
+			t.Errorf("id %d: got %q, want %q", id, got, exp)
+		}
+	}
+}
+
+// TestMigrate_RefusesNewerSchema verifies the downgrade guard: an older binary
+// must refuse to open a DB stamped with a higher migration version than it knows.
+func TestMigrate_RefusesNewerSchema(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "argus.db")
+	db, err := sqlite.New(path)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if _, err := db.RawDB().Exec(`INSERT INTO schema_migrations (version) VALUES (9999)`); err != nil {
+		t.Fatalf("stamp newer version: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	_, err = sqlite.New(path)
+	if err == nil {
+		t.Fatal("expected error opening DB stamped with a newer schema version")
+	}
+	if !strings.Contains(err.Error(), "newer than this binary") {
+		t.Errorf("error = %v, want newer-than-binary message", err)
+	}
+}
+
 func TestGetRawPayload_unknownKeyReturnsNil(t *testing.T) {
 	db := newTestDB(t)
 	got, err := db.GetRawPayload("nonexistentkey")

@@ -80,7 +80,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("POST /api/hook", handler.Hook(svc, m))
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
-	mux.Handle("GET /api/events/raw", handler.EventRawPayload(svc))
+	mux.Handle("GET /api/events/raw", secFetchSite(handler.EventRawPayload(svc)))
 	mux.Handle("GET /api/version", handler.Version())
 	hookDetector := opts.HookConfigDetector
 	if hookDetector == nil {
@@ -98,8 +98,8 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/diagnostics/log-tail", handler.LogTail(handler.LogTailOptions{
 		ArgusDir: opts.ArgusDir,
 	}))
-	mux.Handle("POST /api/diagnostics/reveal", handler.Reveal())
-	mux.Handle("POST /api/diagnostics/compact", handler.CompactDatabase(svc))
+	mux.Handle("POST /api/diagnostics/reveal", secFetchSite(handler.Reveal()))
+	mux.Handle("POST /api/diagnostics/compact", secFetchSite(handler.CompactDatabase(svc)))
 	mux.Handle("GET /api/projects", handler.Projects(svc))
 	mux.Handle("DELETE /api/projects", handler.Projects(svc))
 	mux.Handle("GET /api/sessions", handler.Sessions(svc))
@@ -109,8 +109,8 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/export/events", secFetchSite(handler.ExportEvents(repo)))
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
 	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
-	mux.Handle("PUT /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
-	mux.Handle("POST /api/hooks/simulate", handler.HooksSimulate())
+	mux.Handle("PUT /api/hooks-config", secFetchSite(handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath)))
+	mux.Handle("POST /api/hooks/simulate", secFetchSite(handler.HooksSimulate()))
 	registryURL := os.Getenv("ARGUS_REGISTRY_RAW_URL")
 	if registryURL == "" {
 		registryURL = defaultRegistryRawURL
@@ -121,20 +121,20 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 		githubClientID = defaultGitHubClientID
 	}
 	ghSvc := github.NewService(githubClientID, opts.ArgusDir)
-	mux.Handle("POST /api/github/device", handler.GitHubDevice(ghSvc))
+	mux.Handle("POST /api/github/device", secFetchSite(handler.GitHubDevice(ghSvc)))
 	mux.Handle("GET /api/github/status", handler.GitHubStatus(ghSvc))
-	mux.Handle("POST /api/github/logout", handler.GitHubLogout(ghSvc))
-	mux.Handle("POST /api/registry/publish", handler.RegistryPublish(ghSvc))
-	mux.Handle("GET /api/collection", handler.Collection(ghSvc, communitySrc, opts.ArgusDir))
-	mux.Handle("POST /api/collection", handler.CollectionAdd(ghSvc, opts.ArgusDir))
-	mux.Handle("DELETE /api/collection", handler.CollectionRemove(ghSvc))
-	mux.Handle("POST /api/collection/install", handler.CollectionInstall(ghSvc, opts.ArgusDir))
-	mux.Handle("GET /api/collection/local", handler.CollectionLocal(opts.ArgusDir))
-	mux.Handle("DELETE /api/collection/local", handler.CollectionLocal(opts.ArgusDir))
+	mux.Handle("POST /api/github/logout", secFetchSite(handler.GitHubLogout(ghSvc)))
+	mux.Handle("POST /api/registry/publish", secFetchSite(handler.RegistryPublish(ghSvc)))
+	mux.Handle("GET /api/collection", secFetchSite(handler.Collection(ghSvc, communitySrc, opts.ArgusDir)))
+	mux.Handle("POST /api/collection", secFetchSite(handler.CollectionAdd(ghSvc, opts.ArgusDir)))
+	mux.Handle("DELETE /api/collection", secFetchSite(handler.CollectionRemove(ghSvc)))
+	mux.Handle("POST /api/collection/install", secFetchSite(handler.CollectionInstall(ghSvc, opts.ArgusDir)))
+	mux.Handle("GET /api/collection/local", secFetchSite(handler.CollectionLocal(opts.ArgusDir)))
+	mux.Handle("DELETE /api/collection/local", secFetchSite(handler.CollectionLocal(opts.ArgusDir)))
 	mux.Handle("GET /api/community/catalog", handler.CommunityCatalog(communitySrc, opts.ArgusDir))
 	mux.Handle("GET /api/community/script", handler.CommunityScriptBody(communitySrc))
-	mux.Handle("POST /api/community/install", handler.CommunityInstall(communitySrc, opts.ArgusDir))
-	mux.Handle("POST /api/community/simulate", handler.CommunitySimulate(communitySrc))
+	mux.Handle("POST /api/community/install", secFetchSite(handler.CommunityInstall(communitySrc, opts.ArgusDir)))
+	mux.Handle("POST /api/community/simulate", secFetchSite(handler.CommunitySimulate(communitySrc)))
 	mux.Handle("GET /", ui.Handler())
 
 	return panicRecovery(hostHeader(corsAllowlist(corsOrigins)(logging(mux))))

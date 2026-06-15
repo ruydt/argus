@@ -44,35 +44,40 @@ changelog:
 
 release:
   header: |
-    ## Argus v0.1.2 — CPU optimization
+    ## Argus v1.0.0 — first stable release
 
-    A performance pass across the whole app. Argus runs locally alongside your coding agents, so this release cuts both per-event ingest spikes and the CPU it burns while just sitting open in a tab. No behavior changes, no schema breaks — same features, less work.
+    Argus is a local-first hook control center for AI coding agents: manage hook
+    configs with one-click presets, test any hook in the built-in simulator before
+    a live agent fires it, share and install community hook scripts, and observe
+    every Claude Code / Codex session in real time. Runs as a single local binary —
+    no cloud, no external infra.
 
-    ### Backend
+    ### Highlights
 
-    - **Single-read hook enrichment** — context lookup reads each edited file once instead of twice (≈45% faster on the ingest path); files over 2 MB are skipped.
-    - **Marshal-once SSE broadcast** — each event is serialized one time per broadcast, not once per connected browser.
-    - **Throttled usage scans** — transcript token-usage is recomputed at most once every 30s per session (always exact on session end) instead of on every hook event, and never on dashboard/session list reads.
-    - **Dashboard stats cache** — aggregate stats are cached for 5s; repeat loads drop from tens of milliseconds to microseconds.
-    - **Index-friendly queries** — time-range filters now use the `created_at` index directly; `created_at` is normalized to UTC at write (migration 014 backfills existing rows).
-    - **Faster project merge** — the projects view collapses nested directories in a single pass instead of a quadratic scan.
+    - **Hook management** — structured + JSON editors for Claude Code and Codex with one-click presets.
+    - **Hook simulator** — run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code before a real agent fires it.
+    - **Community script sharing** — browse, install, and (via optional GitHub login) publish hook scripts to the public registry; back up your collection to a private gist.
+    - **Observability** — live event feed (SSE), dashboard stats, usage breakdown, projects/sessions explorer, diagnostics.
+    - **Lean storage** — `raw_payload` is stored gzip-compressed; the Diagnostics page has a **Compact database** action (gzip-backfill + VACUUM) and optional retention (`ARGUS_RETENTION_DAYS` / `ARGUS_MAX_EVENTS`, off by default).
 
-    ### Frontend
+    ### Security posture
 
-    - **Isolated header clock** — the per-second time display no longer re-renders the whole app shell.
-    - **Visibility-aware polling** — sessions, projects, and the clock stop polling when the tab is hidden and refresh instantly on return.
-    - **Cheaper event feed** — cached timestamp formatting and search-highlight regex, append-only filtering for live events, and split session grouping/sorting so toggling sort order doesn't rebuild the tree.
-    - **Dashboard render skips** — identical stats payloads keep their object identity and the charts are memoized, so polling no longer redraws unchanged charts.
+    Binds to `127.0.0.1` by default; cross-site browser requests to sensitive and
+    state-changing endpoints are rejected. Captured data (prompts, diffs, tool
+    output) never leaves the machine. `ARGUS_ALLOW_REMOTE=1` opts into non-loopback
+    bind and is unsupported for public exposure — the hook simulator and reveal
+    endpoints run local commands.
 
     ### Upgrade notes
 
-    Migration 014 runs automatically on first start and rewrites any legacy `hook_events.created_at` values to UTC. No action required.
+    Migrations run automatically on first start. Argus refuses to open a database
+    created by a newer version. No manual action required.
 
     ### Install
 
-    Download the binary for your platform from the assets below, or install from source:
+    Download the binary for your platform from the assets below, or build from source:
 
     ```bash
     git clone https://github.com/duytrandt04-afk/argus
-    cd argus && make install
+    cd argus && make build-local   # builds to ~/.argus/bin/argus
     ```
