@@ -12,13 +12,13 @@ import (
 )
 
 const (
-	defaultEventsLimit    = 1000
-	sessionEventsLimit    = 5000
-	sseBackfillLimit      = 100
-	maxEventsPageLimit    = 500
-	defaultEventsPage     = 200
-	defaultSessionPage    = 20
-	maxSessionPageLimit   = 50
+	defaultEventsLimit  = 1000
+	sessionEventsLimit  = 5000
+	sseBackfillLimit    = 100
+	maxEventsPageLimit  = 500
+	defaultEventsPage   = 200
+	defaultSessionPage  = 20
+	maxSessionPageLimit = 50
 )
 
 func Events(svc *service.EventService) http.Handler {
@@ -27,6 +27,13 @@ func Events(svc *service.EventService) http.Handler {
 		since := q.Get("since")
 		until := q.Get("until")
 		sessionID := q.Get("session")
+		search := q.Get("q")
+
+		// Search spans the whole DB by session id / project, so it ignores the
+		// time window — a matching session may sit outside the selected range.
+		if search != "" {
+			since, until = "", ""
+		}
 
 		sessionLimit := defaultSessionPage
 		if s := q.Get("session_limit"); s != "" {
@@ -59,7 +66,7 @@ func Events(svc *service.EventService) http.Handler {
 		}
 
 		// No time params and no session cursor = backward-compat path.
-		if since == "" && until == "" && beforeID == 0 && q.Get("before_session_cursor") == "" && q.Get("session_limit") == "" {
+		if search == "" && since == "" && until == "" && beforeID == 0 && q.Get("before_session_cursor") == "" && q.Get("session_limit") == "" {
 			events, err := listEvents(svc, sessionID)
 			if err != nil {
 				http.Error(w, "list events", http.StatusInternalServerError)
@@ -81,7 +88,7 @@ func Events(svc *service.EventService) http.Handler {
 					beforeCursor = v
 				}
 			}
-			events, cursor, hasMore, err := svc.ListEventsBySessionsTimeRange(since, until, beforeCursor, sessionLimit)
+			events, cursor, hasMore, err := svc.ListEventsBySessionsTimeRange(since, until, search, beforeCursor, sessionLimit)
 			if err != nil {
 				http.Error(w, "list events", http.StatusInternalServerError)
 				return

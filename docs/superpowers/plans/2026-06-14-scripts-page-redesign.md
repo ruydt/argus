@@ -6,6 +6,10 @@
 
 **Architecture:** Backend gains a union `GET /api/collection` (`CollectionView`, auth-optional) plus a `/api/collection/local` route (GET body + DELETE). Frontend shrinks `ScriptsPage` to a 2-tab shell, rebuilds `CommunityTab` into Bundles + Single-scripts sections merging official (`/api/scripts/catalog`) and remote (`/api/community/catalog`), and rewrites `CollectionTab` into the union manager.
 
+> **Current note:** Later scripts-v2/UI-tweaks/upload-share work supersedes the bundled sections and
+> per-row Publish flow in this plan. Current sharing is **Upload & share** via
+> `/api/registry/publish`; row source opens in a shared modal; collection entries include author/login.
+
 **Tech Stack:** Go (`net/http`), React 19 + TS + Vite, Vitest + Testing Library, shadcn `Popover`.
 
 **Spec:** `docs/superpowers/specs/2026-06-14-scripts-page-redesign-design.md`
@@ -976,7 +980,7 @@ export function CollectionTab({ query }: CollectionTabProps) {
         {authenticated ? (
           <span>Signed in to GitHub</span>
         ) : (
-          <span>Local scripts only — sign in to sync with a gist.</span>
+          <span>Sign in to save and share your favourite scripts.</span>
         )}
         <div className="flex items-center gap-2">
           {authenticated && gistUrl ? (

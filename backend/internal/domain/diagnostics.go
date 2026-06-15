@@ -112,7 +112,7 @@ type DiagnosticsFileEntry struct {
 }
 
 type DiagnosticsFileSystem struct {
-	ArgusDir            string                 `json:"argusDir"`
+	ArgusDir             string                 `json:"argusDir"`
 	Binary               DiagnosticsFileEntry   `json:"binary"`
 	Logs                 []DiagnosticsFileEntry `json:"logs"`
 	Hooks                []DiagnosticsFileEntry `json:"hooks"`

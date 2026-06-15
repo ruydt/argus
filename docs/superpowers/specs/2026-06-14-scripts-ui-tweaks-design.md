@@ -15,8 +15,9 @@ event and file preselected. Pure frontend; no backend or registry changes.
 
 ## 2. Decisions (locked)
 
-1. **Community row** shows only: `filename.js` · `by <author>` · `<event>` hook badge · **Source** ·
-   **Install**/Installed. Remove the title, the purpose/description line, and the row **Test** button.
+1. **Community row** shows only: `filename.js` · `<author>` · `<event>` hook badge · row-click
+   source modal · **Install**/Installed. Remove the title, the purpose/description line, and the row
+   **Test** button.
 2. **My Collection ⋯ menu** gains a **Test** item for **local** entries only. It navigates to the
    simulator with the event + script preselected. Gist-only (not-installed) entries get no Test.
 3. **Hooks-config** reads query params (`view`, `event`, `script`) on mount to open the simulator
@@ -34,11 +35,11 @@ and `CollectionEntry.event`. The row renders that value as the hook badge. No in
 
 Render, in order:
 - **filename** (monospace) — derived from `source`: `script.source.split('/').pop() ?? script.id`.
-- `by {script.author}` badge.
+- `{script.author}` as the secondary monospaced label.
 - `{script.event}` hook badge (only if present).
 - a runtime-missing warning badge stays (if `!script.runtime_available`) — it's a safety signal, not
   cosmetic, so keep it.
-- **Source** button (existing toggle behavior).
+- Clicking any non-button row area opens the shared `ScriptViewerModal` source viewer.
 - **Install** button, or an `Installed` badge when `script.installed`.
 
 Remove: the title element, the `purpose` paragraph, and the **Test** button (plus the now-unused

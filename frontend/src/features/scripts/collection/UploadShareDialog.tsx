@@ -1,7 +1,8 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 import { UploadShareForm } from './UploadShareForm'
 
@@ -11,9 +12,17 @@ type UploadShareDialogProps = {
   onPublish: (files: UploadFile[], description: string) => Promise<string>
   onNeedsLogin: () => void
   onResult: (notice: { text: string; href?: string }) => void
+  className?: string
+  icon?: ReactNode
 }
 
-export function UploadShareDialog({ onPublish, onNeedsLogin, onResult }: UploadShareDialogProps) {
+export function UploadShareDialog({
+  onPublish,
+  onNeedsLogin,
+  onResult,
+  className,
+  icon,
+}: UploadShareDialogProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState<UploadFile[] | null>(null)
@@ -63,7 +72,7 @@ export function UploadShareDialog({ onPublish, onNeedsLogin, onResult }: UploadS
         size="sm"
         disabled={busy}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center gap-1"
+        className={cn('inline-flex items-center gap-1', className)}
       >
         {busy ? (
           <>
@@ -71,7 +80,10 @@ export function UploadShareDialog({ onPublish, onNeedsLogin, onResult }: UploadS
             Sharing…
           </>
         ) : (
-          'Upload & share'
+          <>
+            {icon}
+            Upload &amp; share
+          </>
         )}
       </Button>
       {pending ? (

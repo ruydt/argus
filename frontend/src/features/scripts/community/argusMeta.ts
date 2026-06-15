@@ -1,5 +1,6 @@
 export type ArgusMeta = {
   title: string
+  author?: string
   event: string
   runtime: string
   matcher: string
@@ -27,7 +28,14 @@ export function runtimeFromExt(filename: string): string {
   return 'node'
 }
 
-const FIELD_KEYS: (keyof ArgusMeta)[] = ['title', 'event', 'runtime', 'matcher', 'purpose']
+const FIELD_KEYS: (keyof ArgusMeta)[] = [
+  'title',
+  'author',
+  'event',
+  'runtime',
+  'matcher',
+  'purpose',
+]
 const META_START = '// @argus-meta'
 const META_END = '// @end'
 
@@ -46,7 +54,9 @@ export function parseArgusMeta(body: string): Partial<ArgusMeta> {
 }
 
 export function buildArgusMeta(m: ArgusMeta): string {
-  const lines = [META_START, `// title: ${m.title}`, `// event: ${m.event}`, `// runtime: ${m.runtime}`]
+  const lines = [META_START, `// title: ${m.title}`]
+  if (m.author) lines.push(`// author: ${m.author}`)
+  lines.push(`// event: ${m.event}`, `// runtime: ${m.runtime}`)
   if (m.matcher) lines.push(`// matcher: ${m.matcher}`)
   if (m.purpose) lines.push(`// purpose: ${m.purpose}`)
   lines.push(META_END, '')

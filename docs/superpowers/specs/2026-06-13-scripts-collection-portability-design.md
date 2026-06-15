@@ -4,6 +4,10 @@
 **Status:** Approved (pending spec review)
 **Topic:** Let a user log in with GitHub and keep a portable **personal collection** of hook scripts stored in their own private gist, so their scripts follow them to any machine and can be installed into `~/.argus/hooks/` anywhere.
 
+> **Current note:** Later scripts-v2 work supersedes the tab layout and add-to-collection entry
+> points in this Phase 2a design. Current UI uses **Community** + **My Collection**; collection list
+> is local ∪ gist and auth-optional.
+
 ---
 
 ## 1. Problem & Goal

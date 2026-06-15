@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { FolderKanban, Trash2 } from 'lucide-react'
+import { FolderKanban, Search, Trash2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,45 +11,49 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import type { Project } from '@/types/sessions'
 
-async function loadProjects(signal: AbortSignal): Promise<Project[]> {
-  const res = await fetch('/api/projects', { signal })
-  if (!res.ok) return []
-  const data = (await res.json()) as { projects?: Project[] }
-  return data.projects || []
-}
+const PAGE_SIZE = 20
 
 export function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[] | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const query = searchQuery.trim().toLowerCase()
-  const visibleProjects = (projects ?? []).filter(
-    (p) => !query || p.name.toLowerCase().includes(query) || p.cwd.toLowerCase().includes(query)
+  // Debounce the input so each keystroke doesn't fire a DB query; the trimmed
+  // value drives a server-side search (matches cwd/name in SQLite).
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300)
+    return () => window.clearTimeout(id)
+  }, [searchQuery])
+
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const params = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) })
+      if (debouncedQuery) params.set('q', debouncedQuery)
+      const res = await fetch(`/api/projects?${params.toString()}`)
+      if (!res.ok) return { items: [] as Project[], hasMore: false }
+      const data = (await res.json()) as { projects: Project[]; has_more: boolean }
+      return { items: data.projects ?? [], hasMore: data.has_more ?? false }
+    },
+    [debouncedQuery]
   )
 
-  useEffect(() => {
-    const controller = new AbortController()
-    loadProjects(controller.signal)
-      .then(setProjects)
-      .catch((err: unknown) => {
-        if ((err as Error).name !== 'AbortError') setProjects([])
-      })
-    const interval = window.setInterval(() => {
-      loadProjects(controller.signal)
-        .then(setProjects)
-        .catch(() => {})
-    }, 10_000)
-    return () => {
-      controller.abort()
-      window.clearInterval(interval)
-    }
-  }, [])
+  // resetKey changes on a new search or after a delete → list resets to page 1.
+  const resetKey = `${debouncedQuery}:${refreshKey}`
+  const {
+    items: projects,
+    loading,
+    loadingMore,
+    sentinelRef,
+  } = useInfiniteScroll<Project>(fetchPage, resetKey, PAGE_SIZE)
 
   async function handleDelete() {
     if (!pendingDelete) return
@@ -58,10 +62,7 @@ export function ProjectsPage() {
       const res = await fetch(`/api/projects?cwd=${encodeURIComponent(pendingDelete.cwd)}`, {
         method: 'DELETE',
       })
-      if (res.ok) {
-        const controller = new AbortController()
-        setProjects(await loadProjects(controller.signal))
-      }
+      if (res.ok) setRefreshKey((k) => k + 1)
     } finally {
       setDeleting(false)
       setPendingDelete(null)
@@ -69,35 +70,36 @@ export function ProjectsPage() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-[#0a0a0a] text-white">
-      <header className="flex items-end justify-between gap-4 border-b border-white/10 bg-black/40 px-6 py-4">
-        <div>
-          <div className="text-[12px] font-semibold uppercase tracking-widest text-white/45">
-            Projects
-          </div>
-          <h1 className="mt-1 text-xl font-semibold">Projects</h1>
-        </div>
+    <PageShell>
+      <PageHeader title="Projects" />
+
+      <div className="relative">
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search projects…"
           aria-label="Search projects"
-          className="w-full max-w-[260px] border-white/10 bg-black/30 text-[13px] placeholder:text-white/35"
+          className="w-full border-white/10 bg-black/30 pl-9 text-[13px] placeholder:text-white/35"
         />
-      </header>
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/35" />
+      </div>
 
-      <main className="flex-1 overflow-auto p-6">
-        {projects === null ? (
-          <div className="text-sm text-white/45">Loading projects…</div>
-        ) : projects.length === 0 ? (
-          <div className="text-sm text-white/55">
-            No projects yet. Start a Claude Code or Codex session to see it here.
-          </div>
-        ) : visibleProjects.length === 0 ? (
-          <div className="text-sm text-white/55">No projects match “{searchQuery.trim()}”.</div>
-        ) : (
+      {loading ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-[124px] rounded-lg" />
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="text-sm text-white/55">
+          {debouncedQuery
+            ? `No projects match “${debouncedQuery}”.`
+            : 'No projects yet. Start a Claude Code or Codex session to see it here.'}
+        </div>
+      ) : (
+        <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleProjects.map((project) => (
+            {projects.map((project) => (
               <Link
                 key={project.cwd}
                 to={`/sessions/${encodeURIComponent(project.cwd)}`}
@@ -152,8 +154,18 @@ export function ProjectsPage() {
               </Link>
             ))}
           </div>
-        )}
-      </main>
+
+          {/* Sentinel + load-more indicator for infinite scroll. */}
+          <div ref={sentinelRef} className="h-4" aria-hidden />
+          {loadingMore ? (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-[124px] rounded-lg" />
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
 
       <AlertDialog
         open={pendingDelete !== null}
@@ -182,6 +194,6 @@ export function ProjectsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageShell>
   )
 }

@@ -16,6 +16,8 @@ export function __resetCommunityCache() {
   cache = null
 }
 
+export type CommunityController = ReturnType<typeof useCommunity>
+
 export function useCommunity() {
   const [state, setState] = useState<State>({
     scripts: cache ?? [],
@@ -37,6 +39,10 @@ export function useCommunity() {
   }, [])
 
   useEffect(() => {
+    // Only auto-fetch on the FIRST ever mount (cold cache). Returning to the
+    // page later reuses the session cache; an explicit reload() (e.g. on tab
+    // switch) is the only thing that revalidates after that.
+    if (cache !== null) return
     // Async IIFE keeps the fetch-driven setState off the effect's sync path.
     void (async () => {
       await reload()

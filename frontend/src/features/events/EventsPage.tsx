@@ -18,6 +18,22 @@ import type { EventRecord, LayoutOutletContext, SessionUsage, TooltipState } fro
 
 function handleTargetVisible() {}
 
+function SearchSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-busy="true" aria-label="Searching">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-lg border border-[#1c1c1c] bg-[#111] px-4 py-3"
+        >
+          <div className="h-3.5 w-1/3 rounded bg-[#222]" />
+          <div className="mt-2 h-2.5 w-1/5 rounded bg-[#1a1a1a]" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 const KNOWN_SESSIONS_KEY = 'events_known_sessions'
 
 function loadKnownSessions(): Set<string> {
@@ -211,6 +227,7 @@ type SinglePanelProps = SessionListSharedProps & {
   filteredEvents: EventRecord[]
   isLive: boolean
   histLoading: boolean
+  searching: boolean
   hasMore: boolean
   onLoadMore: () => void
   targetSessionId: string | null
@@ -223,6 +240,7 @@ function SinglePanel({
   filteredEvents,
   isLive,
   histLoading,
+  searching,
   hasMore,
   onLoadMore,
   targetSessionId,
@@ -245,9 +263,13 @@ function SinglePanel({
         </Alert>
       )}
 
-      {activeEvents.length === 0 && !activeError ? (
+      {searching && histLoading && activeEvents.length === 0 ? (
+        <SearchSkeleton />
+      ) : activeEvents.length === 0 && !activeError ? (
         <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
-          No events found. Start a session to see events stream here.
+          {searching
+            ? 'No sessions match that id or project.'
+            : 'No events found. Start a session to see events stream here.'}
         </div>
       ) : (
         <SessionList
@@ -292,6 +314,15 @@ export function EventsPage() {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
+  // Debounce the search box, then resolve it on the backend (session id /
+  // project, whole DB) rather than filtering the loaded page client-side.
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery)
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(searchQuery), 250)
+    return () => window.clearTimeout(t)
+  }, [searchQuery])
+  const searching = debouncedSearch.trim() !== ''
+
   const {
     clearLink,
     eventLink,
@@ -322,7 +353,13 @@ export function EventsPage() {
     since: fetchSince,
     until: fetchUntil,
   })
-  const histState = useHistoricalEvents(fetchSince, fetchUntil, sessionFilterOverride, true)
+  const histState = useHistoricalEvents(
+    fetchSince,
+    fetchUntil,
+    sessionFilterOverride,
+    true,
+    debouncedSearch
+  )
   // Collapse every newly-seen session by default — including ones appended via
   // "load more" (which keeps loadVersion unchanged), so they appear closed.
   useEffect(() => {
@@ -339,9 +376,14 @@ export function EventsPage() {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [histState.events])
+  // While searching, show only the backend search results — live SSE would
+  // append unrelated sessions and pollute the result set.
   const activeEvents = useMemo(
-    () => (isLive ? mergeByKey(histState.events, liveState.events) : histState.events),
-    [isLive, histState.events, liveState.events]
+    () =>
+      isLive && !searching
+        ? mergeByKey(histState.events, liveState.events)
+        : histState.events,
+    [isLive, searching, histState.events, liveState.events]
   )
   const activeError = isLive ? liveState.error : histState.error
 
@@ -505,6 +547,7 @@ export function EventsPage() {
           filteredEvents={filteredEvents}
           isLive={isLive}
           histLoading={histState.loading}
+          searching={searching}
           hasMore={histState.hasMore}
           onLoadMore={histState.loadMore}
           targetSessionId={eventLink.pendingEventLink?.sessionId ?? null}

@@ -1,7 +1,9 @@
 package handler_test
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -22,6 +24,53 @@ func writeLocal(t *testing.T, argusDir, filename, body string) {
 	}
 	if err := os.WriteFile(filepath.Join(dir, filename), []byte(body), 0o755); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCollectionViewPrefersLocalMetaOverRegistry(t *testing.T) {
+	dir := t.TempDir()
+	body := "// @argus-meta\n" +
+		"// title: Local title\n" +
+		"// author: local-author\n" +
+		"// event: Stop\n" +
+		"// runtime: node\n" +
+		"// @end\n\nconsole.log('local')\n"
+	writeLocal(t, dir, "guard.js", body)
+	svc := github.NewService("test-client-id", dir)
+
+	sum := sha256.Sum256([]byte(body))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/index.json", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprintf(w, `{"schema_version":1,"scripts":[{"id":"guard","author":"registry-author","title":"Registry title","event":"PreToolUse","runtime":"sh","sha256":"%x","source":"scripts/registry/guard.js"}]}`, sum)
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+
+	rr := httptest.NewRecorder()
+	handler.Collection(svc, community.NewSource(srv.URL, srv.Client()), dir).
+		ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/api/collection", nil))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", rr.Code, rr.Body.String())
+	}
+
+	var view struct {
+		Entries []struct {
+			Filename string `json:"filename"`
+			Title    string `json:"title"`
+			Author   string `json:"author"`
+			Event    string `json:"event"`
+			Runtime  string `json:"runtime"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &view); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(view.Entries) != 1 {
+		t.Fatalf("entries len = %d, want 1", len(view.Entries))
+	}
+	e := view.Entries[0]
+	if e.Filename != "guard.js" || e.Title != "Local title" || e.Author != "local-author" || e.Event != "Stop" || e.Runtime != "node" {
+		t.Fatalf("entry = %+v, want local meta to override registry fields", e)
 	}
 }
 

@@ -1,9 +1,13 @@
-import { MoreVertical } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Cloud, HardDrive, MoreVertical } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CollectionEntry } from '@/types'
+
+import { ScriptViewerModal } from '../ScriptViewerModal'
 
 type CollectionRowProps = {
   entry: CollectionEntry
@@ -15,6 +19,7 @@ type CollectionRowProps = {
   onRemoveLocal: (filename: string) => void
   onRemoveGist: (id: string) => void
   onRemoveBoth: (entry: CollectionEntry) => void
+  getBody: (entry: CollectionEntry) => Promise<string>
 }
 
 export function CollectionRow({
@@ -27,33 +32,85 @@ export function CollectionRow({
   onRemoveLocal,
   onRemoveGist,
   onRemoveBoth,
+  getBody,
 }: CollectionRowProps) {
+  const [viewing, setViewing] = useState(false)
+  // Two clickable surfaces (content + action column) cover the whole row so any
+  // non-button area opens the viewer, while the action column stays w-40 to line
+  // up with the header. pointer-down-capture fires on the real DOM target before
+  // Radix re-dispatches the ⋯ trigger click, so button presses are skipped.
+  const skipOpen = useRef(false)
+  function openFromAction() {
+    if (skipOpen.current) {
+      skipOpen.current = false
+      return
+    }
+    setViewing(true)
+  }
   return (
-    <div className="flex items-center gap-4 border-b border-white/[0.06] px-3 py-3 hover:bg-white/[0.02]">
-      <span className="w-6 shrink-0 text-right text-[0.72rem] tabular-nums text-[#555]">
-        {index}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-semibold text-[#e5e5e5]">{entry.title}</span>
-          <span className="truncate font-mono text-[0.7rem] text-[#666]">{entry.filename}</span>
+    <div className="flex items-center border-b border-white/[0.06] hover:bg-white/[0.02]">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setViewing(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setViewing(true)
+          }
+        }}
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 py-3.5 pr-4 pl-2"
+      >
+        <span className="w-7 shrink-0 text-right font-mono text-[0.8rem] tabular-nums text-[#555]">
+          {index}
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
+          <span className="truncate font-mono text-sm font-semibold text-[#e5e5e5]">
+            {entry.filename}
+          </span>
+          {entry.author ? (
+            <span className="truncate font-mono text-[0.8rem] text-[#666]">{entry.author}</span>
+          ) : null}
         </div>
+        <div className="hidden w-36 shrink-0 items-center md:flex">
+          {entry.event ? <Badge variant="outline">{entry.event}</Badge> : null}
+        </div>
+        <TooltipProvider delayDuration={100}>
+          <div className="hidden w-44 shrink-0 items-center gap-2.5 text-white/55 md:flex">
+            {entry.local ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HardDrive className="size-4" aria-label="Installed in ~/.argus/hooks" />
+                </TooltipTrigger>
+                <TooltipContent>Installed in ~/.argus/hooks</TooltipContent>
+              </Tooltip>
+            ) : null}
+            {entry.gist ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Cloud className="size-4" aria-label="Saved on gist" />
+                </TooltipTrigger>
+                <TooltipContent>Saved on gist</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
+        </TooltipProvider>
       </div>
-      <div className="hidden shrink-0 items-center gap-1 md:flex">
-        <Badge
-          variant={entry.local ? 'secondary' : 'outline'}
-          className={entry.local ? '' : 'opacity-40'}
-        >
-          Local
-        </Badge>
-        <Badge
-          variant={entry.gist ? 'secondary' : 'outline'}
-          className={entry.gist ? '' : 'opacity-40'}
-        >
-          Gist
-        </Badge>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">
+
+      <ScriptViewerModal
+        title={entry.filename}
+        open={viewing}
+        onOpenChange={setViewing}
+        load={() => getBody(entry)}
+      />
+
+      <div
+        className="flex w-40 shrink-0 cursor-pointer items-center justify-end gap-2 py-3.5 pr-2"
+        onPointerDownCapture={(e) => {
+          skipOpen.current = (e.target as HTMLElement).closest('button') != null
+        }}
+        onClick={openFromAction}
+      >
         {entry.gist && !entry.local ? (
           <Button size="sm" disabled={busy} onClick={() => onInstall(entry.id)}>
             Install
@@ -71,7 +128,7 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="justify-start"
+                  className="menu-item justify-start"
                   onClick={() => onTest(entry)}
                 >
                   Test
@@ -81,7 +138,7 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="justify-start"
+                  className="menu-item justify-start"
                   onClick={() => onSaveToGist(entry.filename)}
                 >
                   Save to gist
@@ -91,17 +148,17 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="justify-start"
+                  className="menu-item justify-start"
                   onClick={() => onRemoveLocal(entry.filename)}
                 >
-                  Remove local
+                  Uninstall
                 </Button>
               ) : null}
               {entry.gist ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="justify-start"
+                  className="menu-item justify-start"
                   onClick={() => onRemoveGist(entry.id)}
                 >
                   Remove from gist
@@ -111,7 +168,7 @@ export function CollectionRow({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="justify-start text-destructive"
+                  className="menu-item justify-start text-destructive"
                   onClick={() => onRemoveBoth(entry)}
                 >
                   Remove both

@@ -32,6 +32,7 @@ export type CollectionEntry = {
   id: string
   filename: string
   title: string
+  author?: string
   event?: string
   runtime?: string
   local: boolean
@@ -40,6 +41,7 @@ export type CollectionEntry = {
 
 export type CollectionView = {
   authenticated: boolean
+  login?: string
   gist_url?: string
   entries: CollectionEntry[]
 }

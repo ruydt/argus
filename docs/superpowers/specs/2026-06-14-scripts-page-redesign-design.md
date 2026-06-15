@@ -5,6 +5,11 @@
 **Builds on:** Phase 1 (bundled scripts), Phase 2a (gist collection), Phase 2b (community registry)
 **Branch:** `feat/community-script-sharing` (folds into the in-flight Phase 2b branch; replaces its Publish-on-Installed wiring)
 
+> **Current note:** Later scripts-v2 and UI-tweaks work supersedes bundled sections and per-row
+> Publish details here. Current Scripts page is still **Community** + **My Collection**, but sharing
+> is via **Upload & share**, rows open source in a modal, and My Collection carries parsed
+> `@argus-meta` author/event/runtime.
+
 ---
 
 ## 1. Goal
@@ -22,7 +27,8 @@ to their gist and remove it from either or both places.
   because official content is embedded.
 - **Community install is local-only** (writes to `~/.argus/hooks/`). No direct-to-gist from Community.
 - **My Collection = union of local ∪ gist.** One row per script installed locally OR saved in the
-  gist (or both); each row carries independent `Local` and `Gist` flags.
+  gist (or both); each row carries independent `Local` and `Gist` flags plus parsed author/event/
+  runtime metadata when available.
 - **Bundles are batch installers only.** Installing a bundle installs its member scripts, which
   appear as individual single-script rows in My Collection. No bundle entity in the gist.
 - **3-way remove** via a `Remove ▾` dropdown (Popover-based): *Remove local* / *Remove from gist* /
@@ -76,6 +82,7 @@ type CollectionEntry struct {
 	ID       string `json:"id"`
 	Filename string `json:"filename"`
 	Title    string `json:"title"`
+	Author   string `json:"author,omitempty"`
 	Event    string `json:"event,omitempty"`
 	Runtime  string `json:"runtime,omitempty"`
 	Local    bool   `json:"local"`
@@ -84,6 +91,7 @@ type CollectionEntry struct {
 
 type CollectionView struct {
 	Authenticated bool              `json:"authenticated"`
+	Login         string            `json:"login,omitempty"`
 	GistURL       string            `json:"gist_url,omitempty"`
 	Entries       []CollectionEntry `json:"entries"`
 }
@@ -99,11 +107,12 @@ argusDir)`):
    `GistURL`; if it returns `ErrNotAuthenticated`, treat the gist set as empty and
    `Authenticated:false` (do **not** 401).
 3. Merge by filename:
-   - Each gist script → `CollectionEntry{Local: localSet has filename, Gist: true, ...}`; drop its
-     filename from the local set.
-   - Each remaining local file → `CollectionEntry{Local: true, Gist: false}`, with `Title/Event/
-     Runtime` enriched by matching the filename against the bundled catalog; if absent, `Title =
-     filename` and `Runtime` derived from extension (`.js`→`node`, `.sh`→`sh`, `.py`→`python3`).
+   - Each gist script → `CollectionEntry{Local: localSet has filename, Gist: true, ...}` with gist
+     metadata, filled by local `@argus-meta` when that file also exists locally.
+   - Each remaining local file → `CollectionEntry{Local: true, Gist: false}`, with `Title/Author/
+     Event/Runtime` parsed from its own `@argus-meta` header first, then enriched by matching the
+     filename against catalog/registry metadata; if absent, `Title = filename` and `Runtime` derived
+     from extension (`.js`→`node`, `.sh`→`sh`, `.py`→`python3`).
 4. Return `CollectionView`. A genuine GitHub/transport error (not `ErrNotAuthenticated`) still maps
    to `502`.
 
@@ -155,7 +164,8 @@ wiring, and the `useScriptCatalog`-driven `ScriptRow` list. Renders `<CommunityT
 ### 5.3 `collection/CollectionTab.tsx` → union manager (rewrite)
 
 - `useCollection` (rewritten) loads `GET /api/collection` → `CollectionView`.
-- Each entry → a row with **Local**/**Gist** badges and the state-driven actions from §3.2.
+- Each entry → a row with filename/author/event, icon badges for **Local**/**Gist**, a shared
+  source-view modal loaded lazily from local/gist body, and the state-driven actions from §3.2.
 - **Remove ▾** = `Popover` containing the applicable buttons; *both* calls `removeLocal` then
   `removeGist`.
 - **Publish** reuses `buildPublishUrl`/`buildMetaHeader`. The union entry carries no body, so Publish

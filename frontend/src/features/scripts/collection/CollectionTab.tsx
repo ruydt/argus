@@ -1,22 +1,20 @@
 import { useState } from 'react'
-import { ExternalLink } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { CollectionEntry } from '@/types'
 
-import { useCollection } from './useCollection'
-import { DeviceFlowModal } from './DeviceFlowModal'
+import type { CollectionController } from './useCollection'
 import { CollectionRow } from './CollectionRow'
-import { UploadShareDialog } from './UploadShareDialog'
 import { simulatorPath } from './simulatorLink'
 
 type CollectionTabProps = {
   query: string
+  collection: CollectionController
 }
 
-export function CollectionTab({ query }: CollectionTabProps) {
+export function CollectionTab({ query, collection }: CollectionTabProps) {
   const navigate = useNavigate()
 
   function testInSimulator(entry: CollectionEntry) {
@@ -25,21 +23,16 @@ export function CollectionTab({ query }: CollectionTabProps) {
 
   const {
     authenticated,
-    gistUrl,
     entries,
     loading,
     error,
-    deviceCode,
     startLogin,
-    cancelLogin,
-    logout,
     saveToGist,
     install,
     removeLocal,
     removeGist,
     removeBoth,
-    publishFiles,
-  } = useCollection()
+  } = collection
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<{ text: string; href?: string } | null>(null)
 
@@ -54,16 +47,6 @@ export function CollectionTab({ query }: CollectionTabProps) {
     }
   }
 
-  // Upgrading scope (gist -> public_repo) needs fresh consent. An existing
-  // gist-only token makes /api/github/status report authenticated, which would
-  // short-circuit the device-flow poll, so log out first then start a new login.
-  function reauthForSharing() {
-    void run(async () => {
-      await logout()
-      await startLogin()
-    })
-  }
-
   function guardedSave(filename: string) {
     if (!authenticated) {
       setNotice({ text: 'Sign in with GitHub to back up to your gist.' })
@@ -76,7 +59,13 @@ export function CollectionTab({ query }: CollectionTabProps) {
   const filtered = entries.filter((e) => {
     const q = query.trim().toLowerCase()
     if (!q) return true
-    return e.title.toLowerCase().includes(q) || e.filename.toLowerCase().includes(q)
+    return (
+      e.title.toLowerCase().includes(q) ||
+      e.filename.toLowerCase().includes(q) ||
+      e.id.toLowerCase().includes(q) ||
+      (e.event ?? '').toLowerCase().includes(q) ||
+      (e.runtime ?? '').toLowerCase().includes(q)
+    )
   })
 
   if (loading) {
@@ -91,43 +80,6 @@ export function CollectionTab({ query }: CollectionTabProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between text-[0.72rem] text-[#888]">
-        {authenticated ? (
-          <span>Signed in to GitHub</span>
-        ) : (
-          <span>Local scripts only — sign in to sync with a gist.</span>
-        )}
-        <div className="flex items-center gap-2">
-          {authenticated && gistUrl ? (
-            <a
-              href={gistUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ExternalLink className="size-3" />
-              View scripts on Gist
-            </a>
-          ) : null}
-          {authenticated ? (
-            <UploadShareDialog
-              onPublish={publishFiles}
-              onNeedsLogin={reauthForSharing}
-              onResult={setNotice}
-            />
-          ) : null}
-          {authenticated ? (
-            <Button variant="outline" size="sm" disabled={busy} onClick={() => run(logout)}>
-              Logout
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" disabled={busy} onClick={() => run(startLogin)}>
-              Sign in with GitHub
-            </Button>
-          )}
-        </div>
-      </div>
-
       {notice ? (
         <div className="flex items-center justify-between rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[0.78rem] text-[#bbb]">
           <span>
@@ -159,7 +111,14 @@ export function CollectionTab({ query }: CollectionTabProps) {
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <div className="overflow-hidden rounded-md border border-white/[0.06]">
+      <div>
+        <div className="flex items-center gap-4 border-b border-white/[0.12] px-2 pb-2 font-mono text-[0.68rem] tracking-[0.12em] text-[#666] uppercase">
+          <span className="w-7 shrink-0 text-right">#</span>
+          <span className="flex-1">Script</span>
+          <span className="hidden w-36 shrink-0 md:block">Event</span>
+          <span className="hidden w-44 shrink-0 md:block">Status</span>
+          <span className="w-40 shrink-0 text-right">Action</span>
+        </div>
         {filtered.length === 0 ? (
           <p className="px-3 py-8 text-center text-sm text-[#777]">
             {query
@@ -179,12 +138,15 @@ export function CollectionTab({ query }: CollectionTabProps) {
               onRemoveLocal={(filename) => run(() => removeLocal(filename))}
               onRemoveGist={(id) => run(() => removeGist(id))}
               onRemoveBoth={(entry) => run(() => removeBoth(entry))}
+              getBody={(entry) =>
+                entry.local
+                  ? collection.getLocalBody(entry.filename)
+                  : Promise.reject(new Error('no local source'))
+              }
             />
           ))
         )}
       </div>
-
-      <DeviceFlowModal device={deviceCode} onClose={cancelLogin} />
     </div>
   )
 }

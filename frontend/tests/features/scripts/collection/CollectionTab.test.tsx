@@ -1,40 +1,51 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { CollectionTab } from '@/features/scripts/collection/CollectionTab'
-import { __resetCollectionCache } from '@/features/scripts/collection/useCollection'
+import type { CollectionController } from '@/features/scripts/collection/useCollection'
 
-afterEach(() => {
-  vi.restoreAllMocks()
-  __resetCollectionCache()
-})
-
-const view = {
-  authenticated: true,
-  entries: [{ id: 'a', filename: 'a.js', title: 'Alpha', local: true, gist: false }],
+function fakeCollection(over: Partial<CollectionController> = {}): CollectionController {
+  return {
+    authenticated: true,
+    login: 'octocat',
+    gistUrl: undefined,
+    entries: [{ id: 'a', filename: 'a.js', title: 'Alpha', local: true, gist: false }],
+    loading: false,
+    error: null,
+    deviceCode: null,
+    reload: vi.fn(),
+    startLogin: vi.fn(),
+    cancelLogin: vi.fn(),
+    logout: vi.fn(),
+    saveToGist: vi.fn(),
+    install: vi.fn(),
+    removeLocal: vi.fn(),
+    removeGist: vi.fn(),
+    removeBoth: vi.fn(),
+    getLocalBody: vi.fn(),
+    publishFiles: vi.fn(),
+    ...over,
+  } as CollectionController
 }
 
-function renderTab(query = '') {
+function renderTab(query = '', collection = fakeCollection()) {
   return render(
     <MemoryRouter>
-      <CollectionTab query={query} />
+      <CollectionTab query={query} collection={collection} />
     </MemoryRouter>
   )
 }
 
 describe('CollectionTab', () => {
-  it('shows entries and the Upload & share control when authenticated', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => view }))
+  it('renders entries by filename from the collection controller', () => {
     renderTab()
-    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument())
-    expect(screen.getByRole('button', { name: /upload & share/i })).toBeInTheDocument()
+    expect(screen.getByText('a.js')).toBeInTheDocument()
   })
 
-  it('does not render a Publish button on rows', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => view }))
+  it('does not render a Publish button on rows (sharing lives in the account menu)', () => {
     renderTab()
-    await waitFor(() => expect(screen.getByText('Alpha')).toBeInTheDocument())
     expect(screen.queryByRole('button', { name: /^publish$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /upload & share/i })).not.toBeInTheDocument()
   })
 })

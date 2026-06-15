@@ -72,6 +72,45 @@ func TestEventsHandlerSessionQueryReturnsOldSessionEvents(t *testing.T) {
 	}
 }
 
+func TestEventsHandlerSearchIgnoresTimeWindow(t *testing.T) {
+	svc := newTestService(t)
+	old := time.Now().UTC().Add(-48 * time.Hour).Format(time.RFC3339)
+	if err := svc.AddEvent(domain.NormalizedEvent{
+		Time: old, Agent: "codex", Session: "needle-session", CWD: "/work/needle-project",
+		HookEventName: "SessionStart", RawPayload: []byte(`{}`),
+	}); err != nil {
+		t.Fatalf("AddEvent target: %v", err)
+	}
+	if err := svc.AddEvent(domain.NormalizedEvent{
+		Time: old, Agent: "codex", Session: "other-session", CWD: "/work/other",
+		HookEventName: "SessionStart", RawPayload: []byte(`{}`),
+	}); err != nil {
+		t.Fatalf("AddEvent other: %v", err)
+	}
+
+	future := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
+	h := handler.Events(svc)
+	req := httptest.NewRequest(http.MethodGet, "/api/events?since="+future+"&q=needle-project", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		Events []domain.NormalizedEvent `json:"events"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Events) != 1 {
+		t.Fatalf("events len = %d, want 1", len(payload.Events))
+	}
+	if payload.Events[0].Session != "needle-session" {
+		t.Fatalf("session = %q, want needle-session", payload.Events[0].Session)
+	}
+}
+
 func TestEventsHandlerSessionQueryIsBounded(t *testing.T) {
 	svc := newTestService(t)
 	base := time.Now().UTC()

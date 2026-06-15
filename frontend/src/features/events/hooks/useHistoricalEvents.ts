@@ -13,7 +13,8 @@ export function useHistoricalEvents(
   since: string,
   until: string,
   sessionFilter: string,
-  enabled: boolean
+  enabled: boolean,
+  search = ''
 ) {
   const [events, setEvents] = useState<EventRecord[]>([])
   const [hasMore, setHasMore] = useState(false)
@@ -26,8 +27,12 @@ export function useHistoricalEvents(
   const buildUrl = useCallback(
     (cursor: number) => {
       const params = new URLSearchParams()
-      if (since) params.set('since', since)
-      if (until) params.set('until', until)
+      // Search spans the whole DB by session id / project, so it ignores the
+      // time window — a matching session may sit outside the selected range.
+      const searching = search.trim() !== ''
+      if (searching) params.set('q', search.trim())
+      if (!searching && since) params.set('since', since)
+      if (!searching && until) params.set('until', until)
       if (sessionFilter) {
         // Single-session view: event-based pagination
         params.set('session', sessionFilter)
@@ -41,7 +46,7 @@ export function useHistoricalEvents(
       const qs = params.toString()
       return `/api/events${qs ? `?${qs}` : ''}`
     },
-    [since, until, sessionFilter]
+    [since, until, sessionFilter, search]
   )
 
   const fetchPage = useCallback(
@@ -91,7 +96,7 @@ export function useHistoricalEvents(
     }, 0)
     return () => window.clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [since, until, sessionFilter, enabled])
+  }, [since, until, sessionFilter, enabled, search])
 
   const loadMore = useCallback(() => {
     if (loading || !hasMore) return

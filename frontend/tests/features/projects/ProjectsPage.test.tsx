@@ -29,6 +29,19 @@ function mockFetch(impl: (url: string, init?: RequestInit) => unknown) {
   )
 }
 
+// Fake of the paginated, server-searched /api/projects GET. Search matches the
+// cwd substring (the backend's behavior; name is the cwd basename).
+function paginate(all: (typeof PROJECT)[], url: string) {
+  const u = new URL(url, 'http://localhost')
+  const q = (u.searchParams.get('q') ?? '').toLowerCase()
+  const page = Number(u.searchParams.get('page') ?? '1')
+  const size = Number(u.searchParams.get('size') ?? '20')
+  const matched = all.filter((p) => !q || p.cwd.toLowerCase().includes(q))
+  const start = (page - 1) * size
+  const slice = matched.slice(start, start + size)
+  return { projects: slice, total: matched.length, has_more: start + slice.length < matched.length }
+}
+
 function renderPage() {
   return render(
     <MemoryRouter>
@@ -50,7 +63,7 @@ describe('ProjectsPage delete', () => {
         deleted = true
         return { sessions_deleted: 3, events_deleted: 42 }
       }
-      return { projects: deleted ? [] : [PROJECT] }
+      return paginate(deleted ? [] : [PROJECT], url)
     })
 
     renderPage()
@@ -74,9 +87,9 @@ describe('ProjectsPage delete', () => {
   })
 
   it('cancel closes dialog without DELETE call', async () => {
-    mockFetch((_url, init) => {
+    mockFetch((url, init) => {
       if (init?.method === 'DELETE') throw new Error('must not delete')
-      return { projects: [PROJECT] }
+      return paginate([PROJECT], url)
     })
 
     renderPage()
@@ -100,7 +113,7 @@ describe('ProjectsPage search', () => {
   })
 
   it('filters cards by name, matches cwd segments, and restores on clear', async () => {
-    mockFetch(() => ({ projects: [PROJECT, OTHER_PROJECT] }))
+    mockFetch((url) => paginate([PROJECT, OTHER_PROJECT], url))
     renderPage()
 
     expect(await screen.findAllByTestId('project-card')).toHaveLength(2)
@@ -125,7 +138,7 @@ describe('ProjectsPage search', () => {
   })
 
   it('shows no-match message for unmatched query', async () => {
-    mockFetch(() => ({ projects: [PROJECT] }))
+    mockFetch((url) => paginate([PROJECT], url))
     renderPage()
 
     await screen.findAllByTestId('project-card')

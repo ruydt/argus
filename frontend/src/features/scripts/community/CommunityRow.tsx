@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { CommunityScript } from '@/types'
+
+import { ScriptViewerModal } from '../ScriptViewerModal'
 
 type CommunityRowProps = {
   script: CommunityScript
@@ -17,41 +19,43 @@ function filenameOf(script: CommunityScript): string {
 }
 
 export function CommunityRow({ script, index, busy, onInstall, getBody }: CommunityRowProps) {
-  const [body, setBody] = useState<string | null>(null)
-  const [working, setWorking] = useState(false)
-
-  async function toggleSource() {
-    if (body !== null) {
-      setBody(null)
+  const [viewing, setViewing] = useState(false)
+  // Two clickable surfaces cover every pixel without an outer-row onClick (Radix
+  // re-dispatches the trigger click on a portaled div that bubbles up). The
+  // action surface skips button presses via pointer-down-capture.
+  const skipOpen = useRef(false)
+  function openFromAction() {
+    if (skipOpen.current) {
+      skipOpen.current = false
       return
     }
-    setWorking(true)
-    try {
-      setBody(await getBody(script.id))
-    } catch {
-      setBody('// failed to load source')
-    } finally {
-      setWorking(false)
-    }
+    setViewing(true)
   }
 
   return (
-    <div className="border-b border-white/[0.06] px-3 py-3 hover:bg-white/[0.02]">
-      <div className="flex items-center gap-4">
-        <span className="w-6 shrink-0 text-right text-[0.72rem] tabular-nums text-[#555]">
+    <div className="flex items-center border-b border-white/[0.06] hover:bg-white/[0.02]">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setViewing(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setViewing(true)
+          }
+        }}
+        className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 py-3.5 pr-4 pl-2"
+      >
+        <span className="w-7 shrink-0 text-right font-mono text-[0.8rem] tabular-nums text-[#555]">
           {index}
         </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-2">
-            <span className="truncate font-mono text-sm font-semibold text-[#e5e5e5]">
-              {filenameOf(script)}
-            </span>
-            <span className="truncate font-mono text-[0.8rem] text-[#666]">
-              {script.author}/{script.id}
-            </span>
-          </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
+          <span className="truncate font-mono text-sm font-semibold text-[#e5e5e5]">
+            {filenameOf(script)}
+          </span>
+          <span className="truncate font-mono text-[0.8rem] text-[#666]">{script.author}</span>
         </div>
-        <div className="hidden shrink-0 items-center gap-1 md:flex">
+        <div className="hidden w-44 shrink-0 items-center gap-1 md:flex">
           {script.event ? <Badge variant="outline">{script.event}</Badge> : null}
           {!script.runtime_available ? (
             <Badge variant="outline" className="border-amber-600/40 text-amber-500">
@@ -59,26 +63,32 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
             </Badge>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button variant="ghost" size="sm" disabled={busy || working} onClick={toggleSource}>
-            Source
-          </Button>
-          {!script.installed ? (
-            <Button size="sm" disabled={busy || working} onClick={() => onInstall(script.id)}>
-              Install
-            </Button>
-          ) : (
-            <Badge variant="secondary" className="px-2.5 py-1">
-              Installed
-            </Badge>
-          )}
-        </div>
       </div>
-      {body !== null ? (
-        <pre className="mt-2 max-h-[40vh] overflow-auto rounded-md bg-black/40 p-3 text-[0.72rem] text-[#bbb]">
-          {body}
-        </pre>
-      ) : null}
+
+      <div
+        className="flex w-40 shrink-0 cursor-pointer items-center justify-end gap-2 py-3.5 pr-2"
+        onPointerDownCapture={(e) => {
+          skipOpen.current = (e.target as HTMLElement).closest('button') != null
+        }}
+        onClick={openFromAction}
+      >
+        {!script.installed ? (
+          <Button size="sm" disabled={busy} onClick={() => onInstall(script.id)}>
+            Install
+          </Button>
+        ) : (
+          <Badge variant="secondary" className="px-2.5 py-1">
+            Installed
+          </Badge>
+        )}
+      </div>
+
+      <ScriptViewerModal
+        title={filenameOf(script)}
+        open={viewing}
+        onOpenChange={setViewing}
+        load={() => getBody(script.id)}
+      />
     </div>
   )
 }

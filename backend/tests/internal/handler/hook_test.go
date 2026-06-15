@@ -487,4 +487,3 @@ func TestHookHandlerEmptyFieldsWhenMissing(t *testing.T) {
 		t.Errorf("Description = %q, want %q", e.Description, "List files")
 	}
 }
-

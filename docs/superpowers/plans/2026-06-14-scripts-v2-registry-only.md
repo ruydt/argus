@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make `argus-hooks/registry` the sole source of scripts (no embedding, no tiers, no bundles), browse it via an infinite-scroll author-tagged list with whole-registry search, and let users share local files/folders by having the backend open one PR.
+**Goal:** Make `argus-hooks/registry` the sole source of scripts (no embedding, no tiers, no bundles), browse it via an infinite-scroll author-tagged list with whole-registry search, and let users share local files/folders by having the backend open one PR with a description.
 
-**Architecture:** Delete the embedded `BundledSource`, `/api/scripts/*`, and bundle types. The registry (`community.Source`) becomes the only catalog. Add `internal/github` methods that fork the registry, commit uploaded files in one commit, and open a PR; expose them via `POST /api/registry/publish` (needs `public_repo`). Rewrite the Community tab (infinite scroll) and My Collection (⋯ menu + Upload & share).
+**Architecture:** Delete the embedded `BundledSource`, `/api/scripts/*`, and bundle types. The registry (`community.Source`) becomes the only catalog. Add `internal/github` methods that fork the registry, commit uploaded files in one commit, and open a PR; expose them via `POST /api/registry/publish` (needs `public_repo`, accepts files + description, stamps missing author metadata). Rewrite the Community tab (infinite scroll) and My Collection (⋯ menu + Upload & share).
 
 **Tech Stack:** Go (`net/http`, GitHub REST Git Data API), React 19 + TS + Vite, Vitest, shadcn `Popover`.
 
@@ -25,7 +25,7 @@
 - Create: `internal/github/repo_publish.go` — fork/commit/PR methods on `*GistClient`.
 - Modify: `internal/github/service.go` — `PublishToRegistry`; `ErrNeedsRepoScope`.
 - Modify: `internal/github/device_flow.go` — scope `gist` → `gist public_repo`.
-- Create: `internal/handler/registry_publish.go` — `RegistryPublish` handler.
+- Create: `internal/handler/registry_publish.go` — `RegistryPublish` handler (files + description; author fallback).
 - Modify: `internal/server/router.go` — drop `/api/scripts/*`; add `POST /api/registry/publish`; pass `community.Source` to `Collection`.
 - Tests: `internal/github/repo_publish_test.go`, `internal/handler/registry_publish_test.go`; delete bundled/scripts tests.
 

@@ -64,12 +64,12 @@ simulator. Take the full visual tour at **[getargus.org](https://getargus.org)**
 | Surface | What it does |
 | ------- | ------------ |
 | **Hooks config + simulator** | One-click presets; fire a synthetic payload at any hook and read stdout/stderr/exit code before a live agent runs it. |
-| **Event feed** | Every normalized tool call streamed over SSE, sub-100ms from hook to browser. |
+| **Event feed** | Every normalized tool call streamed over SSE, with server-side search across session id and project. |
 | **Sessions** | Per-project session table — duration, tokens, agent, timing — with a file-change drawer of per-edit diffs. |
 | **Dashboard** | Token-usage roll-ups (input/output/cache) charted over time and by model — computed locally. |
-| **Projects** | Cards grouping sessions by working directory, searchable, with cascade delete. |
+| **Projects** | Cards per working directory, server-searchable with infinite scroll and cascade delete. |
 | **Diagnostics** | Health, storage, hook-preset detection, `~/.argus` inventory, and log tails. |
-| **Scripts library** | Browse, search, and one-click install the bundled hook scripts into `~/.argus/hooks/` — with an Installed tab and per-script source view. |
+| **Scripts library** | Browse community scripts, inspect source in a modal, install into `~/.argus/hooks/`, and manage local/gist copies from My Collection. |
 | **Script collection** | Free zero-dependency guardrails in [`my-custom-hook-scripts/`](my-custom-hook-scripts/). |
 
 ## Uninstall

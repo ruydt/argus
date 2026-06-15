@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"argus/internal/github"
+	"argus/internal/scriptmeta"
 )
 
 type publishRequest struct {
@@ -30,13 +31,16 @@ func RegistryPublish(svc *github.Service) http.Handler {
 			http.Error(w, "files required", http.StatusBadRequest)
 			return
 		}
+		// Stamp the publisher's GitHub login as author when the script didn't
+		// declare one, so every shared script carries attribution.
+		login := svc.Status(r.Context()).Login
 		files := make([]github.PublishFile, 0, len(req.Files))
 		for _, f := range req.Files {
 			if f.Name == "" || filepath.Base(f.Name) != f.Name {
 				http.Error(w, "invalid file name", http.StatusBadRequest)
 				return
 			}
-			files = append(files, github.PublishFile{Name: f.Name, Body: f.Body})
+			files = append(files, github.PublishFile{Name: f.Name, Body: scriptmeta.EnsureAuthor(f.Body, login)})
 		}
 		url, err := svc.PublishToRegistry(r.Context(), files, req.Description)
 		switch {

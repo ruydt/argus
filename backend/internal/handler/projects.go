@@ -34,7 +34,11 @@ func Projects(svc *service.EventService) http.Handler {
 			return
 		}
 
-		projects, err := svc.ListProjects()
+		q := r.URL.Query()
+		search := q.Get("q")
+		page, size := parsePageSize(q.Get("page"), q.Get("size"), 20, 200)
+
+		projects, total, err := svc.ListProjectsPage(search, page, size)
 		if err != nil {
 			http.Error(w, "list projects", http.StatusInternalServerError)
 			return
@@ -42,9 +46,17 @@ func Projects(svc *service.EventService) http.Handler {
 		if projects == nil {
 			projects = []domain.Project{}
 		}
+		// Actual returned count avoids a false has_more on a partial last page.
+		hasMore := (page-1)*size+len(projects) < total
 
 		w.Header().Set("Content-Type", "application/json")
-		resp := map[string]any{"projects": projects}
+		resp := map[string]any{
+			"projects": projects,
+			"total":    total,
+			"page":     page,
+			"size":     size,
+			"has_more": hasMore,
+		}
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			log.Printf("[handler] encode %T: %v", resp, err)
 		}

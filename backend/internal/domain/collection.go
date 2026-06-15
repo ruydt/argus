@@ -6,6 +6,7 @@ type CollectionScript struct {
 	ID        string `json:"id"` // stable key (filename without extension)
 	Filename  string `json:"filename"`
 	Title     string `json:"title"`
+	Author    string `json:"author,omitempty"`
 	Purpose   string `json:"purpose,omitempty"`
 	Event     string `json:"event,omitempty"`
 	Matcher   string `json:"matcher,omitempty"`
@@ -41,6 +42,7 @@ type CollectionEntry struct {
 	ID       string `json:"id"`
 	Filename string `json:"filename"`
 	Title    string `json:"title"`
+	Author   string `json:"author,omitempty"`
 	Event    string `json:"event,omitempty"`
 	Runtime  string `json:"runtime,omitempty"`
 	Local    bool   `json:"local"`
@@ -50,6 +52,7 @@ type CollectionEntry struct {
 // CollectionView is the unified collection response: local ∪ gist.
 type CollectionView struct {
 	Authenticated bool              `json:"authenticated"`
+	Login         string            `json:"login,omitempty"`
 	GistURL       string            `json:"gist_url,omitempty"`
 	Entries       []CollectionEntry `json:"entries"`
 }

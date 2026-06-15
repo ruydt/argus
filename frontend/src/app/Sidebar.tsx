@@ -3,7 +3,7 @@ import {
   FolderOpen,
   LayoutDashboard,
   PanelLeft,
-  ScrollText,
+  Files,
   SlidersHorizontal,
   Stethoscope,
   TerminalSquare,
@@ -145,7 +145,7 @@ const NAV_ITEMS: NavItem[] = [
     to: '/scripts',
     label: 'Scripts',
     ariaLabel: 'Hook Scripts Library',
-    icon: ScrollText,
+    icon: Files,
     end: false,
   },
 ]

@@ -4,6 +4,10 @@
 **Date:** 2026-06-14
 **Builds on:** Phase 1 (bundled scripts library), Phase 2a (GitHub-portable personal collection)
 
+> **Current note:** `scripts-v2-registry-only` supersedes publish mechanics in this design. Current
+> sharing uses backend-opened registry PRs via `POST /api/registry/publish`, needs `public_repo`, and
+> includes PR description + author stamping.
+
 ---
 
 ## 1. Goal

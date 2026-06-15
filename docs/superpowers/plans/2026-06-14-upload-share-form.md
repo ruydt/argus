@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the one-click Upload & share with a per-file metadata wizard (confirm/fill `@argus-meta` fields, prefilled from each script) plus a PR-description step; inject clean headers into the files and open the registry PR with that description as its body.
+**Goal:** Replace the one-click Upload & share with a per-file metadata wizard (confirm/fill `@argus-meta` fields, prefilled from each script, including optional author) plus a PR-description step; inject clean headers into the files and open the registry PR with that description as its body.
 
-**Architecture:** Pure `argusMeta.ts` helpers (parse/build/inject/runtimeFromExt) drive a `Dialog` wizard `UploadShareForm`. `UploadShareDialog` reads the picked files then renders the wizard; on Share it injects headers and calls `publishFiles(files, description)`. Backend threads `description` into the PR body.
+**Architecture:** Pure `argusMeta.ts` helpers (parse/build/inject/runtimeFromExt) drive a `Dialog` wizard `UploadShareForm`. `UploadShareDialog` reads the picked files then renders the wizard; on Share it injects headers and calls `publishFiles(files, description)`. Backend threads `description` into the PR body and stamps missing `author` metadata from the authenticated GitHub login.
 
 **Tech Stack:** React 19 + TS + Vite, shadcn `Dialog`/`Select`/`Input`, Vitest, Go.
 
@@ -19,7 +19,7 @@
 
 - Modify: `backend/internal/github/repo_publish.go` — `PublishRegistry(..., description)` → PR body.
 - Modify: `backend/internal/github/service.go` — `PublishToRegistry(..., description)`.
-- Modify: `backend/internal/handler/registry_publish.go` — accept `description`.
+- Modify: `backend/internal/handler/registry_publish.go` — accept `description`; stamp missing author fields.
 - Modify: `backend/internal/github/repo_publish_test.go` — pass + assert description.
 - Create: `frontend/src/features/scripts/community/argusMeta.ts` + test.
 - Create: `frontend/src/features/scripts/collection/UploadShareForm.tsx` + test.
@@ -248,6 +248,7 @@ Expected: FAIL — cannot resolve module.
 ```ts
 export type ArgusMeta = {
   title: string
+  author?: string
   event: string
   runtime: string
   matcher: string
@@ -275,7 +276,7 @@ export function runtimeFromExt(filename: string): string {
   return 'node'
 }
 
-const FIELD_KEYS: (keyof ArgusMeta)[] = ['title', 'event', 'runtime', 'matcher', 'purpose']
+const FIELD_KEYS: (keyof ArgusMeta)[] = ['title', 'author', 'event', 'runtime', 'matcher', 'purpose']
 const META_START = '// @argus-meta'
 const META_END = '// @end'
 
@@ -297,9 +298,9 @@ export function buildArgusMeta(m: ArgusMeta): string {
   const lines = [
     META_START,
     `// title: ${m.title}`,
-    `// event: ${m.event}`,
-    `// runtime: ${m.runtime}`,
   ]
+  if (m.author) lines.push(`// author: ${m.author}`)
+  lines.push(`// event: ${m.event}`, `// runtime: ${m.runtime}`)
   if (m.matcher) lines.push(`// matcher: ${m.matcher}`)
   if (m.purpose) lines.push(`// purpose: ${m.purpose}`)
   lines.push(META_END, '')

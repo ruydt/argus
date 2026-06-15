@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Argus = hook control center for AI coding agents. Core value, in order: **hook management** (config editor with one-click presets for Claude Code and Codex), the **hook simulator** (run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code — test guardrails before a live agent fires them), and the **public hook script collection** (`my-custom-hook-scripts/` — zero-dependency, cross-agent guardrail/automation scripts shipped for everyone). The observability layer supports it: hook payloads arrive via `POST /api/hook`, get normalized, persisted to SQLite, streamed to browser via SSE. Frontend is a React SPA: hooks config editor + simulator, live event feed, dashboard stats, usage breakdown, projects/sessions explorer, diagnostics.
+Argus = hook control center for AI coding agents. Core value, in order: **hook management** (config editor with one-click presets for Claude Code and Codex), the **hook simulator** (run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code — test guardrails before a live agent fires them), and the **public hook script collection** (`my-custom-hook-scripts/` plus the registry/community flow — zero-dependency, cross-agent guardrail/automation scripts). The observability layer supports it: hook payloads arrive via `POST /api/hook`, get normalized, persisted to SQLite, streamed to browser via SSE. Frontend is a React SPA: hooks config editor + simulator, live event feed, dashboard stats, usage breakdown, projects/sessions explorer, diagnostics.
 
 Go backend + React frontend. No external infra. Ships as Docker image or local binary.
 
@@ -35,10 +35,10 @@ argus/
 │       │   ├── events/      # EventsPage, hooks/useEvents, hooks/useEventFilters, renderers/
 │       │   ├── dashboard/   # DashboardPage, hooks/useDashboardStats, date-range helpers
 │       │   ├── sessions/    # SessionListPage, SessionFileChangesPage, FileChangesDrawer/List, hooks/useFileChanges, utils
-│       │   ├── projects/    # ProjectsPage — project cards, search, delete-with-cascade
+│       │   ├── projects/    # ProjectsPage — project cards, server search, infinite scroll, delete-with-cascade
 │       │   ├── diagnostics/ # DiagnosticsPage — health, storage, file system, log tails
 │       │   ├── hooks-config/# HooksConfigPage — structured/JSON editors, presets, SimulatorTab
-│       │   ├── scripts/     # ScriptsPage — browse + install/delete bundled hook scripts
+│       │   ├── scripts/     # ScriptsPage — Community + My Collection script management
 │       │   └── usage/       # UsagePage
 │       ├── components/
 │       │   ├── ui/          # shadcn-generated primitives — DO NOT lint, DO NOT hand-edit
@@ -91,30 +91,35 @@ AI Agent → POST /api/hook → handler.Hook → claudecode/codex.Normalize()
                                          → svc.AddEvent() → repo.Add() + broadcast()
                                                                      ↓
 Browser ← GET /api/events/stream (SSE) ← EventService.subscribers (sync.Map)
+        ← GET /api/events?q=...                (session/project search; search ignores time window)
         ← GET /api/sessions/tree
+        ← GET /api/projects?page=&size=&q=     (server-paged project cards)
         ← GET /api/dashboard/stats
         ← GET /api/session-usage
         ← GET/PUT /api/hooks-config          (hooks config editor)
         → POST /api/hooks/simulate           (hook simulator — sh -c command, payload on stdin,
                                               returns stdout/stderr/exit code/duration)
-        ← GET /api/scripts/catalog           (bundled hook-script library + install state)
-        → POST /api/scripts/install          (copy embedded script → ~/.argus/hooks/)
-        → POST /api/scripts/install-bundle   (install a named bundle's missing members)
-        → DELETE /api/scripts/installed      (remove an installed script)
+        ← GET /api/community/catalog         (registry/community hook scripts + install state)
+        ← GET /api/community/script          (verified source for modal view)
+        → POST /api/community/install        (verified registry script → ~/.argus/hooks/)
+        → POST /api/community/simulate       (verified registry script in simulator sandbox)
         ← GET /api/diagnostics               (health/storage/file system; also feeds the
                                               simulator's ~/.argus/hooks script picker)
         → POST /api/github/device            (start GitHub device-flow login)
         ← GET /api/github/status             (auth state; advances device-flow poll)
         → POST /api/github/logout            (delete local token)
-        ← GET /api/collection                (user's gist-backed script collection)
-        → POST /api/collection               (add a bundled/local script to the gist)
+        ← GET /api/collection                (local ∪ gist collection view; auth optional)
+        → POST /api/collection               (save a local script to the gist)
         → POST /api/collection/install       (install a collection script → ~/.argus/hooks/)
         → DELETE /api/collection             (remove a script from the gist)
+        ← GET /api/collection/local          (read local script body for source/publish)
+        → DELETE /api/collection/local       (uninstall a local script)
+        → POST /api/registry/publish         (upload files + PR description to registry)
 ```
 
 **Hook simulator (`features/hooks-config/SimulatorTab.tsx`):** searchable event-type picker fills an editable per-event payload template; command picker offers config-wired hooks, auto-discovered `~/.argus/hooks` scripts (`.js`→node, `.sh`→sh, `.py`→python3, `CLAUDECODE=1` prefix on the Claude Code tab), or a custom command. Custom commands can be applied into the hooks config (idempotent). Backend executes via `handler/hooks_simulate.go` with the hook's configured timeout (default 10s).
 
-**Scripts collection (Phase 2a):** optional GitHub login (device flow, scope `gist`, token in `~/.argus/github-token.json` 0600) backs up a user's scripts to their own private gist (`[argus-collection]`), portable across machines. Backend `internal/github` owns the token + API; the SPA never sees it. No argus-hosted storage.
+**Scripts collection/registry:** optional GitHub login (device flow, `gist`; registry sharing also needs `public_repo`, token in `~/.argus/github-token.json` 0600) backs up a user's scripts to their own private gist (`[argus-collection]`) and can open registry PRs for uploaded files. `GET /api/collection` is auth-optional and returns local ∪ gist entries, including parsed `@argus-meta` fields (`author`, event, runtime). Backend `internal/github` owns the token + API; the SPA never sees it. No argus-hosted storage.
 
 **Dependency direction (backend):** handler → service → repository → domain. Never skip layers. Never import handler from service.
 

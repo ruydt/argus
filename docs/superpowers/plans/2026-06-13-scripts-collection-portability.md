@@ -6,6 +6,10 @@
 
 **Architecture:** A new `internal/github` package holds three focused units (token store, device-flow client, gist client) plus a stateful `Service` orchestrator. Thin handlers expose auth + collection endpoints; the token never reaches the browser. Local file writes reuse a `writeHookScript` helper extracted from Phase 1. A new "My Collection" tab on `/scripts` drives login + list/install/remove.
 
+> **Current note:** Later scripts-page-redesign/scripts-v2 work supersedes this plan's All/Installed
+> tab wiring. Current collection behavior is local ∪ gist, auth-optional, with save/install/remove
+> actions under **My Collection**.
+
 **Tech Stack:** Go 1.25 (`net/http`, `encoding/json`, `crypto`), GitHub OAuth Device Flow + Gist API, React 19 + TypeScript, Vitest.
 
 **Manual prerequisite (do first, once):** Register a GitHub **OAuth App** (Settings → Developer settings → OAuth Apps → New). Enable **Device Flow**. Copy the **Client ID** (public; no secret needed). It is wired in Task 9 as `defaultGitHubClientID` and overridable via `ARGUS_GITHUB_CLIENT_ID`. Until a real client id is set, device-flow calls hit GitHub and fail — backend unit tests use a fake server and do not need it.

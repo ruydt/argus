@@ -4,6 +4,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { AppWindowIcon, CodeIcon, ExternalLink, RefreshCw, Save, Terminal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
+import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -319,26 +320,26 @@ export function HooksConfigPage() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background text-foreground">
-      <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-0.5">
-            <h1 className="text-[22px] font-semibold text-foreground">Hooks Config</h1>
-            <a
-              href={
-                activeAgent === 'claudecode'
-                  ? 'https://code.claude.com/docs/en/hooks'
-                  : 'https://developers.openai.com/codex/hooks'
-              }
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="size-3" />
-              Hooks documentation
-            </a>
-          </div>
-          <div className="flex items-center gap-2">
+    <PageShell>
+      <PageHeader
+        title="Hooks Config"
+        subtitle={
+          <a
+            href={
+              activeAgent === 'claudecode'
+                ? 'https://code.claude.com/docs/en/hooks'
+                : 'https://developers.openai.com/codex/hooks'
+            }
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="size-3" />
+            Hooks documentation
+          </a>
+        }
+        actions={
+          <>
             {viewMode !== 'simulator' && activeState.isDirty && !activeState.loading && (
               <span className="text-[12px] text-[var(--cwd)]">Unsaved changes</span>
             )}
@@ -364,59 +365,59 @@ export function HooksConfigPage() {
                 Save
               </Button>
             )}
-          </div>
-        </div>
+          </>
+        }
+      />
 
-        <Tabs
-          value={activeAgent}
-          onValueChange={(v) => {
-            const agent = v as AgentKey
-            setActiveAgent(agent)
-            writeStorageString(AGENT_TAB_KEY, agent)
-          }}
-          className="w-full"
-        >
-          <div className="flex items-center justify-between">
+      <Tabs
+        value={activeAgent}
+        onValueChange={(v) => {
+          const agent = v as AgentKey
+          setActiveAgent(agent)
+          writeStorageString(AGENT_TAB_KEY, agent)
+        }}
+        className="w-full"
+      >
+        <div className="flex items-center justify-between">
+          <TabsList variant="line">
+            <TabsTrigger value="claudecode">Claude Code</TabsTrigger>
+            <TabsTrigger value="codex">Codex</TabsTrigger>
+          </TabsList>
+          <Tabs value={viewMode} onValueChange={handleViewModeChange}>
             <TabsList>
-              <TabsTrigger value="claudecode">Claude Code</TabsTrigger>
-              <TabsTrigger value="codex">Codex</TabsTrigger>
+              <TabsTrigger
+                value="structured"
+                aria-label="Structured"
+                disabled={viewMode === 'json' && !jsonIsValid}
+                title={
+                  viewMode === 'json' && !jsonIsValid
+                    ? 'Fix JSON errors before switching to structured view'
+                    : undefined
+                }
+              >
+                <AppWindowIcon />
+              </TabsTrigger>
+              <TabsTrigger value="json" aria-label="JSON">
+                <CodeIcon />
+              </TabsTrigger>
+              <TabsTrigger value="simulator" aria-label="Simulator">
+                <Terminal />
+              </TabsTrigger>
             </TabsList>
-            <Tabs value={viewMode} onValueChange={handleViewModeChange}>
-              <TabsList>
-                <TabsTrigger
-                  value="structured"
-                  aria-label="Structured"
-                  disabled={viewMode === 'json' && !jsonIsValid}
-                  title={
-                    viewMode === 'json' && !jsonIsValid
-                      ? 'Fix JSON errors before switching to structured view'
-                      : undefined
-                  }
-                >
-                  <AppWindowIcon />
-                </TabsTrigger>
-                <TabsTrigger value="json" aria-label="JSON">
-                  <CodeIcon />
-                </TabsTrigger>
-                <TabsTrigger value="simulator" aria-label="Simulator">
-                  <Terminal />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          <TabsContent value="claudecode">
-            <AgentTabContent
-              agent="claudecode"
-              state={claudeState}
-              viewMode={viewMode}
-              sim={simProps}
-            />
-          </TabsContent>
-          <TabsContent value="codex">
-            <AgentTabContent agent="codex" state={codexState} viewMode={viewMode} sim={simProps} />
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+          </Tabs>
+        </div>
+        <TabsContent value="claudecode">
+          <AgentTabContent
+            agent="claudecode"
+            state={claudeState}
+            viewMode={viewMode}
+            sim={simProps}
+          />
+        </TabsContent>
+        <TabsContent value="codex">
+          <AgentTabContent agent="codex" state={codexState} viewMode={viewMode} sim={simProps} />
+        </TabsContent>
+      </Tabs>
+    </PageShell>
   )
 }

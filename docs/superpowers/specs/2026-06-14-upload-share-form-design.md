@@ -10,7 +10,7 @@
 ## 1. Goal
 
 When a user clicks "Upload & share", open a wizard that walks file-by-file, prefilling each script's
-`@argus-meta` fields (parsed from the file), letting the user confirm/fill the required ones, then
+`@argus-meta` fields (parsed from the file, including optional `author`), letting the user confirm/fill the required ones, then
 collects a PR description. On submit, argus injects a clean `@argus-meta` header into each file and
 opens the registry PR with the description as its body. This makes shared scripts indexable (they get
 the header the registry Action needs) and gives the PR a real description.
@@ -19,12 +19,15 @@ the header the registry Action needs) and gives the PR a real description.
 
 - **Sequential per-file wizard:** one step per file (confirm/edit its fields, Next), then a final
   step for the PR description, then Share.
-- **Fields per file:** `title` (required), `event` (required, dropdown), `runtime` (required,
-  dropdown, defaulted from extension), `matcher` (optional), `purpose` (optional).
+- **Fields per file:** `title` (required), `author` (optional), `event` (required, dropdown),
+  `runtime` (required, dropdown, defaulted from extension), `matcher` (optional), `purpose`
+  (optional).
 - **Prefill from parse:** each file's existing `@argus-meta` (if any) prefills the step; missing
   fields are blank and required ones block Next.
 - **On submit, normalize:** regenerate one clean `@argus-meta` block from the confirmed fields per
   file (strip any existing block, prepend) — uniform path for has-header and no-header files.
+- **Author fallback:** if a submitted file has a meta block but no `author`, the backend stamps the
+  publisher's GitHub login before opening the PR.
 - **One PR description** for the whole PR → becomes the PR body.
 - **Concurrent parse:** read + parse all picked files with `Promise.all`.
 
@@ -35,6 +38,7 @@ the header the registry Action needs) and gives the PR a real description.
 ```ts
 export type ArgusMeta = {
   title: string
+  author?: string
   event: string
   runtime: string
   matcher: string
@@ -54,8 +58,8 @@ export function injectMeta(body: string, m: ArgusMeta): string
 ```
 
 - `parseArgusMeta`: find the `// @argus-meta` … `// @end` span; for each line matching
-  `^//\s*(\w+):\s*(.*)$`, capture known keys (title/event/runtime/matcher/purpose). Unknown keys
-  ignored. Returns only the keys it found.
+  `^//\s*(\w+):\s*(.*)$`, capture known keys (title/author/event/runtime/matcher/purpose). Unknown
+  keys ignored. Returns only the keys it found.
 - `injectMeta`: if a `@argus-meta`…`@end` block exists, remove it (and a single trailing blank
   line); prepend the freshly built header. Result always has exactly one header.
 
@@ -101,7 +105,8 @@ const publishFiles = useCallback(
 ### 3.5 Backend — PR body
 
 - `handler/registry_publish.go`: `publishRequest` gains `Description string json:"description"`; pass
-  it to `svc.PublishToRegistry(ctx, files, description)`.
+  each body through `scriptmeta.EnsureAuthor(body, login)`, then call
+  `svc.PublishToRegistry(ctx, files, description)`.
 - `github/service.go`: `PublishToRegistry(ctx, files, description string)` → `gc.PublishRegistry(ctx,
   files, description)`.
 - `github/repo_publish.go`: `PublishRegistry(ctx, files []PublishFile, description string)`; the
@@ -133,8 +138,8 @@ Upload & share → pick files → read+parse (Promise.all) → wizard
 - **`UploadShareForm.tsx`:** renders file 1 prefilled from its header; Next disabled until required
   filled; advancing through files reaches the description step; Share calls `onSubmit` with
   header-injected bodies + description.
-- **Backend:** `RegistryPublish` forwards `description`; `PublishRegistry` sends it as the PR `body`
-  (fake-GitHub assert the pulls payload has `body`).
+- **Backend:** `RegistryPublish` forwards `description`, stamps missing author fields from the
+  authenticated login, and `PublishRegistry` sends the description as the PR `body`.
 - Gates: backend `go build/test/golangci-lint`; frontend `tsc -b --noEmit` + `vitest run` + prettier.
 
 ## 7. Out of scope (YAGNI)

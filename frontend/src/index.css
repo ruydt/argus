@@ -155,6 +155,34 @@ body {
   }
 }
 
+/* Hover/highlight affordance for Select options. --accent (#1c1c1c) sits too
+   close to the popover bg, so the default focus:bg-accent is invisible. Give
+   highlighted/hovered items a brighter bg + ring border. Global so it covers
+   every select without editing the shadcn-generated primitive. */
+[data-slot='select-item'][data-highlighted],
+[data-slot='select-item']:hover,
+[cmdk-item][data-selected='true'],
+[cmdk-item]:hover {
+  background-color: #2e2e2e !important;
+  color: var(--accent-foreground) !important;
+}
+
+/* Popover-based menus (e.g. the row ⋯ menu, account menu) are built from ghost
+   buttons, whose default hover (bg-accent ≈ popover bg) is invisible. Give any
+   .menu-item the same visible highlight as the select/command items above. */
+.menu-item:hover:not(:disabled) {
+  background-color: #2e2e2e !important;
+}
+
+/* Radix sets pointer-events:none on the dialog content while a nested Select
+   is open, and the restore races on close — leaving the dialog frozen (the
+   trigger can't be re-clicked to reopen). Keep the dialog interactive; the
+   Select's dismiss layer uses a document listener, so outside-click still
+   closes it. */
+[data-slot='dialog-content'] {
+  pointer-events: auto !important;
+}
+
 .sidebar-label-motion {
   overflow: hidden;
   min-width: 0;

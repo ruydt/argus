@@ -11,6 +11,7 @@ Public community hook scripts for [argus](https://github.com/argus-hooks/argus).
    ```js
    // @argus-meta
    // title: Short human title
+   // author: your-github-login  # optional; argus stamps publisher login when omitted
    // event: PreToolUse
    // runtime: node          # node | python3 | sh
    // matcher: Bash          # optional

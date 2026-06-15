@@ -2,17 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { useCommunity } from './useCommunity'
+import type { CommunityController } from './useCommunity'
 import { CommunityRow } from './CommunityRow'
 
 type CommunityTabProps = {
   query: string
+  community: CommunityController
 }
 
 const PAGE = 50
 
-export function CommunityTab({ query }: CommunityTabProps) {
-  const { scripts, loading, error, install, getBody } = useCommunity()
+export function CommunityTab({ query, community }: CommunityTabProps) {
+  const { scripts, loading, error, install, getBody } = community
   const [busy, setBusy] = useState(false)
   const [visible, setVisible] = useState(PAGE)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -77,7 +78,13 @@ export function CommunityTab({ query }: CommunityTabProps) {
   const shown = filtered.slice(0, visible)
 
   return (
-    <div className="overflow-hidden rounded-md border border-white/[0.06]">
+    <div>
+      <div className="flex items-center gap-4 border-b border-white/[0.12] px-2 pb-2 font-mono text-[0.68rem] tracking-[0.12em] text-[#666] uppercase">
+        <span className="w-7 shrink-0 text-right">#</span>
+        <span className="flex-1">Script</span>
+        <span className="hidden w-44 shrink-0 md:block">Event</span>
+        <span className="w-40 shrink-0 text-right">Action</span>
+      </div>
       {shown.length === 0 ? (
         <p className="px-3 py-8 text-center text-sm text-[#777]">
           {query ? `No scripts match "${query}".` : 'No scripts in the registry yet.'}

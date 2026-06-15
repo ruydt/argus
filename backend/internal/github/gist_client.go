@@ -97,6 +97,7 @@ type manifestEntry struct {
 	ID       string `json:"id"`
 	Filename string `json:"filename"`
 	Title    string `json:"title"`
+	Author   string `json:"author,omitempty"`
 	Purpose  string `json:"purpose,omitempty"`
 	Event    string `json:"event,omitempty"`
 	Matcher  string `json:"matcher,omitempty"`
@@ -220,7 +221,7 @@ func (g *GistClient) ReadCollection(ctx context.Context, gistID string) (domain.
 			continue // manifest references a file the user deleted; skip
 		}
 		scripts = append(scripts, domain.CollectionScript{
-			ID: e.ID, Filename: e.Filename, Title: e.Title, Purpose: e.Purpose,
+			ID: e.ID, Filename: e.Filename, Title: e.Title, Author: e.Author, Purpose: e.Purpose,
 			Event: e.Event, Matcher: e.Matcher, Runtime: e.Runtime, Origin: e.Origin,
 			Body: f.Content,
 		})
@@ -241,7 +242,7 @@ func (g *GistClient) AddScript(ctx context.Context, gistID string, s domain.Coll
 		}
 	}
 	m.Scripts = append(m.Scripts, manifestEntry{
-		ID: s.ID, Filename: s.Filename, Title: s.Title, Purpose: s.Purpose,
+		ID: s.ID, Filename: s.Filename, Title: s.Title, Author: s.Author, Purpose: s.Purpose,
 		Event: s.Event, Matcher: s.Matcher, Runtime: s.Runtime, Origin: s.Origin,
 	})
 	mb, err := json.Marshal(m)

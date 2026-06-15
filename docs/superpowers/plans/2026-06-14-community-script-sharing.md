@@ -6,6 +6,10 @@
 
 **Architecture:** A new public repo `argus-hooks/registry` stores script bodies (`scripts/<login>/<id>.js`) with an `@argus-meta` header; a GitHub Action regenerates `index.json` (with `sha256`) on merge. Argus backend gets a `community.Source` that fetches + caches `index.json` and verifies bodies on install; four `/api/community/*` handlers expose catalog/source/install/simulate. Frontend adds a Community tab + a Publish button that builds a prefilled GitHub "new file" URL. No SQLite/domain-event changes.
 
+> **Current note:** `scripts-v2-registry-only` and `upload-share-form` supersede this plan's
+> prefilled-link Publish flow. Current sharing posts uploaded files + description to
+> `/api/registry/publish`, then backend opens the registry PR.
+
 **Tech Stack:** Go (`net/http`, `crypto/sha256`), React 19 + TypeScript + Vite, Vitest + Testing Library, Node 20 (registry Action generator).
 
 **Spec:** `docs/superpowers/specs/2026-06-14-community-script-sharing-design.md`

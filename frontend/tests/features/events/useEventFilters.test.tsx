@@ -30,8 +30,11 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('useEventFilters — search debounce', () => {
-  it('does not filter events before 150ms after searchQuery change', () => {
+describe('useEventFilters — search is backend-resolved', () => {
+  it('does not filter loaded events client-side by the search query', () => {
+    // Search by session id / project is resolved on the backend, which returns
+    // whole matching sessions. The hook must not re-filter the loaded page by
+    // free text (that previously hid project-search results).
     const events = [makeEvent({ command: 'echo hello' }), makeEvent({ command: 'cat file.txt' })]
     const { result, rerender } = renderHook(
       ({ q }) =>
@@ -42,30 +45,11 @@ describe('useEventFilters — search debounce', () => {
     expect(result.current.filteredEvents).toHaveLength(2)
 
     rerender({ q: 'hello' })
-
-    // Before debounce expires — still unfiltered
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+    // Still both events — the query does not narrow the loaded set.
     expect(result.current.filteredEvents).toHaveLength(2)
-
-    // After 150ms — filter applied
-    act(() => {
-      vi.advanceTimersByTime(150)
-    })
-    expect(result.current.filteredEvents).toHaveLength(1)
-  })
-
-  it('applies filter when debounce expires', () => {
-    const events = [makeEvent({ command: 'grep pattern file' })]
-    const { result, rerender } = renderHook(
-      ({ q }) =>
-        useEventFilters(events, q, vi.fn(), '', '5m', vi.fn(), '', vi.fn(), '', vi.fn(), false),
-      { wrapper, initialProps: { q: '' } }
-    )
-
-    rerender({ q: 'nomatch' })
-    act(() => {
-      vi.advanceTimersByTime(150)
-    })
-    expect(result.current.filteredEvents).toHaveLength(0)
   })
 })
 

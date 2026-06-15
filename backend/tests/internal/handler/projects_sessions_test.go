@@ -44,6 +44,65 @@ func TestProjectsHandlerReturnsProjectSummary(t *testing.T) {
 	}
 }
 
+func TestProjectsHandlerPaginatesAndSearches(t *testing.T) {
+	svc := newTestService(t)
+	seeds := []struct {
+		session, cwd, ts string
+	}{
+		{"a", "/work/alpha", "2026-05-14T10:00:00Z"},
+		{"b", "/work/beta", "2026-05-14T11:00:00Z"},
+		{"c", "/other/gamma", "2026-05-14T12:00:00Z"},
+	}
+	for _, s := range seeds {
+		addHandlerEvent(t, svc, domain.NormalizedEvent{
+			Time: s.ts, Agent: "codex", Session: s.session, CWD: s.cwd, HookEventName: "SessionStart",
+		})
+	}
+
+	h := handler.Projects(svc)
+
+	type pageResp struct {
+		Projects []domain.Project `json:"projects"`
+		Total    int              `json:"total"`
+		HasMore  bool             `json:"has_more"`
+	}
+	get := func(query string) pageResp {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodGet, "/api/projects"+query, nil)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
+		}
+		var p pageResp
+		if err := json.Unmarshal(rec.Body.Bytes(), &p); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		return p
+	}
+
+	// First page of size 2: most-recent two, has_more=true.
+	page1 := get("?page=1&size=2")
+	if page1.Total != 3 || !page1.HasMore || len(page1.Projects) != 2 {
+		t.Fatalf("page1 = %+v, want total 3 hasMore true len 2", page1)
+	}
+	if page1.Projects[0].CWD != "/other/gamma" {
+		t.Fatalf("page1[0] = %q, want /other/gamma", page1.Projects[0].CWD)
+	}
+
+	// Last page: one item, has_more=false.
+	page2 := get("?page=2&size=2")
+	if page2.HasMore || len(page2.Projects) != 1 {
+		t.Fatalf("page2 = %+v, want hasMore false len 1", page2)
+	}
+
+	// Server-side search on cwd substring.
+	search := get("?q=work")
+	if search.Total != 2 || len(search.Projects) != 2 {
+		t.Fatalf("search = %+v, want 2 matches", search)
+	}
+}
+
 func TestSessionsHandlerFiltersByCWDQuery(t *testing.T) {
 	svc := newTestService(t)
 	addHandlerEvent(t, svc, domain.NormalizedEvent{

@@ -36,7 +36,7 @@ BROWSE / INSTALL                         SHARE (upload)
 ----------------                          --------------
 Community tab                             My Collection -> "Upload & share"
   GET /api/community/catalog (full index)   pick file(s)/folder (browser reads text)
-  -> infinite scroll (render 50 + scroll)   POST /api/registry/publish {files:[{name,body}]}
+  -> infinite scroll (render 50 + scroll)   POST /api/registry/publish {files:[{name,body}], description}
   -> search filters whole list              -> github: fork argus-hooks/registry
   Install: fetch body, verify sha256,          -> branch + one commit (all files under
    write ~/.argus/hooks                          scripts/<login>/) + open PR
@@ -81,12 +81,13 @@ runtime). `idFromFilename`/`runtimeFromExt` stay.
 
 ### 4.4 New `POST /api/registry/publish`
 
-Request: `{ "files": [ { "name": "foo.js", "body": "..." }, ... ] }` (names are basenames; reject any
-with path separators). Handler `RegistryPublish(svc *github.Service)`:
+Request: `{ "files": [ { "name": "foo.js", "body": "..." }, ... ], "description": "..." }` (names
+are basenames; reject any with path separators). Handler `RegistryPublish(svc *github.Service)`:
 
 1. Require auth; require the token to carry `public_repo` (see §4.5). On missing scope → `403` with a
    body the SPA maps to "re-login to enable sharing."
-2. Call `svc.PublishToRegistry(ctx, files)` → returns the PR URL.
+2. Stamp missing `// author: <login>` into existing `@argus-meta` blocks, then call
+   `svc.PublishToRegistry(ctx, files, description)` → returns the PR URL.
 3. Respond `{ "pull_request_url": "..." }`; `400` on empty/invalid files, `502` on GitHub error.
 
 `internal/github` gains `PublishToRegistry(ctx, files []PublishFile) (string, error)` using the
@@ -102,7 +103,8 @@ GitHub REST API:
 - `POST .../git/refs` create `refs/heads/argus-share-<n>` (branch name derived from the file set /
   a counter — NOT time, since the codebase forbids wall-clock in some paths; a short hash of the
   names is fine).
-- `POST /repos/argus-hooks/registry/pulls` `head=<login>:argus-share-<n>`, `base=main` → PR URL.
+- `POST /repos/argus-hooks/registry/pulls` `head=<login>:argus-share-<n>`, `base=main`,
+  `body=<description>` → PR URL.
 
 `PublishFile{ Name, Body string }`. All network errors wrapped; partial failures abort with a clear
 error (no half-PR state beyond an orphan branch on the fork, which is acceptable).
@@ -138,7 +140,8 @@ call — optionally read that header on `GET /user` to pre-check before attempti
   `webkitdirectory`). Selected files are read as text in the browser, posted to
   `/api/registry/publish`. On success show the returned PR URL ("Pull request opened — review &
   merge on GitHub"); on `403` show "Re-login to enable sharing" and start the login flow.
-- `useCollection` gains `publishFiles(files: {name,body}[]) => Promise<{pull_request_url}>`.
+- `useCollection` gains `publishFiles(files: {name,body}[], description: string) =>
+  Promise<{pull_request_url}>`.
 
 ### 5.3 Removed UI
 

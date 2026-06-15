@@ -13,6 +13,7 @@ import (
 	"argus/internal/community"
 	"argus/internal/domain"
 	"argus/internal/github"
+	"argus/internal/scriptmeta"
 )
 
 // listLocalHooks returns the basenames of installed hook scripts in ~/.argus/hooks.
@@ -69,15 +70,24 @@ func Collection(svc *github.Service, registrySrc *community.Source, argusDir str
 			return
 		default:
 			view.Authenticated = true
+			view.Login = svc.Status(r.Context()).Login
 			view.GistURL = col.GistURL
 			for _, s := range col.Scripts {
 				gistByFile[s.Filename] = s
 			}
 		}
 
+		// Parse each local file's own @argus-meta — it is the authoritative
+		// source for that script's event/author/runtime.
 		localSet := map[string]bool{}
+		localMeta := map[string]scriptmeta.Meta{}
 		for _, f := range listLocalHooks(argusDir) {
 			localSet[f] = true
+			if target, err := hookTarget(argusDir, f); err == nil {
+				if body, err := os.ReadFile(target); err == nil {
+					localMeta[f] = scriptmeta.Parse(string(body))
+				}
+			}
 		}
 
 		metaByFile := map[string]domain.CommunityScript{}
@@ -100,24 +110,27 @@ func Collection(svc *github.Service, registrySrc *community.Source, argusDir str
 		}
 		sort.Strings(sorted)
 
-		for _, f := range sorted {
-			e := domain.CollectionEntry{Filename: f, Local: localSet[f], Gist: false}
-			if gs, ok := gistByFile[f]; ok {
-				e.Gist = true
-				e.ID = gs.ID
-				e.Title = gs.Title
-				e.Event = gs.Event
-				e.Runtime = gs.Runtime
-			} else if p, ok := metaByFile[f]; ok {
-				e.ID = idFromFilename(f)
-				e.Title = p.Title
-				e.Event = p.Event
-				e.Runtime = p.Runtime
-			} else {
-				e.ID = idFromFilename(f)
-				e.Title = f
-				e.Runtime = runtimeFromExt(f)
+		// firstNonEmpty resolves a field by precedence: local file → gist → registry.
+		firstNonEmpty := func(vals ...string) string {
+			for _, v := range vals {
+				if v != "" {
+					return v
+				}
 			}
+			return ""
+		}
+
+		for _, f := range sorted {
+			lm := localMeta[f]
+			gs, inGist := gistByFile[f]
+			reg := metaByFile[f]
+
+			e := domain.CollectionEntry{Filename: f, Local: localSet[f], Gist: inGist}
+			e.ID = firstNonEmpty(gs.ID, idFromFilename(f))
+			e.Title = firstNonEmpty(lm.Title, gs.Title, reg.Title, f)
+			e.Author = firstNonEmpty(lm.Author, gs.Author, reg.Author)
+			e.Event = firstNonEmpty(lm.Event, gs.Event, reg.Event)
+			e.Runtime = firstNonEmpty(lm.Runtime, gs.Runtime, reg.Runtime, runtimeFromExt(f))
 			if e.ID == "" {
 				e.ID = idFromFilename(f)
 			}
@@ -150,9 +163,18 @@ func CollectionAdd(svc *github.Service, argusDir string) http.Handler {
 			http.Error(w, "local script not found", http.StatusBadRequest)
 			return
 		}
+		// Preserve the script's own metadata so the gist copy keeps its event,
+		// runtime, etc. Title intentionally stays the filename — the collection
+		// lists scripts by their file name, not the human description.
+		meta := scriptmeta.Parse(string(body))
+		runtime := meta.Runtime
+		if runtime == "" {
+			runtime = runtimeFromExt(req.Filename)
+		}
 		script := domain.CollectionScript{
 			ID: idFromFilename(req.Filename), Filename: req.Filename,
-			Title: req.Filename, Origin: "local", Body: string(body),
+			Title: req.Filename, Author: meta.Author, Purpose: meta.Purpose, Event: meta.Event,
+			Matcher: meta.Matcher, Runtime: runtime, Origin: "local", Body: string(body),
 		}
 		switch err := svc.AddScript(r.Context(), script); {
 		case errors.Is(err, github.ErrNotAuthenticated):

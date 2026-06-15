@@ -4,6 +4,7 @@ import type { CollectionEntry, CollectionView, DeviceCodeResponse } from '@/type
 
 type State = {
   authenticated: boolean
+  login?: string
   gistUrl?: string
   entries: CollectionEntry[]
   loading: boolean
@@ -13,15 +14,23 @@ type State = {
 // Session cache: survives tab switches / remounts so My Collection shows
 // instantly on return (avoids a refetch + GitHub gist round-trip every time);
 // reload() revalidates in the background. Reset via __resetCollectionCache (tests).
-type CachedView = { authenticated: boolean; gistUrl?: string; entries: CollectionEntry[] }
+type CachedView = {
+  authenticated: boolean
+  login?: string
+  gistUrl?: string
+  entries: CollectionEntry[]
+}
 let cache: CachedView | null = null
 export function __resetCollectionCache() {
   cache = null
 }
 
+export type CollectionController = ReturnType<typeof useCollection>
+
 export function useCollection() {
   const [state, setState] = useState<State>({
     authenticated: cache?.authenticated ?? false,
+    login: cache?.login,
     gistUrl: cache?.gistUrl,
     entries: cache?.entries ?? [],
     loading: cache === null,
@@ -37,6 +46,7 @@ export function useCollection() {
       const view: CollectionView = await resp.json()
       cache = {
         authenticated: view.authenticated,
+        login: view.login,
         gistUrl: view.gist_url,
         entries: view.entries ?? [],
       }
@@ -47,9 +57,14 @@ export function useCollection() {
   }, [])
 
   useEffect(() => {
-    void (async () => {
-      await reload()
-    })()
+    // Only auto-fetch on the FIRST ever mount (cold cache). Navigating back to
+    // the page reuses the session cache; an explicit reload() (e.g. on tab
+    // switch) is the only thing that revalidates after that.
+    if (cache === null) {
+      void (async () => {
+        await reload()
+      })()
+    }
     return () => {
       if (pollRef.current) clearInterval(pollRef.current)
     }

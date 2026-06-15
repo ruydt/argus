@@ -13,36 +13,21 @@ function readStr(key: string, fallback: string): string {
   }
 }
 
+// Free-text search (session id / project) is resolved by the backend, which
+// returns whole matching sessions. The client only applies the structured
+// dropdown filters over whatever the backend returned.
 function eventMatchesFilters(
   e: EventRecord,
   actionFilter: string,
   agentFilter: string,
   projectFilter: string,
-  sessionFilter: string,
-  q: string
+  sessionFilter: string
 ): boolean {
   if (actionFilter !== 'all' && e.action !== actionFilter) return false
   if (agentFilter !== 'all' && e.agent !== agentFilter) return false
   if (projectFilter !== 'all' && e.cwd !== projectFilter && !e.cwd?.startsWith(projectFilter + '/'))
     return false
   if (sessionFilter && e.session !== sessionFilter) return false
-  if (q) {
-    if (
-      !e.path?.toLowerCase().includes(q) &&
-      !e.session?.toLowerCase().includes(q) &&
-      !e.command?.toLowerCase().includes(q) &&
-      !e.prompt?.toLowerCase().includes(q) &&
-      !e.notification_message?.toLowerCase().includes(q) &&
-      !e.error_message?.toLowerCase().includes(q) &&
-      !e.response?.toLowerCase().includes(q) &&
-      !e.task_title?.toLowerCase().includes(q) &&
-      !e.subagent_type?.toLowerCase().includes(q) &&
-      !e.trigger?.toLowerCase().includes(q) &&
-      !e.tool_result_stdout?.toLowerCase().includes(q) &&
-      !e.tool_result_stderr?.toLowerCase().includes(q)
-    )
-      return false
-  }
   return true
 }
 
@@ -65,13 +50,6 @@ export function useEventFilters(
   const [actionFilter, setActionFilter] = useState(() => readStr('events_action_filter', 'all'))
   const [agentFilter, setAgentFilter] = useState(() => readStr('events_agent_filter', 'all'))
   const [sortOrder, setSortOrder] = useState(() => readStr('events_sort_order', 'newest'))
-
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedSearchQuery(searchQuery), 150)
-    return () => window.clearTimeout(t)
-  }, [searchQuery])
 
   const [projectFilter, setProjectFilter] = useState(() => readStr('events_project_filter', 'all'))
 
@@ -140,8 +118,7 @@ export function useEventFilters(
 
   /* eslint-disable react-hooks/refs */
   const filteredEvents = useMemo(() => {
-    const q = debouncedSearchQuery.toLowerCase()
-    const signature = [actionFilter, agentFilter, projectFilter, sessionFilter, q].join(' ')
+    const signature = [actionFilter, agentFilter, projectFilter, sessionFilter].join(' ')
     const prev = prevFilterRef.current
 
     // The live stream appends events to the end of a fresh array, preserving
@@ -159,35 +136,24 @@ export function useEventFilters(
     if (isAppendOnly) {
       const appended: EventRecord[] = []
       for (let i = prevLen; i < events.length; i++) {
-        if (
-          eventMatchesFilters(events[i], actionFilter, agentFilter, projectFilter, sessionFilter, q)
-        ) {
+        if (eventMatchesFilters(events[i], actionFilter, agentFilter, projectFilter, sessionFilter)) {
           appended.push(events[i])
         }
       }
       filtered = appended.length > 0 ? [...prev.filtered, ...appended] : prev.filtered
     } else {
       filtered = events.filter((e) =>
-        eventMatchesFilters(e, actionFilter, agentFilter, projectFilter, sessionFilter, q)
+        eventMatchesFilters(e, actionFilter, agentFilter, projectFilter, sessionFilter)
       )
     }
 
     return filtered
-  }, [events, actionFilter, agentFilter, projectFilter, debouncedSearchQuery, sessionFilter])
+  }, [events, actionFilter, agentFilter, projectFilter, sessionFilter])
 
   useEffect(() => {
-    const q = debouncedSearchQuery.toLowerCase()
-    const signature = [actionFilter, agentFilter, projectFilter, sessionFilter, q].join(' ')
+    const signature = [actionFilter, agentFilter, projectFilter, sessionFilter].join(' ')
     prevFilterRef.current = { events, filtered: filteredEvents, signature }
-  }, [
-    events,
-    filteredEvents,
-    actionFilter,
-    agentFilter,
-    projectFilter,
-    debouncedSearchQuery,
-    sessionFilter,
-  ])
+  }, [events, filteredEvents, actionFilter, agentFilter, projectFilter, sessionFilter])
 
   return {
     actionFilter,
