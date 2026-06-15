@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +9,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -192,18 +192,15 @@ export function StructuredEditor({
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 flex-wrap">
         {availableToAdd.length > 0 && (
-          <Select key={usedEvents.join(',')} onValueChange={addEventType}>
-            <SelectTrigger className="h-8 text-[13px] w-[200px]">
-              <SelectValue placeholder="Add hook event" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableToAdd.map((e) => (
-                <SelectItem key={e} value={e} className="font-mono text-[13px]">
-                  {e}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            key={usedEvents.join(',')}
+            value=""
+            onValueChange={addEventType}
+            options={availableToAdd.map((e) => ({ label: e, value: e }))}
+            placeholder="Add hook event"
+            ariaLabel="Add hook event"
+            className="h-8 w-[200px] text-[13px] font-mono bg-transparent border-input text-foreground"
+          />
         )}
 
         <Select value={selectedPreset} onValueChange={handleApplyPreset}>

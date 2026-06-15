@@ -86,9 +86,9 @@ export function ScriptsPage() {
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         <Tabs value={tab} onValueChange={(v) => changeTab(v as Tab)}>
-          <TabsList variant="line" className="w-full flex-wrap justify-start sm:w-auto">
+          <TabsList variant="line">
             <TabsTrigger value="community">Community</TabsTrigger>
             <TabsTrigger value="collection">My Collection</TabsTrigger>
           </TabsList>
