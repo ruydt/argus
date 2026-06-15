@@ -391,7 +391,7 @@ export function HooksConfigPage() {
         className="w-full"
       >
         <div className="flex items-center justify-between">
-          <TabsList variant="line">
+          <TabsList variant="line" data-tour="hooks-config-agent-tabs">
             <TabsTrigger value="claudecode">Claude Code</TabsTrigger>
             <TabsTrigger value="codex">Codex</TabsTrigger>
           </TabsList>

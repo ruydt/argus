@@ -54,6 +54,7 @@ interface NavItem {
   ariaLabel: string
   icon: LucideIcon
   end: boolean
+  dataTour?: string
 }
 
 type NavButtonProps = NavItem &
@@ -62,6 +63,7 @@ type NavButtonProps = NavItem &
     onNavigate?: () => void
     desktopNavLabelClassName: string
     navButtonClassNameFn: (isActive: boolean) => string
+    dataTour?: string
   }
 
 function NavButton({
@@ -74,6 +76,7 @@ function NavButton({
   onNavigate,
   desktopNavLabelClassName,
   navButtonClassNameFn,
+  dataTour,
   ...rest
 }: NavButtonProps) {
   const match = useMatch({ path: to, end })
@@ -87,6 +90,7 @@ function NavButton({
         end={end}
         aria-label={ariaLabel}
         onClick={() => onNavigate?.()}
+        data-tour={dataTour}
         {...rest}
       >
         <span className="flex size-9 shrink-0 items-center justify-center">
@@ -140,6 +144,7 @@ const NAV_ITEMS: NavItem[] = [
     ariaLabel: 'Hooks Configuration',
     icon: SlidersHorizontal,
     end: false,
+    dataTour: 'hooks-config-link',
   },
   {
     to: '/scripts',
@@ -289,7 +294,7 @@ export function Sidebar({
       )}
 
       <TooltipProvider delayDuration={100}>
-        <nav className={cn('mt-1 flex flex-col gap-0.5')}>
+        <nav className={cn('mt-1 flex flex-col gap-0.5')} data-tour="sidebar-nav">
           {NAV_ITEMS.map((item) => {
             const button = renderNavButton(item)
 

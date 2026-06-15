@@ -204,7 +204,7 @@ export function StructuredEditor({
         )}
 
         <Select value={selectedPreset} onValueChange={handleApplyPreset}>
-          <SelectTrigger className="h-8 text-[13px] w-[160px]">
+          <SelectTrigger className="h-8 text-[13px] w-[160px]" data-tour="preset-selector">
             <span className={selectedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}>
               {selectedPreset
                 ? PRESET_LABELS[selectedPreset as keyof typeof PRESET_LABELS]?.label
