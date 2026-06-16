@@ -14,7 +14,6 @@ import {
 import {
   type ArgusMeta,
   HOOK_EVENTS,
-  RUNTIMES,
   injectMeta,
   parseArgusMeta,
   runtimeFromExt,
@@ -33,10 +32,20 @@ function initialMeta(f: UploadFile): ArgusMeta {
   return {
     title: parsed.title ?? '',
     event: parsed.event ?? '',
-    runtime: parsed.runtime ?? runtimeFromExt(f.name),
+    command: parsed.command ?? `${runtimeFromExt(f.name)} ${f.name}`,
     matcher: parsed.matcher ?? '',
     purpose: parsed.purpose ?? '',
   }
+}
+
+const META_START = '// @argus-meta'
+const META_END = '// @end'
+
+function extractMetaBlock(body: string): string | null {
+  const si = body.indexOf(META_START)
+  const ei = body.indexOf(META_END)
+  if (si === -1 || ei === -1) return null
+  return body.slice(si, ei + META_END.length)
 }
 
 export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormProps) {
@@ -51,11 +60,24 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
     setMeta((prev) => prev.map((m, i) => (i === step ? { ...m, [field]: value } : m)))
   }
 
-  const requiredFilled = !!current && !!current.title && !!current.event && !!current.runtime
+  const requiredFilled = !!current && !!current.title && !!current.event && !!current.command
 
   function share() {
     const out = files.map((f, i) => ({ name: f.name, body: injectMeta(f.body, meta[i]) }))
-    onSubmit(out, description)
+
+    const headerSections = out
+      .map((f) => {
+        const block = extractMetaBlock(f.body)
+        return block ? `### ${f.name}\n\`\`\`\n${block}\n\`\`\`` : null
+      })
+      .filter((h): h is string => h !== null)
+      .join('\n\n')
+
+    const fullDescription = headerSections
+      ? `${description ? description + '\n\n' : ''}---\n## Scripts\n\n${headerSections}`
+      : description
+
+    onSubmit(out, fullDescription)
   }
 
   return (
@@ -114,19 +136,13 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               </Select>
             </label>
             <label className="block space-y-1">
-              <span className="text-[0.72rem] text-[#999]">Runtime *</span>
-              <Select value={current.runtime} onValueChange={(v) => setField('runtime', v)}>
-                <SelectTrigger aria-label="Runtime">
-                  <SelectValue placeholder="Select runtime" />
-                </SelectTrigger>
-                <SelectContent>
-                  {RUNTIMES.map((rt) => (
-                    <SelectItem key={rt} value={rt}>
-                      {rt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <span className="text-[0.72rem] text-[#999]">Command *</span>
+              <Input
+                value={current.command}
+                onChange={(e) => setField('command', e.target.value)}
+                placeholder="e.g. node hook.js --config ~/.argus/config.json"
+                aria-label="Command"
+              />
             </label>
             <label className="block space-y-1">
               <span className="text-[0.72rem] text-[#999]">Matcher (optional)</span>

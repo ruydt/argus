@@ -15,7 +15,7 @@ const HEADED = [
   '// @argus-meta',
   '// title: Demo',
   '// event: Stop',
-  '// runtime: node',
+  '// command: node demo.js',
   '// @end',
   '',
   'console.log(1)',
@@ -41,7 +41,11 @@ describe('UploadShareForm', () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1)
     const [outFiles, description] = onSubmit.mock.calls[0]
-    expect(description).toBe('my desc')
+    // description now includes user text + appended @argus-meta headers
+    expect(description).toContain('my desc')
+    expect(description).toContain('## Scripts')
+    expect(description).toContain('### demo.js')
+    expect(description).toContain('// @argus-meta')
     expect(outFiles[0].name).toBe('demo.js')
     expect(outFiles[0].body).toContain('// @argus-meta')
     expect(outFiles[0].body).toContain('// title: Demo')
