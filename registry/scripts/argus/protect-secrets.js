@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Protect secret files
 // event: PreToolUse
-// runtime: node
+// command: node protect-secrets.js
 // matcher: Read|Edit|Write|Bash
 // purpose: Deny access to secret files (.env, *.pem, ~/.ssh/, ~/.aws/). .env.example/sample/template and secrets.test/spec.* are allowed.
 // @end

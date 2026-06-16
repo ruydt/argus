@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Format & lint on edit
 // event: PostToolUse
-// runtime: node
+// command: node format-lint.js
 // matcher: Edit|Write|MultiEdit
 // purpose: Auto-format the edited file (prettier/ruff/gofmt, single-file) and feed lint errors back so the agent fixes them.
 // @end

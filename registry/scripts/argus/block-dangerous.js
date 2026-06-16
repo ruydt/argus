@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Block dangerous commands
 // event: PreToolUse
-// runtime: node
+// command: node block-dangerous.js
 // matcher: Bash
 // purpose: Deny dangerous shell commands (rm -rf ~, curl | sh, force-push to main, mkfs) with a reason the agent can act on.
 // @end

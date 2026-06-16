@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Stop notification
 // event: Stop
-// runtime: node
+// command: node stop.js
 // purpose: Local notification when the agent finishes.
 // @end
 

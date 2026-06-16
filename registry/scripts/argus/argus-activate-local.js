@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Argus liveness banner
 // event: SessionStart
-// runtime: node
+// command: node argus-activate-local.js
 // purpose: Argus liveness banner with event/session counts at session start.
 // @end
 

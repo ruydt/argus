@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Inject context
 // event: UserPromptSubmit
-// runtime: node
+// command: node inject-context.js
 // purpose: Inject just-in-time context per prompt: git branch + working-tree state, plus .argus-context.md or ~/.argus/context.md if present.
 // @end
 

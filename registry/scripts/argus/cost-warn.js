@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Cost warning
 // event: SessionStart
-// runtime: node
+// command: node cost-warn.js
 // purpose: Warn when token usage in the rolling 5h window crosses a threshold. Silent otherwise.
 // @end
 

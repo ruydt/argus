@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Permission request dialog
 // event: PermissionRequest
-// runtime: node
+// command: node permission-request.js
 // purpose: Native macOS approval dialog with an Always list.
 // @end
 

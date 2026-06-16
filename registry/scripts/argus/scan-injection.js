@@ -2,7 +2,7 @@
 // @argus-meta
 // title: Prompt-injection scanner
 // event: PostToolUse
-// runtime: node
+// command: node scan-injection.js
 // matcher: Read|WebFetch|WebSearch|Grep|Bash|Task|mcp__.*
 // purpose: Warn-only prompt-injection scanner on tool output. Injects a caution into context instead of blocking.
 // @end
