@@ -65,3 +65,36 @@ func TestParseMissingHeaderReturnsZero(t *testing.T) {
 		t.Errorf("expected zero Meta, got %+v", m)
 	}
 }
+
+func TestParseExtractsCommandField(t *testing.T) {
+	body := "// @argus-meta\n" +
+		"// title: My hook\n" +
+		"// event: PreToolUse\n" +
+		"// command: node hook.js --strict\n" +
+		"// matcher: Bash\n" +
+		"// @end\n\nbody\n"
+
+	m := scriptmeta.Parse(body)
+	if m.Command != "node hook.js --strict" {
+		t.Errorf("Command = %q", m.Command)
+	}
+	if m.Runtime != "" {
+		t.Errorf("Runtime = %q, want empty", m.Runtime)
+	}
+}
+
+func TestParseBackwardCompatRuntimeField(t *testing.T) {
+	body := "// @argus-meta\n" +
+		"// title: Old script\n" +
+		"// event: Stop\n" +
+		"// runtime: node\n" +
+		"// @end\n\nbody\n"
+
+	m := scriptmeta.Parse(body)
+	if m.Runtime != "node" {
+		t.Errorf("Runtime = %q, want node", m.Runtime)
+	}
+	if m.Command != "" {
+		t.Errorf("Command = %q, want empty", m.Command)
+	}
+}

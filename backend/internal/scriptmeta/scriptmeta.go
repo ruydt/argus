@@ -18,9 +18,10 @@ type Meta struct {
 	Title   string
 	Author  string
 	Event   string
-	Runtime string
+	Runtime string // kept for backward compat with old scripts that declare // runtime:
 	Matcher string
 	Purpose string
+	Command string // full invocation e.g. "node hook.js --flag"
 }
 
 var fieldLine = regexp.MustCompile(`^//\s*(\w+):\s*(.*)$`)
@@ -73,6 +74,8 @@ func Parse(body string) Meta {
 			m.Matcher = value
 		case "purpose":
 			m.Purpose = value
+		case "command":
+			m.Command = value
 		}
 	}
 	return m
