@@ -14,7 +14,7 @@ import (
 var ErrNeedsRepoScope = errors.New("github token missing public_repo scope")
 
 const registryOwner = "argus-hooks"
-const registryRepo = "registry"
+const registryRepo = "argus"
 
 // PublishFile is one file to publish (basename + text body).
 type PublishFile struct {
@@ -140,7 +140,7 @@ func (g *GistClient) PublishRegistry(ctx context.Context, files []PublishFile, d
 			return "", err
 		}
 		entries = append(entries, treeEntry{
-			Path: fmt.Sprintf("scripts/%s/%s", login, f.Name), Mode: "100644", Type: "blob", SHA: blob.SHA,
+			Path: fmt.Sprintf("registry/scripts/%s/%s", login, f.Name), Mode: "100644", Type: "blob", SHA: blob.SHA,
 		})
 	}
 

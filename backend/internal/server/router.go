@@ -147,4 +147,4 @@ const defaultGitHubClientID = "Ov23liZl7euqQmfnmBPW"
 
 // defaultRegistryRawURL is where argus reads the public community script index.
 // Override at runtime with ARGUS_REGISTRY_RAW_URL (forks/tests).
-const defaultRegistryRawURL = "https://raw.githubusercontent.com/argus-hooks/registry/main"
+const defaultRegistryRawURL = "https://raw.githubusercontent.com/argus-hooks/argus/main/registry"
