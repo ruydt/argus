@@ -6,6 +6,7 @@ export type CommunityScript = {
   event?: string
   matcher?: string
   runtime?: string
+  command?: string
   tier: 'community'
   sha256: string
   source: string

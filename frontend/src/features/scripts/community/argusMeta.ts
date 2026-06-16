@@ -2,7 +2,7 @@ export type ArgusMeta = {
   title: string
   author?: string
   event: string
-  runtime: string
+  command: string
   matcher: string
   purpose: string
 }
@@ -20,8 +20,6 @@ export const HOOK_EVENTS = [
   'PreCompact',
 ]
 
-export const RUNTIMES = ['node', 'python3', 'sh']
-
 export function runtimeFromExt(filename: string): string {
   if (filename.endsWith('.py')) return 'python3'
   if (filename.endsWith('.sh')) return 'sh'
@@ -32,7 +30,7 @@ const FIELD_KEYS: (keyof ArgusMeta)[] = [
   'title',
   'author',
   'event',
-  'runtime',
+  'command',
   'matcher',
   'purpose',
 ]
@@ -56,7 +54,7 @@ export function parseArgusMeta(body: string): Partial<ArgusMeta> {
 export function buildArgusMeta(m: ArgusMeta): string {
   const lines = [META_START, `// title: ${m.title}`]
   if (m.author) lines.push(`// author: ${m.author}`)
-  lines.push(`// event: ${m.event}`, `// runtime: ${m.runtime}`)
+  lines.push(`// event: ${m.event}`, `// command: ${m.command}`)
   if (m.matcher) lines.push(`// matcher: ${m.matcher}`)
   if (m.purpose) lines.push(`// purpose: ${m.purpose}`)
   lines.push(META_END, '')
