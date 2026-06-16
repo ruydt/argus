@@ -44,6 +44,8 @@ export async function buildIndex(root = '.') {
     const author = rel.split('/')[1]
     const id = rel.split('/').pop().replace(/\.(js|sh|py)$/, '')
     const sha256 = createHash('sha256').update(text).digest('hex')
+    const command = meta.command ?? ''
+    const runtime = command ? command.split(/\s+/)[0] : (meta.runtime ?? 'node')
     scripts.push({
       id,
       author,
@@ -51,7 +53,8 @@ export async function buildIndex(root = '.') {
       purpose: meta.purpose ?? '',
       event: meta.event ?? '',
       matcher: meta.matcher ?? '',
-      runtime: meta.runtime ?? 'node',
+      command,
+      runtime,
       tier: 'community',
       sha256,
       source: rel,

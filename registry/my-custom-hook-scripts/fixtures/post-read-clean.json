@@ -1,8 +1,0 @@
-{
-  "hook_event_name": "PostToolUse",
-  "tool_name": "Read",
-  "tool_input": { "file_path": "/tmp/argus-hook-test/notes.md" },
-  "tool_result": "Regular file content about the project roadmap and architecture decisions.",
-  "cwd": "/tmp/argus-hook-test",
-  "transcript_path": "/Users/duytran/.claude/projects/test/session.jsonl"
-}

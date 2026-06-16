@@ -1,6 +1,0 @@
-{
-  "hook_event_name": "PreToolUse",
-  "tool_name": "Bash",
-  "tool_input": { "command": "cat .env | grep API_KEY" },
-  "transcript_path": "/Users/duytran/.claude/projects/test/session.jsonl"
-}
