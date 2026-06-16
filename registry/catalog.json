@@ -4,6 +4,7 @@
     {
       "id": "block-dangerous",
       "filename": "block-dangerous.js",
+      "command": "node block-dangerous.js",
       "version": "1.0.0",
       "title": "Block dangerous commands",
       "purpose": "Deny dangerous shell commands (rm -rf ~, curl | sh, force-push to main, mkfs) with a reason the agent can act on.",
@@ -12,12 +13,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "protect-secrets",
       "filename": "protect-secrets.js",
+      "command": "node protect-secrets.js",
       "version": "1.0.0",
       "title": "Protect secret files",
       "purpose": "Deny access to secret files (.env, *.pem, ~/.ssh/, ~/.aws/). .env.example/sample/template and secrets.test/spec.* are allowed.",
@@ -26,12 +28,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "cost-warn",
       "filename": "cost-warn.js",
+      "command": "node cost-warn.js",
       "version": "1.0.0",
       "title": "Cost warning",
       "purpose": "Warn when token usage in the rolling 5h window crosses a threshold. Silent otherwise.",
@@ -40,12 +43,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "permission-request",
       "filename": "permission-request.js",
+      "command": "node permission-request.js",
       "version": "1.0.0",
       "title": "Permission request dialog",
       "purpose": "Native macOS approval dialog with an Always list.",
@@ -54,12 +58,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "stop",
       "filename": "stop.js",
+      "command": "node stop.js",
       "version": "1.0.0",
       "title": "Stop notification",
       "purpose": "Local notification when the agent finishes.",
@@ -68,12 +73,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "argus-activate-local",
       "filename": "argus-activate-local.js",
+      "command": "node argus-activate-local.js",
       "version": "1.0.0",
       "title": "Argus liveness banner",
       "purpose": "Argus liveness banner with event/session counts at session start.",
@@ -82,12 +88,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "format-lint",
       "filename": "format-lint.js",
+      "command": "node format-lint.js",
       "version": "1.0.0",
       "title": "Format & lint on edit",
       "purpose": "Auto-format the edited file (prettier/ruff/gofmt, single-file) and feed lint errors back so the agent fixes them.",
@@ -96,12 +103,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "protect-branch",
       "filename": "protect-branch.js",
+      "command": "node protect-branch.js",
       "version": "1.0.0",
       "title": "Protect branches",
       "purpose": "Deny git commit/push/branch-deletion on protected branches (main, master); suggests a feature branch.",
@@ -110,12 +118,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "notify-webhook",
       "filename": "notify-webhook.js",
+      "command": "node notify-webhook.js",
       "version": "1.0.0",
       "title": "Notify webhook",
       "purpose": "Slack / Discord / ntfy / Telegram / custom webhook when the agent finishes or needs attention. Rate-limited; silent without config.",
@@ -124,12 +133,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "git-autostage",
       "filename": "git-autostage.js",
+      "command": "node git-autostage.js",
       "version": "1.0.0",
       "title": "Git autostage",
       "purpose": "Opt-in checkpoint per agent turn: git add -u (tracked files only), optional local commit, never pushes.",
@@ -138,12 +148,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "scan-injection",
       "filename": "scan-injection.js",
+      "command": "node scan-injection.js",
       "version": "1.0.0",
       "title": "Prompt-injection scanner",
       "purpose": "Warn-only prompt-injection scanner on tool output. Injects a caution into context instead of blocking.",
@@ -152,12 +163,13 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     },
     {
       "id": "inject-context",
       "filename": "inject-context.js",
+      "command": "node inject-context.js",
       "version": "1.0.0",
       "title": "Inject context",
       "purpose": "Inject just-in-time context per prompt: git branch + working-tree state, plus .argus-context.md or ~/.argus/context.md if present.",
@@ -166,7 +178,7 @@
       "runtime": "node",
       "agents": ["claude-code", "codex"],
       "author": "argus",
-      "source": "https://github.com/argus-hooks/argus/tree/main/my-custom-hook-scripts",
+      "source": "https://github.com/argus-hooks/argus/tree/main/registry/scripts/argus",
       "tier": "official"
     }
   ],
