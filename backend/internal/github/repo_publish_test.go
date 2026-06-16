@@ -18,7 +18,7 @@ func fakeGitHub(t *testing.T, scopes string) *httptest.Server {
 		w.Header().Set("X-OAuth-Scopes", scopes)
 		_, _ = w.Write([]byte(`{"login":"alice"}`))
 	})
-	mux.HandleFunc("/repos/argus-hooks/argus/forks", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/repos/ruydt/argus/forks", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"full_name":"alice/argus"}`))
 	})
 	mux.HandleFunc("/repos/alice/argus", func(w http.ResponseWriter, _ *http.Request) {
@@ -52,7 +52,7 @@ func fakeGitHub(t *testing.T, scopes string) *httptest.Server {
 	mux.HandleFunc("/repos/alice/argus/git/refs", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"ref":"refs/heads/x"}`))
 	})
-	mux.HandleFunc("/repos/argus-hooks/argus/pulls", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/repos/ruydt/argus/pulls", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			Body string `json:"body"`
 		}
@@ -60,7 +60,7 @@ func fakeGitHub(t *testing.T, scopes string) *httptest.Server {
 		if body.Body != "my description" {
 			t.Errorf("PR body = %q, want %q", body.Body, "my description")
 		}
-		_, _ = w.Write([]byte(`{"html_url":"https://github.com/argus-hooks/argus/pull/1"}`))
+		_, _ = w.Write([]byte(`{"html_url":"https://github.com/ruydt/argus/pull/1"}`))
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
@@ -76,7 +76,7 @@ func TestPublishRegistryHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("PublishRegistry: %v", err)
 	}
-	if url != "https://github.com/argus-hooks/argus/pull/1" {
+	if url != "https://github.com/ruydt/argus/pull/1" {
 		t.Fatalf("unexpected PR url: %q", url)
 	}
 }

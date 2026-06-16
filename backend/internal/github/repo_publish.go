@@ -13,7 +13,7 @@ import (
 // ErrNeedsRepoScope means the token lacks public_repo and cannot open a PR.
 var ErrNeedsRepoScope = errors.New("github token missing public_repo scope")
 
-const registryOwner = "argus-hooks"
+const registryOwner = "ruydt"
 const registryRepo = "argus"
 
 // PublishFile is one file to publish (basename + text body).
