@@ -81,7 +81,7 @@ export const AgentSession = memo(function AgentSession({
     <Collapsible
       open={!isCollapsed}
       onOpenChange={() => toggleSession(sessionId)}
-      className="border border-white/[0.06] rounded-lg mb-3 overflow-hidden bg-white/[0.015]"
+      className="border border-black/[0.06] rounded-lg mb-3 overflow-hidden bg-black/[0.015]"
     >
       <CollapsibleTrigger asChild>
         <div
@@ -92,7 +92,7 @@ export const AgentSession = memo(function AgentSession({
           }}
           className={cn(
             'flex items-start gap-2 px-3 py-[10px] cursor-grab active:cursor-grabbing',
-            'bg-white/[0.03] border-b border-white/[0.06]',
+            'bg-black/[0.03] border-b border-black/[0.06]',
             isCollapsed && 'border-b-0'
           )}
         >
@@ -100,14 +100,14 @@ export const AgentSession = memo(function AgentSession({
             <Logo size={18} />
           </span>
           <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <div className="group inline-flex min-w-0 max-w-full items-center gap-2 text-[0.8rem] font-bold text-[#47ff9c]">
+            <div className="group inline-flex min-w-0 max-w-full items-center gap-2 text-[0.8rem] font-bold text-[#16a34a]">
               <span title={sessionId} className="min-w-[8ch] truncate">
                 {highlight(firstEvent.session || shortId(transcriptPath), searchQuery)}
               </span>
               {cwd !== '' && (
                 <span
                   title={cwd}
-                  className="shrink-0 max-w-[180px] truncate text-[0.68rem] font-normal text-[#666]"
+                  className="shrink-0 max-w-[180px] truncate text-[0.68rem] font-normal text-[#666666]"
                 >
                   {projectName(cwd)}
                 </span>
@@ -115,11 +115,11 @@ export const AgentSession = memo(function AgentSession({
               <CopyIconButton
                 text={sessionId}
                 label="session ID"
-                className="shrink-0 opacity-0 group-hover:opacity-100 size-4 text-[#666] hover:text-[#47ff9c] hover:bg-transparent"
+                className="shrink-0 opacity-0 group-hover:opacity-100 size-4 text-[#666666] hover:text-[#16a34a] hover:bg-transparent"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
-            <div className="inline-flex flex-wrap items-center gap-2 text-[0.68rem] text-[#666]">
+            <div className="inline-flex flex-wrap items-center gap-2 text-[0.68rem] text-[#666666]">
               {sessionUsage[sessionId] &&
                 agent.buildUsageItems &&
                 (() => {

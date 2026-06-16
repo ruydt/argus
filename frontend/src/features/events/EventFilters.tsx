@@ -141,7 +141,7 @@ export function EventFilters({
     <div
       id={id}
       className={cn(
-        'flex flex-col gap-3 border-b border-[#333] bg-[#111] px-4 py-[10px] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between',
+        'flex flex-col gap-3 border-b border-[#eaeaea] bg-[#ffffff] px-4 py-[10px] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between',
         className
       )}
     >
@@ -152,6 +152,7 @@ export function EventFilters({
             size="sm"
             aria-label={searchOpen ? 'Close events search' : 'Search events'}
             aria-expanded={searchOpen}
+            data-tour="events-search-btn"
             onClick={() => {
               setSearchOpen((open) => {
                 if (open) setSearchQuery('')
@@ -159,8 +160,8 @@ export function EventFilters({
               })
             }}
             className={cn(
-              'h-7 shrink-0 px-2 text-[#666] hover:bg-white/[0.03] hover:text-[#cccccc]',
-              searchOpen && 'text-[#cccccc]'
+              'h-7 shrink-0 px-2 text-[#666666] hover:bg-black/[0.03] hover:text-[#171717]',
+              searchOpen && 'text-[#171717]'
             )}
           >
             <Search className="size-3.5" />
@@ -178,7 +179,7 @@ export function EventFilters({
             placeholder="Search events"
             aria-label="Search events"
             className={cn(
-              'h-7 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 transition-all duration-200',
+              'h-7 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] placeholder:text-[#666666] focus-visible:ring-0 transition-all duration-200',
               searchOpen
                 ? 'w-full px-2 opacity-100 sm:w-[220px]'
                 : 'pointer-events-none w-0 px-0 opacity-0'
@@ -190,10 +191,11 @@ export function EventFilters({
             size="sm"
             aria-label={filtersCollapsed ? 'Show filters' : 'Hide filters'}
             aria-expanded={!filtersCollapsed}
+            data-tour="events-filter-toggle"
             onClick={() => setFiltersCollapsed((c) => !c)}
             className={cn(
-              'relative h-7 shrink-0 px-2 text-[#666] hover:bg-white/[0.03] hover:text-[#cccccc]',
-              !filtersCollapsed && 'text-[#cccccc]'
+              'relative h-7 shrink-0 px-2 text-[#666666] hover:bg-black/[0.03] hover:text-[#171717]',
+              !filtersCollapsed && 'text-[#171717]'
             )}
           >
             <ListFilter className="size-3.5" />
@@ -208,20 +210,20 @@ export function EventFilters({
 
         {!filtersCollapsed && (
           <>
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <span className="text-[0.7rem] text-[#666]">Event</span>
+            <div className="flex w-full items-center gap-2 sm:w-auto" data-tour="events-filter-event">
+              <span className="text-[0.7rem] text-[#666666]">Event</span>
               <SearchableSelect
                 value={actionFilter}
                 onValueChange={setActionFilter}
                 options={ACTION_OPTIONS}
                 placeholder="All"
                 ariaLabel="Filter by event"
-                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[160px]"
+                className="h-7 w-full px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] sm:w-[160px]"
               />
             </div>
 
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <span className="text-[0.7rem] text-[#666]">Agent</span>
+            <div className="flex w-full items-center gap-2 sm:w-auto" data-tour="events-filter-agent">
+              <span className="text-[0.7rem] text-[#666666]">Agent</span>
               <SearchableSelect
                 value={agentFilter}
                 onValueChange={setAgentFilter}
@@ -231,12 +233,12 @@ export function EventFilters({
                 ]}
                 placeholder="All"
                 ariaLabel="Filter by agent"
-                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[120px]"
+                className="h-7 w-full px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] sm:w-[120px]"
               />
             </div>
 
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <span className="text-[0.7rem] text-[#666]">Project</span>
+            <div className="flex w-full items-center gap-2 sm:w-auto" data-tour="events-filter-project">
+              <span className="text-[0.7rem] text-[#666666]">Project</span>
               <SearchableSelect
                 value={projectFilter}
                 onValueChange={setProjectFilter}
@@ -249,20 +251,20 @@ export function EventFilters({
                 ]}
                 placeholder="All"
                 ariaLabel="Filter by project"
-                className="h-7 w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[140px]"
+                className="h-7 w-full px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] sm:w-[140px]"
               />
             </div>
 
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <span className="text-[0.7rem] text-[#666]">Sort</span>
+            <div className="flex w-full items-center gap-2 sm:w-auto" data-tour="events-filter-sort">
+              <span className="text-[0.7rem] text-[#666666]">Sort</span>
               <Select value={sortOrder} onValueChange={setSortOrder}>
                 <SelectTrigger
                   size="sm"
-                  className="w-full px-2 text-[0.8rem] bg-neutral-950 border-[#333] text-[#cccccc] sm:w-[110px] focus:ring-0 focus:ring-offset-0"
+                  className="w-full px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] sm:w-[110px] focus:ring-0 focus:ring-offset-0"
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
+                <SelectContent className="bg-[#ffffff] border-[#eaeaea] text-[#171717]">
                   <SelectGroup>
                     <SelectItem value="newest">Newest</SelectItem>
                     <SelectItem value="oldest">Oldest</SelectItem>
@@ -272,18 +274,19 @@ export function EventFilters({
             </div>
 
             <div
+              data-tour="events-filter-time"
               className={cn('flex items-center gap-3', isLive && 'pointer-events-none opacity-40')}
             >
               <div className="flex items-center gap-2">
-                <span className="text-[0.7rem] text-[#666]">Time</span>
+                <span className="text-[0.7rem] text-[#666666]">Time</span>
                 <Select value={timeRange} onValueChange={setTimeRange} disabled={isLive}>
                   <SelectTrigger
                     size="sm"
-                    className="w-full px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] sm:w-[160px] focus:ring-0 focus:ring-offset-0"
+                    className="w-full px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] sm:w-[160px] focus:ring-0 focus:ring-offset-0"
                   >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#111] border-[#333] text-[#cccccc]">
+                  <SelectContent className="bg-[#ffffff] border-[#eaeaea] text-[#171717]">
                     <SelectGroup>
                       <SelectItem value="5m">Last 5 minutes</SelectItem>
                       <SelectItem value="15m">Last 15 minutes</SelectItem>
@@ -301,9 +304,9 @@ export function EventFilters({
               {timeRange === 'custom' && (
                 <>
                   <div className="flex items-center gap-2">
-                    <span className="text-[0.7rem] uppercase text-[#666]">Start</span>
+                    <span className="text-[0.7rem] uppercase text-[#666666]">Start</span>
                     <Input
-                      className="h-7 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 w-[160px]"
+                      className="h-7 px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] placeholder:text-[#666666] focus-visible:ring-0 w-[160px]"
                       placeholder="2026-05-05 10:00:00"
                       value={customStart}
                       onChange={(e) => setCustomStart(e.target.value)}
@@ -311,9 +314,9 @@ export function EventFilters({
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[0.7rem] uppercase text-[#666]">End</span>
+                    <span className="text-[0.7rem] uppercase text-[#666666]">End</span>
                     <Input
-                      className="h-7 px-2 text-[0.8rem] bg-black border-[#333] text-[#cccccc] placeholder:text-[#666] focus-visible:ring-0 w-[160px]"
+                      className="h-7 px-2 text-[0.8rem] bg-[#fafafa] border-[#eaeaea] text-[#171717] placeholder:text-[#666666] focus-visible:ring-0 w-[160px]"
                       placeholder="2026-05-05 12:00:00"
                       value={customEnd}
                       onChange={(e) => setCustomEnd(e.target.value)}
@@ -334,7 +337,7 @@ export function EventFilters({
             size="sm"
             onClick={onRefresh}
             disabled={histLoading}
-            className="h-7 gap-1 px-2 text-[0.8rem] text-[#666] hover:text-[#cccccc]"
+            className="h-7 gap-1 px-2 text-[0.8rem] text-[#666666] hover:text-[#171717]"
           >
             <RefreshCw className={`size-3 ${histLoading ? 'animate-spin' : ''}`} />
             Refresh
@@ -344,16 +347,17 @@ export function EventFilters({
           <Button
             variant="outline"
             size="sm"
+            data-tour="events-live-btn"
             onClick={() => onToggleLive(!isLive)}
             className={cn(
-              'h-7 gap-1.5 px-2 text-[0.8rem] border-[#333] bg-black hover:bg-white/[0.03]',
+              'h-7 gap-1.5 px-2 text-[0.8rem] border-[#eaeaea] bg-[#fafafa] hover:bg-black/[0.03]',
               isLive
                 ? 'border-green-700 text-green-400 hover:text-green-300'
-                : 'text-[#666] hover:text-[#cccccc]'
+                : 'text-[#666666] hover:text-[#171717]'
             )}
           >
             <span
-              className={`size-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-[#555]'}`}
+              className={`size-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-[#666666]'}`}
             />
             Live
           </Button>
@@ -362,10 +366,11 @@ export function EventFilters({
           <Button
             variant="outline"
             size="sm"
+            data-tour="events-split-btn"
             onClick={onToggleSplit}
             className={cn(
-              'h-7 shrink-0 gap-1.5 px-2 text-[0.8rem] border-[#333] bg-black text-[#666] hover:bg-white/[0.03] hover:text-[#cccccc]',
-              splitView && 'border-[#555] text-[#cccccc]'
+              'h-7 shrink-0 gap-1.5 px-2 text-[0.8rem] border-[#eaeaea] bg-[#fafafa] text-[#666666] hover:bg-black/[0.03] hover:text-[#171717]',
+              splitView && 'border-[#666666] text-[#171717]'
             )}
             title={splitView ? 'Close split view' : 'Open split view'}
             aria-label={splitView ? 'Close split view' : 'Open split view'}

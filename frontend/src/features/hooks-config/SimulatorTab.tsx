@@ -6,13 +6,10 @@ import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { argusEditorTheme, argusHighlighting, editableExtensions } from '@/lib/editorTheme'
 import { getTemplate, HOOK_TEMPLATES } from './hookTemplates'
 import type { AgentKey, HooksConfig } from './types'
-
-const CUSTOM_VALUE = '__custom__'
 
 type HookScript = { name: string; path: string }
 
@@ -105,8 +102,10 @@ export function SimulatorTab({
     const match = hookScripts.find((h) => h.name === initialScript)
     if (!match) return
     preselectApplied.current = true
-    onCommandValueChange(composeScriptCommand(match, agent))
-  }, [initialScript, hookScripts, agent, onCommandValueChange])
+    const cmd = composeScriptCommand(match, agent)
+    onCommandValueChange(cmd)
+    onCustomCommandTextChange(cmd)
+  }, [initialScript, hookScripts, agent, onCommandValueChange, onCustomCommandTextChange])
 
   const eventTypes = Object.keys(HOOK_TEMPLATES[agent]).sort()
 
@@ -114,8 +113,6 @@ export function SimulatorTab({
     if (!eventType) return []
     const groups = config?.hooks[eventType] ?? []
     const opts: { label: string; value: string; timeout?: number }[] = []
-    // Dedupe by command — option value IS the command string, and duplicate values
-    // make Radix Select render every matching item's label in the trigger.
     const seen = new Set<string>()
     groups.forEach((g, gi) => {
       g.hooks.forEach((h, hi) => {
@@ -132,34 +129,37 @@ export function SimulatorTab({
       const command = composeScriptCommand(script, agent)
       if (seen.has(command)) return
       seen.add(command)
-      opts.push({ label: `${script.name}`, value: command })
+      opts.push({ label: script.name, value: command })
     })
     return opts
   })()
 
-  const commandSelectOptions = [
-    ...commandOptions.map(({ label, value }) => ({ label, value })),
-    { label: 'Custom command…', value: CUSTOM_VALUE },
-  ]
-
-  const effectiveCommand = commandValue === CUSTOM_VALUE ? customCommandText.trim() : commandValue
-  const selectedHookTimeout =
-    commandValue === CUSTOM_VALUE
-      ? undefined
-      : commandOptions.find((opt) => opt.value === commandValue)?.timeout
+  // terminal is source of truth; commandValue tracks preset selection for dropdown label
+  const effectiveCommand = customCommandText.trim()
+  const selectedHookTimeout = commandOptions.find((opt) => opt.value === commandValue)?.timeout
   const canRun = effectiveCommand.length > 0 && !running
   const canApply = effectiveCommand.length > 0 && !!eventType && !applying
 
   function handleEventTypeChange(et: string) {
     onEventTypeChange(et)
     onCommandValueChange('')
+    onCustomCommandTextChange('')
     onPayloadJSONChange(JSON.stringify(getTemplate(agent, et), null, 2))
     setResult(null)
     setError(null)
   }
 
-  function handleCommandValueChange(v: string) {
+  function handlePresetChange(v: string) {
     onCommandValueChange(v)
+    onCustomCommandTextChange(v)
+    setResult(null)
+    setError(null)
+  }
+
+  function handleTerminalChange(text: string) {
+    onCustomCommandTextChange(text)
+    // Clear preset selection when user edits directly
+    if (commandValue) onCommandValueChange('')
     setResult(null)
     setError(null)
   }
@@ -220,30 +220,37 @@ export function SimulatorTab({
 
         <SearchableSelect
           value={commandValue}
-          onValueChange={handleCommandValueChange}
-          options={commandSelectOptions}
-          placeholder="command/script (~/.argus/hooks/...)"
-          ariaLabel="command/script (~/.argus/hooks/...)"
+          onValueChange={handlePresetChange}
+          options={commandOptions.map(({ label, value }) => ({ label, value }))}
+          placeholder="Pick a preset script…"
+          ariaLabel="Pick a preset script"
           disabled={!eventType}
           className="flex-1"
         />
       </div>
 
-      {commandValue === CUSTOM_VALUE && (
-        <Input
-          value={customCommandText}
-          onChange={(e) => onCustomCommandTextChange(e.target.value)}
-          placeholder="Enter shell command, e.g. curl -s http://127.0.0.1:10804/api/hook -d @-"
-          className="font-mono text-[13px]"
-        />
+      {eventType && (
+        <div className="rounded-md border border-border overflow-hidden bg-[#fafafa]">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border bg-card">
+            <Terminal className="size-3 text-muted-foreground" />
+            <span className="text-[11px] font-mono text-muted-foreground">command</span>
+          </div>
+          <textarea
+            value={customCommandText}
+            onChange={(e) => handleTerminalChange(e.target.value)}
+            rows={3}
+            placeholder="Pick a preset above or type a shell command…"
+            className="w-full bg-transparent px-3 py-2.5 font-mono text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none resize-none"
+          />
+        </div>
       )}
 
       {eventType && (
-        <div className="relative rounded-md border overflow-hidden">
+        <div className="relative rounded-md border border-border overflow-hidden">
           <CopyIconButton
             text={payloadJSON}
             label="JSON"
-            className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+            className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-black/10"
           />
           <CodeMirror
             value={payloadJSON}
@@ -256,7 +263,7 @@ export function SimulatorTab({
               highlightActiveLine: true,
               bracketMatching: true,
               autocompletion: false,
-              foldGutter: true,
+              foldGutter: false,
             }}
           />
         </div>
@@ -299,17 +306,17 @@ export function SimulatorTab({
             <span className="text-[12px] text-muted-foreground">{result.duration_ms}ms</span>
           </div>
 
-          <div className="relative rounded-md border overflow-hidden bg-[#0d1117]">
+          <div className="relative rounded-md border border-border overflow-hidden bg-[#fafafa]">
             {result.stdout && (
               <CopyIconButton
                 text={result.stdout}
                 label="output"
-                className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+                className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-black/10"
               />
             )}
             <ScrollArea className="h-[180px]">
-              <pre className="p-3 text-[12px] font-mono text-[#e6edf3] whitespace-pre-wrap break-all">
-                {result.stdout || <span className="text-[#8b949e]">(no output)</span>}
+              <pre className="p-3 text-[12px] font-mono text-foreground whitespace-pre-wrap break-all">
+                {result.stdout || <span className="text-muted-foreground">(no output)</span>}
               </pre>
             </ScrollArea>
           </div>
@@ -319,7 +326,7 @@ export function SimulatorTab({
               <CopyIconButton
                 text={result.stderr}
                 label="stderr"
-                className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[rgba(255,95,86,0.9)] hover:bg-white/5"
+                className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-[rgba(255,95,86,0.9)] hover:bg-black/5"
               />
               <ScrollArea className="h-[120px]">
                 <pre className="p-3 text-[12px] font-mono text-destructive whitespace-pre-wrap break-all">

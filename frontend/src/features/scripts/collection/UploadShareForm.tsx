@@ -82,7 +82,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
 
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-lg border border-white/15 bg-[#141414]">
+      <DialogContent className="max-w-lg border border-black/15 bg-[#141414]">
         <DialogHeader>
           <DialogTitle>
             {isDescriptionStep
@@ -98,7 +98,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what these scripts do (optional)…"
               aria-label="Pull request description"
-              className="h-32 w-full rounded-md border border-white/10 bg-[#0a0a0a] p-3 text-sm text-[#ddd]"
+              className="h-32 w-full rounded-md border border-black/10 bg-[#ffffff] p-3 text-sm text-[#171717]"
             />
             <div className="flex justify-between">
               <Button variant="outline" size="sm" onClick={() => setStep(files.length - 1)}>

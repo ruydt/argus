@@ -1,24 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
-import { json } from '@codemirror/lang-json'
-import CodeMirror from '@uiw/react-codemirror'
-import { AppWindowIcon, CodeIcon, ExternalLink, RefreshCw, Save, Terminal } from 'lucide-react'
+import { AppWindowIcon, ExternalLink, RefreshCw, Save, Terminal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
-import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { cn } from '@/lib/utils'
-import { argusEditorTheme, argusHighlighting, editableExtensions } from '@/lib/editorTheme'
+import { AnthropicLogo, OpenAILogo } from '@/agents/logos'
 import { StructuredEditor } from './StructuredEditor'
 import { SimulatorTab } from './SimulatorTab'
 import { getTemplate } from './hookTemplates'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig, HooksConfigState } from './types'
 
-type ViewMode = 'structured' | 'json' | 'simulator'
+type ViewMode = 'structured' | 'simulator'
 
 const SIM_STORAGE_KEY = 'argus:sim'
 const AGENT_TAB_KEY = 'argus:hooks-agent'
@@ -78,16 +80,7 @@ type AgentTabContentProps = {
 }
 
 function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) {
-  const { config, draftJSON, loading, error, saveError, setDraftJSON, setConfig, reload } = state
-
-  const jsonIsValid = (() => {
-    try {
-      JSON.parse(draftJSON)
-      return true
-    } catch {
-      return false
-    }
-  })()
+  const { config, loading, error, saveError, setConfig, reload } = state
 
   if (loading) {
     return (
@@ -121,40 +114,6 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
           onDiscardChanges={state.discardChanges}
           onChange={setConfig}
         />
-      )}
-
-      {viewMode === 'json' && (
-        <div className="flex flex-col gap-1">
-          <section
-            className={cn(
-              'relative rounded-md border overflow-hidden',
-              !jsonIsValid && 'border-destructive'
-            )}
-            aria-label="Hooks config JSON"
-          >
-            <CopyIconButton
-              text={draftJSON}
-              label="JSON"
-              className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
-            />
-            <CodeMirror
-              value={draftJSON}
-              onChange={(value) => setDraftJSON(value)}
-              extensions={[json(), argusEditorTheme, argusHighlighting, ...editableExtensions]}
-              theme="none"
-              height="calc(100dvh - 220px)"
-              minHeight="320px"
-              basicSetup={{
-                lineNumbers: true,
-                highlightActiveLine: true,
-                bracketMatching: true,
-                autocompletion: false,
-                foldGutter: true,
-              }}
-            />
-          </section>
-          {!jsonIsValid && <p className="text-[12px] text-destructive mt-0.5">Invalid JSON</p>}
-        </div>
       )}
 
       {viewMode === 'simulator' && (
@@ -191,7 +150,7 @@ export function HooksConfigPage() {
   })
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = readStorageString(VIEW_MODE_KEY)
-    return stored === 'json' || stored === 'simulator' ? stored : 'structured'
+    return stored === 'simulator' ? 'simulator' : 'structured'
   })
 
   // Simulator cached state — lifted + sessionStorage so it survives page navigation
@@ -319,14 +278,6 @@ export function HooksConfigPage() {
   function handleViewModeChange(nextMode: string) {
     const mode = nextMode as ViewMode
     if (mode === viewMode) return
-    if (mode === 'structured') {
-      if (!jsonIsValid) return
-      try {
-        activeState.setConfig(JSON.parse(activeState.draftJSON) as HooksConfig)
-      } catch {
-        return
-      }
-    }
     setViewMode(mode)
     writeStorageString(VIEW_MODE_KEY, mode)
   }
@@ -391,32 +342,40 @@ export function HooksConfigPage() {
         className="w-full"
       >
         <div className="flex items-center justify-between">
-          <TabsList variant="line" data-tour="hooks-config-agent-tabs">
-            <TabsTrigger value="claudecode">Claude Code</TabsTrigger>
-            <TabsTrigger value="codex">Codex</TabsTrigger>
-          </TabsList>
           <Tabs value={viewMode} onValueChange={handleViewModeChange}>
-            <TabsList>
-              <TabsTrigger
-                value="structured"
-                aria-label="Structured"
-                disabled={viewMode === 'json' && !jsonIsValid}
-                title={
-                  viewMode === 'json' && !jsonIsValid
-                    ? 'Fix JSON errors before switching to structured view'
-                    : undefined
-                }
-              >
+            <TabsList variant="line">
+              <TabsTrigger value="structured">
                 <AppWindowIcon />
+                Structured
               </TabsTrigger>
-              <TabsTrigger value="json" aria-label="JSON">
-                <CodeIcon />
-              </TabsTrigger>
-              <TabsTrigger value="simulator" aria-label="Simulator">
+              <TabsTrigger value="simulator">
                 <Terminal />
+                Simulator
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          <Select
+            value={activeAgent}
+            onValueChange={(v) => {
+              const agent = v as AgentKey
+              setActiveAgent(agent)
+              writeStorageString(AGENT_TAB_KEY, agent)
+            }}
+          >
+            <SelectTrigger className="w-auto" aria-label="Agent" data-tour="hooks-config-agent-tabs">
+              {activeAgent === 'claudecode' ? <AnthropicLogo size={18} /> : <OpenAILogo size={18} />}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="claudecode">
+                <AnthropicLogo size={18} />
+                Claude Code
+              </SelectItem>
+              <SelectItem value="codex">
+                <OpenAILogo size={18} />
+                Codex
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <TabsContent value="claudecode">
           <AgentTabContent

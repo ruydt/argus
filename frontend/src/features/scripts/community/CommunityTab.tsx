@@ -81,7 +81,7 @@ export function CommunityTab({ query, community }: CommunityTabProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-white/[0.12] px-2 pb-2 font-mono text-[0.68rem] tracking-[0.12em] text-[#666] uppercase">
+      <div className="flex items-center gap-4 border-b border-black/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-[#666666] uppercase">
         <span className="w-7 shrink-0 text-right">#</span>
         <span className="flex-1">Script</span>
         <span className="hidden w-44 shrink-0 md:block">Event</span>

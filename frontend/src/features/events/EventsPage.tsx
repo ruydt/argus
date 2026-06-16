@@ -24,10 +24,10 @@ function SearchSkeleton() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="animate-pulse rounded-lg border border-[#1c1c1c] bg-[#111] px-4 py-3"
+          className="animate-pulse rounded-lg border border-[#eaeaea] bg-[#fafafa] px-4 py-3"
         >
-          <div className="h-3.5 w-1/3 rounded bg-[#222]" />
-          <div className="mt-2 h-2.5 w-1/5 rounded bg-[#1a1a1a]" />
+          <div className="h-3.5 w-1/3 rounded bg-[#eaeaea]" />
+          <div className="mt-2 h-2.5 w-1/5 rounded bg-[#f0f0f0]" />
         </div>
       ))}
     </div>
@@ -154,7 +154,7 @@ function SplitPanels({
           onDrop={handleDropToPanel(1)}
         >
           {activeEvents.length === 0 && !activeError ? (
-            <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
+            <div className="text-[#666666] text-sm h-full flex flex-col items-center justify-center">
               No events found. Start a session to see events stream here.
             </div>
           ) : (
@@ -176,7 +176,7 @@ function SplitPanels({
         </div>
       </ResizablePanel>
 
-      <ResizableHandle className="w-[3px] bg-[#222] hover:bg-[#444] active:bg-[#555] transition-colors cursor-col-resize" />
+      <ResizableHandle className="w-[3px] bg-[#eaeaea] hover:bg-[#d4d4d4] active:bg-[#666666] transition-colors cursor-col-resize" />
 
       <ResizablePanel minSize={20} defaultSize={50}>
         <div
@@ -193,8 +193,8 @@ function SplitPanels({
             <div className="h-full flex items-center justify-center">
               <div
                 className={cn(
-                  'flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-[#2a2a2a] p-10 text-[#444] text-sm transition-colors',
-                  dragOverPanel === 2 && 'border-sky-500/40 text-[#666]'
+                  'flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-[#d4d4d4] p-10 text-[#666666] text-sm transition-colors',
+                  dragOverPanel === 2 && 'border-sky-500/40 text-[#666666]'
                 )}
               >
                 <span>Drop events here</span>
@@ -279,7 +279,7 @@ function SinglePanel({
   return (
     <div ref={scrollRef} className="relative min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 lg:p-5">
       {activeError && (
-        <Alert variant="destructive" className="mb-4 bg-red-950/50 border-red-900">
+        <Alert variant="destructive" className="mb-4 bg-red-50 border-red-200">
           <AlertTitle>Connection Error</AlertTitle>
           <AlertDescription>{activeError}</AlertDescription>
         </Alert>
@@ -288,7 +288,7 @@ function SinglePanel({
       {searching && histLoading && activeEvents.length === 0 ? (
         <SearchSkeleton />
       ) : activeEvents.length === 0 && !activeError ? (
-        <div className="text-[#666] text-sm h-full flex flex-col items-center justify-center">
+        <div className="text-[#666666] text-sm h-full flex flex-col items-center justify-center">
           {searching
             ? 'No sessions match that id or project.'
             : 'No events found. Start a session to see events stream here.'}
@@ -311,7 +311,7 @@ function SinglePanel({
       )}
 
       {autoLoad && (
-        <div ref={sentinelRef} className="flex justify-center py-4 text-xs text-[#666]">
+        <div ref={sentinelRef} className="flex justify-center py-4 text-xs text-[#666666]">
           {histLoading ? 'Loading...' : ''}
         </div>
       )}
@@ -451,12 +451,12 @@ export function EventsPage() {
   })
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#0c0c0c] relative">
-      <div className="border-b border-[#333] bg-[#111] px-4 py-2 sm:hidden">
+    <div className="flex-1 flex flex-col min-h-0 bg-[#ffffff] relative">
+      <div className="border-b border-[#eaeaea] bg-[#ffffff] px-4 py-2 sm:hidden">
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-between border-[#333] bg-neutral-950 text-[#cccccc] hover:bg-white/[0.03] hover:text-[#cccccc]"
+          className="w-full justify-between border-[#eaeaea] bg-[#fafafa] text-[#171717] hover:bg-black/[0.03] hover:text-[#171717]"
           onClick={() => setMobileFiltersOpen((open) => !open)}
           aria-expanded={mobileFiltersOpen}
           aria-controls="event-filters"
@@ -583,7 +583,7 @@ export function EventsPage() {
 
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-[1000] bg-neutral-950 text-[#ccc] px-2 py-1 text-[0.7rem] rounded border border-white/10"
+          className="fixed pointer-events-none z-[1000] bg-[#fafafa] text-[#171717] px-2 py-1 text-[0.7rem] rounded border border-black/10"
           style={{ top: tooltip.y + 10, left: tooltip.x + 10 }}
         >
           {tooltip.text}

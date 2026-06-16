@@ -22,12 +22,12 @@ export function DeviceFlowModal({ device, onClose }: DeviceFlowModalProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md border border-white/15 bg-[#141414] shadow-2xl">
+      <DialogContent className="max-w-md border border-black/15 bg-[#141414] shadow-2xl">
         <DialogHeader>
           <DialogTitle>Connect GitHub</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 text-sm">
-          <p className="text-[#aaa]">
+          <p className="text-[#666666]">
             Open{' '}
             <a
               href={device.verification_uri}
@@ -39,8 +39,8 @@ export function DeviceFlowModal({ device, onClose }: DeviceFlowModalProps) {
             </a>{' '}
             and enter this code:
           </p>
-          <div className="flex items-center justify-between rounded-md border border-white/10 bg-[#0a0a0a] px-4 py-3">
-            <span className="font-mono text-lg tracking-[0.3em] text-[#e5e5e5]">
+          <div className="flex items-center justify-between rounded-md border border-black/10 bg-[#ffffff] px-4 py-3">
+            <span className="font-mono text-lg tracking-[0.3em] text-[#171717]">
               {device.user_code}
             </span>
             <Button variant="outline" size="sm" onClick={handleCopy}>

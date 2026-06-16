@@ -11,8 +11,8 @@ export function ErrorBlock({ errorMessage, errorType, searchQuery = '' }: ErrorB
   if (!errorMessage && !errorType) return null
 
   return (
-    <div className="mt-2 text-[0.75rem] text-[#ff6b6b] bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-[6px]">
-      <strong className="text-[#ff9999] text-[0.7rem]">
+    <div className="mt-2 text-[0.75rem] text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-[6px]">
+      <strong className="text-[#b91c1c] text-[0.7rem]">
         Error{errorType ? `: ${errorType}` : ''}
       </strong>
       {errorMessage && (

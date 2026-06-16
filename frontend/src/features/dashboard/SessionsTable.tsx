@@ -103,7 +103,7 @@ export function SessionsTable({ stats }: SessionsTableProps) {
                       <TableCell className="px-5 font-medium">
                         <div className="grid gap-1">
                           <div className="flex items-center gap-1">
-                            <span className="font-mono text-xs text-foreground">
+                            <span className="text-xs text-foreground">
                               {shortId(session.session_id)}
                             </span>
                             {session.session_id && (
@@ -152,7 +152,7 @@ export function SessionsTable({ stats }: SessionsTableProps) {
                                 className="h-auto max-w-full gap-2 rounded-lg px-2 py-1 text-left"
                               >
                                 <span>{displayProviderModel(model.provider, model.model)}</span>
-                                <span className="font-mono text-[11px] text-muted-foreground">
+                                <span className="text-[11px] text-muted-foreground">
                                   {formatSharePercent(modelTotal, sessionTotal)} ·{' '}
                                   {modelTotal.toLocaleString()}
                                 </span>
@@ -161,19 +161,19 @@ export function SessionsTable({ stats }: SessionsTableProps) {
                           })}
                         </div>
                       </TableCell>
-                      <TableCell className="px-5 text-right font-mono">
+                      <TableCell className="px-5 text-right">
                         {session.input.toLocaleString()}
                       </TableCell>
-                      <TableCell className="px-5 text-right font-mono">
+                      <TableCell className="px-5 text-right">
                         {session.output.toLocaleString()}
                       </TableCell>
-                      <TableCell className="px-5 text-right font-mono">
+                      <TableCell className="px-5 text-right">
                         {sessionCacheRead.toLocaleString()}
                       </TableCell>
-                      <TableCell className="px-5 text-right font-mono">
+                      <TableCell className="px-5 text-right">
                         {sessionCacheWrite.toLocaleString()}
                       </TableCell>
-                      <TableCell className="px-5 text-right font-mono font-semibold">
+                      <TableCell className="px-5 text-right font-semibold">
                         {sessionTotal.toLocaleString()}
                       </TableCell>
                     </TableRow>

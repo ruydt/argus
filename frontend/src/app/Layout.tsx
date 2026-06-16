@@ -9,7 +9,6 @@ import { useSessions } from '@/hooks/useSessions'
 import type { LayoutOutletContext } from '@/types'
 import { useOnboarding } from '@/features/onboarding/useOnboarding'
 import { PAGE_TOURS } from '@/features/onboarding/pageTours'
-import { HeaderClock } from './HeaderClock'
 import { Sidebar } from './Sidebar'
 
 const COLLAPSED_SESSIONS_STORAGE_KEY = 'events_collapsed_sessions'
@@ -295,26 +294,18 @@ export function Layout() {
         aria-hidden={mobileOpen ? true : undefined}
         className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden"
       >
-        <header className="flex items-center justify-between gap-2 border-b border-[#222] bg-[#0c0c0c] px-3 py-1.5 text-[0.75rem] text-muted-foreground sm:px-4">
-          <div className="flex items-center gap-2">
-            <Button
-              ref={mobileToggleRef}
-              variant="ghost"
-              size="icon-lg"
-              className="md:hidden text-[#666] hover:text-[#ccc] hover:bg-white/[0.05]"
-              onClick={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: location.key })}
-              aria-label="Open sidebar"
-              aria-controls={MOBILE_SIDEBAR_ID}
-              aria-expanded={mobileOpen}
-            >
-              <PanelLeft className="size-4" />
-            </Button>
-          </div>
-
-          <div className="flex min-w-0 items-center justify-end">
-            <HeaderClock />
-          </div>
-        </header>
+        <Button
+          ref={mobileToggleRef}
+          variant="ghost"
+          size="icon-lg"
+          className="absolute left-2 top-2 z-10 md:hidden text-[#666666] hover:text-[#171717] hover:bg-black/[0.05]"
+          onClick={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: location.key })}
+          aria-label="Open sidebar"
+          aria-controls={MOBILE_SIDEBAR_ID}
+          aria-expanded={mobileOpen}
+        >
+          <PanelLeft className="size-4" />
+        </Button>
         <Outlet context={outletContext} />
       </div>
     </div>

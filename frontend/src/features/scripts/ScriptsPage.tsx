@@ -62,7 +62,7 @@ export function ScriptsPage() {
         title="Scripts"
         subtitle={
           <a
-            href="https://github.com/argus-hooks/registry"
+            href="https://github.com/ruydt/argus/tree/main/registry"
             target="_blank"
             rel="noreferrer"
             className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
@@ -74,15 +74,15 @@ export function ScriptsPage() {
         actions={<AccountMenu collection={collection} />}
       />
 
-      <div className="flex items-center gap-3 border-b border-white/[0.12] pb-3">
-        <Search className="pointer-events-none size-4 shrink-0 text-[#666]" />
+      <div className="flex items-center gap-3 border-b border-black/[0.12] pb-3">
+        <Search className="pointer-events-none size-4 shrink-0 text-[#666666]" />
         <input
           ref={searchRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search scripts..."
           aria-label="Search scripts"
-          className="min-w-0 flex-1 bg-transparent font-mono text-base text-[#e5e5e5] placeholder:text-[#555] focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-base text-[#171717] placeholder:text-[#666666] focus:outline-none"
         />
       </div>
 

@@ -121,7 +121,7 @@ function LogRow({ entry, open, onToggle, tailState, onRefresh }: LogRowProps) {
   return (
     <div>
       <div className="flex items-center justify-between py-1.5 text-[13px]">
-        <span className="font-mono text-[12px]">{entry.name}</span>
+        <span className="text-[12px]">{entry.name}</span>
         <div className="flex items-center gap-2 shrink-0">
           <FileSize entry={entry} />
           <FileModified entry={entry} />
@@ -164,7 +164,7 @@ function SubSection({ label, entries, dirExists, emptyLabel, total }: SubSection
   return (
     <div className="mt-2">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[11px] font-mono text-muted-foreground">{label}</span>
+        <span className="text-[11px] text-muted-foreground">{label}</span>
         <span className="text-[11px] text-muted-foreground">
           ({truncated ? `${entries.length} of ${total.toLocaleString()}` : entries.length})
         </span>
@@ -180,7 +180,7 @@ function SubSection({ label, entries, dirExists, emptyLabel, total }: SubSection
             <div key={entry.name}>
               {i > 0 && <Separator />}
               <div className="flex items-center justify-between py-1.5 text-[13px]">
-                <span className="font-mono text-[12px]">{entry.name}</span>
+                <span className="text-[12px]">{entry.name}</span>
                 <div className="flex items-center gap-2">
                   <FileSize entry={entry} />
                   <FileModified entry={entry} />
@@ -245,7 +245,7 @@ export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystem
           <span className="text-muted-foreground">~/.argus</span>
           <span className="flex items-center gap-1">
             <span
-              className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
+              className="text-[12px] text-foreground truncate max-w-[300px]"
               title={fileSystem.argusDir}
             >
               {fileSystem.argusDir}
@@ -264,7 +264,7 @@ export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystem
           <span className="text-muted-foreground">Binary</span>
           <div className="flex items-center gap-2">
             <span
-              className="font-mono text-[12px] text-foreground truncate max-w-[200px]"
+              className="text-[12px] text-foreground truncate max-w-[200px]"
               title={fileSystem.binary.path}
             >
               {fileSystem.binary.path}
@@ -286,7 +286,7 @@ export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystem
         {/* Logs */}
         <div className="mt-2">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] font-mono text-muted-foreground">logs</span>
+            <span className="text-[11px] text-muted-foreground">logs</span>
             <span className="text-[11px] text-muted-foreground">({fileSystem.logs.length})</span>
           </div>
           <div className="border-l border-border pl-3">
@@ -321,7 +321,7 @@ export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystem
           <span className="text-muted-foreground">~/.claude</span>
           <span className="flex items-center gap-1">
             <span
-              className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
+              className="text-[12px] text-foreground truncate max-w-[300px]"
               title={fileSystem.claudeDir}
             >
               {fileSystem.claudeDir}
@@ -345,7 +345,7 @@ export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystem
         />
         <div className="mt-2 border-l border-border pl-3">
           <div className="flex items-center justify-between py-1.5 text-[13px]">
-            <span className="font-mono text-[12px]">history.jsonl</span>
+            <span className="text-[12px]">history.jsonl</span>
             <div className="flex items-center gap-2">
               <FileSize entry={fileSystem.claudeHistory} />
               {fileSystem.claudeHistory.lineCount != null && (
@@ -373,7 +373,7 @@ export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystem
           <span className="text-muted-foreground">~/.codex</span>
           <span className="flex items-center gap-1">
             <span
-              className="font-mono text-[12px] text-foreground truncate max-w-[300px]"
+              className="text-[12px] text-foreground truncate max-w-[300px]"
               title={fileSystem.codexDir}
             >
               {fileSystem.codexDir}

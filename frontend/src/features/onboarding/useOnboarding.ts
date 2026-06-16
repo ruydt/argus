@@ -51,14 +51,19 @@ export function useOnboarding({
   }
 
   const startPageTour = (route: string) => {
-    const steps = PAGE_TOURS[route]
-    if (!steps || steps.length === 0) return
+    const tourDef = PAGE_TOURS[route]
+    if (!tourDef) return
 
     const config = createDriverConfig()
-    const d = driver({
-      ...config,
-      steps,
-    })
+    const steps =
+      typeof tourDef === 'function'
+        ? tourDef({ navigate, getDriver: () => driverRef.current })
+        : tourDef
+
+    if (!steps.length) return
+
+    const d = driver({ ...config, steps })
+    driverRef.current = d
     d.drive()
   }
 

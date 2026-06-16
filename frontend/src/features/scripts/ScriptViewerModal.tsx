@@ -39,7 +39,7 @@ export function ScriptViewerModal({ title, open, onOpenChange, load }: ScriptVie
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl border border-white/15 bg-[#0d0d0d]">
+      <DialogContent className="max-w-5xl border border-black/15 bg-[#ffffff]">
         <DialogHeader>
           <DialogTitle className="font-mono text-sm break-all">{title}</DialogTitle>
         </DialogHeader>
@@ -50,7 +50,7 @@ export function ScriptViewerModal({ title, open, onOpenChange, load }: ScriptVie
         ) : body === null ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : (
-          <pre className="max-h-[70vh] overflow-auto rounded-md bg-black/40 p-3 font-mono text-[0.72rem] leading-relaxed text-[#bbb]">
+          <pre className="max-h-[70vh] overflow-auto rounded-md bg-black/[0.04] p-3 font-mono text-[0.72rem] leading-relaxed text-[#666666]">
             {body}
           </pre>
         )}

@@ -81,7 +81,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
   return (
     <div className="space-y-3">
       {notice ? (
-        <div className="flex items-center justify-between rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-[0.78rem] text-[#bbb]">
+        <div className="flex items-center justify-between rounded-md border border-black/[0.08] bg-black/[0.03] px-3 py-2 text-[0.78rem] text-[#666666]">
           <span>
             {notice.text}
             {notice.href ? (
@@ -101,7 +101,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto px-1 py-0 text-[#777] hover:text-[#ccc]"
+            className="h-auto px-1 py-0 text-[#777] hover:text-[#171717]"
             onClick={() => setNotice(null)}
             aria-label="Dismiss"
           >
@@ -112,7 +112,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div>
-        <div className="flex items-center gap-4 border-b border-white/[0.12] px-2 pb-2 font-mono text-[0.68rem] tracking-[0.12em] text-[#666] uppercase">
+        <div className="flex items-center gap-4 border-b border-black/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-[#666666] uppercase">
           <span className="w-7 shrink-0 text-right">#</span>
           <span className="flex-1">Script</span>
           <span className="hidden w-36 shrink-0 md:block">Event</span>

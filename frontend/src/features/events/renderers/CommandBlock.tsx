@@ -22,11 +22,11 @@ export function CommandBlock({
 
   return (
     <div
-      className="group/eblock mt-2 select-text rounded-[6px] border border-white/[0.05] bg-black/30 px-3 py-2 text-[0.75rem] text-[#ccc]"
+      className="group/eblock mt-2 select-text rounded-[6px] border border-black/[0.05] bg-black/[0.04] px-3 py-2 text-[0.75rem] text-[#171717]"
       data-event-drag-ignore
     >
       <div className="flex items-center justify-between gap-3">
-        <strong className="text-[#aaa] text-[0.7rem]">{label}</strong>
+        <strong className="text-[#666666] text-[0.7rem]">{label}</strong>
         <CopyIconButton
           text={textToCopy}
           label={label.toLowerCase()}
@@ -44,7 +44,7 @@ export function CommandBlock({
       )}
       {description && (
         <p className="mt-1 mb-0 text-[0.7rem] text-[#777]">
-          <span className="text-[#555]">Intent:</span> {description}
+          <span className="text-[#666666]">Intent:</span> {description}
         </p>
       )}
     </div>

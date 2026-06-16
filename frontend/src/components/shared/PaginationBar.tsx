@@ -22,14 +22,14 @@ export function PaginationBar({
   onPageSizeChange,
 }: PaginationBarProps) {
   return (
-    <div className="flex items-center justify-between px-3 py-[6px] border-b border-white/[0.06] bg-white/[0.02] text-[0.72rem] text-[#888]">
+    <div className="flex items-center justify-between px-3 py-[6px] border-b border-black/[0.06] bg-black/[0.02] text-[0.72rem] text-[#666666]">
       <div className="flex items-center gap-2">
         <span>
           {rangeStart + 1}–{rangeEnd} of {totalItems}
         </span>
-        <span className="text-[#555]">·</span>
+        <span className="text-[#666666]">·</span>
         <label className="flex items-center gap-1">
-          <span className="text-[#666]">per page</span>
+          <span className="text-[#666666]">per page</span>
           <input
             type="number"
             min={10}
@@ -40,7 +40,7 @@ export function PaginationBar({
               onPageSizeChange(v)
               onPageChange(0)
             }}
-            className="w-[60px] bg-neutral-950 border border-white/[0.1] rounded px-1.5 py-0.5 text-[0.72rem] text-[#ccc] text-center focus:outline-none focus:border-white/20"
+            className="w-[60px] bg-[#fafafa] border border-black/[0.1] rounded px-1.5 py-0.5 text-[0.72rem] text-[#171717] text-center focus:outline-none focus:border-black/20"
           />
         </label>
       </div>
@@ -49,7 +49,7 @@ export function PaginationBar({
           type="button"
           disabled={page <= 0}
           onClick={() => onPageChange(0)}
-          className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
+          className="px-1.5 py-0.5 rounded hover:bg-black/[0.06] disabled:opacity-30 disabled:cursor-default"
         >
           ««
         </button>
@@ -57,18 +57,18 @@ export function PaginationBar({
           type="button"
           disabled={page <= 0}
           onClick={() => onPageChange(page - 1)}
-          className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
+          className="px-1.5 py-0.5 rounded hover:bg-black/[0.06] disabled:opacity-30 disabled:cursor-default"
         >
           «
         </button>
-        <span className="px-2 text-[#ccc]">
+        <span className="px-2 text-[#171717]">
           {page + 1} / {totalPages}
         </span>
         <button
           type="button"
           disabled={page >= totalPages - 1}
           onClick={() => onPageChange(page + 1)}
-          className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
+          className="px-1.5 py-0.5 rounded hover:bg-black/[0.06] disabled:opacity-30 disabled:cursor-default"
         >
           »
         </button>
@@ -76,7 +76,7 @@ export function PaginationBar({
           type="button"
           disabled={page >= totalPages - 1}
           onClick={() => onPageChange(totalPages - 1)}
-          className="px-1.5 py-0.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default"
+          className="px-1.5 py-0.5 rounded hover:bg-black/[0.06] disabled:opacity-30 disabled:cursor-default"
         >
           »»
         </button>

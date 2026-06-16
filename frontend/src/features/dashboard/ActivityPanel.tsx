@@ -87,16 +87,16 @@ export const ActivityPanel = memo(function ActivityPanel({ stats, query }: Activ
                       </linearGradient>
                     ))}
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#333" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
                   <XAxis
                     dataKey="date"
-                    stroke="#666"
+                    stroke="#666666"
                     fontSize={10}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(value) => labelByBucket.get(String(value)) || String(value)}
                   />
-                  <YAxis stroke="#666" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#666666" fontSize={10} axisLine={false} tickLine={false} />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent
@@ -148,7 +148,7 @@ export const ActivityPanel = memo(function ActivityPanel({ stats, query }: Activ
                 return (
                   <TableRow key={`${action.name}-${index}`}>
                     <TableCell className="px-5 font-medium">{action.name}</TableCell>
-                    <TableCell className="px-5 text-right font-mono">
+                    <TableCell className="px-5 text-right">
                       {action.value.toLocaleString()}
                     </TableCell>
                     <TableCell className="px-5">

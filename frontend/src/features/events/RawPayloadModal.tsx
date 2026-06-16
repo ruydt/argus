@@ -58,7 +58,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
     >
       <DialogContent className="flex max-h-[80vh] w-[90vw] sm:max-w-4xl flex-col gap-3">
         <DialogHeader>
-          <DialogTitle className="font-mono text-xs text-[#8b949e]">{label}</DialogTitle>
+          <DialogTitle className="text-xs text-muted-foreground">{label}</DialogTitle>
         </DialogHeader>
         {payload.status === 'loading' && <Skeleton className="h-64 w-full" aria-busy="true" />}
         {payload.status === 'error' && (
@@ -74,7 +74,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
             <CopyIconButton
               text={payload.rawJson}
               label="JSON"
-              className="absolute top-2 right-2 z-10 size-7 text-[#8b949e] hover:text-[#e6edf3] hover:bg-white/10"
+              className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-black/10"
             />
             <div className="overflow-y-auto flex-1 min-h-0">
               <CodeMirror

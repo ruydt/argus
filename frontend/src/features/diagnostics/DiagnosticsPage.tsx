@@ -70,7 +70,7 @@ function MonoPath({ path, ariaLabel }: { path: string; ariaLabel: string }) {
   return (
     <span className="inline-flex items-center gap-0">
       <span
-        className="font-mono text-[12px] text-foreground truncate max-w-[220px] inline-block align-bottom"
+        className="text-[12px] text-foreground truncate max-w-[220px] inline-block align-bottom"
         title={path}
       >
         {path}
@@ -203,7 +203,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
   return (
     <>
       {/* Summary tile row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-tour="diagnostics-tiles">
         {/* Tile 1 — Readiness */}
         <Card data-tour="diagnostics-health">
           <CardContent className="p-4">
@@ -300,7 +300,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
       {/* Two-column body */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_360px]">
         {/* LEFT — Agent Connectivity */}
-        <Card>
+        <Card data-tour="diagnostics-agent-connectivity">
           <CardHeader>
             <CardTitle>Agent Connectivity</CardTitle>
           </CardHeader>
@@ -378,7 +378,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
         {/* RIGHT column */}
         <div className="flex flex-col gap-6">
           {/* System Facts */}
-          <Card>
+          <Card data-tour="diagnostics-system-facts">
             <CardHeader>
               <CardTitle>System Facts</CardTitle>
             </CardHeader>

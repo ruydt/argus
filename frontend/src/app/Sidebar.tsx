@@ -1,5 +1,6 @@
 import { Fragment, useEffect, type AnchorHTMLAttributes, type Ref, type RefObject } from 'react'
 import {
+  Signpost,
   FolderOpen,
   LayoutDashboard,
   PanelLeft,
@@ -36,26 +37,6 @@ function ArgusEye({ className }: { className?: string }) {
   )
 }
 
-function SteeringWheel({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="2.5" />
-      <line x1="12" y1="9.5" x2="12" y2="3" />
-      <line x1="9.83" y1="10.17" x2="5.02" y2="18.38" />
-      <line x1="14.17" y1="10.17" x2="18.98" y2="18.38" />
-    </svg>
-  )
-}
 
 interface SidebarProps {
   id?: string
@@ -121,7 +102,7 @@ function NavButton({
           <Icon
             className={cn(
               'size-[15px] shrink-0 transition-colors duration-200',
-              isActive ? 'text-[#e6e6e6]' : 'text-current'
+              isActive ? 'text-[#171717]' : 'text-current'
             )}
           />
         </span>
@@ -205,13 +186,13 @@ export function Sidebar({
       'sidebar-nav-item h-9 gap-0 border text-[0.8rem] font-normal transition-all duration-200',
       collapsed ? 'w-9 justify-start rounded-lg px-0' : 'w-full justify-start rounded-lg px-0',
       isActive
-        ? 'sidebar-nav-active border-[rgba(255,255,255,0.16)] bg-[rgba(255,255,255,0.09)] text-[#e6e6e6]'
-        : 'border-transparent text-[#9a9a9a] hover:border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#d4d4d4]'
+        ? 'sidebar-nav-active border-[rgba(0, 0, 0,0.16)] bg-[rgba(0, 0, 0,0.09)] text-[#171717]'
+        : 'border-transparent text-[#666666] hover:border-[rgba(0, 0, 0,0.1)] hover:bg-[rgba(0, 0, 0,0.05)] hover:text-[#171717]'
     )
 
   const desktopToggleLabel = collapsed ? 'Expand sidebar' : 'Collapse sidebar'
   const desktopToggleButtonClassName = cn(
-    'h-9 gap-0 border border-transparent text-[0.8rem] font-normal text-[#666] shadow-none transition-colors duration-200 hover:bg-white/[0.06] hover:text-[#aaa]',
+    'h-9 gap-0 border border-transparent text-[0.8rem] font-normal text-[#666666] shadow-none transition-colors duration-200 hover:bg-black/[0.06] hover:text-[#666666]',
     collapsed ? 'size-9 justify-center rounded-lg px-0' : 'size-9 justify-center rounded-lg px-0'
   )
 
@@ -263,9 +244,9 @@ export function Sidebar({
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="flex size-6 items-center justify-center">
-                <ArgusEye className="size-3.5 text-[#9a9a9a]" />
+                <ArgusEye className="size-3.5 text-[#666666]" />
               </div>
-              <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-[#ccc]">
+              <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-[#171717]">
                 argus
               </span>
             </div>
@@ -273,7 +254,7 @@ export function Sidebar({
               type="button"
               variant="ghost"
               size="icon-lg"
-              className="shrink-0 text-[#666] hover:text-[#ccc]"
+              className="shrink-0 text-[#666666] hover:text-[#171717]"
               onClick={() => onClose?.()}
               aria-label="Close sidebar"
             >
@@ -299,9 +280,9 @@ export function Sidebar({
             }}
           >
             <div className="flex size-6 shrink-0 items-center justify-center">
-              <ArgusEye className="size-3.5 text-[#9a9a9a]" />
+              <ArgusEye className="size-3.5 text-[#666666]" />
             </div>
-            <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-[#ccc]">
+            <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-[#171717]">
               argus
             </span>
           </div>
@@ -354,12 +335,12 @@ export function Sidebar({
                         'h-9 w-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
                         'justify-center rounded-lg px-0',
                         hasTourForRoute
-                          ? 'text-[#666] hover:bg-white/[0.06] hover:text-[#aaa]'
+                          ? 'text-[#666666] hover:bg-black/[0.06] hover:text-[#666666]'
                           : 'cursor-not-allowed opacity-40'
                       )}
                       aria-label="Start page tour"
                     >
-                      <SteeringWheel className="size-[15px] shrink-0" />
+                      <Signpost className="size-[15px] shrink-0" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right" sideOffset={10}>
@@ -376,13 +357,13 @@ export function Sidebar({
                     'h-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
                     collapsed ? 'w-9 justify-center rounded-lg px-0' : 'w-full justify-start rounded-lg px-0',
                     hasTourForRoute
-                      ? 'text-[#666] hover:bg-white/[0.06] hover:text-[#aaa]'
+                      ? 'text-[#666666] hover:bg-black/[0.06] hover:text-[#666666]'
                       : 'cursor-not-allowed opacity-40'
                   )}
                   aria-label="Start page tour"
                 >
                   <span className="flex size-9 shrink-0 items-center justify-center">
-                    <SteeringWheel className="size-[15px] shrink-0" />
+                    <Signpost className="size-[15px] shrink-0" />
                   </span>
                   <span aria-hidden="true" className={desktopNavLabelClassName}>
                     Tour
