@@ -129,7 +129,10 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
           <span className="w-40 shrink-0 text-right">Action</span>
         </div>
         {filtered.length === 0 ? (
-          <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+          <p
+            data-tour="collection-empty"
+            className="px-3 py-8 text-center text-sm text-muted-foreground"
+          >
             {query
               ? `No scripts match "${query}".`
               : 'Nothing here yet. Install scripts from the Community tab.'}

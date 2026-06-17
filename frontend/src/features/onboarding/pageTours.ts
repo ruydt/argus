@@ -412,11 +412,14 @@ function buildScriptsSteps({ getDriver }: PageTourOpts): DriveStep[] {
       },
     },
     {
-      element: '[data-tour="collection-actions"]',
+      // Highlight the first row's ⋯ menu when scripts exist; fall back to the
+      // empty-state message when the collection is empty (driver picks the first
+      // selector that matches).
+      element: '[data-tour="collection-actions"], [data-tour="collection-empty"]',
       popover: {
         title: 'Row actions (⋯)',
         description:
-          'The ⋯ menu on each script is where the work happens: Test it in the Simulator, Save to gist (back it up), Install into ~/.argus/hooks/, or Remove it — from your machine, the gist, or both.',
+          'Every script has a ⋯ menu: Test it in the Simulator, Show in folder, Save to gist (back it up), Install into ~/.argus/hooks/, or Remove it — from your machine, the gist, or both. Nothing here yet? Install one from the Community tab to get started.',
         showButtons: ['previous', 'next'],
         doneBtnText: 'Done',
       },
