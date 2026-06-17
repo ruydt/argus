@@ -22,11 +22,11 @@ export function CommandBlock({
 
   return (
     <div
-      className="group/eblock mt-2 select-text rounded-[6px] border border-black/[0.05] bg-black/[0.04] px-3 py-2 text-[0.75rem] text-[#171717]"
+      className="group/eblock mt-2 select-text rounded-[6px] border border-foreground/[0.08] bg-foreground/[0.04] px-3 py-2 text-[0.75rem] text-foreground"
       data-event-drag-ignore
     >
       <div className="flex items-center justify-between gap-3">
-        <strong className="text-[#666666] text-[0.7rem]">{label}</strong>
+        <strong className="text-muted-foreground text-[0.7rem]">{label}</strong>
         <CopyIconButton
           text={textToCopy}
           label={label.toLowerCase()}
@@ -34,17 +34,17 @@ export function CommandBlock({
         />
       </div>
       {prompt ? (
-        <pre className="mt-1 mb-0 max-h-[300px] overflow-y-auto whitespace-pre-wrap break-words font-[inherit] text-[0.75rem] text-[#a0a0a0]">
+        <pre className="mt-1 mb-0 max-h-[300px] overflow-y-auto whitespace-pre-wrap break-words font-[inherit] text-[0.75rem] text-muted-foreground">
           {highlight(prompt, searchQuery) as ReactNode}
         </pre>
       ) : (
-        <pre className="mt-1 mb-0 whitespace-pre-wrap break-words text-[0.75rem] text-[#a0a0a0] max-h-[300px] overflow-y-auto font-[inherit]">
+        <pre className="mt-1 mb-0 whitespace-pre-wrap break-words text-[0.75rem] text-muted-foreground max-h-[300px] overflow-y-auto font-[inherit]">
           {highlight(command || '', searchQuery) as ReactNode}
         </pre>
       )}
       {description && (
-        <p className="mt-1 mb-0 text-[0.7rem] text-[#777]">
-          <span className="text-[#666666]">Intent:</span> {description}
+        <p className="mt-1 mb-0 text-[0.7rem] text-muted-foreground">
+          <span className="text-muted-foreground">Intent:</span> {description}
         </p>
       )}
     </div>

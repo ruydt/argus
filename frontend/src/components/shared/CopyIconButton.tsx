@@ -37,7 +37,7 @@ export function CopyIconButton({ text, label, className, onClick }: CopyIconButt
         void onCopy()
       }}
       className={cn(
-        'inline-flex h-5 w-5 items-center justify-center rounded text-[#666666] transition hover:bg-black/[0.08] hover:text-[#171717]',
+        'inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground transition hover:bg-foreground/[0.08] hover:text-foreground',
         className
       )}
       aria-label={copied ? `Copied ${label}` : `Copy ${label}`}

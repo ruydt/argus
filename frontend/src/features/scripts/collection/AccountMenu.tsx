@@ -77,7 +77,7 @@ export function AccountMenu({ collection }: AccountMenuProps) {
               <img
                 src={`https://github.com/${login}.png?size=48`}
                 alt=""
-                className="size-6 rounded-full border border-black/[0.12]"
+                className="size-6 rounded-full border border-foreground/[0.12]"
               />
             ) : (
               <CircleUser className="size-5 text-muted-foreground" />
@@ -92,7 +92,7 @@ export function AccountMenu({ collection }: AccountMenuProps) {
                   <img
                     src={`https://github.com/${login}.png?size=48`}
                     alt=""
-                    className="size-6 shrink-0 rounded-full border border-black/[0.12]"
+                    className="size-6 shrink-0 rounded-full border border-foreground/[0.12]"
                   />
                 ) : null}
                 <div className="flex min-w-0 flex-col">
@@ -113,7 +113,7 @@ export function AccountMenu({ collection }: AccountMenuProps) {
                 </div>
               </div>
 
-              <div className="my-1 h-px bg-black/[0.08]" />
+              <div className="my-1 h-px bg-foreground/[0.08]" />
 
               <UploadShareDialog
                 onPublish={publishFiles}

@@ -57,41 +57,41 @@ export function SessionFileChangesPage() {
   const fileCount = fileGroups.length
 
   return (
-    <div className="flex h-full flex-col bg-[#ffffff] text-[#171717]">
-      <header className="shrink-0 border-b border-black/10 bg-[#ffffff] px-4 py-3 sm:px-5">
+    <div className="flex h-full flex-col bg-background text-foreground">
+      <header className="shrink-0 border-b border-foreground/10 bg-background px-4 py-3 sm:px-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-black/45">
-              <Link to="/projects" className="transition-colors hover:text-black/70">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-foreground/45">
+              <Link to="/projects" className="transition-colors hover:text-foreground/70">
                 Projects
               </Link>
-              <span className="text-black/20">/</span>
+              <span className="text-foreground/20">/</span>
               <Link
                 to={`/sessions/${encodeURIComponent(cwd)}`}
-                className="max-w-[18rem] truncate transition-colors hover:text-black/70"
+                className="max-w-[18rem] truncate transition-colors hover:text-foreground/70"
                 title={cwd}
               >
                 {cwdBasename}
               </Link>
-              <span className="text-black/20">/</span>
-              <span className="normal-case tracking-normal text-black/60">
+              <span className="text-foreground/20">/</span>
+              <span className="normal-case tracking-normal text-foreground/60">
                 {sessionId.slice(0, 12)}
               </span>
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-black/60">
-              <span className="font-semibold text-black/85">File changes</span>
-              <span className="hidden text-black/20 sm:inline">|</span>
+            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-foreground/60">
+              <span className="font-semibold text-foreground/85">File changes</span>
+              <span className="hidden text-foreground/20 sm:inline">|</span>
               <span className="font-mono" title={cwd}>
                 {shortenCwd(cwd)}
               </span>
-              <span className="text-black/20">|</span>
+              <span className="text-foreground/20">|</span>
               <span>Started {formatDateTime(session?.started_at)}</span>
-              <span className="text-black/20">|</span>
+              <span className="text-foreground/20">|</span>
               <span>Duration {formatSessionDuration(session)}</span>
               {session?.ended_at && (
                 <>
-                  <span className="text-black/20">|</span>
+                  <span className="text-foreground/20">|</span>
                   <span>Ended {formatDateTime(session.ended_at)}</span>
                 </>
               )}
@@ -104,7 +104,7 @@ export function SessionFileChangesPage() {
               size="sm"
               asChild
               data-tour="session-view-events"
-              className="border-black/15 bg-black/[0.04] text-[12px] text-black/70 hover:bg-black/[0.08] hover:text-[#171717]"
+              className="border-foreground/15 bg-foreground/[0.04] text-[12px] text-foreground/70 hover:bg-foreground/[0.08] hover:text-foreground"
             >
               <Link to={`/?session=${sessionId}`}>
                 <ArrowUpRight className="mr-1 h-3.5 w-3.5" />
@@ -113,7 +113,7 @@ export function SessionFileChangesPage() {
             </Button>
             <Badge
               variant="outline"
-              className="border-black/15 bg-black/[0.04] text-[11px] text-black/70"
+              className="border-foreground/15 bg-foreground/[0.04] text-[11px] text-foreground/70"
             >
               {fileCount} {fileCount === 1 ? 'file' : 'files'} changed
             </Badge>
@@ -121,7 +121,10 @@ export function SessionFileChangesPage() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-auto px-3 py-4 sm:px-5" data-tour="session-file-changes">
+      <main
+        className="min-h-0 flex-1 overflow-auto px-3 py-4 sm:px-5"
+        data-tour="session-file-changes"
+      >
         <FileChangesList
           groups={fileGroups}
           sessionStartedAt={session?.started_at ?? ''}

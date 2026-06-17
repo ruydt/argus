@@ -74,7 +74,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
             <CopyIconButton
               text={payload.rawJson}
               label="JSON"
-              className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-black/10"
+              className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-foreground/10"
             />
             <div className="overflow-y-auto flex-1 min-h-0">
               <CodeMirror

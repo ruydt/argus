@@ -81,7 +81,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
   return (
     <div className="space-y-3">
       {notice ? (
-        <div className="flex items-center justify-between rounded-md border border-black/[0.08] bg-black/[0.03] px-3 py-2 text-[0.78rem] text-[#666666]">
+        <div className="flex items-center justify-between rounded-md border border-foreground/[0.08] bg-foreground/[0.04] px-3 py-2 text-[0.78rem] text-muted-foreground">
           <span>
             {notice.text}
             {notice.href ? (
@@ -101,7 +101,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto px-1 py-0 text-[#777] hover:text-[#171717]"
+            className="h-auto px-1 py-0 text-muted-foreground hover:text-foreground"
             onClick={() => setNotice(null)}
             aria-label="Dismiss"
           >
@@ -112,7 +112,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <div>
-        <div className="flex items-center gap-4 border-b border-black/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-[#666666] uppercase">
+        <div className="flex items-center gap-4 border-b border-foreground/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-muted-foreground uppercase">
           <span className="w-7 shrink-0 text-right">#</span>
           <span className="flex-1">Script</span>
           <span className="hidden w-36 shrink-0 md:block">Event</span>
@@ -120,7 +120,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
           <span className="w-40 shrink-0 text-right">Action</span>
         </div>
         {filtered.length === 0 ? (
-          <p className="px-3 py-8 text-center text-sm text-[#777]">
+          <p className="px-3 py-8 text-center text-sm text-muted-foreground">
             {query
               ? `No scripts match "${query}".`
               : 'Nothing here yet. Install scripts from the Community tab.'}

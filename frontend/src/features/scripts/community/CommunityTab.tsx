@@ -71,7 +71,7 @@ export function CommunityTab({ query, community }: CommunityTabProps) {
 
   if (error) {
     return (
-      <p className="px-3 py-8 text-center text-sm text-[#777]">
+      <p className="px-3 py-8 text-center text-sm text-muted-foreground">
         Couldn't reach the script registry. Try again shortly.
       </p>
     )
@@ -81,14 +81,14 @@ export function CommunityTab({ query, community }: CommunityTabProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-4 border-b border-black/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-[#666666] uppercase">
+      <div className="flex items-center gap-4 border-b border-foreground/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-muted-foreground uppercase">
         <span className="w-7 shrink-0 text-right">#</span>
         <span className="flex-1">Script</span>
         <span className="hidden w-44 shrink-0 md:block">Event</span>
         <span className="w-40 shrink-0 text-right">Action</span>
       </div>
       {shown.length === 0 ? (
-        <p className="px-3 py-8 text-center text-sm text-[#777]">
+        <p className="px-3 py-8 text-center text-sm text-muted-foreground">
           {query ? `No scripts match "${query}".` : 'No scripts in the registry yet.'}
         </p>
       ) : (

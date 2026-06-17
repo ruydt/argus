@@ -90,10 +90,10 @@ export const TokenTimelineChart = memo(function TokenTimelineChart({
                     </linearGradient>
                   ))}
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                 <XAxis
                   dataKey="date"
-                  stroke="#666666"
+                  stroke="var(--muted-foreground)"
                   fontSize={10}
                   axisLine={false}
                   tickLine={false}
@@ -102,7 +102,7 @@ export const TokenTimelineChart = memo(function TokenTimelineChart({
                   tickFormatter={(value) => labelByBucket.get(String(value)) || String(value)}
                 />
                 <YAxis
-                  stroke="#666666"
+                  stroke="var(--muted-foreground)"
                   fontSize={10}
                   axisLine={false}
                   tickLine={false}

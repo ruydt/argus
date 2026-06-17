@@ -9,8 +9,8 @@ export function WorktreeBlock({ branch, hookEventName }: WorktreeBlockProps) {
   const isCreate = hookEventName === 'WorktreeCreate'
 
   return (
-    <div className="mt-1 text-[0.72rem] text-[#666666]">
-      <span className="text-[#666666] mr-1">branch</span>
+    <div className="mt-1 text-[0.72rem] text-muted-foreground">
+      <span className="text-muted-foreground mr-1">branch</span>
       <span className={isCreate ? 'text-[#16a34a]' : 'text-[#dc2626]'}>{branch}</span>
     </div>
   )

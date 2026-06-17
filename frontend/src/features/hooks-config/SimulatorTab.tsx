@@ -230,7 +230,7 @@ export function SimulatorTab({
       </div>
 
       {eventType && (
-        <div className="rounded-md border border-border overflow-hidden bg-[#fafafa]">
+        <div className="rounded-md border border-border overflow-hidden bg-muted">
           <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border bg-card">
             <Terminal className="size-3 text-muted-foreground" />
             <span className="text-[11px] font-mono text-muted-foreground">command</span>
@@ -250,7 +250,7 @@ export function SimulatorTab({
           <CopyIconButton
             text={payloadJSON}
             label="JSON"
-            className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-black/10"
+            className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-foreground/10"
           />
           <CodeMirror
             value={payloadJSON}
@@ -306,12 +306,12 @@ export function SimulatorTab({
             <span className="text-[12px] text-muted-foreground">{result.duration_ms}ms</span>
           </div>
 
-          <div className="relative rounded-md border border-border overflow-hidden bg-[#fafafa]">
+          <div className="relative rounded-md border border-border overflow-hidden bg-muted">
             {result.stdout && (
               <CopyIconButton
                 text={result.stdout}
                 label="output"
-                className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-black/10"
+                className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-foreground/10"
               />
             )}
             <ScrollArea className="h-[180px]">
@@ -326,7 +326,7 @@ export function SimulatorTab({
               <CopyIconButton
                 text={result.stderr}
                 label="stderr"
-                className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-[rgba(255,95,86,0.9)] hover:bg-black/5"
+                className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-[rgba(255,95,86,0.9)] hover:bg-foreground/5"
               />
               <ScrollArea className="h-[120px]">
                 <pre className="p-3 text-[12px] font-mono text-destructive whitespace-pre-wrap break-all">

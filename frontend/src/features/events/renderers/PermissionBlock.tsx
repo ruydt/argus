@@ -52,21 +52,23 @@ export function PermissionBlock({
         questions.map((q, qi) => (
           <div
             key={qi}
-            className="select-text rounded-[6px] border border-black/[0.05] bg-black/[0.04] px-3 py-2 text-[0.75rem] text-[#171717]"
+            className="select-text rounded-[6px] border border-foreground/[0.08] bg-foreground/[0.04] px-3 py-2 text-[0.75rem] text-foreground"
             data-event-drag-ignore
           >
-            <strong className="text-[#666666] text-[0.7rem]">{q.header}</strong>
-            <p className="mt-1 mb-2 text-[0.75rem] text-[#c8c8c8]">{q.question}</p>
+            <strong className="text-muted-foreground text-[0.7rem]">{q.header}</strong>
+            <p className="mt-1 mb-2 text-[0.75rem] text-muted-foreground">{q.question}</p>
             <ul className="m-0 flex flex-col gap-1 p-0 list-none">
               {asArray(q.options).map((opt, oi) => (
                 <li key={oi} className="flex gap-2">
-                  <span className="mt-[2px] shrink-0 text-[0.65rem] text-[#666666]">
+                  <span className="mt-[2px] shrink-0 text-[0.65rem] text-muted-foreground">
                     {q.multiSelect ? '□' : '○'}
                   </span>
                   <span>
-                    <span className="text-[0.73rem] text-[#666666]">{opt.label}</span>
+                    <span className="text-[0.73rem] text-muted-foreground">{opt.label}</span>
                     {opt.description && (
-                      <span className="ml-1 text-[0.7rem] text-[#666666]">— {opt.description}</span>
+                      <span className="ml-1 text-[0.7rem] text-muted-foreground">
+                        — {opt.description}
+                      </span>
                     )}
                   </span>
                 </li>
@@ -81,12 +83,12 @@ export function PermissionBlock({
             asArray(s.rules).map((r, ri) => (
               <span
                 key={`${si}-${ri}`}
-                className="inline-flex items-center gap-1 rounded-full border border-black/[0.08] bg-black/[0.04] px-2 py-0.5 text-[0.68rem]"
+                className="inline-flex items-center gap-1 rounded-full border border-foreground/[0.08] bg-foreground/[0.04] px-2 py-0.5 text-[0.68rem]"
               >
                 <span className={s.behavior === 'allow' ? 'text-[#16a34a]' : 'text-[#dc2626]'}>
                   {s.behavior}
                 </span>
-                <span className="text-[#666666]">
+                <span className="text-muted-foreground">
                   &quot;{r.ruleContent}&quot; → {s.destination}
                 </span>
               </span>

@@ -3,15 +3,15 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { drawSelection, EditorView, keymap } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
-const bg = '#ffffff'
-const border = '#eaeaea'
-const key = '#0550ae'
-const stringColor = '#0a7c42'
-const numberColor = '#953800'
-const text = '#171717'
-const muted = '#666666'
-const selection = '#b3d4fc'
-const lineHighlight = '#f5f5f5'
+const bg = '#0a0a0c'
+const border = '#232329'
+const key = '#a78bfa'
+const stringColor = '#3ecf8e'
+const numberColor = '#fbbf24'
+const text = '#ededf0'
+const muted = '#9c9ca6'
+const selection = 'rgba(139, 92, 246, 0.35)'
+const lineHighlight = '#16161a'
 
 export const argusEditorTheme = EditorView.theme(
   {
@@ -30,24 +30,32 @@ export const argusEditorTheme = EditorView.theme(
     '.cm-activeLineGutter': { backgroundColor: lineHighlight, color: text },
     '.cm-activeLine': { backgroundColor: lineHighlight },
     '.cm-matchingBracket': {
-      backgroundColor: 'rgba(5, 80, 174, 0.12)',
+      backgroundColor: 'rgba(139, 92, 246, 0.18)',
       color: `${text} !important`,
-      outline: '1px solid rgba(5, 80, 174, 0.4)',
+      outline: '1px solid rgba(139, 92, 246, 0.5)',
     },
     '.cm-foldPlaceholder': {
       backgroundColor: lineHighlight,
       border: `1px solid ${border}`,
       color: muted,
     },
-    '.cm-tooltip': { backgroundColor: '#ffffff', border: `1px solid ${border}` },
+    '.cm-tooltip': { backgroundColor: '#0a0a0c', border: `1px solid ${border}` },
     '.cm-tooltip .cm-tooltip-arrow:before': { borderTopColor: border },
-    '.cm-tooltip .cm-tooltip-arrow:after': { borderTopColor: '#ffffff' },
+    '.cm-tooltip .cm-tooltip-arrow:after': { borderTopColor: '#0a0a0c' },
   },
-  { dark: false }
+  { dark: true }
 )
 
-export const readOnlyExtensions = [EditorView.lineWrapping, EditorView.editable.of(false), drawSelection()]
-export const editableExtensions = [EditorView.lineWrapping, keymap.of([indentWithTab]), drawSelection()]
+export const readOnlyExtensions = [
+  EditorView.lineWrapping,
+  EditorView.editable.of(false),
+  drawSelection(),
+]
+export const editableExtensions = [
+  EditorView.lineWrapping,
+  keymap.of([indentWithTab]),
+  drawSelection(),
+]
 
 export const argusHighlighting = syntaxHighlighting(
   HighlightStyle.define([

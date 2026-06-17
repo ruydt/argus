@@ -82,7 +82,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
 
   return (
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-lg border border-black/15 bg-[#141414]">
+      <DialogContent className="max-w-lg border border-foreground/15 bg-card">
         <DialogHeader>
           <DialogTitle>
             {isDescriptionStep
@@ -98,7 +98,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what these scripts do (optional)…"
               aria-label="Pull request description"
-              className="h-32 w-full rounded-md border border-black/10 bg-[#ffffff] p-3 text-sm text-[#171717]"
+              className="h-32 w-full rounded-md border border-foreground/10 bg-background p-3 text-sm text-foreground"
             />
             <div className="flex justify-between">
               <Button variant="outline" size="sm" onClick={() => setStep(files.length - 1)}>
@@ -112,7 +112,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
         ) : (
           <div className="space-y-3 text-sm">
             <label className="block space-y-1">
-              <span className="text-[0.72rem] text-[#999]">Title *</span>
+              <span className="text-[0.72rem] text-muted-foreground">Title *</span>
               <Input
                 value={current.title}
                 onChange={(e) => setField('title', e.target.value)}
@@ -121,7 +121,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[0.72rem] text-[#999]">Event *</span>
+              <span className="text-[0.72rem] text-muted-foreground">Event *</span>
               <Select value={current.event} onValueChange={(v) => setField('event', v)}>
                 <SelectTrigger aria-label="Hook event">
                   <SelectValue placeholder="Select hook event" />
@@ -136,7 +136,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               </Select>
             </label>
             <label className="block space-y-1">
-              <span className="text-[0.72rem] text-[#999]">Command *</span>
+              <span className="text-[0.72rem] text-muted-foreground">Command *</span>
               <Input
                 value={current.command}
                 onChange={(e) => setField('command', e.target.value)}
@@ -145,7 +145,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[0.72rem] text-[#999]">Matcher (optional)</span>
+              <span className="text-[0.72rem] text-muted-foreground">Matcher (optional)</span>
               <Input
                 value={current.matcher}
                 onChange={(e) => setField('matcher', e.target.value)}
@@ -154,7 +154,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-[0.72rem] text-[#999]">Purpose (optional)</span>
+              <span className="text-[0.72rem] text-muted-foreground">Purpose (optional)</span>
               <Input
                 value={current.purpose}
                 onChange={(e) => setField('purpose', e.target.value)}

@@ -342,22 +342,24 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     <TableCell>
                       {agent.hookConfigStatus === 'missing' ? (
                         <span className="text-[12px] text-amber-400">missing hook config</span>
-                      ) : (() => {
-                        const realWarnings = (agent.warnings ?? []).filter(
-                          (w) => w !== 'no events'
-                        )
-                        if (realWarnings.length === 0) return '—'
-                        return (
-                          <span>
-                            {realWarnings.slice(0, 2).join(', ')}
-                            {realWarnings.length > 2 && (
-                              <span className="text-muted-foreground ml-1">
-                                +{realWarnings.length - 2} more
-                              </span>
-                            )}
-                          </span>
-                        )
-                      })()}
+                      ) : (
+                        (() => {
+                          const realWarnings = (agent.warnings ?? []).filter(
+                            (w) => w !== 'no events'
+                          )
+                          if (realWarnings.length === 0) return '—'
+                          return (
+                            <span>
+                              {realWarnings.slice(0, 2).join(', ')}
+                              {realWarnings.length > 2 && (
+                                <span className="text-muted-foreground ml-1">
+                                  +{realWarnings.length - 2} more
+                                </span>
+                              )}
+                            </span>
+                          )
+                        })()
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

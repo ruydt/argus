@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { VersionBadge } from '@/features/version/VersionBadge'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from './ThemeToggle'
 
 // Argus brand mark — all-seeing eye (lucide-style strokes, inherits currentColor)
 function ArgusEye({ className }: { className?: string }) {
@@ -36,7 +37,6 @@ function ArgusEye({ className }: { className?: string }) {
     </svg>
   )
 }
-
 
 interface SidebarProps {
   id?: string
@@ -102,7 +102,7 @@ function NavButton({
           <Icon
             className={cn(
               'size-[15px] shrink-0 transition-colors duration-200',
-              isActive ? 'text-[#171717]' : 'text-current'
+              isActive ? 'text-foreground' : 'text-current'
             )}
           />
         </span>
@@ -186,13 +186,13 @@ export function Sidebar({
       'sidebar-nav-item h-9 gap-0 border text-[0.8rem] font-normal transition-all duration-200',
       collapsed ? 'w-9 justify-start rounded-lg px-0' : 'w-full justify-start rounded-lg px-0',
       isActive
-        ? 'sidebar-nav-active border-[rgba(0, 0, 0,0.16)] bg-[rgba(0, 0, 0,0.09)] text-[#171717]'
-        : 'border-transparent text-[#666666] hover:border-[rgba(0, 0, 0,0.1)] hover:bg-[rgba(0, 0, 0,0.05)] hover:text-[#171717]'
+        ? 'sidebar-nav-active border-foreground/[0.12] bg-foreground/[0.07] text-foreground'
+        : 'border-transparent text-muted-foreground hover:border-foreground/[0.08] hover:bg-foreground/[0.05] hover:text-foreground'
     )
 
   const desktopToggleLabel = collapsed ? 'Expand sidebar' : 'Collapse sidebar'
   const desktopToggleButtonClassName = cn(
-    'h-9 gap-0 border border-transparent text-[0.8rem] font-normal text-[#666666] shadow-none transition-colors duration-200 hover:bg-black/[0.06] hover:text-[#666666]',
+    'h-9 gap-0 border border-transparent text-[0.8rem] font-normal text-muted-foreground shadow-none transition-colors duration-200 hover:bg-foreground/[0.06] hover:text-muted-foreground',
     collapsed ? 'size-9 justify-center rounded-lg px-0' : 'size-9 justify-center rounded-lg px-0'
   )
 
@@ -244,9 +244,9 @@ export function Sidebar({
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="flex size-6 items-center justify-center">
-                <ArgusEye className="size-3.5 text-[#666666]" />
+                <ArgusEye className="size-3.5 text-muted-foreground" />
               </div>
-              <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-[#171717]">
+              <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-foreground">
                 argus
               </span>
             </div>
@@ -254,7 +254,7 @@ export function Sidebar({
               type="button"
               variant="ghost"
               size="icon-lg"
-              className="shrink-0 text-[#666666] hover:text-[#171717]"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
               onClick={() => onClose?.()}
               aria-label="Close sidebar"
             >
@@ -280,9 +280,9 @@ export function Sidebar({
             }}
           >
             <div className="flex size-6 shrink-0 items-center justify-center">
-              <ArgusEye className="size-3.5 text-[#666666]" />
+              <ArgusEye className="size-3.5 text-muted-foreground" />
             </div>
-            <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-[#171717]">
+            <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-foreground">
               argus
             </span>
           </div>
@@ -321,6 +321,13 @@ export function Sidebar({
 
         {/* Bottom divider line + version badge */}
         <div className="mt-auto">
+          <div className="mb-1">
+            <ThemeToggle
+              collapsed={collapsed}
+              showCollapsedTooltips={showCollapsedTooltips}
+              desktopNavLabelClassName={desktopNavLabelClassName}
+            />
+          </div>
           {!isFirstVisitTourActive && (
             <div className="mb-1">
               {showCollapsedTooltips ? (
@@ -335,7 +342,7 @@ export function Sidebar({
                         'h-9 w-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
                         'justify-center rounded-lg px-0',
                         hasTourForRoute
-                          ? 'text-[#666666] hover:bg-black/[0.06] hover:text-[#666666]'
+                          ? 'text-muted-foreground hover:bg-foreground/[0.06] hover:text-muted-foreground'
                           : 'cursor-not-allowed opacity-40'
                       )}
                       aria-label="Start page tour"
@@ -355,9 +362,11 @@ export function Sidebar({
                   onClick={() => onStartTour?.()}
                   className={cn(
                     'h-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
-                    collapsed ? 'w-9 justify-center rounded-lg px-0' : 'w-full justify-start rounded-lg px-0',
+                    collapsed
+                      ? 'w-9 justify-center rounded-lg px-0'
+                      : 'w-full justify-start rounded-lg px-0',
                     hasTourForRoute
-                      ? 'text-[#666666] hover:bg-black/[0.06] hover:text-[#666666]'
+                      ? 'text-muted-foreground hover:bg-foreground/[0.06] hover:text-muted-foreground'
                       : 'cursor-not-allowed opacity-40'
                   )}
                   aria-label="Start page tour"

@@ -35,7 +35,7 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
   }
 
   return (
-    <div className="flex items-center border-b border-black/[0.06] hover:bg-black/[0.02]">
+    <div className="flex items-center border-b border-foreground/[0.08] hover:bg-foreground/[0.02]">
       <div
         role="button"
         tabIndex={0}
@@ -48,14 +48,14 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
         }}
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 py-3.5 pr-4 pl-2"
       >
-        <span className="w-7 shrink-0 text-right text-[0.8rem] tabular-nums text-[#666666]">
+        <span className="w-7 shrink-0 text-right text-[0.8rem] tabular-nums text-muted-foreground">
           {index}
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
-          <span className="truncate text-sm font-semibold text-[#171717]">
+          <span className="truncate text-sm font-semibold text-foreground">
             {filenameOf(script)}
           </span>
-          <span className="truncate text-[0.8rem] text-[#666666]">{script.author}</span>
+          <span className="truncate text-[0.8rem] text-muted-foreground">{script.author}</span>
         </div>
         <div className="hidden w-44 shrink-0 items-center gap-1 md:flex">
           {script.event ? <Badge variant="outline">{script.event}</Badge> : null}

@@ -97,20 +97,27 @@ export const EventRow = memo(function EventRow({
       }}
       data-testid="event-row"
       className={cn(
-        'border-b border-black/[0.03] py-2 text-[0.82rem] leading-[1.4] hover:bg-black/[0.02]',
+        'border-b border-foreground/[0.04] py-2 text-[0.82rem] leading-[1.4] hover:bg-foreground/[0.02]',
         highlighted ? 'rounded-md bg-sky-500/8 ring-1 ring-sky-400/35' : '',
         isDraggable && 'cursor-grab active:cursor-grabbing'
       )}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-        <div className="flex items-center gap-3 pt-[2px] text-[#666666] sm:block sm:w-[75px] sm:shrink-0">
+        <div className="flex items-center gap-3 pt-[2px] text-muted-foreground sm:block sm:w-[75px] sm:shrink-0">
           <span>{formatEventTime(e.time)}</span>
-          <span className={cn('font-bold sm:hidden', e.action)}>{e.hook_event_name ?? e.action}</span>
+          <span className={cn('font-bold sm:hidden', e.action)}>
+            {e.hook_event_name ?? e.action}
+          </span>
         </div>
-        <div className={cn('hidden pt-[2px] font-bold sm:block sm:w-[140px] sm:shrink-0 truncate', e.action)}>
+        <div
+          className={cn(
+            'hidden pt-[2px] font-bold sm:block sm:w-[140px] sm:shrink-0 truncate',
+            e.action
+          )}
+        >
           {e.hook_event_name ?? e.action}
         </div>
-        <div className="min-w-0 flex-1 break-words text-[0.85rem] text-[#171717] sm:break-all">
+        <div className="min-w-0 flex-1 break-words text-[0.85rem] text-foreground sm:break-all">
           {/* Header line: model, path */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -126,7 +133,7 @@ export const EventRow = memo(function EventRow({
                 type="button"
                 data-event-drag-ignore
                 onClick={() => setRawModalOpen(true)}
-                className="inline-flex size-5 shrink-0 items-center justify-center rounded text-[#666666] transition hover:bg-black/[0.08] hover:text-[#171717]"
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-foreground/[0.08] hover:text-foreground"
                 aria-label="View raw payload"
                 title="Raw payload"
               >

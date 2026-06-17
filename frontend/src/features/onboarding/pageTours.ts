@@ -22,7 +22,9 @@ function pollFor(selector: string, onFound: () => void, maxMs = 6000) {
 
 function buildEventsSteps(_opts: PageTourOpts): DriveStep[] {
   // Open filter panel now so all filter steps have elements in DOM
-  const filterToggle = document.querySelector<HTMLButtonElement>('[data-tour="events-filter-toggle"]')
+  const filterToggle = document.querySelector<HTMLButtonElement>(
+    '[data-tour="events-filter-toggle"]'
+  )
   if (filterToggle?.getAttribute('aria-expanded') === 'false') filterToggle.click()
 
   return [
@@ -141,7 +143,9 @@ function buildProjectsSteps({ navigate, getDriver }: PageTourOpts): DriveStep[] 
         description:
           'Each card is a working directory your agent has run in. Shows session count, total tokens, and active agents. Click to see sessions.',
         onNextClick: () => {
-          const card = document.querySelector<HTMLAnchorElement>('[data-tour="projects-first-card"]')
+          const card = document.querySelector<HTMLAnchorElement>(
+            '[data-tour="projects-first-card"]'
+          )
           const href = card?.getAttribute('href')
           if (href) navigate(href)
           pollFor('[data-tour="sessions-table"]', () => getDriver()?.moveNext())

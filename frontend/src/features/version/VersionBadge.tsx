@@ -11,7 +11,7 @@ export function VersionBadge() {
 
   return (
     <span
-      className="whitespace-nowrap text-[0.66rem] font-medium leading-none text-[#666666]"
+      className="whitespace-nowrap text-[0.66rem] font-medium leading-none text-muted-foreground"
       aria-label={`Application version: ${label}`}
     >
       {label}

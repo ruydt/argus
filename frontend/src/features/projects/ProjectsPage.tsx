@@ -80,9 +80,9 @@ export function ProjectsPage() {
           placeholder="Search projects…"
           aria-label="Search projects"
           data-tour="projects-search"
-          className="w-full border-black/10 bg-black/[0.04] pl-9 text-[13px] placeholder:text-black/35"
+          className="w-full border-foreground/10 bg-foreground/[0.04] pl-9 text-[13px] placeholder:text-foreground/35"
         />
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-black/35" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-foreground/35" />
       </div>
 
       {loading ? (
@@ -92,7 +92,7 @@ export function ProjectsPage() {
           ))}
         </div>
       ) : projects.length === 0 ? (
-        <div className="text-sm text-black/55">
+        <div className="text-sm text-foreground/55">
           {debouncedQuery
             ? `No projects match “${debouncedQuery}”.`
             : 'No projects yet. Start a Claude Code or Codex session to see it here.'}
@@ -107,14 +107,14 @@ export function ProjectsPage() {
                 title={project.cwd}
                 data-testid="project-card"
                 {...(i === 0 ? { 'data-tour': 'projects-first-card' } : {})}
-                className="group relative rounded-lg border border-black/10 bg-black/[0.035] p-4 transition-colors hover:border-black/20 hover:bg-black/[0.06]"
+                className="group relative rounded-lg border border-foreground/10 bg-foreground/[0.035] p-4 transition-colors hover:border-foreground/20 hover:bg-foreground/[0.06]"
               >
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   aria-label={`Delete project ${project.name}`}
-                  className="absolute right-2 top-2 size-7 text-black/30 opacity-0 transition-opacity hover:bg-black/10 hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
+                  className="absolute right-2 top-2 size-7 text-foreground/30 opacity-0 transition-opacity hover:bg-foreground/10 hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -125,18 +125,20 @@ export function ProjectsPage() {
                 </Button>
 
                 <div className="flex items-start gap-3">
-                  <div className="rounded-md border border-black/10 bg-black/[0.04] p-2 text-black/70">
+                  <div className="rounded-md border border-foreground/10 bg-foreground/[0.04] p-2 text-foreground/70">
                     <FolderKanban className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h2 className="truncate text-[15px] font-semibold">{project.name}</h2>
                     </div>
-                    <div className="mt-1 truncate text-[12px] text-black/45">{project.cwd}</div>
+                    <div className="mt-1 truncate text-[12px] text-foreground/45">
+                      {project.cwd}
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3 text-[12px] text-black/60">
+                <div className="mt-4 flex items-center justify-between gap-3 text-[12px] text-foreground/60">
                   <span>
                     {project.session_count} {project.session_count === 1 ? 'session' : 'sessions'}
                   </span>
@@ -147,7 +149,7 @@ export function ProjectsPage() {
                   {project.agents.map((agent) => (
                     <span
                       key={agent}
-                      className="rounded border border-black/10 bg-black/[0.04] px-1.5 py-0.5 text-[11px] text-black/65"
+                      className="rounded border border-foreground/10 bg-foreground/[0.04] px-1.5 py-0.5 text-[11px] text-foreground/65"
                     >
                       {agent}
                     </span>
@@ -187,7 +189,7 @@ export function ProjectsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 text-[#171717] hover:bg-red-500"
+              className="bg-red-600 text-foreground hover:bg-red-500"
               disabled={deleting}
               onClick={() => void handleDelete()}
             >

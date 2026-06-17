@@ -298,7 +298,7 @@ export function Layout() {
           ref={mobileToggleRef}
           variant="ghost"
           size="icon-lg"
-          className="absolute left-2 top-2 z-10 md:hidden text-[#666666] hover:text-[#171717] hover:bg-black/[0.05]"
+          className="absolute left-2 top-2 z-10 md:hidden text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05]"
           onClick={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: location.key })}
           aria-label="Open sidebar"
           aria-controls={MOBILE_SIDEBAR_ID}

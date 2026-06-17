@@ -133,9 +133,9 @@ export function FileChangesList({
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="text-sm text-black/45">Loading file changes…</div>
+        <div className="text-sm text-foreground/45">Loading file changes…</div>
         {Array.from({ length: 6 }).map((_, index) => (
-          <Skeleton key={index} className="h-14 border border-black/10 bg-black/[0.05]" />
+          <Skeleton key={index} className="h-14 border border-foreground/10 bg-foreground/[0.05]" />
         ))}
       </div>
     )
@@ -147,13 +147,13 @@ export function FileChangesList({
 
   if (groups.length === 0) {
     return (
-      <Empty className="min-h-[18rem] border border-black/10 bg-black/[0.02] text-[#171717]">
+      <Empty className="min-h-[18rem] border border-foreground/10 bg-foreground/[0.04] text-foreground">
         <EmptyHeader>
-          <EmptyMedia variant="icon" className="bg-black/[0.05] text-black/60">
+          <EmptyMedia variant="icon" className="bg-foreground/[0.05] text-foreground/60">
             <FileText className="size-4" />
           </EmptyMedia>
           <EmptyTitle>No file changes recorded for this session.</EmptyTitle>
-          <EmptyDescription className="text-black/45">
+          <EmptyDescription className="text-foreground/45">
             This session did not create or modify files that argus captured.
           </EmptyDescription>
         </EmptyHeader>
@@ -209,7 +209,7 @@ function FilePagination({
   if (totalItems === 0) return null
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 pb-3 text-[12px] text-black/55">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-foreground/10 pb-3 text-[12px] text-foreground/55">
       <div className="font-mono">
         {rangeStart + 1}-{rangeEnd} of {totalItems} files
       </div>
@@ -235,7 +235,7 @@ function FilePagination({
           >
             <ChevronLeft />
           </Button>
-          <span className="min-w-12 px-2 text-center text-[11px] text-black/65">
+          <span className="min-w-12 px-2 text-center text-[11px] text-foreground/65">
             {page + 1}/{totalPages}
           </span>
           <Button
@@ -276,41 +276,38 @@ function FileChangeRow({ group, sessionStartedAt, expanded, onToggle }: FileChan
   const latestTime = latestChangeTime(group)
 
   return (
-    <Card size="sm" className="gap-0 rounded-lg border-black/10 bg-[#111216] py-0 text-[#171717]">
+    <Card size="sm" className="gap-0 rounded-lg border-foreground/10 bg-card py-0 text-foreground">
       <Button
         type="button"
         variant="ghost"
-        className="h-auto w-full justify-start gap-3 rounded-none p-3 text-left hover:bg-black/[0.04]"
+        className="h-auto w-full justify-start gap-3 rounded-none p-3 text-left hover:bg-foreground/[0.04]"
         onClick={onToggle}
         aria-expanded={expanded}
       >
         <FileIcon tool={firstTool} />
-        <span
-          className="min-w-0 flex-1 truncate text-[12px] text-black/80"
-          title={group.path}
-        >
+        <span className="min-w-0 flex-1 truncate text-[12px] text-foreground/80" title={group.path}>
           {shortenCwd(group.path)}
         </span>
         <Badge
           variant="outline"
-          className="shrink-0 border-black/15 bg-black/[0.04] text-[10px] text-black/60"
+          className="shrink-0 border-foreground/15 bg-foreground/[0.04] text-[10px] text-foreground/60"
         >
           {group.count}x
         </Badge>
         {latestTime && (
-          <span className="hidden shrink-0 text-[10px] text-black/45 sm:inline">
+          <span className="hidden shrink-0 text-[10px] text-foreground/45 sm:inline">
             {formatRelativeTime(latestTime, sessionStartedAt)}
           </span>
         )}
         {expanded ? (
-          <ChevronDown className="size-4 shrink-0 text-black/45" />
+          <ChevronDown className="size-4 shrink-0 text-foreground/45" />
         ) : (
-          <ChevronRight className="size-4 shrink-0 text-black/45" />
+          <ChevronRight className="size-4 shrink-0 text-foreground/45" />
         )}
       </Button>
 
       {expanded && (
-        <div className="space-y-2 border-t border-black/10 p-3">
+        <div className="space-y-2 border-t border-foreground/10 p-3">
           {group.changes.map((change, index) => (
             <ChangeEntry
               key={`${change.time}-${change.tool}-${change.start_line ?? 'line'}-${index}`}
@@ -334,18 +331,18 @@ function ChangeEntry({ change, sessionStartedAt }: ChangeEntryProps) {
   const hasNew = Boolean(change.new_string)
 
   return (
-    <div className="rounded-md border border-black/10 bg-black/[0.04] p-2.5">
+    <div className="rounded-md border border-foreground/10 bg-foreground/[0.04] p-2.5">
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline" className={toolBadgeClass(change.tool)}>
           {toolLabel(change.tool, change.action)}
         </Badge>
-        <span className="text-[10px] text-black/45">
+        <span className="text-[10px] text-foreground/45">
           {formatRelativeTime(change.time, sessionStartedAt)}
         </span>
         {change.start_line && (
           <Badge
             variant="outline"
-            className="border-black/15 bg-black/[0.04] text-[10px] text-black/55"
+            className="border-foreground/15 bg-foreground/[0.04] text-[10px] text-foreground/55"
           >
             L{change.start_line}
           </Badge>
@@ -354,9 +351,9 @@ function ChangeEntry({ change, sessionStartedAt }: ChangeEntryProps) {
 
       {hasOld || hasNew ? (
         <div className="mt-2 overflow-x-auto rounded-md">
-          <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-black/45">
+          <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-foreground/45">
             {hasOld && <span>Before</span>}
-            {hasOld && hasNew && <span className="text-black/20">/</span>}
+            {hasOld && hasNew && <span className="text-foreground/20">/</span>}
             {hasNew && <span>After</span>}
           </div>
           <DiffBlock
@@ -366,7 +363,7 @@ function ChangeEntry({ change, sessionStartedAt }: ChangeEntryProps) {
           />
         </div>
       ) : (
-        <div className="mt-2 text-[12px] text-black/40">
+        <div className="mt-2 text-[12px] text-foreground/40">
           No inline snippet captured for this change.
         </div>
       )}

@@ -87,16 +87,21 @@ export const ActivityPanel = memo(function ActivityPanel({ stats, query }: Activ
                       </linearGradient>
                     ))}
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eaeaea" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                   <XAxis
                     dataKey="date"
-                    stroke="#666666"
+                    stroke="var(--muted-foreground)"
                     fontSize={10}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(value) => labelByBucket.get(String(value)) || String(value)}
                   />
-                  <YAxis stroke="#666666" fontSize={10} axisLine={false} tickLine={false} />
+                  <YAxis
+                    stroke="var(--muted-foreground)"
+                    fontSize={10}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent

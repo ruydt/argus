@@ -11,7 +11,7 @@ export function HeaderClock() {
   return (
     <span
       data-testid="header-clock"
-      className="tabular-nums text-[#666666] shrink-0 font-medium text-right"
+      className="tabular-nums text-muted-foreground shrink-0 font-medium text-right"
     >
       {now.toLocaleDateString()} {now.toLocaleTimeString()}
     </span>

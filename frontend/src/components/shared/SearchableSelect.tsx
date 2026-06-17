@@ -45,8 +45,7 @@ export function SearchableSelect({
   // Show the raw value when it's not in the options list (custom value)
   const triggerLabel = selected ? selected.label : value || undefined
 
-  const showCreate =
-    creatable && query.trim() && !options.some((o) => o.value === query.trim())
+  const showCreate = creatable && query.trim() && !options.some((o) => o.value === query.trim())
 
   function handleSelect(v: string) {
     onValueChange(v)
@@ -78,15 +77,11 @@ export function SearchableSelect({
       {/* align="start" is required for Radix to set --radix-popover-trigger-width */}
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <Command
-          filter={(value, search) =>
-            value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
-          }
+          filter={(value, search) => (value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}
         >
           <CommandInput placeholder="Search…" value={query} onValueChange={setQuery} />
           <CommandList>
-            <CommandEmpty>
-              {showCreate ? null : emptyText}
-            </CommandEmpty>
+            <CommandEmpty>{showCreate ? null : emptyText}</CommandEmpty>
             <CommandGroup>
               {options.map((opt) => (
                 <CommandItem

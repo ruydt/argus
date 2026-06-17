@@ -22,12 +22,9 @@ function SearchSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-busy="true" aria-label="Searching">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className="animate-pulse rounded-lg border border-[#eaeaea] bg-[#fafafa] px-4 py-3"
-        >
-          <div className="h-3.5 w-1/3 rounded bg-[#eaeaea]" />
-          <div className="mt-2 h-2.5 w-1/5 rounded bg-[#f0f0f0]" />
+        <div key={i} className="animate-pulse rounded-lg border border-border bg-card px-4 py-3">
+          <div className="h-3.5 w-1/3 rounded bg-secondary" />
+          <div className="mt-2 h-2.5 w-1/5 rounded bg-secondary" />
         </div>
       ))}
     </div>
@@ -154,7 +151,7 @@ function SplitPanels({
           onDrop={handleDropToPanel(1)}
         >
           {activeEvents.length === 0 && !activeError ? (
-            <div className="text-[#666666] text-sm h-full flex flex-col items-center justify-center">
+            <div className="text-muted-foreground text-sm h-full flex flex-col items-center justify-center">
               No events found. Start a session to see events stream here.
             </div>
           ) : (
@@ -176,7 +173,7 @@ function SplitPanels({
         </div>
       </ResizablePanel>
 
-      <ResizableHandle className="w-[3px] bg-[#eaeaea] hover:bg-[#d4d4d4] active:bg-[#666666] transition-colors cursor-col-resize" />
+      <ResizableHandle className="w-[3px] bg-border hover:bg-secondary active:bg-muted-foreground transition-colors cursor-col-resize" />
 
       <ResizablePanel minSize={20} defaultSize={50}>
         <div
@@ -193,8 +190,8 @@ function SplitPanels({
             <div className="h-full flex items-center justify-center">
               <div
                 className={cn(
-                  'flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-[#d4d4d4] p-10 text-[#666666] text-sm transition-colors',
-                  dragOverPanel === 2 && 'border-sky-500/40 text-[#666666]'
+                  'flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-10 text-muted-foreground text-sm transition-colors',
+                  dragOverPanel === 2 && 'border-sky-500/40 text-muted-foreground'
                 )}
               >
                 <span>Drop events here</span>
@@ -288,7 +285,7 @@ function SinglePanel({
       {searching && histLoading && activeEvents.length === 0 ? (
         <SearchSkeleton />
       ) : activeEvents.length === 0 && !activeError ? (
-        <div className="text-[#666666] text-sm h-full flex flex-col items-center justify-center">
+        <div className="text-muted-foreground text-sm h-full flex flex-col items-center justify-center">
           {searching
             ? 'No sessions match that id or project.'
             : 'No events found. Start a session to see events stream here.'}
@@ -311,7 +308,7 @@ function SinglePanel({
       )}
 
       {autoLoad && (
-        <div ref={sentinelRef} className="flex justify-center py-4 text-xs text-[#666666]">
+        <div ref={sentinelRef} className="flex justify-center py-4 text-xs text-muted-foreground">
           {histLoading ? 'Loading...' : ''}
         </div>
       )}
@@ -451,12 +448,12 @@ export function EventsPage() {
   })
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#ffffff] relative">
-      <div className="border-b border-[#eaeaea] bg-[#ffffff] px-4 py-2 sm:hidden">
+    <div className="flex-1 flex flex-col min-h-0 bg-background relative">
+      <div className="border-b border-border bg-background px-4 py-2 sm:hidden">
         <Button
           variant="outline"
           size="sm"
-          className="w-full justify-between border-[#eaeaea] bg-[#fafafa] text-[#171717] hover:bg-black/[0.03] hover:text-[#171717]"
+          className="w-full justify-between border-border bg-muted text-foreground hover:bg-foreground/[0.04] hover:text-foreground"
           onClick={() => setMobileFiltersOpen((open) => !open)}
           aria-expanded={mobileFiltersOpen}
           aria-controls="event-filters"
@@ -583,7 +580,7 @@ export function EventsPage() {
 
       {tooltip && (
         <div
-          className="fixed pointer-events-none z-[1000] bg-[#fafafa] text-[#171717] px-2 py-1 text-[0.7rem] rounded border border-black/10"
+          className="fixed pointer-events-none z-[1000] bg-card text-foreground px-2 py-1 text-[0.7rem] rounded border border-foreground/10"
           style={{ top: tooltip.y + 10, left: tooltip.x + 10 }}
         >
           {tooltip.text}

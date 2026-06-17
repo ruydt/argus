@@ -28,10 +28,10 @@ export function BatchBlock({ json }: BatchBlockProps) {
       {calls.map((c, ci) => (
         <div
           key={`${c.tool_name}-${c.tool_input?.file_path || c.tool_input?.command || ci}`}
-          className="flex gap-2 text-[0.72rem] text-[#666666]"
+          className="flex gap-2 text-[0.72rem] text-muted-foreground"
         >
-          <span className="text-[#666666] font-bold shrink-0">[{c.tool_name}]</span>
-          <span className="break-all text-[#777]">
+          <span className="text-muted-foreground font-bold shrink-0">[{c.tool_name}]</span>
+          <span className="break-all text-muted-foreground">
             {c.tool_input?.file_path || c.tool_input?.command || ''}
           </span>
         </div>

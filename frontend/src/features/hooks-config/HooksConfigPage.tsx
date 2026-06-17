@@ -5,12 +5,7 @@ import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AnthropicLogo, OpenAILogo } from '@/agents/logos'
@@ -362,8 +357,16 @@ export function HooksConfigPage() {
               writeStorageString(AGENT_TAB_KEY, agent)
             }}
           >
-            <SelectTrigger className="w-auto" aria-label="Agent" data-tour="hooks-config-agent-tabs">
-              {activeAgent === 'claudecode' ? <AnthropicLogo size={18} /> : <OpenAILogo size={18} />}
+            <SelectTrigger
+              className="w-auto"
+              aria-label="Agent"
+              data-tour="hooks-config-agent-tabs"
+            >
+              {activeAgent === 'claudecode' ? (
+                <AnthropicLogo size={18} />
+              ) : (
+                <OpenAILogo size={18} />
+              )}
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="claudecode">

@@ -5,18 +5,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* App design tokens + shadcn dark theme tokens */
+/* App design tokens + shadcn dark theme tokens — argus-landing neural palette
+   (deep-black #030303 base, violet #8b5cf6 + cyan #06b6d4 accents) */
 :root {
   /* Sans font stack (replaces JetBrains Mono) */
-  --font-app: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-app:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
 
-  /* App custom tokens */
+  /* Brand + cyan accents — shared across both themes */
+  --brand: #8b5cf6;
+  --accent-cyan: #06b6d4;
+
+  /* App custom tokens — light */
   --bg: #ffffff;
   --header: #ffffff;
   --text: #171717;
   --dim: #666666;
-  --brand: #a78bfa;
   --app-border: #eaeaea;
   --edit: #60a5fa;
   --bash: #f5a623;
@@ -37,7 +42,7 @@
   --display: #e2c4ff;
   --elicit: #ff9f6b;
 
-  /* shadcn semantic tokens — Geist-style light theme */
+  /* shadcn semantic tokens — Geist light theme */
   --background: #ffffff;
   --foreground: #171717;
   --card: #fafafa;
@@ -55,7 +60,7 @@
   --destructive: #ee0000;
   --border: #eaeaea;
   --input: #eaeaea;
-  --ring: #a1a1a1;
+  --ring: #8b5cf6;
   --radius: 0.5rem;
   --chart-1: #f97316;
   --chart-2: #818cf8;
@@ -64,12 +69,63 @@
   --chart-5: #ff8e8e;
   --sidebar: #fafafa;
   --sidebar-foreground: #171717;
-  --sidebar-primary: #a78bfa;
+  --sidebar-primary: #8b5cf6;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f5f5f5;
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #eaeaea;
-  --sidebar-ring: #a1a1a1;
+  --sidebar-ring: #8b5cf6;
+
+  /* Driver.js tour popover surface */
+  --tour-bg: #ffffff;
+  --tour-border: #eaeaea;
+}
+
+/* ── Dark theme overrides (argus-landing neural palette) ─────────────────── */
+.dark {
+  /* App custom tokens — dark */
+  --bg: #030303;
+  --header: #0a0a0c;
+  --text: #ededf0;
+  --dim: #9c9ca6;
+  --app-border: #232329;
+
+  /* shadcn semantic tokens — dark */
+  --background: #030303;
+  --foreground: #ededf0;
+  --card: #101013;
+  --card-foreground: #ededf0;
+  --popover: #0a0a0c;
+  --popover-foreground: #ededf0;
+  --primary: #ededf0;
+  --primary-foreground: #030303;
+  --secondary: #1a1a1f;
+  --secondary-foreground: #ededf0;
+  --muted: #101013;
+  --muted-foreground: #9c9ca6;
+  --accent: #1a1a1f;
+  --accent-foreground: #ededf0;
+  --destructive: #ef4444;
+  --border: #232329;
+  --input: #232329;
+  --ring: #8b5cf6;
+  --chart-1: #f97316;
+  --chart-2: #818cf8;
+  --chart-3: #a78bfa;
+  --chart-4: #ffd97e;
+  --chart-5: #ff8e8e;
+  --sidebar: #0a0a0c;
+  --sidebar-foreground: #ededf0;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a1f;
+  --sidebar-accent-foreground: #ededf0;
+  --sidebar-border: #232329;
+  --sidebar-ring: #8b5cf6;
+
+  /* Driver.js tour popover — lifted above the dark dim-overlay */
+  --tour-bg: #16161b;
+  --tour-border: #2e2e36;
 }
 
 * {
@@ -101,6 +157,7 @@ body {
   --color-app-text: var(--text);
   --color-dim: var(--dim);
   --color-brand: var(--brand);
+  --color-accent-cyan: var(--accent-cyan);
   --color-app-border: var(--app-border);
   --color-edit: var(--edit);
   --color-bash: var(--bash);
@@ -166,7 +223,7 @@ body {
 [data-slot='select-item']:hover,
 [cmdk-item][data-selected='true'],
 [cmdk-item]:hover {
-  background-color: #f5f5f5 !important;
+  background-color: var(--accent) !important;
   color: var(--accent-foreground) !important;
 }
 
@@ -174,7 +231,7 @@ body {
    buttons, whose default hover (bg-accent ≈ popover bg) is invisible. Give any
    .menu-item the same visible highlight as the select/command items above. */
 .menu-item:hover:not(:disabled) {
-  background-color: #f5f5f5 !important;
+  background-color: var(--accent) !important;
 }
 
 /* Radix sets pointer-events:none on the dialog content while a nested Select
@@ -223,19 +280,25 @@ body {
 
 /* ─── Sidebar root ─── */
 .sidebar-root {
-  background: #fafafa;
-  border-right: 1px solid #eaeaea;
+  background: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
 }
 
 /* ─── Sidebar nav item active indicator ─── */
 .sidebar-nav-active .sidebar-nav-icon {
-  color: #171717;
+  color: var(--sidebar-foreground);
 }
 
 /* ─── Sidebar bottom divider ─── */
 .sidebar-bottom-divider {
   height: 1px;
-  background: linear-gradient(to right, transparent, #eaeaea 30%, #eaeaea 70%, transparent);
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--sidebar-border) 30%,
+    var(--sidebar-border) 70%,
+    transparent
+  );
   margin: 0 4px;
 }
 
@@ -255,73 +318,97 @@ body {
 }
 
 mark {
-  background-color: rgba(167, 139, 250, 0.3);
-  color: #171717;
+  background-color: rgba(139, 92, 246, 0.3);
+  color: var(--foreground);
   border-radius: 2px;
   padding: 0 1px;
-  box-shadow: 0 0 4px rgba(167, 139, 250, 0.15);
+  box-shadow: 0 0 4px rgba(139, 92, 246, 0.15);
 }
 
-/* ─── Driver.js tour popover — Argus dark theme ─────────────────────────── */
+/* ─── Driver.js tour popover (theme-aware via --tour-* tokens) ──────────── */
 .argus-tour-popover.driver-popover {
-  background-color: #ffffff;
-  border: 1px solid #f5f5f5;
-  border-radius: 8px;
-  color: #171717;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  /* dark: lifted above the dim-overlay; light: plain white card */
+  background-color: var(--tour-bg);
+  border: 1px solid var(--tour-border);
+  border-radius: 10px;
+  color: var(--foreground);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(139, 92, 246, 0.12);
   font-family: var(--font-app);
 }
 
 .argus-tour-popover .driver-popover-title {
-  color: #171717;
+  color: var(--foreground);
+  font-family: var(--font-app);
   font-size: 0.875rem;
   font-weight: 600;
 }
 
 .argus-tour-popover .driver-popover-description {
-  color: #555555;
+  color: var(--muted-foreground);
+  font-family: var(--font-app);
   font-size: 0.8rem;
   line-height: 1.5;
 }
 
 .argus-tour-popover .driver-popover-progress-text {
-  color: #666;
+  color: var(--muted-foreground);
+  font-family: var(--font-app);
   font-size: 0.75rem;
 }
 
 .argus-tour-popover .driver-popover-navigation-btns button {
-  background-color: #a78bfa;
+  background-color: #8b5cf6;
   border: none;
   border-radius: 6px;
-  color: #111;
+  color: #fff;
+  /* driver.js leaves buttons on the UA serif default — force the app sans stack */
+  font-family: var(--font-app);
   font-size: 0.8rem;
   font-weight: 500;
   padding: 0.35rem 0.75rem;
   cursor: pointer;
+  text-shadow: none;
   transition: background-color 150ms ease;
 }
 
 .argus-tour-popover .driver-popover-navigation-btns button:hover {
-  background-color: #c4b5fd;
+  background-color: #a78bfa;
 }
 
 .argus-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn {
   background-color: transparent;
-  border: 1px solid #eaeaea;
-  color: #666666;
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
 }
 
 .argus-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #171717;
+  background-color: var(--accent);
+  border-color: var(--ring);
+  color: var(--foreground);
 }
 
 .argus-tour-popover .driver-popover-close-btn {
-  color: #666;
+  color: var(--muted-foreground);
   font-size: 1rem;
   line-height: 1;
 }
 
+/* Arrow triangle must match the card bg (driver.js defaults it to white) */
+.argus-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: var(--tour-bg);
+}
+.argus-tour-popover .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: var(--tour-bg);
+}
+.argus-tour-popover .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: var(--tour-bg);
+}
+.argus-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: var(--tour-bg);
+}
+
 .argus-tour-popover .driver-popover-close-btn:hover {
-  color: #171717;
+  color: var(--foreground);
 }

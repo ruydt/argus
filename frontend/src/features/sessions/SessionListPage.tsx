@@ -66,10 +66,10 @@ export function SessionListPage() {
   }, [])
 
   return (
-    <div className="flex h-full flex-col bg-[#ffffff] text-[#171717]">
-      <header className="border-b border-black/10 bg-black/[0.04] px-6 py-4">
-        <div className="text-[12px] font-semibold uppercase tracking-widest text-black/45">
-          <Link to="/projects" className="hover:text-black/70 transition-colors">
+    <div className="flex h-full flex-col bg-background text-foreground">
+      <header className="border-b border-foreground/10 bg-foreground/[0.04] px-6 py-4">
+        <div className="text-[12px] font-semibold uppercase tracking-widest text-foreground/45">
+          <Link to="/projects" className="hover:text-foreground/70 transition-colors">
             Projects
           </Link>
           {' › '}
@@ -82,14 +82,17 @@ export function SessionListPage() {
 
       <main className="flex-1 overflow-auto p-6">
         {loading ? (
-          <div className="text-sm text-black/45">Loading sessions…</div>
+          <div className="text-sm text-foreground/45">Loading sessions…</div>
         ) : sessions.length === 0 ? (
-          <div className="text-sm text-black/55">No sessions for this project.</div>
+          <div className="text-sm text-foreground/55">No sessions for this project.</div>
         ) : (
           <>
-            <div className="overflow-hidden rounded-lg border border-black/10" data-tour="sessions-table">
+            <div
+              className="overflow-hidden rounded-lg border border-foreground/10"
+              data-tour="sessions-table"
+            >
               <table className="w-full border-collapse text-sm">
-                <thead className="bg-black/[0.04] text-left text-[11px] uppercase tracking-wider text-black/45">
+                <thead className="bg-foreground/[0.04] text-left text-[11px] uppercase tracking-wider text-foreground/45">
                   <tr>
                     <th className="px-4 py-3 font-medium">Session</th>
                     <th className="px-4 py-3 font-medium">Agent</th>
@@ -106,31 +109,33 @@ export function SessionListPage() {
                     return (
                       <tr
                         key={session.session_id}
-                        className="cursor-pointer border-t border-black/10 bg-black/10 hover:bg-black/[0.035]"
+                        className="cursor-pointer border-t border-foreground/10 hover:bg-accent"
                         onClick={() => navigate(sessionPath)}
-                        {...(i === 0 ? { 'data-tour': 'sessions-first-row', 'data-tour-navigate': sessionPath } : {})}
+                        {...(i === 0
+                          ? { 'data-tour': 'sessions-first-row', 'data-tour-navigate': sessionPath }
+                          : {})}
                       >
-                        <td className="px-4 py-3 text-[12px] text-black/75">
+                        <td className="px-4 py-3 text-[12px] text-foreground/75">
                           <span className="flex items-center gap-2">
                             {running && <span className="h-1.5 w-1.5 rounded-full bg-green-400" />}
                             {session.session_id.slice(0, 12)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="rounded border border-black/10 bg-black/[0.04] px-2 py-1 text-[12px]">
+                          <span className="rounded border border-foreground/10 bg-foreground/[0.04] px-2 py-1 text-[12px]">
                             {session.agent}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-black/70">
+                        <td className="px-4 py-3 text-foreground/70">
                           {formatDuration(sessionDurationMs(session, nowMs))}
                         </td>
-                        <td className="px-4 py-3 text-black/70">
+                        <td className="px-4 py-3 text-foreground/70">
                           {totalTokens(session).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 text-black/55">
+                        <td className="px-4 py-3 text-foreground/55">
                           {new Date(session.started_at).toLocaleString()}
                         </td>
-                        <td className="px-4 py-3 text-black/55">
+                        <td className="px-4 py-3 text-foreground/55">
                           {new Date(session.last_seen_at).toLocaleString()}
                         </td>
                       </tr>
@@ -141,7 +146,7 @@ export function SessionListPage() {
             </div>
             {/* Infinite scroll sentinel */}
             <div ref={sentinelRef} className="flex justify-center py-4">
-              {loadingMore && <span className="text-xs text-black/40">Loading more…</span>}
+              {loadingMore && <span className="text-xs text-foreground/40">Loading more…</span>}
             </div>
           </>
         )}
