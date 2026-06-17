@@ -79,6 +79,17 @@
   /* Driver.js tour popover surface */
   --tour-bg: #ffffff;
   --tour-border: #eaeaea;
+
+  /* CodeMirror editor (JSON payload) — Shiki github-light-default (matches docs) */
+  --cm-bg: var(--muted);
+  --cm-border: #d1d9e0;
+  --cm-text: #1f2328;
+  --cm-muted: #6e7781;
+  --cm-selection: rgba(84, 174, 255, 0.25);
+  --cm-line: #f6f8fa;
+  --cm-key: #116329;
+  --cm-string: #0a3069;
+  --cm-number: #0550ae;
 }
 
 /* ── Dark theme overrides (argus-landing neural palette) ─────────────────── */
@@ -126,6 +137,17 @@
   /* Driver.js tour popover — lifted above the dark dim-overlay */
   --tour-bg: #16161b;
   --tour-border: #2e2e36;
+
+  /* CodeMirror editor (JSON payload) — Shiki dark-plus / docs bg (matches docs) */
+  --cm-bg: var(--muted);
+  --cm-border: #232329;
+  --cm-text: #d4d4d4;
+  --cm-muted: #858585;
+  --cm-selection: rgba(38, 79, 120, 0.6);
+  --cm-line: #161719;
+  --cm-key: #9cdcfe;
+  --cm-string: #ce9178;
+  --cm-number: #b5cea8;
 }
 
 * {

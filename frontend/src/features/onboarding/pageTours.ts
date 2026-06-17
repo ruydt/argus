@@ -9,6 +9,14 @@ export type PageTourOpts = {
 
 export type TourDefinition = DriveStep[] | ((opts: PageTourOpts) => DriveStep[])
 
+// Radix Tabs activate on focus (automatic mode), not on a synthetic click event,
+// so Element.click() alone won't switch a controlled tab. Focus first, then click.
+function activateTab(selector: string) {
+  const el = document.querySelector<HTMLElement>(selector)
+  el?.focus()
+  el?.click()
+}
+
 function pollFor(selector: string, onFound: () => void, maxMs = 6000) {
   let elapsed = 0
   const id = setInterval(() => {
@@ -20,7 +28,7 @@ function pollFor(selector: string, onFound: () => void, maxMs = 6000) {
   }, 100)
 }
 
-function buildEventsSteps(_opts: PageTourOpts): DriveStep[] {
+function buildEventsSteps(): DriveStep[] {
   // Open filter panel now so all filter steps have elements in DOM
   const filterToggle = document.querySelector<HTMLButtonElement>(
     '[data-tour="events-filter-toggle"]'
@@ -188,75 +196,233 @@ function buildProjectsSteps({ navigate, getDriver }: PageTourOpts): DriveStep[] 
   ]
 }
 
-const dashboardSteps: DriveStep[] = [
-  {
-    element: '[data-tour="dashboard-stats"]',
-    popover: {
-      title: 'Summary stats',
-      description: 'Token usage, session count, and event totals across your selected date range.',
-    },
-  },
-  {
-    element: '[data-tour="dashboard-chart"]',
-    popover: {
-      title: 'Token timeline',
-      description: 'Daily input/output token consumption. Hover a bar to see the breakdown.',
-    },
-  },
-  {
-    element: '[data-tour="dashboard-export"]',
-    popover: {
-      title: 'CSV export',
-      description: 'Download session stats as CSV for further analysis in a spreadsheet.',
-    },
-  },
-]
+function buildDashboardSteps({ getDriver }: PageTourOpts): DriveStep[] {
+  // Always start on the Token usage tab — the tour may be launched while the user is
+  // on Activity, and we want to begin from the beginning. No-op if already active.
+  activateTab('[data-tour="dashboard-tab-tokens"]')
 
-const hooksConfigSteps: DriveStep[] = [
-  {
-    element: '[data-tour="hooks-config-agent-tabs"]',
-    popover: {
-      title: 'Agent tabs',
-      description:
-        'Separate hook configs for Claude Code and Codex. Changes to one do not affect the other.',
+  return [
+    {
+      element: '[data-tour="dashboard-stats"]',
+      popover: {
+        title: 'Summary stats',
+        description:
+          'Token usage, session count, and event totals across your selected date range.',
+      },
     },
-  },
-  {
-    element: '[data-tour="preset-selector"]',
-    popover: {
-      title: 'Presets',
-      description:
-        'Quickly load a curated hook set. Baseline is a great starting point; Full captures everything.',
+    {
+      element: '[data-tour="dashboard-chart"]',
+      popover: {
+        title: 'Token timeline',
+        description: 'Daily input/output token consumption. Hover a bar to see the breakdown.',
+      },
     },
-  },
-  {
+    {
+      element: '[data-tour="dashboard-export"]',
+      popover: {
+        title: 'CSV export',
+        description: 'Download session stats as CSV for further analysis in a spreadsheet.',
+      },
+    },
+    {
+      element: '[data-tour="dashboard-tab-activity"]',
+      popover: {
+        title: 'Activity tab',
+        description:
+          'Beyond tokens, the Activity view breaks down what your agents actually did. Click Next to switch to it.',
+        showButtons: ['previous', 'next', 'close'],
+        onNextClick: () => {
+          activateTab('[data-tour="dashboard-tab-activity"]')
+          pollFor('[data-tour="dashboard-activity"]', () => getDriver()?.moveNext())
+        },
+      },
+    },
+    {
+      element: '[data-tour="dashboard-activity"]',
+      popover: {
+        title: 'Activity breakdown',
+        description:
+          'Tool calls, prompts, and events over time — a behavioral view of your sessions to complement the raw token counts.',
+        showButtons: ['previous', 'next'],
+        doneBtnText: 'Done',
+      },
+    },
+  ]
+}
+
+function buildHooksConfigSteps({ navigate, getDriver }: PageTourOpts): DriveStep[] {
+  // Always begin from a clean Structured view: the tour may be launched while the
+  // user is already in the Simulator, and stale ?view/?event params would make the
+  // later "open simulator" navigation a no-op (no state change → tour stalls).
+  document.querySelector<HTMLButtonElement>('[aria-label="Back to Structured"]')?.click()
+  navigate('/hooks-config')
+
+  const steps: DriveStep[] = [
+    {
+      element: '[data-tour="hooks-config-agent-tabs"]',
+      popover: {
+        title: 'Pick the agent',
+        description:
+          'Claude Code and Codex keep separate hook configs. Switch here — changes to one never touch the other.',
+      },
+    },
+    {
+      element: '[data-tour="hooks-structured-toolbar"]',
+      popover: {
+        title: 'Structured editor',
+        description:
+          'This is the Structured view — build your config visually instead of hand-editing JSON. Add a hook event from the left selector, or load a curated set with a preset.',
+      },
+    },
+    {
+      element: '[data-tour="preset-selector"]',
+      popover: {
+        title: 'Presets',
+        description:
+          'One-click hook sets. Baseline is a safe starting point; Full wires up every event. Applying a preset overwrites the current config.',
+      },
+    },
+  ]
+
+  // Only walk an event group when at least one is configured.
+  if (document.querySelector('[data-tour="hooks-event-group"]')) {
+    steps.push({
+      element: '[data-tour="hooks-event-group"]',
+      popover: {
+        title: 'An event group',
+        description:
+          'Each configured event expands to its hook groups. A group has an optional matcher (which tool it fires on) and one or more commands. Edit a command inline, or open the ⋯ menu for timeout and extra options.',
+      },
+    })
+  }
+
+  steps.push({
     element: '[aria-label="Save hooks config"]',
     popover: {
-      title: 'Save',
+      title: 'Save your changes',
       description:
-        'Writes the config to disk. Your agent picks up changes on the next session start.',
+        'Writes the config to disk. Your agent picks it up on the next session start. Next, let’s try the Simulator →',
     },
-  },
-]
+  })
 
-const scriptsSteps: DriveStep[] = [
-  {
-    element: '[data-tour="scripts-tabs"]',
+  // Lead the user into the Simulator view. Deep-link with a sample event so the
+  // command box + JSON editor render (they only mount once an event is chosen),
+  // then guide through each once the view animates in.
+  steps.push({
+    element: '[aria-label="Open Simulator"]',
     popover: {
-      title: 'Community vs. My Collection',
+      title: 'Open the Simulator',
       description:
-        'Community: curated scripts from the registry. My Collection: your installed scripts, optionally backed up to a private GitHub gist.',
+        'Before a live agent ever fires a hook, you can test it here. Click Next to step inside.',
+      showButtons: ['previous', 'next', 'close'],
+      onNextClick: () => {
+        navigate('/hooks-config?view=simulator&event=PreToolUse')
+        pollFor('[data-tour="sim-command"]', () => getDriver()?.moveNext())
+      },
     },
-  },
-  {
-    element: '[data-tour="scripts-content"]',
+  })
+
+  steps.push({
+    element: '[data-tour="sim-pickers"]',
     popover: {
-      title: 'Script cards',
+      title: 'Choose what to test',
       description:
-        'Each card shows the script name, event it targets, and runtime. Click Install to add it to ~/.argus/hooks/.',
+        'Pick the hook event to simulate on the left, then a script or preset command on the right.',
+      showButtons: ['next', 'close'],
     },
-  },
-]
+  })
+
+  steps.push({
+    element: '[data-tour="sim-command"]',
+    popover: {
+      title: 'The command',
+      description:
+        'Picking a preset fills this in (e.g. CLAUDECODE=1 node …/hook.js) — or type any shell command yourself. This is exactly what runs, with the payload piped to it on stdin.',
+      showButtons: ['previous', 'next', 'close'],
+    },
+  })
+
+  steps.push({
+    element: '[data-tour="sim-payload"]',
+    popover: {
+      title: 'The JSON payload',
+      description:
+        'A synthetic event body for the selected hook, pre-filled from a template. Edit it to match a real payload — this is the JSON your command receives on stdin.',
+      showButtons: ['previous', 'next', 'close'],
+    },
+  })
+
+  steps.push({
+    popover: {
+      title: 'Run it and read the result',
+      description:
+        'Hit Run to execute the command against your payload and inspect exit code, stdout, and stderr. Apply wires the command straight into your config. Use “Go back” (top-right) to return to the Structured editor.',
+      showButtons: ['previous', 'next'],
+      doneBtnText: 'Done',
+    },
+  })
+
+  return steps
+}
+
+function buildScriptsSteps({ getDriver }: PageTourOpts): DriveStep[] {
+  // Always start on the Community tab — the tour may be launched from My Collection,
+  // and we want to begin from the beginning. No-op if already active.
+  activateTab('[data-tour="scripts-tab-community"]')
+
+  return [
+    {
+      element: '[data-tour="scripts-tabs"]',
+      popover: {
+        title: 'Community vs. My Collection',
+        description:
+          'Community: curated scripts from the registry. My Collection: your installed scripts, optionally backed up to a private GitHub gist.',
+      },
+    },
+    {
+      element: '[data-tour="scripts-content"]',
+      popover: {
+        title: 'Community scripts',
+        description:
+          'Each card shows the script name, event it targets, and runtime. Click Install to add it to ~/.argus/hooks/.',
+      },
+    },
+    {
+      element: '[data-tour="scripts-tab-collection"]',
+      popover: {
+        title: 'My Collection',
+        description:
+          'Your own installed scripts live here. Click Next to switch over and take a look.',
+        showButtons: ['previous', 'next', 'close'],
+        onNextClick: () => {
+          activateTab('[data-tour="scripts-tab-collection"]')
+          pollFor('[data-tour="scripts-tab-collection"][data-state="active"]', () =>
+            getDriver()?.moveNext()
+          )
+        },
+      },
+    },
+    {
+      element: '[data-tour="scripts-content"]',
+      popover: {
+        title: 'Your collection',
+        description:
+          'Scripts you’ve installed or saved. Sign in with GitHub to back them up to a private gist and sync across machines — or open one to view it.',
+        showButtons: ['previous', 'next', 'close'],
+      },
+    },
+    {
+      element: '[data-tour="collection-actions"]',
+      popover: {
+        title: 'Row actions (⋯)',
+        description:
+          'The ⋯ menu on each script is where the work happens: Test it in the Simulator, Save to gist (back it up), Install into ~/.argus/hooks/, or Remove it — from your machine, the gist, or both.',
+        showButtons: ['previous', 'next'],
+        doneBtnText: 'Done',
+      },
+    },
+  ]
+}
 
 const diagnosticsSteps: DriveStep[] = [
   {
@@ -295,9 +461,9 @@ const diagnosticsSteps: DriveStep[] = [
 
 export const PAGE_TOURS: Record<string, TourDefinition> = {
   '/': buildEventsSteps,
-  '/dashboard': dashboardSteps,
+  '/dashboard': buildDashboardSteps,
   '/projects': buildProjectsSteps,
-  '/hooks-config': hooksConfigSteps,
-  '/scripts': scriptsSteps,
+  '/hooks-config': buildHooksConfigSteps,
+  '/scripts': buildScriptsSteps,
   '/diagnostics': diagnosticsSteps,
 }

@@ -208,7 +208,7 @@ export function SimulatorTab({
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      <div className="flex gap-3">
+      <div className="flex gap-3" data-tour="sim-pickers">
         <SearchableSelect
           value={eventType}
           onValueChange={handleEventTypeChange}
@@ -230,7 +230,10 @@ export function SimulatorTab({
       </div>
 
       {eventType && (
-        <div className="rounded-md border border-border overflow-hidden bg-muted">
+        <div
+          className="rounded-md border border-border overflow-hidden bg-muted"
+          data-tour="sim-command"
+        >
           <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-border bg-card">
             <Terminal className="size-3 text-muted-foreground" />
             <span className="text-[11px] font-mono text-muted-foreground">command</span>
@@ -246,7 +249,10 @@ export function SimulatorTab({
       )}
 
       {eventType && (
-        <div className="relative rounded-md border border-border overflow-hidden">
+        <div
+          className="relative rounded-md border border-border overflow-hidden"
+          data-tour="sim-payload"
+        >
           <CopyIconButton
             text={payloadJSON}
             label="JSON"
@@ -259,7 +265,7 @@ export function SimulatorTab({
             theme="none"
             height="280px"
             basicSetup={{
-              lineNumbers: true,
+              lineNumbers: false,
               highlightActiveLine: true,
               bracketMatching: true,
               autocompletion: false,

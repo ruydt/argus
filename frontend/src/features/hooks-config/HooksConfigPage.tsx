@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { AppWindowIcon, ExternalLink, RefreshCw, Save, Terminal } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowLeft, ArrowRight, ExternalLink, RefreshCw, Save } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { AnthropicLogo, OpenAILogo } from '@/agents/logos'
 import { StructuredEditor } from './StructuredEditor'
 import { SimulatorTab } from './SimulatorTab'
@@ -102,31 +102,35 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
   return (
     <div className="flex flex-col gap-4 mt-4">
       {viewMode === 'structured' && config !== null && (
-        <StructuredEditor
-          config={config}
-          agent={agent}
-          isDirty={state.isDirty}
-          onDiscardChanges={state.discardChanges}
-          onChange={setConfig}
-        />
+        <div className="animate-in fade-in duration-200">
+          <StructuredEditor
+            config={config}
+            agent={agent}
+            isDirty={state.isDirty}
+            onDiscardChanges={state.discardChanges}
+            onChange={setConfig}
+          />
+        </div>
       )}
 
       {viewMode === 'simulator' && (
-        <SimulatorTab
-          agent={agent}
-          config={config}
-          initialScript={sim.initialScript}
-          eventType={sim.eventType}
-          onEventTypeChange={sim.onEventTypeChange}
-          commandValue={sim.commandValue}
-          onCommandValueChange={sim.onCommandValueChange}
-          payloadJSON={sim.payloadJSON}
-          onPayloadJSONChange={sim.onPayloadJSONChange}
-          customCommandText={sim.customCommandText}
-          onCustomCommandTextChange={sim.onCustomCommandTextChange}
-          onApply={sim.onApply}
-          applying={sim.applying}
-        />
+        <div className="animate-in fade-in slide-in-from-left-8 duration-300">
+          <SimulatorTab
+            agent={agent}
+            config={config}
+            initialScript={sim.initialScript}
+            eventType={sim.eventType}
+            onEventTypeChange={sim.onEventTypeChange}
+            commandValue={sim.commandValue}
+            onCommandValueChange={sim.onCommandValueChange}
+            payloadJSON={sim.payloadJSON}
+            onPayloadJSONChange={sim.onPayloadJSONChange}
+            customCommandText={sim.customCommandText}
+            onCustomCommandTextChange={sim.onCustomCommandTextChange}
+            onApply={sim.onApply}
+            applying={sim.applying}
+          />
+        </div>
       )}
 
       {saveError !== null && (
@@ -153,12 +157,23 @@ export function HooksConfigPage() {
 
   const [searchParams] = useSearchParams()
   const [initialScript, setInitialScript] = useState<string | undefined>(undefined)
-  const deepLinkApplied = useRef(false)
+
+  const [simCommandValue, setSimCommandValue] = useState<string>(
+    () => readSimCache()?.commandValue ?? ''
+  )
+  const [simPayloadJSON, setSimPayloadJSON] = useState<string>(
+    () => readSimCache()?.payloadJSON ?? ''
+  )
+  const [simCustomCommandText, setSimCustomCommandText] = useState<string>(
+    () => readSimCache()?.customCommandText ?? ''
+  )
+  const [applying, setApplying] = useState(false)
+
   useEffect(() => {
-    if (deepLinkApplied.current) return
-    deepLinkApplied.current = true
-    // One-time deep-link application from URL params on first mount; the ref guard
-    // ensures it runs once, so the sync setState can't cascade.
+    // Apply deep-link params whenever they change. Re-applies (not one-shot) so the
+    // page tour can drive the view by navigating to ?view=simulator&event=… while
+    // the page is already mounted. searchParams only changes on navigation, so the
+    // setStates here can't cascade.
     /* eslint-disable react-hooks/set-state-in-effect */
     if (searchParams.get('view') === 'simulator') setViewMode('simulator')
     const ev = searchParams.get('event')
@@ -174,17 +189,6 @@ export function HooksConfigPage() {
     if (sc) setInitialScript(sc)
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [searchParams])
-
-  const [simCommandValue, setSimCommandValue] = useState<string>(
-    () => readSimCache()?.commandValue ?? ''
-  )
-  const [simPayloadJSON, setSimPayloadJSON] = useState<string>(
-    () => readSimCache()?.payloadJSON ?? ''
-  )
-  const [simCustomCommandText, setSimCustomCommandText] = useState<string>(
-    () => readSimCache()?.customCommandText ?? ''
-  )
-  const [applying, setApplying] = useState(false)
 
   useEffect(() => {
     try {
@@ -337,18 +341,27 @@ export function HooksConfigPage() {
         className="w-full"
       >
         <div className="flex items-center justify-between">
-          <Tabs value={viewMode} onValueChange={handleViewModeChange}>
-            <TabsList variant="line">
-              <TabsTrigger value="structured">
-                <AppWindowIcon />
-                Structured
-              </TabsTrigger>
-              <TabsTrigger value="simulator">
-                <Terminal />
-                Simulator
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {viewMode === 'structured' ? (
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('simulator')}
+              className="group order-last flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Open Simulator"
+            >
+              Simulator
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('structured')}
+              className="group order-last flex items-center gap-1.5 text-[13px] font-semibold text-foreground transition-colors"
+              aria-label="Back to Structured"
+            >
+              <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+              Go back
+            </button>
+          )}
           <Select
             value={activeAgent}
             onValueChange={(v) => {

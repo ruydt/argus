@@ -2,8 +2,9 @@
 // @argus-meta
 // title: Stop notification
 // event: Stop
-// command: node stop.js
+// command: node ~/.argus/hooks/stop.js
 // purpose: Local notification when the agent finishes.
+// os: macos
 // @end
 
 // Stop hook: posts a macOS notification when the agent session stops, so you know
@@ -11,11 +12,7 @@
 // title/subtitle/message from it (last assistant message, cwd, session id), and
 // displays it via /usr/bin/osascript. Always exits 0 — a notification failure must
 // never block the agent. Activity is logged to ~/.argus/hook-scripts.log.
-//
-// osascript only — terminal-notifier was removed on purpose: it exits 0 even when
-// macOS silently drops its notification (app not registered in Notification Center),
-// which masked failures and prevented fallback (2026-06-10 debugging).
-//
+
 // NOTE on screen sharing/streaming (e.g. Discord streams, screen mirroring):
 // macOS hides notification banners while the display is shared — the script still
 // "succeeds" (exit 0, sound plays, notification lands in Notification Center) but

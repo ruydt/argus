@@ -6,6 +6,7 @@ export type CollectionScript = {
   event?: string
   matcher?: string
   runtime?: string
+  os?: string
   origin: 'bundled' | 'local'
   body: string
   installed: boolean
@@ -35,6 +36,7 @@ export type CollectionEntry = {
   author?: string
   event?: string
   runtime?: string
+  os?: string
   local: boolean
   gist: boolean
 }

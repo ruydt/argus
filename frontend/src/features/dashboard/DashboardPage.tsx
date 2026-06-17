@@ -80,14 +80,20 @@ export function DashboardPage() {
             data-tour="dashboard-chart"
           >
             <TabsList variant="line" className="w-full flex-wrap justify-start sm:w-auto">
-              <TabsTrigger value="tokens">Token usage</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="tokens" data-tour="dashboard-tab-tokens">
+                Token usage
+              </TabsTrigger>
+              <TabsTrigger value="activity" data-tour="dashboard-tab-activity">
+                Activity
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="tokens">
               <TokenUsagePanel stats={stats} query={query} />
             </TabsContent>
             <TabsContent value="activity">
-              <ActivityPanel stats={stats} query={query} />
+              <div data-tour="dashboard-activity">
+                <ActivityPanel stats={stats} query={query} />
+              </div>
             </TabsContent>
           </Tabs>
         </>

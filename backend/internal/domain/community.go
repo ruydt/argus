@@ -10,12 +10,13 @@ type CommunityScript struct {
 	Purpose          string `json:"purpose,omitempty"`
 	Event            string `json:"event,omitempty"`
 	Matcher          string `json:"matcher,omitempty"`
-	Runtime          string `json:"runtime,omitempty"`  // node | python3 | sh — security gate
-	Command          string `json:"command,omitempty"`  // full invocation e.g. "node hook.js --flag"
-	Tier             string `json:"tier"`               // always "community"
-	SHA256           string `json:"sha256"`             // bare hex of the file body
-	Source           string `json:"source"`             // path within the registry repo
+	Runtime          string `json:"runtime,omitempty"` // node | python3 | sh — security gate
+	Command          string `json:"command,omitempty"` // full invocation e.g. "node hook.js --flag"
+	OS               string `json:"os,omitempty"`      // both | macos | windows — platform support
+	Tier             string `json:"tier"`              // always "community"
+	SHA256           string `json:"sha256"`            // bare hex of the file body
+	Source           string `json:"source"`            // path within the registry repo
 	PublishedAt      string `json:"published_at,omitempty"`
-	Installed        bool   `json:"installed"`          // filled by handler
-	RuntimeAvailable bool   `json:"runtime_available"`  // filled by handler
+	Installed        bool   `json:"installed"`         // filled by handler
+	RuntimeAvailable bool   `json:"runtime_available"` // filled by handler
 }

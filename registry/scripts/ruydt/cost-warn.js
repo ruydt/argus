@@ -2,9 +2,11 @@
 // @argus-meta
 // title: Cost warning
 // event: SessionStart
-// command: node cost-warn.js
+// command: node ~/.argus/hooks/cost-warn.js
 // purpose: Warn when token usage in the rolling 5h window crosses a threshold. Silent otherwise.
+// os: posix
 // @end
+// OS: macOS / Linux (POSIX). Shells out to the `sqlite3` CLI — not Windows-compatible.
 
 // SessionStart hook: warns when token usage in the rolling 5-hour window crosses a
 // threshold, using the local argus database. Approximates the billing window — it

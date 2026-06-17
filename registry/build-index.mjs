@@ -55,6 +55,7 @@ export async function buildIndex(root = '.') {
       matcher: meta.matcher ?? '',
       command,
       runtime,
+      os: meta.os ?? 'both',
       tier: 'community',
       sha256,
       source: rel,

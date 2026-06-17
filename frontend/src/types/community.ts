@@ -7,6 +7,7 @@ export type CommunityScript = {
   matcher?: string
   runtime?: string
   command?: string
+  os?: string
   tier: 'community'
   sha256: string
   source: string

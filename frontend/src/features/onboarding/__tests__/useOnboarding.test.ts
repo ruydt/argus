@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockMoveNext, mockDestroy, mockDrive, mockDriver } = vi.hoisted(() => {
+const { mockDrive, mockDriver } = vi.hoisted(() => {
   const mockMoveNext = vi.fn()
   const mockDestroy = vi.fn()
   const mockDrive = vi.fn()
@@ -10,7 +10,7 @@ const { mockMoveNext, mockDestroy, mockDrive, mockDriver } = vi.hoisted(() => {
     destroy: mockDestroy,
     moveNext: mockMoveNext,
   }))
-  return { mockMoveNext, mockDestroy, mockDrive, mockDriver }
+  return { mockDrive, mockDriver }
 })
 
 vi.mock('driver.js', () => ({ driver: mockDriver }))

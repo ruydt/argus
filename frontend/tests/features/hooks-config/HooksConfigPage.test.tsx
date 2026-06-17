@@ -26,11 +26,10 @@ describe('HooksConfigPage', () => {
     await waitFor(() => expect(screen.getByText('Hooks Config')).toBeTruthy())
   })
 
-  it('shows Claude Code and Codex tabs', async () => {
+  it('shows the agent switcher', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Claude Code' })).toBeTruthy()
-      expect(screen.getByRole('tab', { name: 'Codex' })).toBeTruthy()
+      expect(screen.getByRole('combobox', { name: 'Agent' })).toBeTruthy()
     })
   })
 
@@ -59,11 +58,10 @@ describe('HooksConfigPage', () => {
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
   })
 
-  it('shows Structured and JSON view mode tabs after load', async () => {
+  it('shows the Open Simulator toggle in structured view', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: /structured/i })).toBeTruthy()
-      expect(screen.getByRole('tab', { name: /json/i })).toBeTruthy()
+      expect(screen.getByRole('button', { name: /open simulator/i })).toBeTruthy()
     })
   })
 
@@ -74,11 +72,11 @@ describe('HooksConfigPage', () => {
     })
   })
 
-  it('renders CodeMirror editor region in JSON mode', async () => {
+  it('switches to the simulator view when Open Simulator is clicked', async () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('tab', { name: /json/i }))
-    expect(screen.getByRole('region', { name: /hooks config json/i })).toBeTruthy()
+    await user.click(await screen.findByRole('button', { name: /open simulator/i }))
+    expect(await screen.findByRole('button', { name: /back to structured/i })).toBeTruthy()
   })
 })

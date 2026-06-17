@@ -22,6 +22,7 @@ type Meta struct {
 	Matcher string
 	Purpose string
 	Command string // full invocation e.g. "node hook.js --flag"
+	OS      string // both | posix | macos | windows — platform support
 }
 
 var fieldLine = regexp.MustCompile(`^//\s*(\w+):\s*(.*)$`)
@@ -76,6 +77,8 @@ func Parse(body string) Meta {
 			m.Purpose = value
 		case "command":
 			m.Command = value
+		case "os":
+			m.OS = value
 		}
 	}
 	return m

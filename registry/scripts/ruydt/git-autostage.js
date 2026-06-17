@@ -2,8 +2,9 @@
 // @argus-meta
 // title: Git autostage
 // event: Stop
-// command: node git-autostage.js
+// command: node ~/.argus/hooks/git-autostage.js
 // purpose: Opt-in checkpoint per agent turn: git add -u (tracked files only), optional local commit, never pushes.
+// os: both
 // @end
 
 // Stop hook: stages (and optionally commits) the turn's work as a local checkpoint.

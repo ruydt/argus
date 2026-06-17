@@ -11,7 +11,8 @@ type CollectionScript struct {
 	Event     string `json:"event,omitempty"`
 	Matcher   string `json:"matcher,omitempty"`
 	Runtime   string `json:"runtime,omitempty"`
-	Origin    string `json:"origin"` // "bundled" | "local"
+	OS        string `json:"os,omitempty"` // both | posix | macos | windows
+	Origin    string `json:"origin"`       // "bundled" | "local"
 	Body      string `json:"body"`
 	Installed bool   `json:"installed"`
 }
@@ -45,6 +46,7 @@ type CollectionEntry struct {
 	Author   string `json:"author,omitempty"`
 	Event    string `json:"event,omitempty"`
 	Runtime  string `json:"runtime,omitempty"`
+	OS       string `json:"os,omitempty"` // both | posix | macos | windows
 	Local    bool   `json:"local"`
 	Gist     bool   `json:"gist"`
 }

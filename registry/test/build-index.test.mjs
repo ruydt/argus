@@ -34,7 +34,22 @@ test('buildIndex parses the header and computes sha256', async () => {
   assert.equal(s.runtime, 'node')
   assert.equal(s.tier, 'community')
   assert.equal(s.source, 'scripts/alice/demo.js')
+  assert.equal(s.os, 'both') // default when meta omits os
   assert.equal(s.sha256, createHash('sha256').update(body).digest('hex'))
+})
+
+test('buildIndex reads an explicit os field from the header', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'reg-'))
+  await mkdir(join(root, 'scripts', 'ruydt'), { recursive: true })
+  const body = ['// @argus-meta', '// title: Mac', '// os: macos', '// @end', '', 'console.log(1)', ''].join(
+    '\n'
+  )
+  await writeFile(join(root, 'scripts', 'ruydt', 'mac.js'), body)
+
+  const index = await buildIndex(root)
+
+  assert.equal(index.scripts[0].author, 'ruydt')
+  assert.equal(index.scripts[0].os, 'macos')
 })
 
 test('buildIndex indexes .sh and .py scripts, stripping their extension for the id', async () => {

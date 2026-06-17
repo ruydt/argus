@@ -15,6 +15,7 @@ Public community hook scripts for [argus](https://github.com/argus-hooks/argus).
    // event: PreToolUse
    // runtime: node          # node | python3 | sh
    // matcher: Bash          # optional
+   // os: both               # optional; both | macos | windows (defaults to both)
    // purpose: One line describing what it does.
    // @end
 

@@ -73,7 +73,13 @@ describe('injectMeta', () => {
 
 describe('buildArgusMeta', () => {
   it('omits empty optional fields', () => {
-    const h = buildArgusMeta({ title: 'T', event: 'Stop', command: 'sh t.sh', matcher: '', purpose: '' })
+    const h = buildArgusMeta({
+      title: 'T',
+      event: 'Stop',
+      command: 'sh t.sh',
+      matcher: '',
+      purpose: '',
+    })
     expect(h).toContain('// title: T')
     expect(h).not.toContain('// matcher:')
     expect(h).not.toContain('// purpose:')

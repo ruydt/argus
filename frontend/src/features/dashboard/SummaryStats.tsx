@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import type { DashboardStats } from './hooks/useDashboardStats'
 import { formatTokenCount } from '@/lib/format'
 
@@ -67,16 +67,12 @@ export function SummaryStats({ stats }: SummaryStatsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
       {STAT_LABELS.map((item) => (
-        <Card key={item.key}>
-          <CardHeader className="min-h-10 pb-2">
-            <CardTitle className="text-xs leading-4 font-medium text-muted-foreground">
-              {item.label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold text-foreground" data-testid="stat-value">
+        <Card key={item.key} className="gap-1 py-4">
+          <CardContent className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+            <span className="text-2xl font-semibold text-foreground" data-testid="stat-value">
               {item.format(item.value(stats))}
-            </div>
+            </span>
           </CardContent>
         </Card>
       ))}

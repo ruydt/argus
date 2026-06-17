@@ -3,15 +3,17 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { drawSelection, EditorView, keymap } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
-const bg = '#0a0a0c'
-const border = '#232329'
-const key = '#a78bfa'
-const stringColor = '#3ecf8e'
-const numberColor = '#fbbf24'
-const text = '#ededf0'
-const muted = '#9c9ca6'
-const selection = 'rgba(139, 92, 246, 0.35)'
-const lineHighlight = '#16161a'
+// Colors resolve through CSS variables so the editor flips with the app theme
+// (light/dark). The --cm-* tokens are defined in index.css under :root / .dark.
+const bg = 'var(--cm-bg)'
+const border = 'var(--cm-border)'
+const key = 'var(--cm-key)'
+const stringColor = 'var(--cm-string)'
+const numberColor = 'var(--cm-number)'
+const text = 'var(--cm-text)'
+const muted = 'var(--cm-muted)'
+const selection = 'var(--cm-selection)'
+const lineHighlight = 'var(--cm-line)'
 
 export const argusEditorTheme = EditorView.theme(
   {
@@ -39,11 +41,11 @@ export const argusEditorTheme = EditorView.theme(
       border: `1px solid ${border}`,
       color: muted,
     },
-    '.cm-tooltip': { backgroundColor: '#0a0a0c', border: `1px solid ${border}` },
+    '.cm-tooltip': { backgroundColor: bg, border: `1px solid ${border}` },
     '.cm-tooltip .cm-tooltip-arrow:before': { borderTopColor: border },
-    '.cm-tooltip .cm-tooltip-arrow:after': { borderTopColor: '#0a0a0c' },
+    '.cm-tooltip .cm-tooltip-arrow:after': { borderTopColor: bg },
   },
-  { dark: true }
+  { dark: false }
 )
 
 export const readOnlyExtensions = [

@@ -15,6 +15,7 @@ import {
   type ArgusMeta,
   HOOK_EVENTS,
   injectMeta,
+  OS_OPTIONS,
   parseArgusMeta,
   runtimeFromExt,
 } from '../community/argusMeta'
@@ -35,6 +36,7 @@ function initialMeta(f: UploadFile): ArgusMeta {
     command: parsed.command ?? `${runtimeFromExt(f.name)} ${f.name}`,
     matcher: parsed.matcher ?? '',
     purpose: parsed.purpose ?? '',
+    os: parsed.os ?? 'both',
   }
 }
 
@@ -152,6 +154,21 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
                 placeholder="e.g. Bash"
                 aria-label="Matcher"
               />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-[0.72rem] text-muted-foreground">OS</span>
+              <Select value={current.os ?? 'both'} onValueChange={(v) => setField('os', v)}>
+                <SelectTrigger aria-label="Operating system support">
+                  <SelectValue placeholder="Select OS support" />
+                </SelectTrigger>
+                <SelectContent>
+                  {OS_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="text-[0.72rem] text-muted-foreground">Purpose (optional)</span>

@@ -71,7 +71,7 @@ describe('SimulatorTab script options', () => {
     const onChange = renderTab('claudecode')
     const user = userEvent.setup()
 
-    const commandTrigger = await screen.findByRole('combobox', { name: /command\/script/i })
+    const commandTrigger = await screen.findByRole('combobox', { name: /pick a preset script/i })
     await user.click(commandTrigger)
 
     expect(await screen.findByText('stop.js')).toBeInTheDocument()
@@ -89,7 +89,7 @@ describe('SimulatorTab script options', () => {
     const onChange = renderTab('codex')
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('combobox', { name: /command\/script/i }))
+    await user.click(await screen.findByRole('combobox', { name: /pick a preset script/i }))
     await user.click(await screen.findByText('notify.sh'))
 
     await waitFor(() => {
@@ -102,7 +102,7 @@ describe('SimulatorTab script options', () => {
     renderTab('claudecode')
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('combobox', { name: /command\/script/i }))
+    await user.click(await screen.findByRole('combobox', { name: /pick a preset script/i }))
     const search = await screen.findByPlaceholderText('Search…')
     await user.type(search, 'notify')
 

@@ -18,22 +18,22 @@ import { VersionBadge } from '@/features/version/VersionBadge'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from './ThemeToggle'
 
-// Argus brand mark — all-seeing eye (lucide-style strokes, inherits currentColor)
-function ArgusEye({ className }: { className?: string }) {
+// Argus mark — same geometry as favicon.svg but with no background rect, so it sits
+// transparently in the sidebar. Outline inherits currentColor (adapts to theme);
+// the violet iris matches the browser tab.
+function ArgusLogo({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" />
-      <circle cx="12" cy="12" r="3" />
-      <circle cx="12" cy="12" r=".5" fill="currentColor" />
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+      <path
+        d="M5 16s4-6.5 11-6.5S27 16 27 16s-4 6.5-11 6.5S5 16 5 16Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <circle cx="16" cy="16" r="4.2" fill="#863bff" />
+      <circle cx="16" cy="16" r="1.6" fill="#0d1117" />
+      <circle cx="17.4" cy="14.6" r=".7" fill="#e6edf3" />
     </svg>
   )
 }
@@ -244,7 +244,7 @@ export function Sidebar({
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="flex size-6 items-center justify-center">
-                <ArgusEye className="size-3.5 text-muted-foreground" />
+                <ArgusLogo className="size-5 text-foreground" />
               </div>
               <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-foreground">
                 argus
@@ -280,7 +280,7 @@ export function Sidebar({
             }}
           >
             <div className="flex size-6 shrink-0 items-center justify-center">
-              <ArgusEye className="size-3.5 text-muted-foreground" />
+              <ArgusLogo className="size-5 text-foreground" />
             </div>
             <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-foreground">
               argus
@@ -342,7 +342,7 @@ export function Sidebar({
                         'h-9 w-9 gap-0 border border-transparent text-[0.8rem] font-normal transition-colors duration-200',
                         'justify-center rounded-lg px-0',
                         hasTourForRoute
-                          ? 'text-muted-foreground hover:bg-foreground/[0.06] hover:text-muted-foreground'
+                          ? 'text-muted-foreground hover:border-foreground/[0.08] hover:bg-foreground/[0.05] hover:text-foreground'
                           : 'cursor-not-allowed opacity-40'
                       )}
                       aria-label="Start page tour"
@@ -366,7 +366,7 @@ export function Sidebar({
                       ? 'w-9 justify-center rounded-lg px-0'
                       : 'w-full justify-start rounded-lg px-0',
                     hasTourForRoute
-                      ? 'text-muted-foreground hover:bg-foreground/[0.06] hover:text-muted-foreground'
+                      ? 'text-muted-foreground hover:border-foreground/[0.08] hover:bg-foreground/[0.05] hover:text-foreground'
                       : 'cursor-not-allowed opacity-40'
                   )}
                   aria-label="Start page tour"

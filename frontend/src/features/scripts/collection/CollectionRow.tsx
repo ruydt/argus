@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CollectionEntry } from '@/types'
 
+import { OsIcons } from '../OsIcons'
 import { ScriptViewerModal } from '../ScriptViewerModal'
 
 type CollectionRowProps = {
@@ -35,10 +36,10 @@ export function CollectionRow({
   getBody,
 }: CollectionRowProps) {
   const [viewing, setViewing] = useState(false)
-  // Two clickable surfaces (content + action column) cover the whole row so any
-  // non-button area opens the viewer, while the action column stays w-40 to line
-  // up with the header. pointer-down-capture fires on the real DOM target before
-  // Radix re-dispatches the ⋯ trigger click, so button presses are skipped.
+  // One flat row matches the header grid exactly (each column the same width as
+  // its header cell). Row-click opens the viewer; pointer-down-capture fires on
+  // the real DOM target before Radix re-dispatches the ⋯ trigger click, so
+  // button presses are skipped.
   const skipOpen = useRef(false)
   function openFromAction() {
     if (skipOpen.current) {
@@ -48,18 +49,21 @@ export function CollectionRow({
     setViewing(true)
   }
   return (
-    <div className="flex items-center border-b border-foreground/[0.08] hover:bg-foreground/[0.02]">
+    <>
       <div
         role="button"
         tabIndex={0}
-        onClick={() => setViewing(true)}
+        onClick={openFromAction}
+        onPointerDownCapture={(e) => {
+          skipOpen.current = (e.target as HTMLElement).closest('button') != null
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
             setViewing(true)
           }
         }}
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 py-3.5 pr-4 pl-2"
+        className="flex cursor-pointer items-center gap-4 border-b border-foreground/[0.08] px-2 py-3.5 hover:bg-foreground/[0.02]"
       >
         <span className="w-7 shrink-0 text-right text-[0.8rem] tabular-nums text-muted-foreground">
           {index}
@@ -72,6 +76,9 @@ export function CollectionRow({
         </div>
         <div className="hidden w-36 shrink-0 items-center md:flex">
           {entry.event ? <Badge variant="outline">{entry.event}</Badge> : null}
+        </div>
+        <div className="hidden w-24 shrink-0 md:flex">
+          <OsIcons os={entry.os} />
         </div>
         <TooltipProvider delayDuration={100}>
           <div className="hidden w-44 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
@@ -93,6 +100,85 @@ export function CollectionRow({
             ) : null}
           </div>
         </TooltipProvider>
+        <div className="flex w-40 shrink-0 items-center justify-end gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                aria-label="Actions"
+                data-tour={index === 1 ? 'collection-actions' : undefined}
+              >
+                <MoreVertical className="size-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-44 p-1">
+              <div className="flex flex-col">
+                {entry.local ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start"
+                    onClick={() => onTest(entry)}
+                  >
+                    Test
+                  </Button>
+                ) : null}
+                {entry.gist && !entry.local ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start"
+                    onClick={() => onInstall(entry.id)}
+                  >
+                    Install
+                  </Button>
+                ) : null}
+                {entry.local && !entry.gist ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start"
+                    onClick={() => onSaveToGist(entry.filename)}
+                  >
+                    Save to gist
+                  </Button>
+                ) : null}
+                {entry.local ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start hover:text-destructive"
+                    onClick={() => onRemoveLocal(entry.filename)}
+                  >
+                    Uninstall
+                  </Button>
+                ) : null}
+                {entry.gist ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start hover:text-destructive"
+                    onClick={() => onRemoveGist(entry.id)}
+                  >
+                    Remove from gist
+                  </Button>
+                ) : null}
+                {entry.local && entry.gist ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start hover:text-destructive"
+                    onClick={() => onRemoveBoth(entry)}
+                  >
+                    Remove both
+                  </Button>
+                ) : null}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       <ScriptViewerModal
@@ -101,86 +187,6 @@ export function CollectionRow({
         onOpenChange={setViewing}
         load={() => getBody(entry)}
       />
-
-      <div
-        className="flex w-40 shrink-0 cursor-pointer items-center justify-end gap-2 py-3.5 pr-2"
-        onPointerDownCapture={(e) => {
-          skipOpen.current = (e.target as HTMLElement).closest('button') != null
-        }}
-        onClick={openFromAction}
-      >
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" disabled={busy} aria-label="Actions">
-              <MoreVertical className="size-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-44 p-1">
-            <div className="flex flex-col">
-              {entry.local ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={() => onTest(entry)}
-                >
-                  Test
-                </Button>
-              ) : null}
-              {entry.gist && !entry.local ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={() => onInstall(entry.id)}
-                >
-                  Install
-                </Button>
-              ) : null}
-              {entry.local && !entry.gist ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={() => onSaveToGist(entry.filename)}
-                >
-                  Save to gist
-                </Button>
-              ) : null}
-              {entry.local ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start hover:text-destructive"
-                  onClick={() => onRemoveLocal(entry.filename)}
-                >
-                  Uninstall
-                </Button>
-              ) : null}
-              {entry.gist ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start hover:text-destructive"
-                  onClick={() => onRemoveGist(entry.id)}
-                >
-                  Remove from gist
-                </Button>
-              ) : null}
-              {entry.local && entry.gist ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start hover:text-destructive"
-                  onClick={() => onRemoveBoth(entry)}
-                >
-                  Remove both
-                </Button>
-              ) : null}
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-    </div>
+    </>
   )
 }

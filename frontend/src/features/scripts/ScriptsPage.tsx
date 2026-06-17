@@ -89,8 +89,12 @@ export function ScriptsPage() {
       <div className="space-y-6">
         <Tabs value={tab} onValueChange={(v) => changeTab(v as Tab)} data-tour="scripts-tabs">
           <TabsList variant="line">
-            <TabsTrigger value="community">Community</TabsTrigger>
-            <TabsTrigger value="collection">My Collection</TabsTrigger>
+            <TabsTrigger value="community" data-tour="scripts-tab-community">
+              Community
+            </TabsTrigger>
+            <TabsTrigger value="collection" data-tour="scripts-tab-collection">
+              My Collection
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 

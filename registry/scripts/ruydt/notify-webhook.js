@@ -2,8 +2,9 @@
 // @argus-meta
 // title: Notify webhook
 // event: Stop
-// command: node notify-webhook.js
+// command: node ~/.argus/hooks/notify-webhook.js
 // purpose: Slack / Discord / ntfy / Telegram / custom webhook when the agent finishes or needs attention. Rate-limited; silent without config.
+// os: both
 // @end
 
 // Stop / SubagentStop / Notification hook: posts a message to a Slack, Discord, ntfy,

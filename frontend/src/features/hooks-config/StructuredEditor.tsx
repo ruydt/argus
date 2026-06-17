@@ -338,7 +338,7 @@ export function StructuredEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap" data-tour="hooks-structured-toolbar">
         {availableToAdd.length > 0 && (
           <SearchableSelect
             key={usedEvents.join(',')}
@@ -416,13 +416,17 @@ export function StructuredEditor({
         </p>
       )}
 
-      {usedEvents.map((eventType) => {
+      {usedEvents.map((eventType, eventIdx) => {
         const groups = config.hooks[eventType] ?? []
         const hookCount = groups.reduce((n, g) => n + g.hooks.length, 0)
         const isCollapsed = collapsed[eventType] ?? true
 
         return (
-          <div key={eventType} className="border border-border rounded-lg overflow-hidden">
+          <div
+            key={eventType}
+            className="border border-border rounded-lg overflow-hidden"
+            data-tour={eventIdx === 0 ? 'hooks-event-group' : undefined}
+          >
             <button
               type="button"
               className="w-full flex items-center justify-between px-4 py-3 bg-secondary/40 hover:bg-secondary/60 transition-colors text-left"

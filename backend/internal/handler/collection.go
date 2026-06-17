@@ -131,6 +131,7 @@ func Collection(svc *github.Service, registrySrc *community.Source, argusDir str
 			e.Author = firstNonEmpty(lm.Author, gs.Author, reg.Author)
 			e.Event = firstNonEmpty(lm.Event, gs.Event, reg.Event)
 			e.Runtime = firstNonEmpty(lm.Runtime, gs.Runtime, reg.Runtime, runtimeFromExt(f))
+			e.OS = firstNonEmpty(lm.OS, gs.OS, reg.OS)
 			if e.ID == "" {
 				e.ID = idFromFilename(f)
 			}
@@ -174,7 +175,7 @@ func CollectionAdd(svc *github.Service, argusDir string) http.Handler {
 		script := domain.CollectionScript{
 			ID: idFromFilename(req.Filename), Filename: req.Filename,
 			Title: req.Filename, Author: meta.Author, Purpose: meta.Purpose, Event: meta.Event,
-			Matcher: meta.Matcher, Runtime: runtime, Origin: "local", Body: string(body),
+			Matcher: meta.Matcher, Runtime: runtime, OS: meta.OS, Origin: "local", Body: string(body),
 		}
 		switch err := svc.AddScript(r.Context(), script); {
 		case errors.Is(err, github.ErrNotAuthenticated):

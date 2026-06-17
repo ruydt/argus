@@ -85,6 +85,7 @@ export function CommunityTab({ query, community }: CommunityTabProps) {
         <span className="w-7 shrink-0 text-right">#</span>
         <span className="flex-1">Script</span>
         <span className="hidden w-44 shrink-0 md:block">Event</span>
+        <span className="hidden w-24 shrink-0 md:block">OS</span>
         <span className="w-40 shrink-0 text-right">Action</span>
       </div>
       {shown.length === 0 ? (

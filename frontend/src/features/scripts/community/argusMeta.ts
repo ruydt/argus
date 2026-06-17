@@ -5,7 +5,18 @@ export type ArgusMeta = {
   command: string
   matcher: string
   purpose: string
+  os?: string
 }
+
+// OS_OPTIONS are the platform-support values a script may declare. 'both' is the
+// cross-platform default; 'posix' is macOS + Linux (shell/CLI tools, not Windows).
+export const OS_OPTIONS = [
+  { value: 'both', label: 'All (Linux, macOS, Windows)' },
+  { value: 'posix', label: 'macOS & Linux' },
+  { value: 'macos', label: 'macOS only' },
+  { value: 'windows', label: 'Windows only' },
+  { value: 'linux', label: 'Linux only' },
+]
 
 export const HOOK_EVENTS = [
   'PreToolUse',
@@ -33,6 +44,7 @@ const FIELD_KEYS: (keyof ArgusMeta)[] = [
   'command',
   'matcher',
   'purpose',
+  'os',
 ]
 const META_START = '// @argus-meta'
 const META_END = '// @end'
@@ -57,6 +69,7 @@ export function buildArgusMeta(m: ArgusMeta): string {
   lines.push(`// event: ${m.event}`, `// command: ${m.command}`)
   if (m.matcher) lines.push(`// matcher: ${m.matcher}`)
   if (m.purpose) lines.push(`// purpose: ${m.purpose}`)
+  if (m.os) lines.push(`// os: ${m.os}`)
   lines.push(META_END, '')
   return lines.join('\n')
 }

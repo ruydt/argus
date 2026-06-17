@@ -2,9 +2,10 @@
 // @argus-meta
 // title: Block dangerous commands
 // event: PreToolUse
-// command: node block-dangerous.js
+// command: node ~/.argus/hooks/block-dangerous.js
 // matcher: Bash
 // purpose: Deny dangerous shell commands (rm -rf ~, curl | sh, force-push to main, mkfs) with a reason the agent can act on.
+// os: both
 // @end
 
 // PreToolUse hook (matcher: Bash): blocks dangerous shell commands for Claude Code and Codex.

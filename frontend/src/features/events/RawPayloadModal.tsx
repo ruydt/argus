@@ -82,11 +82,11 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
                 theme="none"
                 extensions={[json(), argusEditorTheme, argusHighlighting, ...readOnlyExtensions]}
                 basicSetup={{
-                  lineNumbers: true,
+                  lineNumbers: false,
                   highlightActiveLine: true,
                   bracketMatching: true,
                   autocompletion: false,
-                  foldGutter: true,
+                  foldGutter: false,
                 }}
               />
             </div>

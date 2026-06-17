@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { driver } from 'driver.js'
 import { createDriverConfig } from './driverConfig'
+import { enableTourScrollForwarding } from './tourScroll'
 import { buildFirstVisitSteps } from './tourSteps'
 import { PAGE_TOURS } from './pageTours'
 
@@ -22,6 +23,17 @@ export function useOnboarding({
 }: UseOnboardingOptions): UseOnboardingReturn {
   const [isFirstVisitTourActive, setIsFirstVisitTourActive] = useState(false)
   const driverRef = useRef<ReturnType<typeof driver> | null>(null)
+  const scrollCleanupRef = useRef<(() => void) | null>(null)
+
+  const stopScrollForwarding = () => {
+    scrollCleanupRef.current?.()
+    scrollCleanupRef.current = null
+  }
+
+  const startScrollForwarding = () => {
+    stopScrollForwarding()
+    scrollCleanupRef.current = enableTourScrollForwarding(() => driverRef.current?.refresh())
+  }
 
   const markDone = () => {
     localStorage.setItem('argus_onboarding_done', '1')
@@ -45,8 +57,12 @@ export function useOnboarding({
       onDestroyStarted: () => {
         markDone()
       },
+      onDestroyed: () => {
+        stopScrollForwarding()
+      },
     })
     driverRef.current = d
+    startScrollForwarding()
     d.drive()
   }
 
@@ -62,8 +78,15 @@ export function useOnboarding({
 
     if (!steps.length) return
 
-    const d = driver({ ...config, steps })
+    const d = driver({
+      ...config,
+      steps,
+      onDestroyed: () => {
+        stopScrollForwarding()
+      },
+    })
     driverRef.current = d
+    startScrollForwarding()
     d.drive()
   }
 

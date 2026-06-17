@@ -2,8 +2,9 @@
 // @argus-meta
 // title: Permission request dialog
 // event: PermissionRequest
-// command: node permission-request.js
+// command: node ~/.argus/hooks/permission-request.js
 // purpose: Native macOS approval dialog with an Always list.
+// os: macos
 // @end
 
 // PermissionRequest hook: native macOS dialog for Claude Code and Codex.
