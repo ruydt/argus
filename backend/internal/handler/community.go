@@ -12,6 +12,7 @@ import (
 
 	"argus/internal/community"
 	"argus/internal/domain"
+	"argus/internal/scriptmeta"
 )
 
 // allowedRuntimes are the only interpreters a community script may declare.
@@ -114,7 +115,11 @@ func CommunityInstall(src *community.Source, argusDir string) http.Handler {
 			http.Error(w, "install failed", http.StatusBadGateway)
 			return
 		}
-		switch err := writeHookScript(argusDir, path.Base(cs.Source), body); {
+		// Stamp the registry author into the installed file so attribution
+		// survives offline (the author is otherwise only known from the registry
+		// index, derived from the scripts/<author>/ folder).
+		stamped := []byte(scriptmeta.EnsureAuthor(string(body), cs.Author))
+		switch err := writeHookScript(argusDir, path.Base(cs.Source), stamped); {
 		case errors.Is(err, os.ErrExist):
 			http.Error(w, "script already installed", http.StatusConflict)
 			return

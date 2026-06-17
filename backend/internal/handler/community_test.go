@@ -71,6 +71,37 @@ func TestCommunityInstallWritesAndConflicts(t *testing.T) {
 	}
 }
 
+func TestCommunityInstallStampsAuthor(t *testing.T) {
+	// A script whose @argus-meta declares no author — install should stamp the
+	// registry author so attribution survives offline.
+	metaBody := "#!/bin/sh\n// @argus-meta\n// title: Demo\n// @end\necho ok\n"
+	sum := sha256.Sum256([]byte(metaBody))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/index.json", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprintf(w, `{"schema_version":1,"scripts":[{"id":"demo","author":"alice","title":"Demo","runtime":"sh","tier":"community","sha256":%q,"source":"scripts/alice/demo.sh"}]}`, hex.EncodeToString(sum[:]))
+	})
+	mux.HandleFunc("/scripts/alice/demo.sh", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, metaBody)
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	src := community.NewSource(srv.URL, srv.Client())
+	dir := t.TempDir()
+
+	rr := httptest.NewRecorder()
+	handler.CommunityInstall(src, dir).ServeHTTP(rr, httptest.NewRequest(http.MethodPost, "/api/community/install", bytes.NewBufferString(`{"id":"demo"}`)))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("install status %d", rr.Code)
+	}
+	got, err := os.ReadFile(filepath.Join(dir, "hooks", "demo.sh"))
+	if err != nil {
+		t.Fatalf("read installed: %v", err)
+	}
+	if !bytes.Contains(got, []byte("// author: alice")) {
+		t.Fatalf("installed file missing stamped author:\n%s", got)
+	}
+}
+
 func TestCommunitySimulateRunsSandboxed(t *testing.T) {
 	src, _ := communityFixture(t)
 	body := bytes.NewBufferString(`{"id":"demo","payload":{"hook_event_name":"PreToolUse"}}`)
