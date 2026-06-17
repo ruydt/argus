@@ -168,6 +168,15 @@ export function useCollection() {
     [removeGist, reload]
   )
 
+  const reveal = useCallback(async (filename: string) => {
+    const resp = await fetch('/api/collection/reveal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename }),
+    })
+    if (!resp.ok) throw new Error(`reveal ${resp.status}`)
+  }, [])
+
   const getLocalBody = useCallback(async (filename: string): Promise<string> => {
     const resp = await fetch(`/api/collection/local?filename=${encodeURIComponent(filename)}`)
     if (!resp.ok) throw new Error(`body ${resp.status}`)
@@ -215,6 +224,7 @@ export function useCollection() {
     removeLocal: removeLocalOnly,
     removeGist: removeGistOnly,
     removeBoth,
+    reveal,
     getLocalBody,
     getGistBody,
     publishFiles,

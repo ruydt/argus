@@ -32,6 +32,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
     removeLocal,
     removeGist,
     removeBoth,
+    reveal,
   } = collection
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<{ text: string; href?: string } | null>(null)
@@ -134,6 +135,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
               index={i + 1}
               busy={busy}
               onTest={testInSimulator}
+              onReveal={(filename) => run(() => reveal(filename))}
               onSaveToGist={guardedSave}
               onInstall={(id) => run(() => install(id))}
               onRemoveLocal={(filename) => run(() => removeLocal(filename))}

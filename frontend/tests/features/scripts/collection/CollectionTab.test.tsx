@@ -23,6 +23,7 @@ function fakeCollection(over: Partial<CollectionController> = {}): CollectionCon
     removeLocal: vi.fn(),
     removeGist: vi.fn(),
     removeBoth: vi.fn(),
+    reveal: vi.fn(),
     getLocalBody: vi.fn(),
     publishFiles: vi.fn(),
     ...over,

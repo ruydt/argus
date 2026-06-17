@@ -1,5 +1,15 @@
 import { useRef, useState } from 'react'
-import { Cloud, HardDrive, MoreVertical } from 'lucide-react'
+import {
+  Cloud,
+  CloudOff,
+  CloudUpload,
+  Download,
+  FolderOpen,
+  HardDrive,
+  MoreVertical,
+  Play,
+  Trash2,
+} from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,6 +25,7 @@ type CollectionRowProps = {
   index: number
   busy: boolean
   onTest: (entry: CollectionEntry) => void
+  onReveal: (filename: string) => void
   onSaveToGist: (filename: string) => void
   onInstall: (id: string) => void
   onRemoveLocal: (filename: string) => void
@@ -28,6 +39,7 @@ export function CollectionRow({
   index,
   busy,
   onTest,
+  onReveal,
   onSaveToGist,
   onInstall,
   onRemoveLocal,
@@ -122,7 +134,19 @@ export function CollectionRow({
                     className="menu-item justify-start"
                     onClick={() => onTest(entry)}
                   >
+                    <Play className="size-4" />
                     Test
+                  </Button>
+                ) : null}
+                {entry.local ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="menu-item justify-start"
+                    onClick={() => onReveal(entry.filename)}
+                  >
+                    <FolderOpen className="size-4" />
+                    Show in folder
                   </Button>
                 ) : null}
                 {entry.gist && !entry.local ? (
@@ -132,6 +156,7 @@ export function CollectionRow({
                     className="menu-item justify-start"
                     onClick={() => onInstall(entry.id)}
                   >
+                    <Download className="size-4" />
                     Install
                   </Button>
                 ) : null}
@@ -142,6 +167,7 @@ export function CollectionRow({
                     className="menu-item justify-start"
                     onClick={() => onSaveToGist(entry.filename)}
                   >
+                    <CloudUpload className="size-4" />
                     Save to gist
                   </Button>
                 ) : null}
@@ -152,6 +178,7 @@ export function CollectionRow({
                     className="menu-item justify-start hover:text-destructive"
                     onClick={() => onRemoveLocal(entry.filename)}
                   >
+                    <Trash2 className="size-4" />
                     Uninstall
                   </Button>
                 ) : null}
@@ -162,6 +189,7 @@ export function CollectionRow({
                     className="menu-item justify-start hover:text-destructive"
                     onClick={() => onRemoveGist(entry.id)}
                   >
+                    <CloudOff className="size-4" />
                     Remove from gist
                   </Button>
                 ) : null}
@@ -172,6 +200,7 @@ export function CollectionRow({
                     className="menu-item justify-start hover:text-destructive"
                     onClick={() => onRemoveBoth(entry)}
                   >
+                    <Trash2 className="size-4" />
                     Remove both
                   </Button>
                 ) : null}

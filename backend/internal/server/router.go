@@ -131,6 +131,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("POST /api/collection/install", secFetchSite(handler.CollectionInstall(ghSvc, opts.ArgusDir)))
 	mux.Handle("GET /api/collection/local", secFetchSite(handler.CollectionLocal(opts.ArgusDir)))
 	mux.Handle("DELETE /api/collection/local", secFetchSite(handler.CollectionLocal(opts.ArgusDir)))
+	mux.Handle("POST /api/collection/reveal", secFetchSite(handler.CollectionReveal(opts.ArgusDir)))
 	mux.Handle("GET /api/collection/gist", secFetchSite(handler.CollectionGistBody(ghSvc)))
 	mux.Handle("GET /api/community/catalog", handler.CommunityCatalog(communitySrc, opts.ArgusDir))
 	mux.Handle("GET /api/community/script", handler.CommunityScriptBody(communitySrc))
