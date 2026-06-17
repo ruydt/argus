@@ -48,6 +48,14 @@ export function CollectionRow({
   getBody,
 }: CollectionRowProps) {
   const [viewing, setViewing] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  // Close the menu before firing an action: prevents spamming the same item (or a
+  // second destructive one) while the request is in flight. The parent's run()
+  // guard is the real backstop; this is the UX half.
+  function act(fn: () => void) {
+    setMenuOpen(false)
+    fn()
+  }
   // One flat row matches the header grid exactly (each column the same width as
   // its header cell). Row-click opens the viewer; pointer-down-capture fires on
   // the real DOM target before Radix re-dispatches the ⋯ trigger click, so
@@ -86,14 +94,14 @@ export function CollectionRow({
             <span className="truncate text-[0.8rem] text-muted-foreground">{entry.author}</span>
           ) : null}
         </div>
-        <div className="hidden w-36 shrink-0 items-center md:flex">
+        <div className="hidden w-40 shrink-0 items-center md:flex">
           {entry.event ? <Badge variant="outline">{entry.event}</Badge> : null}
         </div>
-        <div className="hidden w-24 shrink-0 md:flex">
+        <div className="hidden w-32 shrink-0 md:flex">
           <OsIcons os={entry.os} />
         </div>
         <TooltipProvider delayDuration={100}>
-          <div className="hidden w-44 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
+          <div className="hidden w-32 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
             {entry.local ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -113,7 +121,7 @@ export function CollectionRow({
           </div>
         </TooltipProvider>
         <div className="flex w-40 shrink-0 items-center justify-end gap-2">
-          <Popover>
+          <Popover open={menuOpen} onOpenChange={setMenuOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -131,8 +139,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start"
-                    onClick={() => onTest(entry)}
+                    onClick={() => act(() => onTest(entry))}
                   >
                     <Play className="size-4" />
                     Test
@@ -142,8 +151,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start"
-                    onClick={() => onReveal(entry.filename)}
+                    onClick={() => act(() => onReveal(entry.filename))}
                   >
                     <FolderOpen className="size-4" />
                     Show in folder
@@ -153,8 +163,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start"
-                    onClick={() => onInstall(entry.id)}
+                    onClick={() => act(() => onInstall(entry.id))}
                   >
                     <Download className="size-4" />
                     Install
@@ -164,8 +175,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start"
-                    onClick={() => onSaveToGist(entry.filename)}
+                    onClick={() => act(() => onSaveToGist(entry.filename))}
                   >
                     <CloudUpload className="size-4" />
                     Save to gist
@@ -175,8 +187,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start hover:text-destructive"
-                    onClick={() => onRemoveLocal(entry.filename)}
+                    onClick={() => act(() => onRemoveLocal(entry.filename))}
                   >
                     <Trash2 className="size-4" />
                     Uninstall
@@ -186,8 +199,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start hover:text-destructive"
-                    onClick={() => onRemoveGist(entry.id)}
+                    onClick={() => act(() => onRemoveGist(entry.id))}
                   >
                     <CloudOff className="size-4" />
                     Remove from gist
@@ -197,8 +211,9 @@ export function CollectionRow({
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={busy}
                     className="menu-item justify-start hover:text-destructive"
-                    onClick={() => onRemoveBoth(entry)}
+                    onClick={() => act(() => onRemoveBoth(entry))}
                   >
                     <Trash2 className="size-4" />
                     Remove both
