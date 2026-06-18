@@ -16,6 +16,13 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("seed failed", "err", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	// Seed directly against the same local SQLite file the backend server uses.
 	// Override with -db or the DB_PATH env var; otherwise the repo default is used.
 	dbFlag := flag.String("db", "", "path to argus SQLite DB (default: DB_PATH env or repo default)")
@@ -27,8 +34,7 @@ func main() {
 	slog.Info("seeding", "db", dbPath)
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		slog.Error("failed to open db", "err", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to open db: %w", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -116,7 +122,8 @@ func main() {
 
 	if failures > 0 {
 		slog.Error("seed completed with failures", "failures", failures)
-		os.Exit(1)
+		return fmt.Errorf("seed completed with %d failures", failures)
 	}
 	fmt.Println("Successfully seeded 50 sessions and their events.")
+	return nil
 }

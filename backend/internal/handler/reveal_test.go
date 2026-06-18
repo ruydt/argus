@@ -95,7 +95,7 @@ func TestRevealRejectsPathOutsideRoots(t *testing.T) {
 	orig := revealExec
 	defer func() { revealExec = orig }()
 	called := false
-	revealExec = func(name string, args ...string) error {
+	revealExec = func(_ string, _ ...string) error {
 		called = true
 		return nil
 	}
@@ -119,7 +119,7 @@ func TestRevealRejectsTraversal(t *testing.T) {
 	orig := revealExec
 	defer func() { revealExec = orig }()
 	called := false
-	revealExec = func(name string, args ...string) error {
+	revealExec = func(_ string, _ ...string) error {
 		called = true
 		return nil
 	}
