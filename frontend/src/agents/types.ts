@@ -16,7 +16,6 @@ export type AgentConfig = {
   label: string
   badgeClass: string
   Logo: ComponentType<{ size?: number }>
-  supportsSessionUsage: boolean
   matchesEvent: (event: EventRecord) => boolean
   buildUsageItems?: (usage: SessionUsage, formatTokens: (n: number) => string) => UsageTooltipItem[]
 }

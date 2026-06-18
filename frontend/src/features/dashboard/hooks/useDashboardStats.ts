@@ -78,8 +78,20 @@ export interface DashboardStats {
   session_usage: DashboardSessionUsage[]
 }
 
+// Bounded module-level caches: a small LRU so scrubbing many (incl. arbitrary
+// custom) date ranges or leaving the SPA open does not accumulate payloads forever.
+const MAX_CACHE_ENTRIES = 8
 const statsCache = new Map<string, DashboardStats>()
 const rawTextCache = new Map<string, string>()
+
+function setCapped<T>(map: Map<string, T>, key: string, value: T) {
+  map.delete(key)
+  map.set(key, value)
+  if (map.size > MAX_CACHE_ENTRIES) {
+    const oldest = map.keys().next().value
+    if (oldest !== undefined) map.delete(oldest)
+  }
+}
 
 function normalizeDashboardStats(raw: Partial<DashboardStats>): DashboardStats {
   const agentUsage = Array.isArray(raw.agent_usage)
@@ -170,6 +182,7 @@ export function useDashboardStats(query: string = '') {
   )
   const [fetchingKey, setFetchingKey] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const stats = snapshot.cacheKey === cacheKey ? snapshot.stats : (statsCache.get(cacheKey) ?? null)
   const loading = !stats && fetchingKey === cacheKey
 
@@ -191,21 +204,26 @@ export function useDashboardStats(query: string = '') {
       try {
         const params = query ? `?${query}` : ''
         const res = await fetch(`/api/dashboard/stats${params}`)
-        if (res.ok) {
-          const text = await res.text()
-          // Identical payload → keep the existing object identity so every
-          // downstream memo and chart skips re-rendering.
-          if (rawTextCache.get(cacheKey) !== text) {
-            rawTextCache.set(cacheKey, text)
-            const data = normalizeDashboardStats(JSON.parse(text) as Partial<DashboardStats>)
-            statsCache.set(cacheKey, data)
-            if (mounted) {
-              setSnapshot({ cacheKey, stats: data })
-            }
+        if (!res.ok) {
+          if (mounted) setError(`Failed to load dashboard stats (HTTP ${res.status})`)
+          return
+        }
+        const text = await res.text()
+        // Identical payload → keep the existing object identity so every
+        // downstream memo and chart skips re-rendering.
+        if (rawTextCache.get(cacheKey) !== text) {
+          setCapped(rawTextCache, cacheKey, text)
+          const data = normalizeDashboardStats(JSON.parse(text) as Partial<DashboardStats>)
+          setCapped(statsCache, cacheKey, data)
+          if (mounted) {
+            setSnapshot({ cacheKey, stats: data })
           }
         }
+        if (mounted) setError(null)
       } catch (err) {
         console.error('Failed to fetch dashboard stats', err)
+        if (mounted)
+          setError(err instanceof Error ? err.message : 'Failed to fetch dashboard stats')
       } finally {
         if (mounted) {
           setFetchingKey(null)
@@ -220,7 +238,7 @@ export function useDashboardStats(query: string = '') {
     }
   }, [cacheKey, query, reloadKey])
 
-  return { stats, loading, refreshing, reload }
+  return { stats, loading, refreshing, reload, error }
 }
 
 function providerForAgent(agent?: string) {

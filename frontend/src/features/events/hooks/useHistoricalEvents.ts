@@ -22,7 +22,6 @@ export function useHistoricalEvents(
   const [error, setError] = useState<string | null>(null)
   const [loadVersion, setLoadVersion] = useState(0)
   const cursorRef = useRef<number>(0)
-  const refreshCountRef = useRef(0)
 
   const buildUrl = useCallback(
     (cursor: number) => {
@@ -90,7 +89,6 @@ export function useHistoricalEvents(
   useEffect(() => {
     if (!enabled) return
     cursorRef.current = 0
-    refreshCountRef.current += 1
     const timeout = window.setTimeout(() => {
       void fetchPage(0, true)
     }, 0)

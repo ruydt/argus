@@ -508,11 +508,6 @@ func (d *DB) SessionModel(sessionID string) (string, error) {
 	return model, err
 }
 
-func (d *DB) ListProjects() ([]domain.Project, error) {
-	projects, _, err := d.ListProjectsPage("", 1, 1_000_000)
-	return projects, err
-}
-
 // ListProjectsPage returns one page of projects ordered by last activity, with
 // an optional substring filter on cwd (which also covers the derived project
 // name). total is the full count of matching projects, used by the handler to
@@ -1793,7 +1788,8 @@ func (d *DB) ExportEvents(ctx context.Context, w io.Writer) error {
 		       COALESCE(normalizer_version,''), COALESCE(agent_version,''), COALESCE(normalization_status,''),
 		       COALESCE(expansion_type,''), COALESCE(command_name,''),
 		       COALESCE(memory_type,''), COALESCE(load_reason,''),
-		       COALESCE(branch,''), COALESCE(server_name,'')
+		       COALESCE(branch,''), COALESCE(server_name,''),
+		       COALESCE(tool_input_questions_json,''), COALESCE(permission_suggestions_json,'')
 		FROM hook_events ORDER BY id ASC`)
 	if err != nil {
 		return fmt.Errorf("export events query: %w", err)
@@ -1821,6 +1817,7 @@ func (d *DB) ExportEvents(ctx context.Context, w io.Writer) error {
 			&e.ToolResultStdout, &e.ToolResultStderr, &e.DurationMS, &e.Trigger,
 			&e.NormalizerVersion, &e.AgentVersion, &e.NormalizationStatus,
 			&e.ExpansionType, &e.CommandName, &e.MemoryType, &e.LoadReason, &e.Branch, &e.ServerName,
+			&e.ToolInputQuestionsJSON, &e.PermissionSuggestionsJSON,
 		); err != nil {
 			return fmt.Errorf("export events scan: %w", err)
 		}

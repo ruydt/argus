@@ -11,7 +11,7 @@
 [![Stars](https://img.shields.io/github/stars/ruydt/argus?style=flat)](https://github.com/ruydt/argus/stargazers)
 [![Website](https://img.shields.io/badge/website-getargus.org-863bff)](https://getargus.org)
 
-[Quick start](#quick-start) · [What it looks like](#what-it-looks-like) · [Hook scripts](my-custom-hook-scripts/) · [Docs](#documentation) · [getargus.org](https://getargus.org)
+[Quick start](#quick-start) · [What it looks like](#what-it-looks-like) · [Hook scripts](registry/) · [Docs](#documentation) · [getargus.org](https://getargus.org)
 
 </div>
 
@@ -28,7 +28,7 @@ across a thousand gists. Argus fixes all three, locally:
 - **Hook simulator** — run any hook command or script against a realistic synthetic
   payload for any event type, and inspect stdout/stderr/exit code/duration *before*
   an agent ever fires it. The missing debugger for the hook ecosystem.
-- **Public script collection** — [`my-custom-hook-scripts/`](my-custom-hook-scripts/)
+- **Public script collection** — [`registry/`](registry/)
   ships battle-tested, zero-dependency guardrails free for everyone: dangerous-command
   blocker, secrets protection, branch guard, auto-format with lint feedback,
   prompt-injection scanner, webhook notifications, and more. Every script works
@@ -82,7 +82,7 @@ simulator. Take the full visual tour at **[getargus.org](https://getargus.org)**
 | **Projects** | Cards per working directory, server-searchable with infinite scroll and cascade delete. |
 | **Diagnostics** | Health, storage, hook-preset detection, `~/.argus` inventory, and log tails. |
 | **Scripts library** | Browse community scripts, inspect source in a modal, install into `~/.argus/hooks/`, and manage local/gist copies from My Collection. |
-| **Script collection** | Free zero-dependency guardrails in [`my-custom-hook-scripts/`](my-custom-hook-scripts/). |
+| **Script collection** | Free zero-dependency guardrails in [`registry/`](registry/). |
 
 ## Uninstall
 
@@ -95,7 +95,7 @@ Stops the server, removes binaries and scripts, unwires hooks from `~/.claude/se
 ## Documentation
 
 - [docs/hooks.md](docs/hooks.md) - hook management, presets, and the hook simulator
-- [my-custom-hook-scripts/](my-custom-hook-scripts/) - the public hook script collection
+- [registry/](registry/) - the public hook script collection
 - [docs/quickstart.md](docs/quickstart.md) - first-event walkthrough (under 10 minutes)
 - [docs/install.md](docs/install.md) - full install reference, support matrix, data lifecycle
 - [docs/privacy.md](docs/privacy.md) - capture categories, ignore controls, export implications

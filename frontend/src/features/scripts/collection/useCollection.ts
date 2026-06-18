@@ -79,13 +79,31 @@ export function useCollection() {
       const dc: DeviceCodeResponse = await resp.json()
       setDeviceCode(dc)
       if (pollRef.current) clearInterval(pollRef.current)
+      // Stop polling once the device code expires — otherwise it spins forever on
+      // a code that can no longer succeed. Wrap each tick so a transient fetch
+      // failure is ignored (keep polling) instead of throwing an unhandled rejection.
+      const deadline = Date.now() + (dc.expires_in || 900) * 1000
       pollRef.current = setInterval(
         async () => {
-          const status = await (await fetch('/api/github/status')).json()
-          if (status.authenticated) {
+          if (Date.now() > deadline) {
             if (pollRef.current) clearInterval(pollRef.current)
+            pollRef.current = null
             setDeviceCode(null)
-            await reload()
+            setState((s) => ({ ...s, error: 'Device code expired — try signing in again.' }))
+            return
+          }
+          try {
+            const resp = await fetch('/api/github/status')
+            if (!resp.ok) return
+            const status = await resp.json()
+            if (status.authenticated) {
+              if (pollRef.current) clearInterval(pollRef.current)
+              pollRef.current = null
+              setDeviceCode(null)
+              await reload()
+            }
+          } catch {
+            // transient network error — keep polling until the deadline
           }
         },
         (dc.interval || 5) * 1000

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -91,6 +92,19 @@ func (s *Source) fetchIndex(ctx context.Context) ([]domain.CommunityScript, erro
 	return idx.Scripts, nil
 }
 
+// validateSourcePath rejects registry-supplied body paths that could escape the
+// configured base URL (traversal, absolute path, scheme, or backslash).
+func validateSourcePath(p string) error {
+	if p == "" ||
+		strings.HasPrefix(p, "/") ||
+		strings.Contains(p, "..") ||
+		strings.Contains(p, "://") ||
+		strings.Contains(p, "\\") {
+		return fmt.Errorf("invalid registry source path %q", p)
+	}
+	return nil
+}
+
 func (s *Source) lookup(ctx context.Context, id string) (domain.CommunityScript, error) {
 	scripts, err := s.Catalog(ctx)
 	if err != nil {
@@ -109,6 +123,12 @@ func (s *Source) lookup(ctx context.Context, id string) (domain.CommunityScript,
 func (s *Source) ScriptBody(ctx context.Context, id string) (domain.CommunityScript, []byte, error) {
 	cs, err := s.lookup(ctx, id)
 	if err != nil {
+		return cs, nil, err
+	}
+	// cs.Source comes from the remote index.json (a trust boundary). The body is
+	// sha256-verified below, but constrain the path first so a compromised index
+	// can't redirect the fetch via traversal, an absolute path, or a scheme.
+	if err := validateSourcePath(cs.Source); err != nil {
 		return cs, nil, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.baseURL+"/"+cs.Source, nil)

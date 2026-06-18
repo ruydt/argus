@@ -24,10 +24,12 @@ func writeHookScript(argusDir, filename string, body []byte) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(hooksDir(argusDir), 0o755); err != nil {
+	// 0o700 dir / 0o700 file: argus captures privacy-sensitive data and the hook
+	// runner executes as the same user, so scripts start owner-private (not world-readable).
+	if err := os.MkdirAll(hooksDir(argusDir), 0o700); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o755)
+	f, err := os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o700)
 	if err != nil {
 		return err
 	}

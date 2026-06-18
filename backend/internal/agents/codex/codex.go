@@ -129,10 +129,6 @@ func PatchSnippetStrings(hunks []ParseHunk) (oldStr, newStr string) {
 	return strings.Join(oldLines, "\n"), strings.Join(newLines, "\n")
 }
 
-func ComputeUsage(transcriptPath string) domain.SessionUsage {
-	return ComputeUsageBreakdown(transcriptPath).Total
-}
-
 func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
 	f, err := os.Open(transcriptPath)
 	if err != nil {

@@ -1,27 +1,3 @@
-export type CollectionScript = {
-  id: string
-  filename: string
-  title: string
-  purpose?: string
-  event?: string
-  matcher?: string
-  runtime?: string
-  os?: string
-  origin: 'bundled' | 'local'
-  body: string
-  installed: boolean
-}
-
-export type Collection = {
-  scripts: CollectionScript[]
-  gist_url?: string
-}
-
-export type GitHubAuthStatus = {
-  authenticated: boolean
-  login?: string
-}
-
 export type DeviceCodeResponse = {
   user_code: string
   verification_uri: string

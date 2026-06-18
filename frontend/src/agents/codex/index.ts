@@ -6,7 +6,6 @@ export const codexAgent: AgentConfig = {
   label: 'Codex',
   badgeClass: 'codex',
   Logo: OpenAILogo,
-  supportsSessionUsage: true,
   buildUsageItems: (usage, formatTokens) => [
     {
       cls: 'usage-in',

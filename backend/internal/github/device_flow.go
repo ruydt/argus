@@ -3,11 +3,19 @@ package github
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 )
+
+// ErrDeviceFlowDenied marks a TERMINAL device-flow failure — the user denied
+// access, the code expired, or GitHub rejected it. It is distinct from a transient
+// transport error (DNS/timeout/non-200/decode): Status() discards the pending
+// device code only on a terminal error, so a single network blip mid-authorization
+// no longer aborts the whole login.
+var ErrDeviceFlowDenied = errors.New("device flow rejected")
 
 // DeviceFlow runs GitHub's OAuth device flow (no client secret).
 type DeviceFlow struct {
@@ -85,6 +93,6 @@ func (d *DeviceFlow) Poll(ctx context.Context, deviceCode string) (string, bool,
 	case "slow_down":
 		return "", true, true, nil
 	default:
-		return "", false, false, fmt.Errorf("device flow: %s", body.Error)
+		return "", false, false, fmt.Errorf("%w: %s", ErrDeviceFlowDenied, body.Error)
 	}
 }

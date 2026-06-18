@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { EventRecord } from '@/types/events'
 import type { Session } from '@/types/sessions'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import { usePollingInterval } from '@/hooks/usePollingInterval'
 import { formatDuration, isRunning, projectName, sessionDurationMs } from './utils'
 
 const PAGE_SIZE = 20
@@ -60,10 +61,10 @@ export function SessionListPage() {
     return () => es.close()
   }, [cwd])
 
-  useEffect(() => {
-    const id = window.setInterval(() => setNowMs(Date.now()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
+  // Only tick the 1s "now" clock while at least one session is live (and the tab
+  // is visible). A project full of ended sessions re-renders zero times per second.
+  const hasLive = useMemo(() => sessions.some((s) => isRunning(s, nowMs)), [sessions, nowMs])
+  usePollingInterval(() => setNowMs(Date.now()), 1000, hasLive)
 
   return (
     <div className="flex h-full flex-col bg-background text-foreground">

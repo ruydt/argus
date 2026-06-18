@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os/exec"
 	"strconv"
@@ -47,13 +48,51 @@ func withTimeout(ctx context.Context, timeoutSeconds int) (context.Context, cont
 	return context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
 }
 
-// runCmd runs cmd with payload on stdin, capturing stdout/stderr/exit code.
+// maxCaptureBytes caps stdout/stderr captured from a simulated hook so a runaway
+// command that floods output can't OOM the backend or freeze the simulator panel.
+const maxCaptureBytes = 1 << 20 // 1 MiB
+
+// cappedBuffer collects up to limit bytes, then drops the rest and flags truncation.
+// Write always reports the full length so the child process is never killed by a
+// short-write error.
+type cappedBuffer struct {
+	buf       bytes.Buffer
+	limit     int
+	truncated bool
+}
+
+func (c *cappedBuffer) Write(p []byte) (int, error) {
+	if remaining := c.limit - c.buf.Len(); remaining > 0 {
+		if len(p) > remaining {
+			c.buf.Write(p[:remaining])
+			c.truncated = true
+		} else {
+			c.buf.Write(p)
+		}
+	} else if len(p) > 0 {
+		c.truncated = true
+	}
+	return len(p), nil
+}
+
+func (c *cappedBuffer) WriteString(s string) { c.buf.WriteString(s) }
+func (c *cappedBuffer) Len() int             { return c.buf.Len() }
+
+func (c *cappedBuffer) String() string {
+	if c.truncated {
+		return c.buf.String() + "\n…output truncated (1 MiB cap)…"
+	}
+	return c.buf.String()
+}
+
+// runCmd runs cmd with payload on stdin, capturing (capped) stdout/stderr/exit code.
 func runCmd(cctx context.Context, cmd *exec.Cmd, payload []byte, timeoutSeconds int) simulateResponse {
 	cmd.Stdin = bytes.NewReader(payload)
 
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	stdout := &cappedBuffer{limit: maxCaptureBytes}
+	stderr := &cappedBuffer{limit: maxCaptureBytes}
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 
 	start := time.Now()
 	runErr := cmd.Run()
@@ -61,12 +100,21 @@ func runCmd(cctx context.Context, cmd *exec.Cmd, payload []byte, timeoutSeconds 
 
 	exitCode := 0
 	if runErr != nil {
-		if exitErr, ok := runErr.(*exec.ExitError); ok && cctx.Err() != context.DeadlineExceeded {
-			exitCode = exitErr.ExitCode()
-		} else {
+		var exitErr *exec.ExitError
+		switch {
+		case cctx.Err() == context.DeadlineExceeded:
+			// Genuine timeout — the only case that should say "timed out".
 			exitCode = -1
 			if stderr.Len() == 0 {
 				stderr.WriteString("hook timed out after " + strconv.Itoa(timeoutSeconds) + "s")
+			}
+		case errors.As(runErr, &exitErr):
+			exitCode = exitErr.ExitCode()
+		default:
+			// sh-not-found, missing binary, permission denied, client disconnect, etc.
+			exitCode = -1
+			if stderr.Len() == 0 {
+				stderr.WriteString(runErr.Error())
 			}
 		}
 	}

@@ -3,18 +3,28 @@ package main
 import (
 	"crypto/sha256"
 	"database/sql"
+	"flag"
 	"fmt"
 	"log/slog"
 	"math/rand"
 	"os"
 	"time"
 
+	"argus/internal/config"
+
 	_ "modernc.org/sqlite"
 )
 
 func main() {
-	// Seed directly against the local SQLite file used by the backend server.
-	dbPath := "/home/leeduy0403/emruy/backend/cmd/server/argus.db"
+	// Seed directly against the same local SQLite file the backend server uses.
+	// Override with -db or the DB_PATH env var; otherwise the repo default is used.
+	dbFlag := flag.String("db", "", "path to argus SQLite DB (default: DB_PATH env or repo default)")
+	flag.Parse()
+	dbPath := *dbFlag
+	if dbPath == "" {
+		dbPath = config.Load().DBPath
+	}
+	slog.Info("seeding", "db", dbPath)
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		slog.Error("failed to open db", "err", err)
@@ -36,6 +46,7 @@ func main() {
 	// Use a single anchor time so all generated timestamps stay internally consistent.
 	now := time.Now()
 
+	failures := 0
 	for i := 1; i <= 50; i++ {
 		// Give each seeded session a predictable id so seeded rows are easy to inspect manually.
 		sessionID := fmt.Sprintf("sess-%03d", i)
@@ -66,6 +77,7 @@ func main() {
 		)
 		if err != nil {
 			slog.Error("failed to insert session", "session_id", sessionID, "err", err)
+			failures++
 			continue
 		}
 
@@ -97,9 +109,14 @@ func main() {
 			)
 			if err != nil {
 				slog.Error("failed to insert event", "session_id", sessionID, "err", err)
+				failures++
 			}
 		}
 	}
 
+	if failures > 0 {
+		slog.Error("seed completed with failures", "failures", failures)
+		os.Exit(1)
+	}
 	fmt.Println("Successfully seeded 50 sessions and their events.")
 }

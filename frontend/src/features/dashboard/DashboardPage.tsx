@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { DateRange } from 'react-day-picker'
-import { Download, RefreshCw } from 'lucide-react'
+import { AlertCircle, Download, RefreshCw } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -23,7 +24,7 @@ export function DashboardPage() {
   const [range, setRange] = useState<DateRange>(() => presetToDateRange('14d'))
   const [view, setView] = useState<'activity' | 'tokens'>('tokens')
   const query = rangeToDashboardQuery(range)
-  const { stats, loading, refreshing, reload } = useDashboardStats(query)
+  const { stats, loading, refreshing, reload, error } = useDashboardStats(query)
 
   return (
     <PageShell>
@@ -67,7 +68,19 @@ export function DashboardPage() {
         }
       />
 
-      {loading || !stats ? (
+      {!loading && !stats && error ? (
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>Couldn't load dashboard</AlertTitle>
+          <AlertDescription>
+            {error}
+            <Button variant="outline" size="sm" onClick={reload} className="mt-2 w-fit">
+              <RefreshCw data-icon="inline-start" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : loading || !stats ? (
         <DashboardSkeleton />
       ) : (
         <>

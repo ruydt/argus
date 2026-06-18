@@ -72,53 +72,98 @@ const mockFS: DiagnosticsFileSystem = {
   codexDBsDirExists: true,
 }
 
+// Mounts collapse by default; expand the one whose contents a test asserts.
+function openMount(label: '~/.argus' | '~/.claude' | '~/.codex') {
+  fireEvent.click(screen.getByRole('button', { name: `Toggle ${label}` }))
+}
+
 describe('FileSystemCard', () => {
+  let store: Record<string, string> = {}
+  const localStorageMock = {
+    getItem: (k: string) => (k in store ? store[k] : null),
+    setItem: (k: string, v: string) => {
+      store[k] = v
+    },
+    removeItem: (k: string) => {
+      delete store[k]
+    },
+    clear: () => {
+      store = {}
+    },
+  }
+
   beforeEach(() => {
+    store = {}
+    vi.stubGlobal('localStorage', localStorageMock)
     vi.stubGlobal('fetch', vi.fn())
   })
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  it('renders argusDir', () => {
+  it('renders argusDir path in the header (visible while collapsed)', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
     expect(screen.getByText('/home/user/.argus')).toBeInTheDocument()
   })
 
+  it('keeps mount contents hidden until expanded', () => {
+    render(<FileSystemCard fileSystem={mockFS} />)
+    expect(screen.queryByText('permission-request.sh')).not.toBeInTheDocument()
+    openMount('~/.argus')
+    expect(screen.getByText('permission-request.sh')).toBeInTheDocument()
+  })
+
   it('renders binary size', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
     expect(screen.getByText('17.8 MB')).toBeInTheDocument()
   })
 
   it('shows Not found for missing log', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
     expect(screen.getByText('Not found')).toBeInTheDocument()
   })
 
   it('renders hook file name', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
     expect(screen.getByText('permission-request.sh')).toBeInTheDocument()
   })
 
   it('shows Tail button for existing log files', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
     const tailButtons = screen.getAllByRole('button', { name: /tail/i })
     expect(tailButtons.length).toBeGreaterThan(0)
   })
 
   it('renders Uninstalled badge when codexHooksDirExists is false', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.codex')
     expect(screen.getByText('Uninstalled')).toBeInTheDocument()
   })
 
   it('renders history.jsonl line count', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.claude')
     expect(screen.getByText(/48,231 lines/)).toBeInTheDocument()
   })
 
   it('renders Codex DB file name', () => {
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.codex')
     expect(screen.getByText('logs_2.sqlite')).toBeInTheDocument()
+  })
+
+  it('remembers a mount toggle across remounts (localStorage)', () => {
+    const { unmount } = render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
+    expect(screen.getByText('permission-request.sh')).toBeInTheDocument()
+    unmount()
+    render(<FileSystemCard fileSystem={mockFS} />)
+    // Still expanded — no click needed this time.
+    expect(screen.getByText('permission-request.sh')).toBeInTheDocument()
   })
 
   it('fetches and shows log lines when Tail is clicked', async () => {
@@ -130,6 +175,7 @@ describe('FileSystemCard', () => {
       })
     )
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
     const tailButtons = screen.getAllByRole('button', { name: /tail/i })
     fireEvent.click(tailButtons[0])
     await waitFor(() => {
@@ -145,6 +191,7 @@ describe('FileSystemCard', () => {
     vi.stubGlobal('fetch', mockFetch)
 
     render(<FileSystemCard fileSystem={mockFS} />)
+    openMount('~/.argus')
 
     const rows = screen.getAllByRole('button', { name: /Tail hook-scripts\.log/i })
     fireEvent.click(rows[0])

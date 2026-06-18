@@ -1,73 +1,42 @@
-# React + TypeScript + Vite
+# argus frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite SPA for [argus](https://github.com/ruydt/argus) — the hooks
+config editor and simulator, live event feed, dashboard, sessions/projects explorer,
+diagnostics, and the script collection. In production it is built to static assets and
+embedded into the Go binary; in development it runs against the backend through a dev proxy.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+
+- pnpm 10.x (`corepack enable && corepack prepare pnpm@10.23.0 --activate`)
 
-## React Compiler
+## Develop
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm install
+pnpm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The Vite dev server proxies `/api` to the backend at `http://127.0.0.1:10804`, so run the
+backend alongside it (`cd ../backend && go run ./cmd/server`). Dev server: <http://localhost:5173>.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Checks
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+pnpm exec tsc --noEmit          # types
+pnpm exec vitest run            # tests
+pnpm run build                  # production build
+pnpm exec eslint src            # lint
+pnpm exec prettier --check src  # formatting
 ```
+
+## Conventions
+
+- `@` aliases `src/` (see `vite.config.ts`).
+- Check `src/components/ui/` (shadcn-generated — never hand-edit) before writing any raw
+  HTML element; add new primitives with `npx shadcn add <component>`.
+- Prettier: no semicolons, single quotes, 2-space indent, 100-char width.
+- Named exports only; no barrel files inside feature directories.
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) and the repo [CLAUDE.md](../CLAUDE.md) for the
+full architecture and frontend rules.

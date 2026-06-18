@@ -3,6 +3,11 @@ import { useSearchParams } from 'react-router-dom'
 import type { EventRecord } from '@/types'
 import { buildEventKey } from '../eventKey'
 
+// Cap the in-memory live window. A long, busy SSE session would otherwise grow the
+// events array (and per-flush dedup cost) without bound; older events remain reachable
+// via historical pagination.
+const MAX_LIVE_EVENTS = 2000
+
 export function useLiveEvents(
   sessionFilterOverride = '',
   {
@@ -30,7 +35,7 @@ export function useLiveEvents(
         seen.add(key)
         next.push(event)
       })
-      return next
+      return next.length > MAX_LIVE_EVENTS ? next.slice(next.length - MAX_LIVE_EVENTS) : next
     })
   }, [])
 

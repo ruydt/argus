@@ -2,6 +2,8 @@ package github
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -34,7 +36,7 @@ type Service struct {
 func NewService(clientID, argusDir string) *Service {
 	return &Service{
 		clientID:   clientID,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Timeout: 30 * time.Second},
 		tokens:     NewTokenStore(argusDir),
 	}
 }
@@ -123,14 +125,23 @@ func (s *Service) Status(ctx context.Context) domain.GitHubAuthStatus {
 		s.mu.Unlock()
 	}
 	if err != nil || pending || tok == "" {
-		if err != nil {
+		// Only discard the pending device code on a TERMINAL failure (denied/expired).
+		// A transient transport error must leave deviceCode intact so the next poll
+		// retries — otherwise a single network blip mid-authorization aborts the login.
+		if err != nil && errors.Is(err, ErrDeviceFlowDenied) {
 			s.mu.Lock()
 			s.deviceCode = ""
 			s.mu.Unlock()
 		}
 		return domain.GitHubAuthStatus{}
 	}
-	login, _ := s.newGist(tok).Login(ctx)
+	login, err := s.newGist(tok).Login(ctx)
+	if err != nil {
+		// Token is valid but the username lookup failed (transient). Surface it rather
+		// than silently persisting an empty identity. EnsureAuthor no-ops on an empty
+		// author, so no empty author is stamped; login can be backfilled on next login.
+		slog.Warn("[github] resolved token but failed to fetch login", "err", err)
+	}
 	_ = s.tokens.Save(tok, login)
 	s.mu.Lock()
 	s.deviceCode = ""

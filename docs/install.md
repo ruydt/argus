@@ -93,6 +93,8 @@ Backend environment variables:
 | `ARGUS_ALLOW_REMOTE`  | _(unset)_                        | Set to `1` to allow binding to non-loopback addresses (see security.md)      |
 | `ARGUS_RETENTION_DAYS`| `0` (disabled)                   | Prune hook events older than N days (sweep runs every 6h). `0` keeps everything. |
 | `ARGUS_MAX_EVENTS`    | `0` (disabled)                   | Cap the hook-events table to the N newest rows. `0` keeps everything.          |
+| `ARGUS_REGISTRY_RAW_URL`| `https://raw.githubusercontent.com/ruydt/argus/main/registry` | Base raw URL of the public hook-script registry index (override for forks/self-host). |
+| `ARGUS_GITHUB_CLIENT_ID`| _(built-in public OAuth App)_   | Override the GitHub OAuth App client id used for device-flow login.           |
 
 See [docs/privacy.md](privacy.md) for ignore rules and export handling. See
 [docs/security.md](security.md) for loopback defaults, remote opt-in, and
@@ -178,7 +180,7 @@ DB_PATH="$HOME/.local/share/argus/argus.db" ./argus
 The resolved path is printed at startup:
 
 ```text
-db -> /home/user/.local/share/argus/argus.db
+level=INFO msg=db path=/home/user/.local/share/argus/argus.db
 ```
 
 ### WAL files
@@ -228,14 +230,14 @@ To delete events older than 30 days without resetting everything:
 
 ```bash
 sqlite3 backend/argus.db \
-  "DELETE FROM events WHERE created_at < datetime('now', '-30 days');"
+  "DELETE FROM hook_events WHERE created_at < datetime('now', '-30 days');"
 ```
 
 To see how many events exist by date:
 
 ```bash
 sqlite3 backend/argus.db \
-  "SELECT date(created_at), count(*) FROM events GROUP BY date(created_at) ORDER BY 1 DESC LIMIT 14;"
+  "SELECT date(created_at), count(*) FROM hook_events GROUP BY date(created_at) ORDER BY 1 DESC LIMIT 14;"
 ```
 
 ## Privacy

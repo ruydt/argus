@@ -6,7 +6,6 @@ export const claudeCodeAgent: AgentConfig = {
   label: 'Claude Code',
   badgeClass: 'claude',
   Logo: AnthropicLogo,
-  supportsSessionUsage: true,
   matchesEvent: (event) => Boolean(event.transcript_path?.includes('/.claude/')),
   buildUsageItems: (usage, formatTokens) => [
     {

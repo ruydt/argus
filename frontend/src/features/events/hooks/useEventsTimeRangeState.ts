@@ -19,6 +19,15 @@ type UseEventsTimeRangeStateOptions = {
   sessionFilter: string
 }
 
+// Parse a free-text local datetime into an ISO string. Returns '' for partial/invalid
+// input (which occurs on nearly every keystroke) so an in-progress custom range is
+// treated as "no bound" instead of throwing RangeError during render.
+function toISOOrEmpty(value: string): string {
+  if (!value) return ''
+  const d = new Date(value.replace(' ', 'T'))
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString()
+}
+
 type NowStore = {
   getSnapshot: () => number
   setSnapshot: (value: number) => void
@@ -83,7 +92,7 @@ export function useEventsTimeRangeState({ isLive, sessionFilter }: UseEventsTime
 
   const sinceISO = useMemo(() => {
     if (timeRange === 'custom') {
-      return customStart ? new Date(customStart.replace(' ', 'T')).toISOString() : ''
+      return toISOOrEmpty(customStart)
     }
 
     const mins = TIME_RANGE_OFFSETS_MINUTES[timeRange]
@@ -92,7 +101,7 @@ export function useEventsTimeRangeState({ isLive, sessionFilter }: UseEventsTime
 
   const untilISO = useMemo(() => {
     if (timeRange !== 'custom') return ''
-    return customEnd ? new Date(customEnd.replace(' ', 'T')).toISOString() : ''
+    return toISOOrEmpty(customEnd)
   }, [customEnd, timeRange])
 
   return {

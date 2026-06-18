@@ -11,13 +11,6 @@ export type {
 
 export type { Session, SessionUsageType, SessionTreeNode } from './sessions'
 
-export type {
-  CollectionScript,
-  Collection,
-  GitHubAuthStatus,
-  DeviceCodeResponse,
-  CollectionEntry,
-  CollectionView,
-} from './collection'
+export type { DeviceCodeResponse, CollectionEntry, CollectionView } from './collection'
 
 export type { CommunityScript } from './community'

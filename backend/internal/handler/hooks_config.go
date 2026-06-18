@@ -48,10 +48,16 @@ func HooksConfig(claudeSettingsPath, codexHooksPath string) http.Handler {
 
 func serveGetHooksConfig(w http.ResponseWriter, agent, claudeSettingsPath, codexHooksPath string) {
 	var hooks map[string][]hooksConfigGroup
+	var err error
 	if agent == "claudecode" {
-		hooks = readClaudeHooks(claudeSettingsPath)
+		hooks, err = readClaudeHooks(claudeSettingsPath)
 	} else {
-		hooks = readCodexHooks(codexHooksPath)
+		hooks, err = readCodexHooks(codexHooksPath)
+	}
+	if err != nil {
+		slog.Error("[hooks-config] read config", "agent", agent, "err", err)
+		http.Error(w, fmt.Sprintf("failed to read config: %v", err), http.StatusInternalServerError)
+		return
 	}
 	if hooks == nil {
 		hooks = map[string][]hooksConfigGroup{}
@@ -62,36 +68,45 @@ func serveGetHooksConfig(w http.ResponseWriter, agent, claudeSettingsPath, codex
 	}
 }
 
-func readClaudeHooks(settingsPath string) map[string][]hooksConfigGroup {
+// readClaudeHooks returns (nil, nil) when the file does not exist or has no hooks block,
+// but surfaces a real read/parse error so the editor never shows "no hooks" for a file
+// it simply failed to read.
+func readClaudeHooks(settingsPath string) (map[string][]hooksConfigGroup, error) {
 	data, err := os.ReadFile(settingsPath)
 	if err != nil {
-		return nil
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
 	var settings map[string]json.RawMessage
 	if err := json.Unmarshal(data, &settings); err != nil {
-		return nil
+		return nil, fmt.Errorf("settings.json is not valid JSON: %w", err)
 	}
 	hooksRaw, ok := settings["hooks"]
 	if !ok {
-		return nil
+		return nil, nil
 	}
 	var hooks map[string][]hooksConfigGroup
 	if err := json.Unmarshal(hooksRaw, &hooks); err != nil {
-		return nil
+		return nil, fmt.Errorf("settings.json hooks block is not valid JSON: %w", err)
 	}
-	return hooks
+	return hooks, nil
 }
 
-func readCodexHooks(hooksPath string) map[string][]hooksConfigGroup {
+func readCodexHooks(hooksPath string) (map[string][]hooksConfigGroup, error) {
 	data, err := os.ReadFile(hooksPath)
 	if err != nil {
-		return nil
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
 	var payload hooksConfigPayload
 	if err := json.Unmarshal(data, &payload); err != nil {
-		return nil
+		return nil, fmt.Errorf("hooks.json is not valid JSON: %w", err)
 	}
-	return payload.Hooks
+	return payload.Hooks, nil
 }
 
 func servePutHooksConfig(w http.ResponseWriter, r *http.Request, agent, claudeSettingsPath, codexHooksPath string) {
@@ -121,10 +136,15 @@ func writeClaudeHooks(settingsPath string, hooks map[string][]hooksConfigGroup) 
 	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o700); err != nil {
 		return err
 	}
-	// Read existing settings to preserve all non-hooks keys.
+	// Read existing settings to preserve all non-hooks keys. A present-but-unparseable
+	// file must NOT be silently overwritten — that would destroy the user's other settings.
 	settings := map[string]json.RawMessage{}
 	if data, err := os.ReadFile(settingsPath); err == nil {
-		_ = json.Unmarshal(data, &settings)
+		if err := json.Unmarshal(data, &settings); err != nil {
+			return fmt.Errorf("existing settings.json is not valid JSON, refusing to overwrite: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("read existing settings.json: %w", err)
 	}
 	hooksJSON, err := json.Marshal(hooks)
 	if err != nil {

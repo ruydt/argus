@@ -95,6 +95,14 @@ export function SimulatorTab({
     }
   }, [])
 
+  const appliedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (appliedTimer.current) clearTimeout(appliedTimer.current)
+    },
+    []
+  )
+
   const preselectApplied = useRef(false)
   useEffect(() => {
     if (preselectApplied.current) return
@@ -201,9 +209,17 @@ export function SimulatorTab({
 
   async function handleApply() {
     if (!effectiveCommand || !eventType) return
-    await onApply(eventType, effectiveCommand)
+    setError(null)
+    try {
+      await onApply(eventType, effectiveCommand)
+    } catch (err) {
+      // Save failed — do NOT flash the success check; the hook was not persisted.
+      setError(`Failed to apply: ${err instanceof Error ? err.message : String(err)}`)
+      return
+    }
     setApplied(true)
-    setTimeout(() => setApplied(false), 1500)
+    if (appliedTimer.current) clearTimeout(appliedTimer.current)
+    appliedTimer.current = setTimeout(() => setApplied(false), 1500)
   }
 
   return (

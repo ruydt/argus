@@ -37,12 +37,13 @@ function parseApplyPatch(text: string, initialLine = 1): PatchRow[] {
     }
     if (trimmedLine.startsWith('***')) continue
 
-    // Robust marker and line number extraction:
-    const match = line.match(/^(\s*)(\d*\s*)([-+ ])(\s*)(\d*\s*)(.*)$/)
+    // Marker + optional leading line-number. Crucially there is NO whitespace group
+    // between the marker and the content capture, so source indentation is preserved
+    // verbatim (content must not be trimmed).
+    const match = line.match(/^(\d*)([-+ ])(.*)$/)
     if (!match) continue
-    const [, , preNum, marker, , postNum, content] = match
+    const [, rawNum, marker, content] = match
 
-    const rawNum = (preNum || postNum).trim()
     let currentNum = marker === '+' ? newLine : oldLine
     if (rawNum) {
       const parsed = Number(rawNum)

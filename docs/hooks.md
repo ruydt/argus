@@ -2,7 +2,7 @@
 
 Hook management is Argus's core: configure hooks with presets, test them in the
 simulator before an agent ever runs them, and grab ready-made scripts from the
-[public hook script collection](../my-custom-hook-scripts/) (guardrails,
+[public hook script collection](../registry/) (guardrails,
 formatters, notifications — zero dependencies, Claude Code + Codex).
 
 Argus receives agent events at:
@@ -29,7 +29,7 @@ Open the **Hooks Config** page in the Argus dashboard. Select your agent tab (Cl
 
 Presets are additive — they append to your existing config and never overwrite entries you already have.
 
-Each installed entry is tagged `statusMessage: "argus"` so Argus can identify its own entries. The **Diagnostics** page reflects the active preset name (Baseline / Medium / Full) or `Custom (X/30)` when your argus-managed events don't match a preset exactly.
+Each installed entry is tagged `statusMessage: "argus"` so Argus can identify its own entries. The **Diagnostics** page shows `Configured (X/Y)` — `X` argus-managed event types out of `Y` available for that agent (30 for Claude Code, 10 for Codex) — `Configured` when hooks exist but none are argus-managed, or `Missing` when no hooks are configured.
 
 ### Adding individual events
 
@@ -43,7 +43,7 @@ Click **Remove Argus hooks** to strip all entries tagged `statusMessage: "argus"
 
 ## Hook simulator
 
-The **Simulator** tab on the Hooks Config page runs any hook command against a synthetic payload — no live agent session needed. Use it to test a guardrail script before wiring it, debug a hook that misbehaves, or inspect exactly what an event payload looks like.
+The simulator (open it with the **Simulator** button on the Hooks Config page) runs any hook command against a synthetic payload — no live agent session needed. Use it to test a guardrail script before wiring it, debug a hook that misbehaves, or inspect exactly what an event payload looks like.
 
 How it works:
 
@@ -54,7 +54,7 @@ How it works:
    - or **Custom command…** for anything else.
 3. Click **Run**. The backend executes the command with the payload piped to stdin (the hook contract), honoring the hook's configured timeout (default 10s), and shows stdout, stderr, exit code, and duration.
 
-A custom command can be saved into your hooks config for the selected event with **Apply to config** (idempotent — applying the same command twice adds nothing).
+A custom command can be saved into your hooks config for the selected event with **Apply** (idempotent — applying the same command twice adds nothing).
 
 Example: select `PreToolUse`, pick `block-dangerous.js`, set `tool_input.command` to `rm -rf ~` in the payload — the output panel shows the deny JSON the agent would receive.
 

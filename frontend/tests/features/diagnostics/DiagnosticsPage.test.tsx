@@ -226,6 +226,8 @@ describe('DiagnosticsPage', () => {
   it('renders history.jsonl line count', async () => {
     renderPage()
     await screen.findByText('Agent Connectivity')
+    // File System mounts start collapsed; expand ~/.claude to reveal history.jsonl.
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle ~/.claude' }))
     expect(screen.getByText(/48,231 lines/)).toBeInTheDocument()
   })
 

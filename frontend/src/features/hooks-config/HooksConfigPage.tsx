@@ -241,9 +241,15 @@ export function HooksConfigPage() {
         headers: { 'Content-Type': 'application/json' },
         body,
       })
-      if (res.ok) {
-        state.reload()
+      if (!res.ok) {
+        throw new Error(await res.text().catch(() => `HTTP ${res.status}`))
       }
+      state.reload()
+    } catch (err) {
+      // Roll back the optimistic update so a rejected save never looks persisted,
+      // and rethrow so the simulator surfaces the failure instead of flashing success.
+      state.setConfig(currentConfig)
+      throw err
     } finally {
       setApplying(false)
     }

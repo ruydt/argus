@@ -1,24 +1,294 @@
-import { format } from 'date-fns'
-import { FolderOpen, RefreshCw } from 'lucide-react'
-import { CopyIconButton } from '@/components/shared/CopyIconButton'
+import type { ComponentType, ReactNode } from 'react'
 import { useState } from 'react'
+import { format } from 'date-fns'
+import {
+  Braces,
+  ChevronDown,
+  ChevronRight,
+  Cpu,
+  Database,
+  File,
+  FileCode,
+  Folder,
+  FolderOpen,
+  HardDrive,
+  RefreshCw,
+  ScrollText,
+} from 'lucide-react'
+import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { formatBytes } from './utils'
 import { useLogTail } from './hooks/useLogTail'
 import type { DiagnosticsFileEntry, DiagnosticsFileSystem } from './types'
 
-const BADGE_AMBER = 'border-[var(--cwd)] text-[var(--cwd)] bg-transparent'
+// Files at/above this size are flagged amber so disk-hogs (big logs, databases,
+// a bloated binary) jump out at a glance — the "anything I should worry about?" signal.
+const LARGE_FILE_BYTES = 10 * 1024 * 1024
+const AMBER = 'border-[var(--cwd)] text-[var(--cwd)] bg-transparent'
+
+// Mounts start collapsed; each open/closed toggle is remembered across reloads.
+const FS_OPEN_KEY = 'argus:diag:fs-open'
+function readOpenMounts(): Set<string> {
+  try {
+    const raw = localStorage.getItem(FS_OPEN_KEY)
+    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+// Uniform file-type icon set (research: consistent iconography drives scannability).
+function FileIcon({
+  name,
+  isBinary,
+  className,
+}: {
+  name: string
+  isBinary?: boolean
+  className?: string
+}) {
+  if (isBinary) return <Cpu className={className} />
+  const n = name.toLowerCase()
+  if (n.endsWith('.log')) return <ScrollText className={className} />
+  if (/\.(sqlite|db)$/.test(n)) return <Database className={className} />
+  if (/\.(json|jsonl)$/.test(n)) return <Braces className={className} />
+  if (/\.(js|mjs|cjs|ts|sh|py)$/.test(n)) return <FileCode className={className} />
+  return <File className={className} />
+}
+
+function fmtDate(iso?: string | null): string | null {
+  if (!iso) return null
+  try {
+    return format(new Date(iso), 'MMM d')
+  } catch {
+    return null
+  }
+}
+
+function totalBytes(entries: DiagnosticsFileEntry[]): number {
+  return entries.reduce((sum, e) => sum + (e.exists && e.sizeBytes ? e.sizeBytes : 0), 0)
+}
 
 function UninstalledBadge() {
   return (
-    <Badge variant="outline" className={BADGE_AMBER}>
+    <Badge variant="outline" className={cn('h-5 text-[10px]', AMBER)}>
       Uninstalled
     </Badge>
   )
+}
+
+function reveal(path: string) {
+  fetch('/api/diagnostics/reveal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  }).catch((err: unknown) => console.error('reveal failed', err))
+}
+
+function RowActions({ entry }: { entry: DiagnosticsFileEntry }) {
+  // Reserve fixed width so rows don't shift when actions fade in on hover.
+  return (
+    <span className="flex w-[44px] items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      {entry.exists && (
+        <>
+          <CopyIconButton
+            text={entry.path}
+            label={`Copy ${entry.name} path`}
+            className="size-4 opacity-60 hover:opacity-100 hover:bg-transparent"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Show ${entry.name} in folder`}
+            title="Show in folder"
+            className="size-4 opacity-60 hover:opacity-100 hover:bg-transparent"
+            onClick={() => reveal(entry.path)}
+          >
+            <FolderOpen className="size-3.5" />
+          </Button>
+        </>
+      )}
+    </span>
+  )
+}
+
+type FileRowProps = {
+  entry: DiagnosticsFileEntry
+  isBinary?: boolean
+  meta?: string | null
+  children?: ReactNode
+}
+
+// One file = one row: [type icon] name … size · date · hover-actions [· trailing slot].
+// Filenames in mono; size right-aligned + tabular so the column reads as a list.
+function FileRow({ entry, isBinary, meta, children }: FileRowProps) {
+  const date = fmtDate(entry.lastModified)
+  const dim = !entry.exists || entry.name.startsWith('.')
+  const large = entry.exists && entry.sizeBytes != null && entry.sizeBytes >= LARGE_FILE_BYTES
+  return (
+    <div className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-muted/50">
+      <FileIcon
+        name={entry.name}
+        isBinary={isBinary}
+        className={cn(
+          'size-3.5 shrink-0',
+          dim ? 'text-muted-foreground/50' : 'text-muted-foreground'
+        )}
+      />
+      <span
+        className={cn('truncate text-[12px]', dim ? 'text-muted-foreground' : 'text-foreground')}
+        title={entry.name}
+      >
+        {entry.name}
+      </span>
+      <div className="flex items-center justify-end gap-2.5 text-[12px]">
+        {meta && <span className="tabular-nums text-muted-foreground">{meta}</span>}
+        <span
+          className={cn(
+            'w-[72px] text-right tabular-nums',
+            !entry.exists
+              ? 'text-muted-foreground'
+              : large
+                ? 'font-medium text-[var(--cwd)]'
+                : 'text-foreground/80'
+          )}
+        >
+          {entry.exists
+            ? entry.sizeBytes != null
+              ? formatBytes(entry.sizeBytes)
+              : 'Unknown'
+            : 'Not found'}
+        </span>
+        <span className="w-9 text-right text-[11px] text-muted-foreground">{date}</span>
+        <RowActions entry={entry} />
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// Sub-group divider inside a mount (logs / hooks / databases / history).
+function GroupLabel({
+  label,
+  count,
+  total,
+  missing,
+}: {
+  label: string
+  count: number
+  total?: number
+  missing?: boolean
+}) {
+  const truncated = total !== undefined && total > count
+  return (
+    <div className="flex items-center gap-2 px-2 pb-0.5 pt-2.5 first:pt-1">
+      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+        {label}
+      </span>
+      <span className="text-[10px] tabular-nums text-muted-foreground/70">
+        {truncated ? `${count} of ${total!.toLocaleString()}` : count}
+      </span>
+      {missing && <UninstalledBadge />}
+      <span className="h-px flex-1 bg-border/60" />
+    </div>
+  )
+}
+
+type MountProps = {
+  icon: ComponentType<{ className?: string }>
+  label: string
+  role: string
+  path: string
+  exists?: boolean
+  fileCount: number
+  sizeBytes: number
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}
+
+// A root directory = a "mount": identifiable header (icon + name + plain-language role)
+// with at-a-glance file count + total size, collapsible to fold away noise.
+function Mount({
+  icon: Icon,
+  label,
+  role,
+  path,
+  exists = true,
+  fileCount,
+  sizeBytes,
+  open,
+  onToggle,
+  children,
+}: MountProps) {
+  const Chevron = open ? ChevronDown : ChevronRight
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/70 bg-card">
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-label={`Toggle ${label}`}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <Chevron className="size-4 shrink-0 text-muted-foreground" />
+          <span
+            className={cn(
+              'flex size-7 shrink-0 items-center justify-center rounded-lg',
+              exists ? 'bg-muted text-foreground' : 'bg-muted/50 text-muted-foreground'
+            )}
+          >
+            <Icon className="size-4" />
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold text-foreground">{label}</span>
+              {!exists && <UninstalledBadge />}
+            </span>
+            <span className="truncate text-[11px] text-muted-foreground">{role}</span>
+          </span>
+        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="flex flex-col items-end gap-0.5 text-[11px] text-muted-foreground">
+            {exists && (
+              <span className="tabular-nums">
+                {fileCount} {fileCount === 1 ? 'file' : 'files'} · {formatBytes(sizeBytes)}
+              </span>
+            )}
+            <span
+              className="max-w-[260px] truncate text-[10px] text-muted-foreground/70"
+              title={path}
+            >
+              {path}
+            </span>
+          </div>
+          <CopyIconButton
+            text={path}
+            label={`Copy ${label} path`}
+            className="size-4 opacity-50 hover:opacity-100 hover:bg-transparent"
+          />
+        </div>
+      </div>
+      {open && (
+        <div className="border-t border-border/70 px-2 pb-2">
+          {exists ? (
+            children
+          ) : (
+            <p className="px-2 py-2 text-[12px] text-muted-foreground">Directory not present.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EmptyGroup({ label }: { label: string }) {
+  return <p className="px-2 py-1 text-[12px] text-muted-foreground">{label}</p>
 }
 
 type FileSystemCardProps = {
@@ -26,394 +296,212 @@ type FileSystemCardProps = {
   'data-tour'?: string
 }
 
-function RevealButton({ entry }: { entry: DiagnosticsFileEntry }) {
-  if (!entry.exists) return null
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon-sm"
-      aria-label={`Show ${entry.name} in folder`}
-      title="Show in folder"
-      className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-      onClick={() => {
-        fetch('/api/diagnostics/reveal', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: entry.path }),
-        }).catch((err: unknown) => console.error('reveal failed', err))
-      }}
-    >
-      <FolderOpen className="size-3.5" />
-    </Button>
-  )
-}
-
-function FileSize({ entry }: { entry: DiagnosticsFileEntry }) {
-  if (!entry.exists) {
-    return <span className="text-[12px] text-muted-foreground">Not found</span>
-  }
-  return (
-    <span className="text-[13px]">
-      {entry.sizeBytes !== null ? formatBytes(entry.sizeBytes) : 'Unknown'}
-    </span>
-  )
-}
-
-function FileModified({ entry }: { entry: DiagnosticsFileEntry }) {
-  if (!entry.exists || !entry.lastModified) return null
-  let label: string
-  try {
-    label = format(new Date(entry.lastModified), 'MMM d')
-  } catch {
-    return null
-  }
-  return <span className="text-[12px] text-muted-foreground">{label}</span>
-}
-
-type TailPanelProps = {
-  lines: string[]
-  loading: boolean
-  error: string | null
-  onRefresh: () => void
-}
-
-function TailPanel({ lines, loading, error, onRefresh }: TailPanelProps) {
-  return (
-    <div className="mt-2 rounded border border-border bg-[var(--secondary)] p-3">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] text-muted-foreground">Last 50 lines</span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={onRefresh}
-          disabled={loading}
-          aria-label="Refresh log"
-        >
-          <RefreshCw className={cn('size-3', loading && 'animate-spin')} />
-        </Button>
-      </div>
-      {error && <p className="text-[12px] text-destructive">{error}</p>}
-      {!error && lines.length === 0 && !loading && (
-        <p className="text-[12px] text-muted-foreground">Log file is empty or not found</p>
-      )}
-      {lines.length > 0 && (
-        <pre className="font-mono text-[11px] leading-relaxed overflow-y-auto max-h-[320px] whitespace-pre-wrap break-all">
-          {lines.map((line, i) => (
-            <div key={i}>{line}</div>
-          ))}
-        </pre>
-      )}
-    </div>
-  )
-}
-
-type LogRowProps = {
-  entry: DiagnosticsFileEntry
-  open: boolean
-  onToggle: () => void
-  tailState: { lines: string[]; loading: boolean; error: string | null }
-  onRefresh: () => void
-}
-
-function LogRow({ entry, open, onToggle, tailState, onRefresh }: LogRowProps) {
-  return (
-    <div>
-      <div className="flex items-center justify-between py-1.5 text-[13px]">
-        <span className="text-[12px]">{entry.name}</span>
-        <div className="flex items-center gap-2 shrink-0">
-          <FileSize entry={entry} />
-          <FileModified entry={entry} />
-          {entry.exists && (
-            <CopyIconButton
-              text={entry.path}
-              label={`Copy ${entry.name} path`}
-              className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-            />
-          )}
-          <RevealButton entry={entry} />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-6 px-2 text-[11px]"
-            onClick={onToggle}
-            aria-label={`Tail ${entry.name}`}
-          >
-            {open ? 'Close' : 'Tail'}
-          </Button>
-        </div>
-      </div>
-      {open && <TailPanel {...tailState} onRefresh={onRefresh} />}
-    </div>
-  )
-}
-
-type SubSectionProps = {
-  label: string
-  entries: DiagnosticsFileEntry[]
-  dirExists: boolean
-  emptyLabel?: string
-  total?: number
-}
-
-function SubSection({ label, entries, dirExists, emptyLabel, total }: SubSectionProps) {
-  // Backend caps listings; total carries the uncapped directory count.
-  const truncated = total !== undefined && total > entries.length
-  return (
-    <div className="mt-2">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-[11px] text-muted-foreground">{label}</span>
-        <span className="text-[11px] text-muted-foreground">
-          ({truncated ? `${entries.length} of ${total.toLocaleString()}` : entries.length})
-        </span>
-        {!dirExists && <UninstalledBadge />}
-      </div>
-      {entries.length === 0 && dirExists ? (
-        <p className="text-[12px] text-muted-foreground pl-3 py-1">
-          {emptyLabel ?? 'No files found'}
-        </p>
-      ) : (
-        <div className="border-l border-border pl-3">
-          {entries.map((entry, i) => (
-            <div key={entry.name}>
-              {i > 0 && <Separator />}
-              <div className="flex items-center justify-between py-1.5 text-[13px]">
-                <span className="text-[12px]">{entry.name}</span>
-                <div className="flex items-center gap-2">
-                  <FileSize entry={entry} />
-                  <FileModified entry={entry} />
-                  <CopyIconButton
-                    text={entry.path}
-                    label={`Copy ${entry.name} path`}
-                    className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-                  />
-                  <RevealButton entry={entry} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-export function FileSystemCard({ fileSystem, 'data-tour': dataTour }: FileSystemCardProps) {
+export function FileSystemCard({ fileSystem: fs, 'data-tour': dataTour }: FileSystemCardProps) {
   const argusTail = useLogTail('argus', 50)
   const buildTail = useLogTail('build', 50)
   const hookScriptsTail = useLogTail('hook-scripts', 50)
   const [openLog, setOpenLog] = useState<string | null>(null)
+  const [openMounts, setOpenMounts] = useState<Set<string>>(readOpenMounts)
+
+  const tailFor = (name: string) =>
+    name === 'argus.log' ? argusTail : name === 'hook-scripts.log' ? hookScriptsTail : buildTail
 
   function toggleLog(name: string) {
     const opening = openLog !== name
     setOpenLog(opening ? name : null)
-    if (opening) {
-      if (name === 'argus.log') argusTail.fetch()
-      else if (name === 'build.log') buildTail.fetch()
-      else if (name === 'hook-scripts.log') hookScriptsTail.fetch()
-    }
+    if (opening) tailFor(name).fetch()
   }
 
-  function tailStateFor(name: string) {
-    if (name === 'argus.log')
-      return { lines: argusTail.lines, loading: argusTail.loading, error: argusTail.error }
-    if (name === 'hook-scripts.log')
-      return {
-        lines: hookScriptsTail.lines,
-        loading: hookScriptsTail.loading,
-        error: hookScriptsTail.error,
+  function toggleMount(id: string) {
+    setOpenMounts((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try {
+        localStorage.setItem(FS_OPEN_KEY, JSON.stringify([...next]))
+      } catch {
+        /* localStorage unavailable */
       }
-    return { lines: buildTail.lines, loading: buildTail.loading, error: buildTail.error }
+      return next
+    })
   }
+  const isOpen = (id: string) => openMounts.has(id)
 
-  function refreshFor(name: string) {
-    if (name === 'argus.log') return argusTail.fetch
-    if (name === 'hook-scripts.log') return hookScriptsTail.fetch
-    return buildTail.fetch
-  }
+  const claudeHooks = fs.claudeHooks ?? []
+  const codexHooks = fs.codexHooks ?? []
+  const codexDBs = fs.codexDBs ?? []
+
+  const argusFileCount = 1 + fs.logs.length + fs.hooks.length
+  const argusSize =
+    (fs.binary.exists && fs.binary.sizeBytes ? fs.binary.sizeBytes : 0) +
+    totalBytes(fs.logs) +
+    totalBytes(fs.hooks)
+  const claudeFileCount = claudeHooks.length + (fs.claudeHistory.exists ? 1 : 0)
+  const claudeSize = totalBytes(claudeHooks) + totalBytes([fs.claudeHistory])
 
   return (
     <Card data-tour={dataTour}>
       <CardHeader>
         <CardTitle>File System</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-0">
-        {/* Root dir */}
-        <div className="flex items-center justify-between py-2 text-[13px]">
-          <span className="text-muted-foreground">~/.argus</span>
-          <span className="flex items-center gap-1">
-            <span
-              className="text-[12px] text-foreground truncate max-w-[300px]"
-              title={fileSystem.argusDir}
-            >
-              {fileSystem.argusDir}
-            </span>
-            <CopyIconButton
-              text={fileSystem.argusDir}
-              label="Copy .argus path"
-              className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-            />
-          </span>
-        </div>
-        <Separator />
-
-        {/* Binary */}
-        <div className="flex items-center justify-between py-2 text-[13px]">
-          <span className="text-muted-foreground">Binary</span>
-          <div className="flex items-center gap-2">
-            <span
-              className="text-[12px] text-foreground truncate max-w-[200px]"
-              title={fileSystem.binary.path}
-            >
-              {fileSystem.binary.path}
-            </span>
-            <FileSize entry={fileSystem.binary} />
-            <FileModified entry={fileSystem.binary} />
-            {fileSystem.binary.exists && (
-              <CopyIconButton
-                text={fileSystem.binary.path}
-                label="Copy binary path"
-                className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-              />
-            )}
-            <RevealButton entry={fileSystem.binary} />
-          </div>
-        </div>
-        <Separator />
-
-        {/* Logs */}
-        <div className="mt-2">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] text-muted-foreground">logs</span>
-            <span className="text-[11px] text-muted-foreground">({fileSystem.logs.length})</span>
-          </div>
-          <div className="border-l border-border pl-3">
-            {fileSystem.logs.map((entry, i) => (
-              <div key={entry.name}>
-                {i > 0 && <Separator />}
-                <LogRow
-                  entry={entry}
-                  open={openLog === entry.name}
-                  onToggle={() => toggleLog(entry.name)}
-                  tailState={tailStateFor(entry.name)}
-                  onRefresh={refreshFor(entry.name)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <Separator />
-
-        {/* ~/.argus/hooks */}
-        <SubSection
-          label="hooks"
-          entries={fileSystem.hooks}
-          dirExists={true}
-          total={fileSystem.hooksTotal}
-        />
-
-        <Separator />
-
-        {/* ~/.claude */}
-        <div className="flex items-center justify-between py-2 text-[13px]">
-          <span className="text-muted-foreground">~/.claude</span>
-          <span className="flex items-center gap-1">
-            <span
-              className="text-[12px] text-foreground truncate max-w-[300px]"
-              title={fileSystem.claudeDir}
-            >
-              {fileSystem.claudeDir}
-            </span>
-            {fileSystem.claudeDirExists ? (
-              <CopyIconButton
-                text={fileSystem.claudeDir}
-                label="Copy .claude path"
-                className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-              />
-            ) : (
-              <UninstalledBadge />
-            )}
-          </span>
-        </div>
-        <SubSection
-          label="hooks"
-          entries={fileSystem.claudeHooks ?? []}
-          dirExists={fileSystem.claudeHooksDirExists}
-          total={fileSystem.claudeHooksTotal}
-        />
-        <div className="mt-2 border-l border-border pl-3">
-          <div className="flex items-center justify-between py-1.5 text-[13px]">
-            <span className="text-[12px]">history.jsonl</span>
-            <div className="flex items-center gap-2">
-              <FileSize entry={fileSystem.claudeHistory} />
-              {fileSystem.claudeHistory.lineCount != null && (
-                <span className="text-[12px] text-muted-foreground">
-                  {fileSystem.claudeHistory.lineCount.toLocaleString()} lines
-                </span>
-              )}
-              <FileModified entry={fileSystem.claudeHistory} />
-              {fileSystem.claudeHistory.exists && (
-                <CopyIconButton
-                  text={fileSystem.claudeHistory.path}
-                  label="Copy history.jsonl path"
-                  className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-                />
-              )}
-              <RevealButton entry={fileSystem.claudeHistory} />
+      <CardContent className="flex flex-col gap-3">
+        {/* ~/.argus — the install */}
+        <Mount
+          icon={HardDrive}
+          label="~/.argus"
+          role="Argus install — binary, logs, and your hook scripts"
+          path={fs.argusDir}
+          fileCount={argusFileCount}
+          sizeBytes={argusSize}
+          open={isOpen('argus')}
+          onToggle={() => toggleMount('argus')}
+        >
+          <GroupLabel label="binary" count={1} />
+          <FileRow entry={fs.binary} isBinary />
+          {!fs.binary.exists && (
+            <div className="px-2 py-1">
+              <Badge variant="outline" className={AMBER}>
+                Binary not installed
+              </Badge>
             </div>
-          </div>
-        </div>
+          )}
 
-        <Separator />
+          <GroupLabel label="logs" count={fs.logs.length} />
+          {fs.logs.map((entry) => {
+            const t = tailFor(entry.name)
+            return (
+              <div key={entry.name}>
+                <FileRow entry={entry}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onClick={() => toggleLog(entry.name)}
+                    aria-label={`Tail ${entry.name}`}
+                  >
+                    {openLog === entry.name ? 'Close' : 'Tail'}
+                  </Button>
+                </FileRow>
+                {openLog === entry.name && (
+                  <div className="mb-2 ml-2 mt-1 rounded border border-border bg-[var(--secondary)] p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground">Last 50 lines</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={t.fetch}
+                        disabled={t.loading}
+                        aria-label="Refresh log"
+                      >
+                        <RefreshCw className={cn('size-3', t.loading && 'animate-spin')} />
+                      </Button>
+                    </div>
+                    {t.error && <p className="text-[12px] text-destructive">{t.error}</p>}
+                    {!t.error && t.lines.length === 0 && !t.loading && (
+                      <p className="text-[12px] text-muted-foreground">
+                        Log file is empty or not found
+                      </p>
+                    )}
+                    {t.lines.length > 0 && (
+                      <pre className="max-h-[320px] overflow-y-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed">
+                        {t.lines.map((line, i) => (
+                          <div key={i}>{line}</div>
+                        ))}
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
 
-        {/* ~/.codex */}
-        <div className="flex items-center justify-between py-2 text-[13px]">
-          <span className="text-muted-foreground">~/.codex</span>
-          <span className="flex items-center gap-1">
-            <span
-              className="text-[12px] text-foreground truncate max-w-[300px]"
-              title={fileSystem.codexDir}
-            >
-              {fileSystem.codexDir}
-            </span>
-            {fileSystem.codexDirExists ? (
-              <CopyIconButton
-                text={fileSystem.codexDir}
-                label="Copy .codex path"
-                className="size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-              />
-            ) : (
-              <UninstalledBadge />
-            )}
-          </span>
-        </div>
-        <SubSection
-          label="hooks"
-          entries={fileSystem.codexHooks ?? []}
-          dirExists={fileSystem.codexHooksDirExists}
-          total={fileSystem.codexHooksTotal}
-        />
-        <SubSection
-          label="databases"
-          entries={fileSystem.codexDBs ?? []}
-          dirExists={fileSystem.codexDBsDirExists}
-          emptyLabel="No databases found"
-          total={fileSystem.codexDBsTotal}
-        />
+          <GroupLabel label="hooks" count={fs.hooks.length} total={fs.hooksTotal} />
+          {fs.hooks.length === 0 ? (
+            <EmptyGroup label="No hook scripts installed" />
+          ) : (
+            fs.hooks.map((entry) => <FileRow key={entry.name} entry={entry} />)
+          )}
+        </Mount>
 
-        {/* Warning for missing binary */}
-        {!fileSystem.binary.exists && (
-          <div className="mt-2">
-            <Badge
-              variant="outline"
-              className="border-[var(--cwd)] text-[var(--cwd)] bg-transparent"
-            >
-              Binary not installed
-            </Badge>
-          </div>
-        )}
+        {/* ~/.claude — Claude Code */}
+        <Mount
+          icon={Folder}
+          label="~/.claude"
+          role="Claude Code — hooks and prompt history"
+          path={fs.claudeDir}
+          exists={fs.claudeDirExists}
+          fileCount={claudeFileCount}
+          sizeBytes={claudeSize}
+          open={isOpen('claude')}
+          onToggle={() => toggleMount('claude')}
+        >
+          <GroupLabel
+            label="hooks"
+            count={claudeHooks.length}
+            total={fs.claudeHooksTotal}
+            missing={!fs.claudeHooksDirExists}
+          />
+          {!fs.claudeHooksDirExists ? (
+            <EmptyGroup label="Hooks directory not present" />
+          ) : claudeHooks.length === 0 ? (
+            <EmptyGroup label="No hooks configured" />
+          ) : (
+            claudeHooks.map((entry) => <FileRow key={entry.name} entry={entry} />)
+          )}
+
+          <GroupLabel label="history" count={fs.claudeHistory.exists ? 1 : 0} />
+          <FileRow
+            entry={fs.claudeHistory}
+            meta={
+              fs.claudeHistory.lineCount != null
+                ? `${fs.claudeHistory.lineCount.toLocaleString()} lines`
+                : null
+            }
+          />
+        </Mount>
+
+        {/* ~/.codex — Codex */}
+        <Mount
+          icon={Folder}
+          label="~/.codex"
+          role="Codex — hooks and databases"
+          path={fs.codexDir}
+          exists={fs.codexDirExists}
+          fileCount={codexHooks.length + codexDBs.length}
+          sizeBytes={totalBytes(codexHooks) + totalBytes(codexDBs)}
+          open={isOpen('codex')}
+          onToggle={() => toggleMount('codex')}
+        >
+          <GroupLabel
+            label="hooks"
+            count={codexHooks.length}
+            total={fs.codexHooksTotal}
+            missing={!fs.codexHooksDirExists}
+          />
+          {!fs.codexHooksDirExists ? (
+            <EmptyGroup label="Hooks directory not present" />
+          ) : codexHooks.length === 0 ? (
+            <EmptyGroup label="No hooks configured" />
+          ) : (
+            codexHooks.map((entry) => <FileRow key={entry.name} entry={entry} />)
+          )}
+
+          <GroupLabel
+            label="databases"
+            count={codexDBs.length}
+            total={fs.codexDBsTotal}
+            missing={!fs.codexDBsDirExists}
+          />
+          {!fs.codexDBsDirExists ? (
+            <EmptyGroup label="Databases directory not present" />
+          ) : codexDBs.length === 0 ? (
+            <EmptyGroup label="No databases found" />
+          ) : (
+            codexDBs.map((entry) => <FileRow key={entry.name} entry={entry} />)
+          )}
+        </Mount>
       </CardContent>
     </Card>
   )

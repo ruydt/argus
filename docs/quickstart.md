@@ -52,8 +52,8 @@ The setup script patches Claude Code and Codex hook configs automatically:
 
 Or configure manually using the hook guide for your agent:
 
-- [Codex](hooks.md#codex)
-- [Claude Code](hooks.md#claude-code)
+- [Codex](setup/codex.md)
+- [Claude Code](setup/claudecode.md)
 
 ## 4. Verify one event
 
