@@ -37,7 +37,7 @@ describe('Sidebar desktop toggle placement', () => {
       onToggleCollapse: vi.fn(),
     })
 
-    expect(screen.getByText('Dashboard').closest('.sidebar-label-motion')).toHaveClass(
+    expect(screen.getByText('Events').closest('.sidebar-label-motion')).toHaveClass(
       'sidebar-label-open'
     )
     expect(screen.queryByText('Monitor')).not.toBeInTheDocument()
@@ -48,11 +48,11 @@ describe('Sidebar desktop toggle placement', () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText('Dashboard').closest('.sidebar-label-motion')).toHaveClass(
+    expect(screen.getByText('Events').closest('.sidebar-label-motion')).toHaveClass(
       'sidebar-label-closed'
     )
     expect(screen.queryByText('Monitor')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /overview dashboard/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /terminal events/i })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /ai insights/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
   })

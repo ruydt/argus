@@ -1,8 +1,6 @@
 import { Fragment, useEffect, type AnchorHTMLAttributes, type Ref, type RefObject } from 'react'
 import {
   Signpost,
-  FolderOpen,
-  LayoutDashboard,
   PanelLeft,
   Files,
   SlidersHorizontal,
@@ -116,25 +114,11 @@ function NavButton({
 
 const NAV_ITEMS: NavItem[] = [
   {
-    to: '/dashboard',
-    label: 'Dashboard',
-    ariaLabel: 'Overview Dashboard',
-    icon: LayoutDashboard,
-    end: false,
-  },
-  {
     to: '/',
     label: 'Events',
     ariaLabel: 'Terminal Events',
     icon: TerminalSquare,
     end: true,
-  },
-  {
-    to: '/projects',
-    label: 'Projects',
-    ariaLabel: 'Projects',
-    icon: FolderOpen,
-    end: false,
   },
   {
     to: '/diagnostics',
