@@ -42,17 +42,6 @@ func idFromFilename(filename string) string {
 	return filename
 }
 
-func runtimeFromExt(filename string) string {
-	switch filepath.Ext(filename) {
-	case ".js":
-		return "node"
-	case ".py":
-		return "python3"
-	default:
-		return "sh"
-	}
-}
-
 // Collection returns the unified collection view: every script installed locally
 // or saved in the gist, with independent Local/Gist flags. Auth is OPTIONAL — a
 // logged-out user still sees their local scripts (never a 401).

@@ -21,19 +21,6 @@ import (
 // an arbitrary string from ever reaching exec.LookPath or the sandbox command.
 var allowedRuntimes = map[string]bool{"sh": true, "node": true, "python3": true}
 
-// runtimeExt maps an allowlisted runtime to the temp-file extension used for the
-// sandbox. Derived from the runtime, never from the untrusted source path.
-func runtimeExt(runtime string) string {
-	switch runtime {
-	case "node":
-		return ".js"
-	case "python3":
-		return ".py"
-	default:
-		return ".sh"
-	}
-}
-
 // communityState fills Installed + RuntimeAvailable for each script. The install
 // filename is the basename of the registry source path (e.g. demo.sh).
 func communityState(scripts []domain.CommunityScript, argusDir string) []domain.CommunityScript {
