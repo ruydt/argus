@@ -21,7 +21,6 @@ import { detectHookConfigLabel } from '@/features/hooks-config/presets'
 import type { HooksConfig } from '@/features/hooks-config/types'
 import type { AgentKey } from '@/features/hooks-config/types'
 import { useDiagnostics } from './hooks/useDiagnostics'
-import { FileSystemCard } from './FileSystemCard'
 import type { Diagnostics, DiagnosticsAgent } from './types'
 import { formatBytes } from './utils'
 
@@ -479,9 +478,6 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
           </Card>
         </div>
       </div>
-
-      {/* File System — full width */}
-      <FileSystemCard fileSystem={data.fileSystem} data-tour="diagnostics-filesystem" />
     </>
   )
 }

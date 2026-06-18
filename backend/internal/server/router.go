@@ -98,7 +98,6 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/diagnostics/log-tail", handler.LogTail(handler.LogTailOptions{
 		ArgusDir: opts.ArgusDir,
 	}))
-	mux.Handle("POST /api/diagnostics/reveal", secFetchSite(handler.Reveal(opts.ArgusDir)))
 	mux.Handle("POST /api/diagnostics/compact", secFetchSite(handler.CompactDatabase(svc)))
 	mux.Handle("GET /api/export/events", secFetchSite(handler.ExportEvents(repo)))
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))

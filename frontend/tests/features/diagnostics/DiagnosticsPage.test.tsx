@@ -217,20 +217,6 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText('Migration')).toBeInTheDocument()
   })
 
-  it('shows Uninstalled badge when codexDBsDirExists is false', async () => {
-    renderPage()
-    await screen.findByText('Agent Connectivity')
-    expect(screen.getAllByText('Uninstalled').length).toBeGreaterThan(0)
-  })
-
-  it('renders history.jsonl line count', async () => {
-    renderPage()
-    await screen.findByText('Agent Connectivity')
-    // File System mounts start collapsed; expand ~/.claude to reveal history.jsonl.
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle ~/.claude' }))
-    expect(screen.getByText(/48,231 lines/)).toBeInTheDocument()
-  })
-
   it('shows Configured (X/Y) label in hook config column when config has argus hooks', async () => {
     const fullConfig = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.full)
     vi.stubGlobal(

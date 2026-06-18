@@ -318,14 +318,6 @@ const diagnosticsSteps: DriveStep[] = [
         'Version, build info, DB path, size, WAL state, and migration version. Use Compact to reclaim disk space.',
     },
   },
-  {
-    element: '[data-tour="diagnostics-filesystem"]',
-    popover: {
-      title: 'File System',
-      description:
-        "Confirms argus can read your hooks config and transcript directories. Red here means hooks aren't being received.",
-    },
-  },
 ]
 
 export const PAGE_TOURS: Record<string, TourDefinition> = {
