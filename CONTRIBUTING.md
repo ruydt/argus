@@ -29,6 +29,11 @@ By default, the backend listens on `127.0.0.1:10804` and stores SQLite data in
 `backend/argus.db`. Use `DB_PATH=/absolute/path/to/my.db` when you need a separate
 database.
 
+All other runtime settings are environment variables too. See
+[docs/install.md](docs/install.md) ("Configuration") for the full table, and
+`backend/.env.example` for a copy-pasteable reference. Note: argus reads real
+environment variables — it does not auto-load a `.env` file.
+
 Start the frontend dev server:
 
 ```bash

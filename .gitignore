@@ -18,6 +18,7 @@ bin/
 .env
 .env.*
 *.env
+!backend/.env.example
 
 # Local agent/project state
 .claude/
