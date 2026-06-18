@@ -26,8 +26,6 @@ const defaultProps = {
   searchQuery: '',
   collapsedSessions: new Set<string>(),
   toggleSession: vi.fn(),
-  sessionUsage: {},
-  setTooltip: vi.fn(),
   targetSessionId: null,
   targetEventKey: null,
   highlightedEventKey: null,

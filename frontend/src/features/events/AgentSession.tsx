@@ -1,13 +1,12 @@
 import { memo, useMemo, useState } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { PaginationBar } from '@/components/shared/PaginationBar'
 import { cn } from '@/lib/utils'
-import { formatTokenCount, highlight, shortId } from '@/lib/format'
+import { highlight, shortId } from '@/lib/format'
 import { agentForEvent } from '@/agents'
 import { projectName } from '@/features/sessions/utils'
-import type { SessionGroup, SessionUsage, TooltipState } from '@/types/events'
+import type { SessionGroup } from '@/types/events'
 import { buildEventKey } from './eventKey'
 import { EventRow } from './EventRow'
 
@@ -19,8 +18,6 @@ type AgentSessionProps = {
   isCollapsed: boolean
   toggleSession: (id: string) => void
   searchQuery: string
-  sessionUsage: Record<string, SessionUsage>
-  setTooltip: Dispatch<SetStateAction<TooltipState | null>>
   targetSessionId: string | null
   targetEventKey: string | null
   highlightedEventKey: string | null
@@ -34,8 +31,6 @@ export const AgentSession = memo(function AgentSession({
   isCollapsed,
   toggleSession,
   searchQuery,
-  sessionUsage,
-  setTooltip,
   targetSessionId,
   targetEventKey,
   highlightedEventKey,
@@ -120,30 +115,6 @@ export const AgentSession = memo(function AgentSession({
               />
             </div>
             <div className="inline-flex flex-wrap items-center gap-2 text-[0.68rem] text-muted-foreground">
-              {sessionUsage[sessionId] &&
-                agent.buildUsageItems &&
-                (() => {
-                  const u = sessionUsage[sessionId]
-                  return (
-                    <span className="usage-summary">
-                      {agent.buildUsageItems(u, formatTokenCount).map(({ cls, label, tip }) => (
-                        <span
-                          key={cls}
-                          className={`usage-item ${cls}`}
-                          onMouseEnter={(ev) =>
-                            setTooltip({ text: tip, x: ev.clientX, y: ev.clientY })
-                          }
-                          onMouseMove={(ev) =>
-                            setTooltip((t) => (t ? { ...t, x: ev.clientX, y: ev.clientY } : null))
-                          }
-                          onMouseLeave={() => setTooltip(null)}
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </span>
-                  )
-                })()}
               {events.length} events • {lastTimeLabel}
             </div>
           </div>

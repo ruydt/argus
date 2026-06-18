@@ -3,12 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { EventsPage } from '@/features/events/EventsPage'
 import type { EventRecord, LayoutOutletContext } from '@/types'
 
-const refreshSessionUsage = vi.fn()
 const setActionFilter = vi.fn()
 const setAgentFilter = vi.fn()
 const setProjectFilter = vi.fn()
 const histRefresh = vi.fn()
-const refreshProjects = vi.fn()
 const setSearchParams = vi.fn()
 const clearLink = vi.fn()
 const toggleSession = vi.fn()
@@ -25,12 +23,10 @@ vi.mock('react-router-dom', async () => {
       ({
         collapsedSessions: new Set<string>(),
         setCollapsedSessions,
-        sessionUsage: {},
         searchQuery: '',
         setSearchQuery: vi.fn(),
         isLive: false,
         setIsLive,
-        refreshSessionUsage,
       }) as LayoutOutletContext,
   }
 })
@@ -96,7 +92,6 @@ vi.mock('@/features/events/hooks/useEventFilters', () => ({
     sortOrder: 'newest',
     setSortOrder: vi.fn(),
     filteredEvents: [],
-    refreshProjects,
   }),
 }))
 
@@ -140,8 +135,6 @@ describe('EventsPage refresh', () => {
     expect(setAgentFilter).toHaveBeenCalledWith('all')
     expect(setProjectFilter).toHaveBeenCalledWith('all')
     expect(histRefresh).toHaveBeenCalledTimes(1)
-    expect(refreshSessionUsage).toHaveBeenCalledTimes(1)
-    expect(refreshProjects).toHaveBeenCalledTimes(1)
   })
 })
 

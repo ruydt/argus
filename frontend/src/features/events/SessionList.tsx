@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty'
-import type { EventRecord, SessionGroup, SessionUsage, TooltipState } from '@/types/events'
+import type { EventRecord, SessionGroup } from '@/types/events'
 import { AgentSession } from './AgentSession'
 
 type SessionListProps = {
@@ -10,8 +9,6 @@ type SessionListProps = {
   searchQuery: string
   collapsedSessions: Set<string>
   toggleSession: (id: string) => void
-  sessionUsage: Record<string, SessionUsage>
-  setTooltip: Dispatch<SetStateAction<TooltipState | null>>
   targetSessionId: string | null
   targetEventKey: string | null
   highlightedEventKey: string | null
@@ -33,8 +30,6 @@ export function SessionList({
   searchQuery,
   collapsedSessions,
   toggleSession,
-  sessionUsage,
-  setTooltip,
   targetSessionId,
   targetEventKey,
   highlightedEventKey,
@@ -108,8 +103,6 @@ export function SessionList({
           isCollapsed={collapsedSessions.has(session.sessionId)}
           toggleSession={toggleSession}
           searchQuery={searchQuery}
-          sessionUsage={sessionUsage}
-          setTooltip={setTooltip}
           targetSessionId={targetSessionId}
           targetEventKey={targetEventKey}
           highlightedEventKey={highlightedEventKey}

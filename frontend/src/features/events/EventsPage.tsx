@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Dispatch, SetStateAction } from 'react'
 import { Columns2, SlidersHorizontal } from 'lucide-react'
 import { useOutletContext } from 'react-router-dom'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -14,7 +13,7 @@ import { useLiveEvents } from './hooks/useLiveEvents'
 import { mergeByKey } from './eventKey'
 import { EventFilters } from './EventFilters'
 import { SessionList } from './SessionList'
-import type { EventRecord, LayoutOutletContext, SessionUsage, TooltipState } from '@/types'
+import type { EventRecord, LayoutOutletContext } from '@/types'
 
 function handleTargetVisible() {}
 
@@ -97,8 +96,6 @@ type SessionListSharedProps = {
   searchQuery: string
   collapsedSessions: Set<string>
   toggleSession: (id: string) => void
-  sessionUsage: Record<string, SessionUsage>
-  setTooltip: Dispatch<SetStateAction<TooltipState | null>>
   highlightedEventKey: string | null
   onTargetVisible: () => void
 }
@@ -131,8 +128,6 @@ function SplitPanels({
   searchQuery,
   collapsedSessions,
   toggleSession,
-  sessionUsage,
-  setTooltip,
   highlightedEventKey,
   onTargetVisible,
 }: SplitPanelsProps) {
@@ -161,8 +156,6 @@ function SplitPanels({
               searchQuery={searchQuery}
               collapsedSessions={collapsedSessions}
               toggleSession={toggleSession}
-              sessionUsage={sessionUsage}
-              setTooltip={setTooltip}
               targetSessionId={targetSessionId}
               targetEventKey={targetEventKey}
               highlightedEventKey={highlightedEventKey}
@@ -204,8 +197,6 @@ function SplitPanels({
               searchQuery={searchQuery}
               collapsedSessions={collapsedSessions}
               toggleSession={toggleSession}
-              sessionUsage={sessionUsage}
-              setTooltip={setTooltip}
               targetSessionId={null}
               targetEventKey={null}
               highlightedEventKey={highlightedEventKey}
@@ -247,8 +238,6 @@ function SinglePanel({
   searchQuery,
   collapsedSessions,
   toggleSession,
-  sessionUsage,
-  setTooltip,
   highlightedEventKey,
   onTargetVisible,
 }: SinglePanelProps) {
@@ -298,8 +287,6 @@ function SinglePanel({
           searchQuery={searchQuery}
           collapsedSessions={collapsedSessions}
           toggleSession={toggleSession}
-          sessionUsage={sessionUsage}
-          setTooltip={setTooltip}
           targetSessionId={targetSessionId}
           targetEventKey={targetEventKey}
           highlightedEventKey={highlightedEventKey}
@@ -320,15 +307,12 @@ export function EventsPage() {
   const {
     collapsedSessions,
     setCollapsedSessions,
-    sessionUsage,
     searchQuery,
     setSearchQuery,
     isLive,
     setIsLive,
-    refreshSessionUsage,
   } = useOutletContext<LayoutOutletContext>()
 
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
   // Debounce the search box, then resolve it on the backend (session id /
@@ -414,7 +398,6 @@ export function EventsPage() {
     sortOrder,
     setSortOrder,
     filteredEvents,
-    refreshProjects,
   } = useEventFilters(
     activeEvents,
     searchQuery,
@@ -525,8 +508,6 @@ export function EventsPage() {
           setAgentFilter('all')
           setProjectFilter('all')
           histState.refresh()
-          refreshSessionUsage()
-          refreshProjects()
         }}
         histLoading={histState.loading}
         splitView={splitView}
@@ -550,8 +531,6 @@ export function EventsPage() {
           searchQuery={searchQuery}
           collapsedSessions={collapsedSessions}
           toggleSession={toggleSession}
-          sessionUsage={sessionUsage}
-          setTooltip={setTooltip}
           highlightedEventKey={eventLink.highlightedEventKey}
           onTargetVisible={handleTargetVisible}
         />
@@ -571,20 +550,9 @@ export function EventsPage() {
           searchQuery={searchQuery}
           collapsedSessions={collapsedSessions}
           toggleSession={toggleSession}
-          sessionUsage={sessionUsage}
-          setTooltip={setTooltip}
           highlightedEventKey={eventLink.highlightedEventKey}
           onTargetVisible={handleTargetVisible}
         />
-      )}
-
-      {tooltip && (
-        <div
-          className="fixed pointer-events-none z-[1000] bg-card text-foreground px-2 py-1 text-[0.7rem] rounded border border-foreground/10"
-          style={{ top: tooltip.y + 10, left: tooltip.x + 10 }}
-        >
-          {tooltip.text}
-        </div>
       )}
 
       {isDragging && (
