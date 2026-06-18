@@ -2,6 +2,7 @@ export interface DiagnosticsVersion {
   version: string
   commit: string
   buildDate: string
+  binarySizeBytes: number | null
 }
 
 export interface DiagnosticsHealth {

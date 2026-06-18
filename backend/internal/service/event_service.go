@@ -233,11 +233,22 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 		}
 	}
 
+	// Size of the running executable on disk. Best-effort: nil if the path
+	// can't be resolved or stat'd (e.g. binary removed while running).
+	var binarySize *int64
+	if exe, err := os.Executable(); err == nil {
+		if info, err := os.Stat(exe); err == nil {
+			size := info.Size()
+			binarySize = &size
+		}
+	}
+
 	result := domain.Diagnostics{
 		Version: domain.DiagnosticsVersion{
-			Version:   version.Version,
-			Commit:    version.Commit,
-			BuildDate: version.BuildDate,
+			Version:         version.Version,
+			Commit:          version.Commit,
+			BuildDate:       version.BuildDate,
+			BinarySizeBytes: binarySize,
 		},
 		Health:  health,
 		Storage: storage,

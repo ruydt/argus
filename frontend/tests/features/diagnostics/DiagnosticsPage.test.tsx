@@ -4,10 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiagnosticsPage } from '@/features/diagnostics/DiagnosticsPage'
 import { HOOK_PRESETS, applyPreset } from '@/features/hooks-config/presets'
 import type { Diagnostics } from '@/features/diagnostics/types'
+import { formatBytes } from '@/features/diagnostics/utils'
 import { _resetDiagnosticsCache } from '@/features/diagnostics/hooks/useDiagnostics'
 
 const healthyDiagnostics: Diagnostics = {
-  version: { version: '1.1.0', commit: 'abc12345', buildDate: '2026-05-28' },
+  version: {
+    version: '1.1.0',
+    commit: 'abc12345',
+    buildDate: '2026-05-28',
+    binarySizeBytes: 12_582_912,
+  },
   health: { live: true, ready: true },
   storage: {
     dbPath: '/home/user/.argus/argus.db',
@@ -211,8 +217,9 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText('System Facts')).toBeInTheDocument()
     expect(screen.getByText('Claude Code')).toBeInTheDocument()
     expect(screen.getByText('Codex')).toBeInTheDocument()
-    // Readiness tile shows Ready
-    expect(screen.getByText('Ready')).toBeInTheDocument()
+    // Binary size tile renders the formatted executable size
+    expect(screen.getByText('Binary size')).toBeInTheDocument()
+    expect(screen.getByText(formatBytes(12_582_912))).toBeInTheDocument()
     expect(screen.getByText('Hook requests')).toBeInTheDocument()
     expect(screen.getByText('Migration')).toBeInTheDocument()
   })
@@ -269,19 +276,6 @@ describe('DiagnosticsPage', () => {
     renderPage()
     expect(await screen.findByText('No activity observed yet')).toBeInTheDocument()
     expect(screen.getByText(/argus setup/)).toBeInTheDocument()
-  })
-
-  it('renders Not ready tile and reason when health.ready is false', async () => {
-    const notReadyDiagnostics: Diagnostics = {
-      ...healthyDiagnostics,
-      health: { live: true, ready: false, reason: 'Database migration pending' },
-    }
-    vi.stubGlobal('fetch', makeFetchMock(notReadyDiagnostics))
-    renderPage()
-    expect(await screen.findByText('Not ready')).toBeInTheDocument()
-    expect(screen.getByText(/Database migration pending/)).toBeInTheDocument()
-    // Other sections still render
-    expect(screen.getByText('Agent Connectivity')).toBeInTheDocument()
   })
 
   it('shows spin animation on refresh button click and keeps data visible', async () => {

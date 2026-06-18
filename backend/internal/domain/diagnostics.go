@@ -1,9 +1,10 @@
 package domain
 
 type DiagnosticsVersion struct {
-	Version   string `json:"version"`
-	Commit    string `json:"commit"`
-	BuildDate string `json:"buildDate"`
+	Version         string `json:"version"`
+	Commit          string `json:"commit"`
+	BuildDate       string `json:"buildDate"`
+	BinarySizeBytes *int64 `json:"binarySizeBytes"`
 }
 
 type DiagnosticsHealth struct {

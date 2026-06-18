@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { Activity, AlertTriangle, Clock, RefreshCw, Zap } from 'lucide-react'
+import { AlertTriangle, Clock, HardDrive, RefreshCw, Zap } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -203,34 +203,18 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
     <>
       {/* Summary tile row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-tour="diagnostics-tiles">
-        {/* Tile 1 — Readiness */}
+        {/* Tile 1 — Binary size */}
         <Card data-tour="diagnostics-health">
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
-              <Activity className="inline size-4 mr-1 text-muted-foreground" />
-              Readiness
+              <HardDrive className="inline size-4 mr-1 text-muted-foreground" />
+              Binary size
             </div>
             <div className="flex items-center gap-1 text-[14px] font-semibold">
-              {data.health.ready ? (
-                <>
-                  <span className="inline-block size-2 rounded-full bg-[var(--worktree)]" />
-                  Ready
-                </>
-              ) : (
-                <>
-                  <span className="inline-block size-2 rounded-full bg-[var(--destructive)]" />
-                  Not ready
-                </>
-              )}
+              {data.version.binarySizeBytes !== null
+                ? formatBytes(data.version.binarySizeBytes)
+                : 'Unknown'}
             </div>
-            {!data.health.ready && data.health.reason && (
-              <p
-                className="text-[12px] text-muted-foreground mt-1 truncate"
-                title={data.health.reason}
-              >
-                {data.health.reason.slice(0, 60)}
-              </p>
-            )}
           </CardContent>
         </Card>
 
