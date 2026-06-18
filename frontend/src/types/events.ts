@@ -83,9 +83,3 @@ export interface EventsResponse {
   has_more?: boolean
   next_cursor?: number
 }
-
-export interface TooltipState {
-  text: string
-  x: number
-  y: number
-}

@@ -5,7 +5,6 @@ export type {
   SessionGroup,
   LayoutOutletContext,
   EventsResponse,
-  TooltipState,
 } from './events'
 
 export type { DeviceCodeResponse, CollectionEntry, CollectionView } from './collection'
