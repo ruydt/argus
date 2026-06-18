@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Dispatch, SetStateAction } from 'react'
 import type { EventRecord } from '@/types/events'
-import type { Project } from '@/types/sessions'
-import { usePollingInterval } from '@/hooks/usePollingInterval'
 
 function readStr(key: string, fallback: string): string {
   try {
@@ -63,36 +61,13 @@ export function useEventFilters(
     return Array.from(agents).sort()
   }, [events])
 
-  const [availableProjects, setAvailableProjects] = useState<string[]>([])
-  const projectsMountedRef = useRef(true)
-
-  useEffect(() => {
-    projectsMountedRef.current = true
-    return () => {
-      projectsMountedRef.current = false
+  const availableProjects = useMemo(() => {
+    const cwds = new Set<string>()
+    for (const e of events) {
+      if (e.cwd) cwds.add(e.cwd)
     }
-  }, [])
-
-  const refreshProjects = useCallback(async () => {
-    try {
-      const res = await fetch('/api/projects')
-      if (!res.ok || !projectsMountedRef.current) return
-      const data = (await res.json()) as { projects?: Project[] }
-      if (projectsMountedRef.current)
-        setAvailableProjects((data.projects ?? []).map((p) => p.cwd).filter(Boolean))
-    } catch {
-      // non-fatal — dropdown stays with last known list
-    }
-  }, [])
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void refreshProjects()
-    }, 0)
-    return () => window.clearTimeout(timeout)
-  }, [refreshProjects])
-
-  usePollingInterval(() => void refreshProjects(), 15_000, isLive)
+    return Array.from(cwds).sort()
+  }, [events])
 
   useEffect(() => {
     sessionStorage.setItem('events_action_filter', actionFilter)
@@ -180,7 +155,6 @@ export function useEventFilters(
     setCustomEnd,
     filteredEvents,
     sessionFilter,
-    refreshProjects,
   }
   /* eslint-enable react-hooks/refs */
 }

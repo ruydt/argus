@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { createElement } from 'react'
@@ -142,46 +142,5 @@ describe('useEventFilters — sessionFilter', () => {
 
     expect(result.current.filteredEvents).toHaveLength(1)
     expect(result.current.filteredEvents[0].session).toBe('target-session')
-  })
-
-  it('does not refetch projects when only event count changes', async () => {
-    const fetchProjects = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ projects: [] }),
-    })
-    vi.stubGlobal('fetch', fetchProjects)
-
-    const firstEvents: EventRecord[] = [
-      {
-        time: new Date().toISOString(),
-        action: 'EDIT',
-        path: '/a',
-        session: 'sess-1',
-        agent: 'claudecode',
-      },
-    ]
-    const nextEvents: EventRecord[] = [
-      ...firstEvents,
-      {
-        time: new Date().toISOString(),
-        action: 'EDIT',
-        path: '/b',
-        session: 'sess-2',
-        agent: 'claudecode',
-      },
-    ]
-
-    const { rerender } = renderHook(
-      ({ events }) =>
-        useEventFilters(events, '', vi.fn(), '', '15m', vi.fn(), '', vi.fn(), '', vi.fn()),
-      { initialProps: { events: firstEvents }, wrapper: makeWrapper() }
-    )
-
-    await waitFor(() => expect(fetchProjects).toHaveBeenCalledTimes(1))
-
-    rerender({ events: nextEvents })
-
-    await new Promise((resolve) => window.setTimeout(resolve, 0))
-    expect(fetchProjects).toHaveBeenCalledTimes(1)
   })
 })
