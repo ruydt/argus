@@ -11,27 +11,31 @@ import (
 )
 
 func TestRevealRejectsNonPOST(t *testing.T) {
+	dir := t.TempDir()
 	rec := httptest.NewRecorder()
-	Reveal().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/diagnostics/reveal", nil))
+	Reveal(dir).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/diagnostics/reveal", nil))
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, want 405", rec.Code)
 	}
 }
 
 func TestRevealRequiresPath(t *testing.T) {
+	dir := t.TempDir()
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/reveal", strings.NewReader(`{}`))
-	Reveal().ServeHTTP(rec, req)
+	Reveal(dir).ServeHTTP(rec, req)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
 
 func TestRevealMissingFile(t *testing.T) {
+	dir := t.TempDir()
 	rec := httptest.NewRecorder()
+	// A nonexistent path inside the argus root — passes confinement, fails Stat.
 	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/reveal",
-		strings.NewReader(`{"path":"/nonexistent/nope"}`))
-	Reveal().ServeHTTP(rec, req)
+		strings.NewReader(`{"path":"`+filepath.Join(dir, "nope")+`"}`))
+	Reveal(dir).ServeHTTP(rec, req)
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", rec.Code)
 	}
@@ -42,7 +46,8 @@ func TestRevealLaunchesFileManager(t *testing.T) {
 		t.Skip("reveal unsupported on this platform")
 	}
 
-	file := filepath.Join(t.TempDir(), "f.txt")
+	dir := t.TempDir()
+	file := filepath.Join(dir, "argus.log")
 	if err := os.WriteFile(file, []byte("x"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +65,7 @@ func TestRevealLaunchesFileManager(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/reveal",
 		strings.NewReader(`{"path":"`+file+`"}`))
-	Reveal().ServeHTTP(rec, req)
+	Reveal(dir).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, want 204; body: %s", rec.Code, rec.Body.String())
@@ -74,5 +79,60 @@ func TestRevealLaunchesFileManager(t *testing.T) {
 		if gotName != "xdg-open" || len(gotArgs) != 1 || gotArgs[0] != filepath.Dir(file) {
 			t.Errorf("exec = %s %v, want xdg-open %s", gotName, gotArgs, filepath.Dir(file))
 		}
+	}
+}
+
+func TestRevealRejectsPathOutsideRoots(t *testing.T) {
+	dir := t.TempDir()      // argus root
+	outside := t.TempDir() // a separate dir not under argusDir, ~/.claude, or ~/.codex
+
+	// Create a real file in the outside dir to confirm it exists.
+	file := filepath.Join(outside, "secret.txt")
+	if err := os.WriteFile(file, []byte("secret"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	orig := revealExec
+	defer func() { revealExec = orig }()
+	called := false
+	revealExec = func(name string, args ...string) error {
+		called = true
+		return nil
+	}
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/reveal",
+		strings.NewReader(`{"path":"`+file+`"}`))
+	Reveal(dir).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 for out-of-root path; body: %s", rec.Code, rec.Body.String())
+	}
+	if called {
+		t.Error("revealExec should NOT have been called for an out-of-root path")
+	}
+}
+
+func TestRevealRejectsTraversal(t *testing.T) {
+	dir := t.TempDir()
+
+	orig := revealExec
+	defer func() { revealExec = orig }()
+	called := false
+	revealExec = func(name string, args ...string) error {
+		called = true
+		return nil
+	}
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/reveal",
+		strings.NewReader(`{"path":"../../etc/hosts"}`))
+	Reveal(dir).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400 for traversal path; body: %s", rec.Code, rec.Body.String())
+	}
+	if called {
+		t.Error("revealExec should NOT have been called for a traversal path")
 	}
 }

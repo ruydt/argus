@@ -56,7 +56,7 @@ func serveGetHooksConfig(w http.ResponseWriter, agent, claudeSettingsPath, codex
 	}
 	if err != nil {
 		slog.Error("[hooks-config] read config", "agent", agent, "err", err)
-		http.Error(w, fmt.Sprintf("failed to read config: %v", err), http.StatusInternalServerError)
+		http.Error(w, "failed to read config", http.StatusInternalServerError)
 		return
 	}
 	if hooks == nil {
@@ -123,7 +123,7 @@ func servePutHooksConfig(w http.ResponseWriter, r *http.Request, agent, claudeSe
 	}
 	if err != nil {
 		slog.Error("[hooks-config] write config", "agent", agent, "err", err)
-		http.Error(w, fmt.Sprintf("failed to write config: %v", err), http.StatusInternalServerError)
+		http.Error(w, "failed to write config", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
