@@ -50,6 +50,10 @@ Use this instead of `go run` when you need a production-like build locally.
 
 Run checks before opening a PR:
 
+You can run the full gate in one step from the repo root with `make verify`
+(equivalent to the backend + frontend commands below; backend lint is skipped
+with a warning if `golangci-lint` is not installed locally).
+
 ```bash
 cd backend
 go build ./...
