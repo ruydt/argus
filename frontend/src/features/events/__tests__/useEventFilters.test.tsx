@@ -13,8 +13,7 @@ describe('useEventFilters availableProjects', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     const events = [ev({ cwd: '/b' }), ev({ cwd: '/a' }), ev({ cwd: '/b' }), ev({ cwd: '' })]
     const { result } = renderHook(
-      () =>
-        useEventFilters(events, '', vi.fn(), '', 'all', vi.fn(), '', vi.fn(), '', vi.fn(), true),
+      () => useEventFilters(events, '', vi.fn(), '', 'all', vi.fn(), '', vi.fn(), '', vi.fn()),
       { wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter> }
     )
     expect(result.current.availableProjects).toEqual(['/a', '/b'])

@@ -40,8 +40,7 @@ export function useEventFilters(
   customStart: string,
   setCustomStart: Dispatch<SetStateAction<string>>,
   customEnd: string,
-  setCustomEnd: Dispatch<SetStateAction<string>>,
-  isLive = true
+  setCustomEnd: Dispatch<SetStateAction<string>>
 ) {
   const [searchParams] = useSearchParams()
   const sessionFilter = sessionFilterOverride || searchParams.get('session') || ''

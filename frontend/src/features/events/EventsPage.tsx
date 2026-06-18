@@ -408,8 +408,7 @@ export function EventsPage() {
     customStart,
     setCustomStart,
     customEnd,
-    setCustomEnd,
-    isLive
+    setCustomEnd
   )
 
   const {
