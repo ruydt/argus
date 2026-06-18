@@ -29,18 +29,21 @@ clean:
 ## verify — full local gate (backend + frontend), mirrors .github/workflows/ci.yml
 verify: verify-backend verify-frontend
 
-## verify-backend — build, vet, test, lint. Lint is skipped with a warning if
-## golangci-lint is not installed (CI still enforces it).
+## verify-backend — build, vet, test, lint. Mirrors CI: lint is REQUIRED. The
+## linter is found on PATH or in $(go env GOPATH)/bin; if absent, the gate fails.
 verify-backend:
 	cd backend && go build ./...
 	cd backend && go vet ./...
 	cd backend && go test ./...
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		cd backend && golangci-lint run ./...; \
+	@GOLANGCI="$$(command -v golangci-lint || echo "$$(go env GOPATH)/bin/golangci-lint")"; \
+	if [ -x "$$GOLANGCI" ]; then \
+		echo "lint: $$GOLANGCI"; \
+		cd backend && "$$GOLANGCI" run ./...; \
 	else \
-		echo "WARNING: golangci-lint not installed — skipping backend lint."; \
-		echo "         CI still enforces it. Install: brew install golangci-lint"; \
-		echo "         (CI pins v2.12.2; see https://golangci-lint.run/welcome/install/)"; \
+		echo "ERROR: golangci-lint not found (PATH or $$(go env GOPATH)/bin)." >&2; \
+		echo "       CI enforces it (v2.12.2); 'make verify' must too." >&2; \
+		echo "       Install: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2" >&2; \
+		exit 1; \
 	fi
 
 ## verify-frontend — typecheck + lint + format check + tests (non-watch) + build
