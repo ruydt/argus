@@ -68,10 +68,6 @@ func run() int {
 
 	svc := service.New(repo)
 
-	// One-time backfill for sessions persisted before write-time usage
-	// computation existed. Background, best-effort, runs once.
-	go svc.BackfillMissingSessionUsage()
-
 	home, _ := os.UserHomeDir()
 
 	// Load ignore matcher. A missing default file returns an empty matcher (safe).
