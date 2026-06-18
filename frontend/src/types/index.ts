@@ -2,14 +2,11 @@
 export type {
   CtxLine,
   EventRecord,
-  SessionUsage,
   SessionGroup,
   LayoutOutletContext,
   EventsResponse,
   TooltipState,
 } from './events'
-
-export type { Session, SessionUsageType, SessionTreeNode } from './sessions'
 
 export type { DeviceCodeResponse, CollectionEntry, CollectionView } from './collection'
 

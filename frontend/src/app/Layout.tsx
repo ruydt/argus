@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import type { SetStateAction } from 'react'
 import { PanelLeft } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useSessions } from '@/hooks/useSessions'
 import type { LayoutOutletContext } from '@/types'
 import { useOnboarding } from '@/features/onboarding/useOnboarding'
 import { PAGE_TOURS } from '@/features/onboarding/pageTours'
@@ -106,16 +105,7 @@ export function Layout() {
   const shellContentRef = useRef<HTMLDivElement | null>(null)
   const lastFocusedElementRef = useRef<HTMLElement | null>(null)
   const [isLive, setIsLive] = useState(false)
-  const { sessions, refresh: refreshSessionUsage } = useSessions({ enabled: isLive })
   const mobileOpen = !isDesktopViewport && mobileDrawerLocationKey === location.key
-  const sessionUsage = useMemo(
-    () =>
-      sessions.reduce<Record<string, (typeof sessions)[number]['usage']>>((acc, session) => {
-        acc[session.session_id] = session.usage
-        return acc
-      }, {}),
-    [sessions]
-  )
 
   const setCollapsedSessions = (update: SetStateAction<Set<string>>) =>
     dispatch({
@@ -131,12 +121,10 @@ export function Layout() {
   const outletContext: LayoutOutletContext = {
     collapsedSessions,
     setCollapsedSessions,
-    sessionUsage,
     searchQuery,
     setSearchQuery,
     isLive,
     setIsLive,
-    refreshSessionUsage,
   }
 
   useEffect(() => {

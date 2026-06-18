@@ -62,14 +62,6 @@ export interface EventRecord {
   permission_suggestions_json?: string
 }
 
-export interface SessionUsage {
-  input_tokens: number
-  output_tokens: number
-  cache_creation_tokens: number
-  cache_read_tokens: number
-  turns: number
-}
-
 export interface SessionGroup {
   sessionId: string
   transcriptPath: string
@@ -80,12 +72,10 @@ export interface SessionGroup {
 export interface LayoutOutletContext {
   collapsedSessions: Set<string>
   setCollapsedSessions: Dispatch<SetStateAction<Set<string>>>
-  sessionUsage: Record<string, SessionUsage>
   searchQuery: string
   setSearchQuery: Dispatch<SetStateAction<string>>
   isLive: boolean
   setIsLive: Dispatch<SetStateAction<boolean>>
-  refreshSessionUsage: () => void
 }
 
 export interface EventsResponse {
