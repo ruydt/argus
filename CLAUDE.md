@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Argus = hook control center for AI coding agents. Core value, in order: **hook management** (config editor with one-click presets for Claude Code and Codex), the **hook simulator** (run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code — test guardrails before a live agent fires them), and the **public hook script collection** (`registry/` plus the registry/community flow — zero-dependency, cross-agent guardrail/automation scripts). The observability layer supports it: hook payloads arrive via `POST /api/hook`, get normalized, persisted to SQLite, streamed to browser via SSE. Frontend is a React SPA: hooks config editor + simulator, live event feed, dashboard stats, usage breakdown, projects/sessions explorer, diagnostics.
+Argus = hook control center for AI coding agents. Core value, in order: **hook management** (config editor with one-click presets for Claude Code and Codex), the **hook simulator** (run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code — test guardrails before a live agent fires them), and the **public hook script collection** (`registry/` plus the registry/community flow — zero-dependency, cross-agent guardrail/automation scripts). The observability layer supports it: hook payloads arrive via `POST /api/hook`, get normalized, persisted to SQLite, streamed to browser via SSE. Frontend is a React SPA: hooks config editor + simulator, live event feed, diagnostics.
 
 Go backend + React frontend. No external infra. Ships as Docker image or local binary.
 
@@ -17,10 +17,10 @@ argus/
 │   ├── cmd/seed/            # Dev data seeder
 │   └── internal/
 │       ├── agents/
-│       │   ├── claudecode/  # Normalize + usage for Claude Code payloads
-│       │   └── codex/       # Normalize + usage for Codex payloads
+│       │   ├── claudecode/  # Normalize Claude Code payloads
+│       │   └── codex/       # Normalize Codex payloads
 │       ├── config/          # Load runtime env vars (ADDR, DB_PATH)
-│       ├── domain/          # Canonical types — NormalizedEvent, Session, DashboardStats
+│       ├── domain/          # Canonical types — NormalizedEvent, Session
 │       ├── fileutil/        # File line scanner for context enrichment
 │       ├── handler/         # HTTP handlers — one file per endpoint group
 │       ├── repository/
@@ -33,20 +33,15 @@ argus/
 │       ├── app/             # Layout shell + Sidebar
 │       ├── features/
 │       │   ├── events/      # EventsPage, hooks/useEvents, hooks/useEventFilters, renderers/
-│       │   ├── dashboard/   # DashboardPage, hooks/useDashboardStats, date-range helpers
-│       │   ├── sessions/    # SessionListPage, SessionFileChangesPage, FileChangesDrawer/List, hooks/useFileChanges, utils
-│       │   ├── projects/    # ProjectsPage — project cards, server search, infinite scroll, delete-with-cascade
+│       │   ├── sessions/    # sessions/utils.ts — projectName helper
 │       │   ├── diagnostics/ # DiagnosticsPage — health, storage, file system, log tails
 │       │   ├── hooks-config/# HooksConfigPage — structured editor, presets, Open Simulator button → SimulatorTab
-│       │   ├── scripts/     # ScriptsPage — Community + My Collection script management
-│       │   └── usage/       # UsagePage
+│       │   └── scripts/     # ScriptsPage — Community + My Collection script management
 │       ├── components/
 │       │   ├── ui/          # shadcn-generated primitives — DO NOT lint, DO NOT hand-edit
-│       │   └── shared/      # Custom shared components (PaginationBar, DashboardEmpty)
-│       ├── hooks/           # Global hooks (useSessions)
+│       │   └── shared/      # Custom shared components (PaginationBar)
 │       ├── lib/             # utils.ts, format.ts
-│       ├── pages/           # Thin route wrappers (Dashboard.tsx)
-│       ├── types/           # Domain types (events.ts, usage.ts, sessions.ts) + barrel index.ts
+│       ├── types/           # Domain types (events.ts) + barrel index.ts
 │       └── test/            # Global Vitest setup (setup.ts)
 │
 ├── docs/superpowers/
@@ -69,10 +64,9 @@ argus/
 | `backend/internal/repository/sqlite/migrations/`   | Schema migrations. Add new `.sql` file with next sequence number. Never edit existing migrations.                                                             |
 | `backend/internal/agents/claudecode/claudecode.go` | Claude Code payload normalization. Single source — `handler/hook.go` calls `Normalize()` here.                                                                |
 | `backend/internal/agents/codex/codex.go`           | Codex payload normalization. Same contract as claudecode.                                                                                                     |
-| `backend/internal/service/event_service.go`        | Business logic. `AddEvent` → persist → broadcast. `GetDashboardStats` → SQL aggregate + transcript enrichment.                                                |
+| `backend/internal/service/event_service.go`        | Business logic. `AddEvent` → persist → broadcast.                                                                                                             |
 | `frontend/src/types/events.ts`                     | Frontend domain types. Must mirror `backend/internal/domain/event.go` JSON tags — no transformation layer.                                                    |
-| `frontend/src/types/sessions.ts`                   | Session tree types. Mirror backend `domain.SessionTreeNode`.                                                                                                  |
-| `frontend/src/features/sessions/utils.ts`          | Session display helpers — `isRunning`, `sessionDurationMs`, `formatDuration`, `formatTimeAxis`, `shortenCwd`. Single source for all session formatting logic. |
+| `frontend/src/features/sessions/utils.ts`          | Session display helpers — `projectName`. Single source for project name derivation logic.                                                                     |
 
 ### Auto-generated — do not edit directly
 
@@ -92,10 +86,6 @@ AI Agent → POST /api/hook → handler.Hook → claudecode/codex.Normalize()
                                                                      ↓
 Browser ← GET /api/events/stream (SSE) ← EventService.subscribers (sync.Map)
         ← GET /api/events?q=...                (session/project search; search ignores time window)
-        ← GET /api/sessions/tree
-        ← GET /api/projects?page=&size=&q=     (server-paged project cards)
-        ← GET /api/dashboard/stats
-        ← GET /api/session-usage
         ← GET/PUT /api/hooks-config          (hooks config editor)
         → POST /api/hooks/simulate           (hook simulator — sh -c command, payload on stdin,
                                               returns stdout/stderr/exit code/duration)
@@ -126,7 +116,7 @@ Browser ← GET /api/events/stream (SSE) ← EventService.subscribers (sync.Map)
 
 **Agent detection:** `transcript_path` string at ingest time. Paths containing `/.claude/` → Claude Code; others → Codex. This is the only detection mechanism.
 
-**Frontend state:** No global store. `Layout.tsx` owns shared state (`searchQuery`, `collapsedSessions`, `sessionUsage`) and distributes via `useOutletContext<LayoutOutletContext>()`. Feature state lives in custom hooks.
+**Frontend state:** No global store. `Layout.tsx` owns shared state (`searchQuery`, `collapsedSessions`) and distributes via `useOutletContext<LayoutOutletContext>()`. Feature state lives in custom hooks.
 
 ---
 
@@ -195,7 +185,7 @@ golangci-lint run ./...                          # lint
 - No panic recovery. No sentinel errors. Plain `errors.New` / `fmt.Errorf`
 - Log with `log.Printf("[handler] key=val ...")`
 
-**Adding a new agent:** Implement `MatchesTranscript()`, `Normalize()`, `ComputeUsage()`, `ComputeUsageBreakdown()` in a new `internal/agents/<name>/` package. Wire detection in `handler/hook.go`. Add normalization tests before touching the handler.
+**Adding a new agent:** Implement `MatchesTranscript()`, `Normalize()`, `ComputeUsage()` in a new `internal/agents/<name>/` package. Wire detection in `handler/hook.go`. Add normalization tests before touching the handler.
 
 ---
 
@@ -241,9 +231,9 @@ function renderWith(props) {
 - **Backend changes:** Always run `go build ./...` + `go test ./...` + `golangci-lint run ./...` before marking done. Add tests for any new handler/service/repository function.
 - **Domain types:** Keep `backend/internal/domain/event.go` JSON tags in sync with `frontend/src/types/events.ts`. No transformation layer exists — any mismatch silently breaks the data contract.
 - **Migrations:** New migration = new `.sql` file with the next sequence number. Never edit existing migrations. Argus refuses to open a DB whose recorded migration version exceeds the binary's (downgrade guard).
-- **Storage:** `raw_payload` is stored gzip-compressed (transparent on read). Per-model usage is persisted in `session_model_usage` on ingest so the dashboard never re-scans transcripts. `POST /api/diagnostics/compact` reclaims disk; `ARGUS_RETENTION_DAYS`/`ARGUS_MAX_EVENTS` (default off) prune old events.
+- **Storage:** `raw_payload` is stored gzip-compressed (transparent on read). `POST /api/diagnostics/compact` reclaims disk; `ARGUS_RETENTION_DAYS`/`ARGUS_MAX_EVENTS` (default off) prune old events.
 - **Agent normalization:** Edit `internal/agents/claudecode/` or `internal/agents/codex/` for payload shape changes. Never parse agent-specific fields in the handler or service.
-- **Single sources of truth:** Session display formatting lives in `features/sessions/utils.ts`. Architecture/conventions reference lives in `.planning/codebase/`. Design specs live in `docs/superpowers/specs/`. Plans live in `docs/superpowers/plans/`.
+- **Single sources of truth:** Project name derivation lives in `features/sessions/utils.ts`. Architecture/conventions reference lives in `.planning/codebase/`. Design specs live in `docs/superpowers/specs/`. Plans live in `docs/superpowers/plans/`.
 - **No barrel files in features.** Import from the specific file, not a feature `index.ts`.
 - **No global state library.** Local React state + `useOutletContext` only.
 - **SSE handler:** Subscribe to broadcaster before backfill. See `handler/events.go` — the order is intentional (prevents dropped events between the two operations).
@@ -331,12 +321,12 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 ## Naming Patterns
 
 - Frontend React components use `PascalCase.tsx` (for example `frontend/src/app/Layout.tsx`, `frontend/src/features/events/EventRow.tsx`).
-- Frontend hooks use `useX.ts`/`useX.tsx` (for example `frontend/src/hooks/useSessions.ts`, `frontend/src/features/events/hooks/useEvents.ts`).
+- Frontend hooks use `useX.ts`/`useX.tsx` (for example `frontend/src/features/events/hooks/useEvents.ts`, `frontend/src/features/events/hooks/useEventFilters.ts`).
 - Frontend utility and config files use `kebab-case` or lowercase (`frontend/src/lib/format.ts`, `frontend/vite.config.ts`).
 - Backend Go files use `snake_case.go` by area (`backend/internal/service/event_service.go`, `backend/internal/repository/sqlite/sqlite.go`).
 - Tests use `*.test.ts[x]` and `*_test.go` (`frontend/tests/features/events/useEvents.test.tsx`, `backend/tests/internal/config/config_test.go`).
 - Frontend exported functions/components use `camelCase`/`PascalCase` (`useEvents`, `CommandBlock` in `frontend/src/features/events/hooks/useEvents.ts`, `frontend/src/features/events/renderers/CommandBlock.tsx`).
-- Backend exported functions and methods use `PascalCase`; internal helpers use `camelCase` (`Events`, `GetDashboardStats`, `listEvents` in `backend/internal/handler/events.go`, `backend/internal/repository/sqlite/sqlite.go`).
+- Backend exported functions and methods use `PascalCase`; internal helpers use `camelCase` (`Events`, `listEvents` in `backend/internal/handler/events.go`, `backend/internal/repository/sqlite/sqlite.go`).
 - Use `camelCase` for locals and constants in TS/TSX (`sessionFilter`, `textToCopy` in `frontend/src/features/events/hooks/useEvents.ts`, `frontend/src/features/events/renderers/CommandBlock.tsx`).
 - Go uses short meaningful locals and `camelCase` constants (`sqliteBusyTimeoutMS`, `sqliteWriteTimeout` in `backend/internal/repository/sqlite/sqlite.go`).
 - Frontend prop and data types use `PascalCase` with `type` aliases (`CommandBlockProps`, `EventRecord` usage in `frontend/src/features/events/renderers/CommandBlock.tsx`).
@@ -374,11 +364,11 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 ## Function Design
 
 - Frontend hooks/components are generally focused but can contain complete flow logic in one function (`useEvents` in `frontend/src/features/events/hooks/useEvents.ts`).
-- Backend repository/service methods can be long when orchestrating SQL + mapping (`GetDashboardStats`, `GetSessionTree` in `backend/internal/repository/sqlite/sqlite.go`).
+- Backend repository/service methods can be long when orchestrating SQL + mapping (`UpsertSession` in `backend/internal/repository/sqlite/sqlite.go`).
 - Frontend prefers optional params with defaults (`sessionFilterOverride = ''` in `useEvents`).
 - Backend methods pass explicit domain-specific argument lists (`UpsertSession(...)` in `backend/internal/repository/sqlite/sqlite.go`).
 - Frontend hooks return structured state/action objects (`{ events, error, refreshing, reload }` in `useEvents`).
-- Go methods return value-plus-error tuples and sometimes total counts for pagination (`ListSessionsByCWDPage`, `GetDashboardStats` in `backend/internal/repository/sqlite/sqlite.go`).
+- Go methods return value-plus-error tuples (`UpsertSession` in `backend/internal/repository/sqlite/sqlite.go`).
 
 ## Module Design
 
@@ -404,7 +394,7 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 | API bootstrap       | Build config, repository, service, and router, then start server | `backend/cmd/server/main.go`                   |
 | Router              | Map API/UI routes and apply middleware                           | `backend/internal/server/router.go`            |
 | Handlers            | Convert HTTP requests into service calls and encode responses    | `backend/internal/handler/*.go`                |
-| Service             | Own event/session/dashboard workflows and SSE subscriptions      | `backend/internal/service/event_service.go`    |
+| Service             | Own event/session workflows and SSE subscriptions                | `backend/internal/service/event_service.go`    |
 | Repository contract | Define storage boundary used by service                          | `backend/internal/repository/repository.go`    |
 | SQLite adapter      | Run migrations and execute SQL for events/sessions/aggregates    | `backend/internal/repository/sqlite/sqlite.go` |
 | Embedded UI handler | Serve `dist/` static files and SPA fallback                      | `backend/internal/ui/ui.go`                    |
@@ -428,10 +418,10 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 - Contains: Route map, CORS/logging middleware, endpoint handlers.
 - Depends on: `backend/internal/service`.
 - Used by: Hook senders and frontend API calls.
-- Purpose: Central event/session/usage orchestration.
+- Purpose: Central event/session orchestration.
 - Location: `backend/internal/service`
-- Contains: `AddEvent`, list/query methods, dashboard enrichment, SSE fanout.
-- Depends on: `repository.EventRepository`, agent usage calculators.
+- Contains: `AddEvent`, list/query methods, SSE fanout.
+- Depends on: `repository.EventRepository`, agent normalizers.
 - Used by: All handlers.
 - Purpose: Durable storage and shared data contracts.
 - Location: `backend/internal/repository`, `backend/internal/repository/sqlite`, `backend/internal/domain`
@@ -446,7 +436,7 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 ### Secondary Flow Name
 
 - Backend shared mutable state is `EventService.subscribers` (`sync.Map`) in `backend/internal/service/event_service.go`.
-- Frontend state is local React hook/component state, with periodic polling in some hooks (`frontend/src/hooks/useSessions.ts`).
+- Frontend state is local React hook/component state. Feature state lives in custom hooks.
 
 ## Key Abstractions
 
@@ -487,7 +477,7 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 
 ## Error Handling
 
-- Handlers use `http.Error` for malformed input or list/query failures (`backend/internal/handler/hook.go`, `backend/internal/handler/events.go`, `backend/internal/handler/sessions.go`).
+- Handlers use `http.Error` for malformed input or list/query failures (`backend/internal/handler/hook.go`, `backend/internal/handler/events.go`).
 - Hook endpoint can return accepted empty JSON when storage fails after parsing (`backend/internal/handler/hook.go`).
 
 ## Cross-Cutting Concerns
