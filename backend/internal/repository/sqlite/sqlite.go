@@ -72,6 +72,12 @@ var schema015 string
 //go:embed migrations/016_session_model_usage.sql
 var schema016 string
 
+//go:embed migrations/017_audit_indexes.sql
+var schema017 string
+
+//go:embed migrations/018_drop_usage.sql
+var schema018 string
+
 type DB struct {
 	db     *sql.DB
 	ready  atomic.Bool
@@ -153,6 +159,8 @@ func (d *DB) migrate() error {
 		{14, schema014},
 		{15, schema015},
 		{16, schema016},
+		{17, schema017},
+		{18, schema018},
 	}
 
 	// Downgrade guard: refuse to start against a DB stamped with a higher
