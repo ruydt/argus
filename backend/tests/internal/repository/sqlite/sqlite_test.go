@@ -317,7 +317,7 @@ func TestAdd_emptyModelStaysEmpty(t *testing.T) {
 func TestUpsertSession_and_SessionModel(t *testing.T) {
 	db := newTestDB(t)
 
-	if err := db.UpsertSession("sess1", "claudecode", "claude-opus-4-7", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess1", "claudecode", "claude-opus-4-7", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), ""); err != nil {
 		t.Fatalf("UpsertSession: %v", err)
 	}
 
@@ -333,7 +333,7 @@ func TestUpsertSession_and_SessionModel(t *testing.T) {
 func TestUpsertSession_emptyModelStaysEmpty(t *testing.T) {
 	db := newTestDB(t)
 
-	if err := db.UpsertSession("sess1", "codex", "", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess1", "codex", "", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), ""); err != nil {
 		t.Fatalf("UpsertSession: %v", err)
 	}
 
@@ -349,10 +349,10 @@ func TestUpsertSession_emptyModelStaysEmpty(t *testing.T) {
 func TestUpsertSession_emptyModelDoesNotOverwriteRealModel(t *testing.T) {
 	db := newTestDB(t)
 
-	if err := db.UpsertSession("sess1", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess1", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), ""); err != nil {
 		t.Fatalf("first UpsertSession: %v", err)
 	}
-	if err := db.UpsertSession("sess1", "codex", "", "hook", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess1", "codex", "", "hook", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), ""); err != nil {
 		t.Fatalf("second UpsertSession: %v", err)
 	}
 
@@ -382,27 +382,25 @@ func TestUpsertSession_lastSeenAtUsesChronologicalComparison(t *testing.T) {
 	second := "2026-05-10T03:01:00-07:00" // 10:01:00Z (newer than first)
 	older := "2026-05-10T09:59:59Z"
 
-	if err := db.UpsertSession("sess-time", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", first, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-time", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", first, ""); err != nil {
 		t.Fatalf("first UpsertSession: %v", err)
 	}
-	if err := db.UpsertSession("sess-time", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", second, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-time", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", second, ""); err != nil {
 		t.Fatalf("second UpsertSession: %v", err)
 	}
-	if err := db.UpsertSession("sess-time", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", older, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-time", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", older, ""); err != nil {
 		t.Fatalf("third UpsertSession: %v", err)
 	}
 
-	sessions, err := db.ListSessions()
+	var lastSeen string
+	err := db.RawDB().QueryRow(`SELECT last_seen_at FROM sessions WHERE session_id = ?`, "sess-time").Scan(&lastSeen)
 	if err != nil {
-		t.Fatalf("ListSessions: %v", err)
-	}
-	if len(sessions) != 1 {
-		t.Fatalf("sessions len = %d, want 1", len(sessions))
+		t.Fatalf("query last_seen_at: %v", err)
 	}
 	// second is "2026-05-10T03:01:00-07:00" = 10:01:00Z; stored normalized to UTC
 	wantLastSeen := "2026-05-10T10:01:00Z"
-	if sessions[0].LastSeenAt != wantLastSeen {
-		t.Fatalf("last_seen_at = %q, want %q", sessions[0].LastSeenAt, wantLastSeen)
+	if lastSeen != wantLastSeen {
+		t.Fatalf("last_seen_at = %q, want %q", lastSeen, wantLastSeen)
 	}
 }
 
@@ -412,30 +410,25 @@ func TestUpsertSession_endedAtSetAndClearedByNewerActivity(t *testing.T) {
 	stop := "2026-05-10T10:05:00Z"
 	resume := "2026-05-10T10:06:00Z"
 
-	if err := db.UpsertSession("sess-ended", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", start, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-ended", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", start, ""); err != nil {
 		t.Fatalf("first UpsertSession: %v", err)
 	}
-	if err := db.UpsertSession("sess-ended", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", stop, stop, domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-ended", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", stop, stop); err != nil {
 		t.Fatalf("second UpsertSession: %v", err)
 	}
 
-	sessions, err := db.ListSessions()
-	if err != nil {
-		t.Fatalf("ListSessions: %v", err)
-	}
-	if sessions[0].EndedAt != stop {
-		t.Fatalf("ended_at = %q, want %q", sessions[0].EndedAt, stop)
+	var endedAt string
+	_ = db.RawDB().QueryRow(`SELECT COALESCE(ended_at,'') FROM sessions WHERE session_id = ?`, "sess-ended").Scan(&endedAt)
+	if endedAt != stop {
+		t.Fatalf("ended_at = %q, want %q", endedAt, stop)
 	}
 
-	if err := db.UpsertSession("sess-ended", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", resume, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-ended", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", resume, ""); err != nil {
 		t.Fatalf("third UpsertSession: %v", err)
 	}
-	sessions, err = db.ListSessions()
-	if err != nil {
-		t.Fatalf("ListSessions: %v", err)
-	}
-	if sessions[0].EndedAt != "" {
-		t.Fatalf("ended_at = %q, want empty after newer activity", sessions[0].EndedAt)
+	_ = db.RawDB().QueryRow(`SELECT COALESCE(ended_at,'') FROM sessions WHERE session_id = ?`, "sess-ended").Scan(&endedAt)
+	if endedAt != "" {
+		t.Fatalf("ended_at = %q, want empty after newer activity", endedAt)
 	}
 }
 
@@ -445,179 +438,30 @@ func TestUpsertSession_staleStopAfterResumeDoesNotResurrectEndedAt(t *testing.T)
 	stop := "2026-05-10T10:05:00Z"
 	resume := "2026-05-10T10:06:00Z"
 
-	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", start, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", start, ""); err != nil {
 		t.Fatalf("first UpsertSession: %v", err)
 	}
-	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", stop, stop, domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", stop, stop); err != nil {
 		t.Fatalf("second UpsertSession: %v", err)
 	}
-	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", resume, "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", resume, ""); err != nil {
 		t.Fatalf("third UpsertSession: %v", err)
 	}
 	// Stale stop arrives after resume (out-of-order ingestion), must not flip session back to ended.
-	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", stop, stop, domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession("sess-stale-stop", "codex", "gpt-5.4", "hook", "/cwd", "/transcript", stop, stop); err != nil {
 		t.Fatalf("fourth UpsertSession: %v", err)
 	}
 
-	sessions, err := db.ListSessions()
+	var endedAt, lastSeen string
+	err := db.RawDB().QueryRow(`SELECT COALESCE(ended_at,''), last_seen_at FROM sessions WHERE session_id = ?`, "sess-stale-stop").Scan(&endedAt, &lastSeen)
 	if err != nil {
-		t.Fatalf("ListSessions: %v", err)
+		t.Fatalf("query: %v", err)
 	}
-	if len(sessions) != 1 {
-		t.Fatalf("sessions len = %d, want 1", len(sessions))
+	if endedAt != "" {
+		t.Fatalf("ended_at = %q, want empty after stale stop", endedAt)
 	}
-	if sessions[0].EndedAt != "" {
-		t.Fatalf("ended_at = %q, want empty after stale stop", sessions[0].EndedAt)
-	}
-	if sessions[0].LastSeenAt != resume {
-		t.Fatalf("last_seen_at = %q, want %q", sessions[0].LastSeenAt, resume)
-	}
-}
-
-func TestListSessions_sortsByStartedAtDesc(t *testing.T) {
-	db := newTestDB(t)
-
-	if err := db.UpsertSession(
-		"sess-ended-older",
-		"codex",
-		"gpt-5.4",
-		"startup",
-		"/cwd",
-		"/transcript",
-		"2026-05-10T10:00:00Z",
-		"2026-05-10T10:10:00Z",
-		domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession sess-ended-older: %v", err)
-	}
-	if err := db.UpsertSession(
-		"sess-running",
-		"codex",
-		"gpt-5.4",
-		"startup",
-		"/cwd",
-		"/transcript",
-		"2026-05-10T09:00:00Z",
-		"",
-		domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession sess-running: %v", err)
-	}
-	if err := db.UpsertSession(
-		"sess-ended-newer",
-		"codex",
-		"gpt-5.4",
-		"startup",
-		"/cwd",
-		"/transcript",
-		"2026-05-10T08:00:00Z",
-		"2026-05-10T10:20:00Z",
-		domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession sess-ended-newer: %v", err)
-	}
-	if err := db.UpsertSession(
-		"sess-running",
-		"codex",
-		"gpt-5.4",
-		"hook",
-		"/cwd",
-		"/transcript",
-		"2026-05-10T10:30:00Z",
-		"",
-		domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession sess-running second event: %v", err)
-	}
-
-	sessions, err := db.ListSessions()
-	if err != nil {
-		t.Fatalf("ListSessions: %v", err)
-	}
-	if len(sessions) != 3 {
-		t.Fatalf("sessions len = %d, want 3", len(sessions))
-	}
-
-	got := []string{sessions[0].SessionID, sessions[1].SessionID, sessions[2].SessionID}
-	want := []string{"sess-ended-older", "sess-running", "sess-ended-newer"}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Fatalf("sessions[%d] = %q, want %q; full order=%v", i, got[i], want[i], got)
-		}
-	}
-}
-
-func TestListProjectsAggregatesSessionsByCWD(t *testing.T) {
-	db := newTestDB(t)
-
-	if err := db.UpsertSession("sess-old", "codex", "gpt-5.4", "", "/work/argus", "", "2026-05-14T10:00:00Z", "2026-05-14T10:05:00Z", domain.SessionUsage{}); err != nil {
-		t.Fatalf("UpsertSession old: %v", err)
-	}
-	if err := db.UpsertSession("sess-live", "claudecode", "claude-opus-4-7", "", "/work/argus", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatalf("UpsertSession live: %v", err)
-	}
-	if err := db.UpsertSession("sess-other", "codex", "gpt-5.4", "", "/work/other", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatalf("UpsertSession other: %v", err)
-	}
-
-	projects, total, err := db.ListProjectsPage("", 1, 50)
-	if err != nil {
-		t.Fatalf("ListProjectsPage: %v", err)
-	}
-
-	if len(projects) != 2 {
-		t.Fatalf("projects len = %d, want 2", len(projects))
-	}
-	if total != 2 {
-		t.Fatalf("total = %d, want 2", total)
-	}
-	if projects[0].CWD != "/work/argus" {
-		t.Fatalf("first cwd = %q, want /work/argus", projects[0].CWD)
-	}
-	if projects[0].Name != "argus" {
-		t.Fatalf("name = %q, want argus", projects[0].Name)
-	}
-	if projects[0].SessionCount != 2 {
-		t.Fatalf("session_count = %d, want 2", projects[0].SessionCount)
-	}
-	if projects[0].LiveCount != 1 {
-		t.Fatalf("live_count = %d, want 1", projects[0].LiveCount)
-	}
-	if projects[0].LastActivity != "2026-05-14T11:00:00Z" {
-		t.Fatalf("last_activity = %q, want latest session time", projects[0].LastActivity)
-	}
-	gotAgents := map[string]bool{}
-	for _, agent := range projects[0].Agents {
-		gotAgents[agent] = true
-	}
-	if !gotAgents["codex"] || !gotAgents["claudecode"] {
-		t.Fatalf("agents = %+v, want codex and claudecode", projects[0].Agents)
-	}
-}
-
-func TestListSessionsByCWDFiltersAndAppliesSince(t *testing.T) {
-	db := newTestDB(t)
-
-	if err := db.UpsertSession("old", "codex", "", "", "/work/argus", "", "2026-05-14T09:00:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatalf("UpsertSession old: %v", err)
-	}
-	if err := db.UpsertSession("new", "codex", "", "", "/work/argus", "", "2026-05-14T11:00:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatalf("UpsertSession new: %v", err)
-	}
-	if err := db.UpsertSession("other", "codex", "", "", "/work/other", "", "2026-05-14T12:00:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatalf("UpsertSession other: %v", err)
-	}
-
-	sessions, err := db.ListSessionsByCWD("/work/argus", "2026-05-14T10:00:00Z")
-	if err != nil {
-		t.Fatalf("ListSessionsByCWD: %v", err)
-	}
-
-	if len(sessions) != 1 {
-		t.Fatalf("sessions len = %d, want 1", len(sessions))
-	}
-	if sessions[0].SessionID != "new" {
-		t.Fatalf("session_id = %q, want new", sessions[0].SessionID)
+	if lastSeen != resume {
+		t.Fatalf("last_seen_at = %q, want %q", lastSeen, resume)
 	}
 }
 
@@ -642,88 +486,6 @@ func TestList_respectsLimit(t *testing.T) {
 	events, _ := db.List(3)
 	if len(events) != 3 {
 		t.Errorf("got %d events, want 3", len(events))
-	}
-}
-
-func TestGetDashboardStatsDoesNotDeadlockWithSingleConnection(t *testing.T) {
-	db := newTestDB(t)
-
-	done := make(chan error, 1)
-	go func() {
-		_, err := db.GetDashboardStats("", "")
-		done <- err
-	}()
-
-	select {
-	case err := <-done:
-		if err != nil {
-			t.Fatalf("GetDashboardStats: %v", err)
-		}
-	case <-time.After(2 * time.Second):
-		t.Fatal("GetDashboardStats deadlocked waiting for its own SQLite connection")
-	}
-}
-
-func TestGetDashboardStats_filtersEventsAcrossTimezoneOffsets(t *testing.T) {
-	db := newTestDB(t)
-
-	usage := domain.SessionUsage{
-		InputTokens:         10,
-		OutputTokens:        2,
-		CacheCreationTokens: 0,
-		CacheReadTokens:     0,
-		Turns:               1,
-	}
-	if err := db.UpsertSession("sess1", "codex", "gpt-5.4", "startup", "/cwd", "/transcript", time.Now().UTC().Format(time.RFC3339), "", usage); err != nil {
-		t.Fatalf("UpsertSession: %v", err)
-	}
-
-	e := domain.NormalizedEvent{
-		Time:          "2026-05-09T23:50:00+07:00",
-		Agent:         "codex",
-		Session:       "sess1",
-		HookEventName: "PostToolUse",
-		TurnID:        "turn1",
-		ToolUseID:     "tool1",
-		Action:        "BASH",
-		RawPayload:    []byte(`{}`),
-	}
-	if err := db.Add(e); err != nil {
-		t.Fatalf("Add: %v", err)
-	}
-	if err := db.Add(domain.NormalizedEvent{
-		Time:          "2026-05-09T23:51:00+07:00",
-		Agent:         "claudecode",
-		Session:       "sess2",
-		HookEventName: "PreToolUse",
-		TurnID:        "turn2",
-		ToolUseID:     "tool2",
-		Action:        "EDIT",
-		RawPayload:    []byte(`{}`),
-	}); err != nil {
-		t.Fatalf("Add second event: %v", err)
-	}
-
-	stats, err := db.GetDashboardStats("2026-04-25T17:00:00.000Z", "2026-05-09T16:59:59.999Z")
-	if err != nil {
-		t.Fatalf("GetDashboardStats: %v", err)
-	}
-	if stats.TotalEvents != 2 {
-		t.Fatalf("TotalEvents = %d, want 2", stats.TotalEvents)
-	}
-	if len(stats.TimelineByAgent) != 2 {
-		t.Fatalf("len(TimelineByAgent) = %d, want 2", len(stats.TimelineByAgent))
-	}
-
-	agentCounts := map[string]int{}
-	for _, row := range stats.TimelineByAgent {
-		agentCounts[row.Agent] += row.Count
-	}
-	if agentCounts["codex"] != 1 {
-		t.Fatalf("codex count = %d, want 1", agentCounts["codex"])
-	}
-	if agentCounts["claudecode"] != 1 {
-		t.Fatalf("claudecode count = %d, want 1", agentCounts["claudecode"])
 	}
 }
 
@@ -1030,204 +792,10 @@ func addEvent(t *testing.T, db *sqlite.DB, e domain.NormalizedEvent) {
 	}
 }
 
-func addSession(t *testing.T, db *sqlite.DB, sessionID, agent string) {
-	t.Helper()
-	addSessionAt(t, db, sessionID, agent, time.Now().UTC())
-}
-
 func addSessionAt(t *testing.T, db *sqlite.DB, sessionID, agent string, eventTime time.Time) {
 	t.Helper()
-	if err := db.UpsertSession(sessionID, agent, "", "", "/tmp", "", eventTime.Format(time.RFC3339), "", domain.SessionUsage{}); err != nil {
+	if err := db.UpsertSession(sessionID, agent, "", "", "/tmp", "", eventTime.Format(time.RFC3339), ""); err != nil {
 		t.Fatalf("UpsertSession: %v", err)
-	}
-}
-
-func TestGetSessionTree_noSubagents(t *testing.T) {
-	db := newTestDB(t)
-	addSession(t, db, "root1", "claudecode")
-
-	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
-	tree, err := db.GetSessionTree(since)
-	if err != nil {
-		t.Fatalf("GetSessionTree: %v", err)
-	}
-	if len(tree) != 1 {
-		t.Fatalf("got %d roots, want 1", len(tree))
-	}
-	if tree[0].Session.SessionID != "root1" {
-		t.Errorf("root session = %q, want root1", tree[0].Session.SessionID)
-	}
-	if len(tree[0].Children) != 0 {
-		t.Errorf("children = %d, want 0", len(tree[0].Children))
-	}
-}
-
-func TestGetSessionTree_withSubagents(t *testing.T) {
-	db := newTestDB(t)
-	addSession(t, db, "parent", "claudecode")
-	addSession(t, db, "child1", "claudecode")
-	addSession(t, db, "child2", "claudecode")
-
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "parent", HookEventName: "SubagentStart",
-		TurnID: "t1", ToolUseID: "u1", SubagentID: "agent-aaa",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "parent", HookEventName: "SubagentStart",
-		TurnID: "t2", ToolUseID: "u2", SubagentID: "agent-bbb",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "child1", HookEventName: "PreToolUse",
-		TurnID: "t3", ToolUseID: "u3", SubagentID: "agent-aaa",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "child2", HookEventName: "PreToolUse",
-		TurnID: "t4", ToolUseID: "u4", SubagentID: "agent-bbb",
-	})
-
-	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
-	tree, err := db.GetSessionTree(since)
-	if err != nil {
-		t.Fatalf("GetSessionTree: %v", err)
-	}
-	if len(tree) != 1 {
-		t.Fatalf("got %d roots, want 1", len(tree))
-	}
-	if len(tree[0].Children) != 2 {
-		t.Errorf("children = %d, want 2", len(tree[0].Children))
-	}
-}
-
-func TestGetSessionTree_sinceFilter(t *testing.T) {
-	db := newTestDB(t)
-	addSession(t, db, "old-session", "claudecode")
-
-	since := time.Now().Add(time.Hour).Format(time.RFC3339)
-	tree, err := db.GetSessionTree(since)
-	if err != nil {
-		t.Fatalf("GetSessionTree: %v", err)
-	}
-	if len(tree) != 0 {
-		t.Errorf("got %d roots, want 0", len(tree))
-	}
-}
-
-func TestGetSessionTree_nested(t *testing.T) {
-	db := newTestDB(t)
-	addSession(t, db, "root", "claudecode")
-	addSession(t, db, "child", "claudecode")
-	addSession(t, db, "grandchild", "claudecode")
-
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "root", HookEventName: "SubagentStart",
-		TurnID: "t1", ToolUseID: "u1", SubagentID: "agent-child",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "child", HookEventName: "SubagentStart",
-		TurnID: "t2", ToolUseID: "u2", SubagentID: "agent-gc",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "child", HookEventName: "PreToolUse",
-		TurnID: "t3", ToolUseID: "u3", SubagentID: "agent-child",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "grandchild", HookEventName: "PreToolUse",
-		TurnID: "t4", ToolUseID: "u4", SubagentID: "agent-gc",
-	})
-
-	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
-	tree, err := db.GetSessionTree(since)
-	if err != nil {
-		t.Fatalf("GetSessionTree: %v", err)
-	}
-	if len(tree) != 1 {
-		t.Fatalf("roots = %d, want 1", len(tree))
-	}
-	if len(tree[0].Children) != 1 {
-		t.Fatalf("children = %d, want 1", len(tree[0].Children))
-	}
-	if len(tree[0].Children[0].Children) != 1 {
-		t.Fatalf("grandchildren = %d, want 1", len(tree[0].Children[0].Children))
-	}
-}
-
-func TestGetSessionTree_skipsChildOutsideSinceWindow(t *testing.T) {
-	db := newTestDB(t)
-	now := time.Now().UTC()
-	within := now.Add(-15 * time.Minute)
-	outside := now.Add(-8 * 24 * time.Hour)
-	since := now.Add(-7 * 24 * time.Hour).Format(time.RFC3339)
-
-	addSessionAt(t, db, "parent", "claudecode", within)
-	addSessionAt(t, db, "child-outside", "claudecode", outside)
-
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: now.Format(time.RFC3339), Agent: "claudecode",
-		Session: "parent", HookEventName: "SubagentStart",
-		TurnID: "t1", ToolUseID: "u1", SubagentID: "agent-old",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: now.Format(time.RFC3339), Agent: "claudecode",
-		Session: "child-outside", HookEventName: "PreToolUse",
-		TurnID: "t2", ToolUseID: "u2", SubagentID: "agent-old",
-	})
-
-	tree, err := db.GetSessionTree(since)
-	if err != nil {
-		t.Fatalf("GetSessionTree: %v", err)
-	}
-	if len(tree) != 1 {
-		t.Fatalf("roots = %d, want 1", len(tree))
-	}
-	if tree[0].Session.SessionID != "parent" {
-		t.Fatalf("root session = %q, want parent", tree[0].Session.SessionID)
-	}
-	if len(tree[0].Children) != 0 {
-		t.Fatalf("children = %d, want 0", len(tree[0].Children))
-	}
-}
-
-func TestGetSessionTree_cycleDoesNotRecurseInfinitely(t *testing.T) {
-	db := newTestDB(t)
-	addSession(t, db, "root", "claudecode")
-	addSession(t, db, "child", "claudecode")
-
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "root", HookEventName: "SubagentStart",
-		TurnID: "t1", ToolUseID: "u1", SubagentID: "agent-child",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "child", HookEventName: "SubagentStart",
-		TurnID: "t2", ToolUseID: "u2", SubagentID: "agent-root",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "child", HookEventName: "PreToolUse",
-		TurnID: "t3", ToolUseID: "u3", SubagentID: "agent-child",
-	})
-	addEvent(t, db, domain.NormalizedEvent{
-		Time: time.Now().Format(time.RFC3339), Agent: "claudecode",
-		Session: "root", HookEventName: "PreToolUse",
-		TurnID: "t4", ToolUseID: "u4", SubagentID: "agent-root",
-	})
-
-	since := time.Now().Add(-time.Hour).Format(time.RFC3339)
-	tree, err := db.GetSessionTree(since)
-	if err != nil {
-		t.Fatalf("GetSessionTree: %v", err)
-	}
-	if len(tree) == 0 {
-		t.Fatal("expected at least one root node for cycle fallback")
 	}
 }
 
@@ -1344,14 +912,14 @@ func TestMigrationRunner_Idempotent(t *testing.T) {
 	db := newTestDB(t)
 
 	// A second call to New on the same DB would re-run migrate(). Instead,
-	// verify idempotency by checking schema_migrations has exactly 16 versions.
+	// verify idempotency by checking schema_migrations has exactly 18 versions.
 	rawDB := db.RawDB()
 	var count int
 	if err := rawDB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("count schema_migrations: %v", err)
 	}
-	if count != 16 {
-		t.Errorf("schema_migrations has %d rows, want 16 (migrations 1–16)", count)
+	if count != 18 {
+		t.Errorf("schema_migrations has %d rows, want 18 (migrations 1–18)", count)
 	}
 }
 
@@ -1616,49 +1184,6 @@ func TestMigrate_RefusesNewerSchema(t *testing.T) {
 	}
 }
 
-// TestSessionModelUsage_replaceAndGet covers the persisted per-model breakdown:
-// replace is delete-then-insert, GetSessionModelUsage returns rows keyed by
-// session, and deleting a project clears its model rows.
-func TestSessionModelUsage_replaceAndGet(t *testing.T) {
-	db := newTestDB(t)
-	if err := db.UpsertSession("s1", "claudecode", "m", "", "/work/argus", "", "2026-01-01T00:00:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatalf("upsert: %v", err)
-	}
-	models := []domain.ModelUsageBreakdown{
-		{Model: "opus", InputTokens: 100, OutputTokens: 50, CacheReadTokens: 10, Turns: 3},
-		{Model: "sonnet", InputTokens: 20, OutputTokens: 5, Turns: 1},
-	}
-	if err := db.ReplaceSessionModelUsage("s1", models); err != nil {
-		t.Fatalf("replace: %v", err)
-	}
-
-	all, err := db.GetSessionModelUsage()
-	if err != nil {
-		t.Fatalf("get: %v", err)
-	}
-	if got := len(all["s1"]); got != 2 {
-		t.Fatalf("s1 models = %d, want 2", got)
-	}
-
-	// Replace is authoritative — fewer rows replace the prior set.
-	if err := db.ReplaceSessionModelUsage("s1", models[:1]); err != nil {
-		t.Fatalf("replace 2: %v", err)
-	}
-	all, _ = db.GetSessionModelUsage()
-	if got := len(all["s1"]); got != 1 {
-		t.Fatalf("after shrink, s1 models = %d, want 1", got)
-	}
-
-	// Deleting the project clears its model-usage rows.
-	if _, _, err := db.DeleteProjectByCWD("/work/argus"); err != nil {
-		t.Fatalf("delete project: %v", err)
-	}
-	all, _ = db.GetSessionModelUsage()
-	if got := len(all["s1"]); got != 0 {
-		t.Fatalf("after project delete, s1 models = %d, want 0", got)
-	}
-}
-
 // TestGetRawPayload_corruptGzipReturnsError proves a valid-magic-but-garbage
 // blob yields an error (not a panic) on read.
 func TestGetRawPayload_corruptGzipReturnsError(t *testing.T) {
@@ -1766,43 +1291,3 @@ func TestDiagnosticsAgentStatsEventRates(t *testing.T) {
 	}
 }
 
-func TestUpsertSessionZeroUsagePreservesStored(t *testing.T) {
-	db, err := sqlite.New(":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = db.Close() }()
-
-	usage := domain.SessionUsage{InputTokens: 100, OutputTokens: 50, Turns: 3}
-	if err := db.UpsertSession("s1", "claudecode", "m", "", "/tmp/p", "/tmp/.claude/t.jsonl",
-		"2026-06-13T00:00:00Z", "", usage); err != nil {
-		t.Fatal(err)
-	}
-
-	// A later event without computed usage must not wipe the stored counts.
-	if err := db.UpsertSession("s1", "claudecode", "m", "", "/tmp/p", "/tmp/.claude/t.jsonl",
-		"2026-06-13T00:01:00Z", "", domain.SessionUsage{}); err != nil {
-		t.Fatal(err)
-	}
-
-	sessions, err := db.ListSessions()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(sessions) != 1 {
-		t.Fatalf("expected 1 session, got %d", len(sessions))
-	}
-	if sessions[0].Usage.InputTokens != 100 || sessions[0].Usage.Turns != 3 {
-		t.Fatalf("zero-usage upsert clobbered stored usage: %+v", sessions[0].Usage)
-	}
-
-	// A non-zero usage write still overwrites.
-	if err := db.UpsertSession("s1", "claudecode", "m", "", "/tmp/p", "/tmp/.claude/t.jsonl",
-		"2026-06-13T00:02:00Z", "", domain.SessionUsage{InputTokens: 200, OutputTokens: 80, Turns: 4}); err != nil {
-		t.Fatal(err)
-	}
-	sessions, _ = db.ListSessions()
-	if sessions[0].Usage.InputTokens != 200 {
-		t.Fatalf("non-zero usage upsert did not overwrite: %+v", sessions[0].Usage)
-	}
-}
