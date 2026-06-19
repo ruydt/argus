@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { AlertTriangle, Clock, HardDrive, RefreshCw, Zap } from 'lucide-react'
+import { AlertTriangle, Database, HardDrive, RefreshCw, Zap } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -218,22 +218,20 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
           </CardContent>
         </Card>
 
-        {/* Tile 2 — Uptime */}
+        {/* Tile 2 — DB size */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
-              <Clock className="inline size-4 mr-1 text-muted-foreground" />
-              Uptime
+              <Database className="inline size-4 mr-1 text-muted-foreground" />
+              DB size
             </div>
             <div className="text-[20px] font-semibold">
-              {Math.floor(data.runtime.uptimeSeconds / 3600)}h{' '}
-              {Math.floor((data.runtime.uptimeSeconds % 3600) / 60)}m
+              {data.storage.dbSizeBytes !== null
+                ? formatBytes(data.storage.dbSizeBytes)
+                : (data.storage.dbSizeReason ?? 'Unknown')}
             </div>
             <p className="text-[12px] text-muted-foreground mt-1">
-              {new Date(data.runtime.startedAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {data.storage.totalEvents.toLocaleString()} events
             </p>
           </CardContent>
         </Card>
