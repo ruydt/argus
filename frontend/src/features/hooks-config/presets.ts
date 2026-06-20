@@ -133,9 +133,245 @@ const CODEX_PRESETS: Record<PresetKey, HooksConfig> = {
   },
 }
 
+// --- Presets for the JSON-config agents ------------------------------------
+// Each tier wires the argus ingest hook to a subset of the agent's OWN events
+// (names mirror backend/internal/agentspec). Tool events take a `.*` match-all
+// matcher where the agent has matchers; Windsurf has none, so it passes an
+// empty tool set and no matcher is written.
+
+type PresetSpec = { event: string; matcher?: string }
+
+function buildPreset(specs: PresetSpec[]): HooksConfig {
+  const hooks: HooksConfig['hooks'] = {}
+  for (const s of specs) {
+    hooks[s.event] = [argusGroup(s.matcher)]
+  }
+  return { hooks }
+}
+
+function agentPresets(
+  all: string[],
+  tool: Set<string>,
+  baseline: string[],
+  mediumAdds: string[]
+): Record<PresetKey, HooksConfig> {
+  const spec = (e: string): PresetSpec => (tool.has(e) ? { event: e, matcher: '.*' } : { event: e })
+  return {
+    baseline: buildPreset(baseline.map(spec)),
+    medium: buildPreset([...baseline, ...mediumAdds].map(spec)),
+    full: buildPreset(all.map(spec)),
+  }
+}
+
+const CURSOR_PRESETS = agentPresets(
+  [
+    'beforeSubmitPrompt',
+    'beforeShellExecution',
+    'afterShellExecution',
+    'beforeMCPExecution',
+    'afterMCPExecution',
+    'beforeReadFile',
+    'afterFileEdit',
+    'stop',
+    'sessionStart',
+    'sessionEnd',
+    'preToolUse',
+    'postToolUse',
+    'postToolUseFailure',
+    'subagentStart',
+    'subagentStop',
+    'preCompact',
+  ],
+  new Set([
+    'preToolUse',
+    'postToolUse',
+    'postToolUseFailure',
+    'beforeShellExecution',
+    'afterShellExecution',
+    'beforeMCPExecution',
+    'afterMCPExecution',
+    'beforeReadFile',
+    'afterFileEdit',
+  ]),
+  ['sessionStart', 'sessionEnd', 'beforeSubmitPrompt', 'postToolUse', 'stop'],
+  ['preToolUse', 'postToolUseFailure', 'subagentStart', 'subagentStop', 'preCompact']
+)
+
+const ANTIGRAVITY_PRESETS = agentPresets(
+  [
+    'PreToolUse',
+    'PostToolUse',
+    'PreInvocation',
+    'PostInvocation',
+    'SessionStart',
+    'SessionEnd',
+    'Stop',
+    'Notification',
+  ],
+  new Set(['PreToolUse', 'PostToolUse']),
+  ['SessionStart', 'SessionEnd', 'PostToolUse', 'Stop'],
+  ['PreToolUse', 'PreInvocation', 'PostInvocation', 'Notification']
+)
+
+const COPILOT_PRESETS = agentPresets(
+  [
+    'sessionStart',
+    'sessionEnd',
+    'userPromptSubmitted',
+    'preToolUse',
+    'postToolUse',
+    'postToolUseFailure',
+    'permissionRequest',
+    'preCompact',
+    'agentStop',
+    'subagentStart',
+    'subagentStop',
+    'errorOccurred',
+    'notification',
+  ],
+  new Set(['preToolUse', 'postToolUse', 'postToolUseFailure']),
+  ['sessionStart', 'sessionEnd', 'userPromptSubmitted', 'postToolUse', 'agentStop'],
+  [
+    'preToolUse',
+    'postToolUseFailure',
+    'permissionRequest',
+    'subagentStart',
+    'subagentStop',
+    'preCompact',
+  ]
+)
+
+const QWEN_PRESETS = agentPresets(
+  [
+    'PreToolUse',
+    'PostToolUse',
+    'PostToolUseFailure',
+    'UserPromptSubmit',
+    'SessionStart',
+    'SessionEnd',
+    'Stop',
+    'StopFailure',
+    'SubagentStart',
+    'SubagentStop',
+    'PreCompact',
+    'PostCompact',
+    'Notification',
+    'PermissionRequest',
+    'TodoCreated',
+    'TodoCompleted',
+  ],
+  new Set(['PreToolUse', 'PostToolUse', 'PostToolUseFailure']),
+  ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'PostToolUse', 'Stop'],
+  [
+    'PreToolUse',
+    'PostToolUseFailure',
+    'StopFailure',
+    'SubagentStart',
+    'SubagentStop',
+    'PreCompact',
+    'PostCompact',
+  ]
+)
+
+const CONTINUE_PRESETS = agentPresets(
+  [
+    'PreToolUse',
+    'PostToolUse',
+    'PostToolUseFailure',
+    'PermissionRequest',
+    'UserPromptSubmit',
+    'SessionStart',
+    'SessionEnd',
+    'Stop',
+    'Notification',
+    'SubagentStart',
+    'SubagentStop',
+    'PreCompact',
+    'ConfigChange',
+    'TeammateIdle',
+    'TaskCompleted',
+    'WorktreeCreate',
+    'WorktreeRemove',
+  ],
+  new Set(['PreToolUse', 'PostToolUse', 'PostToolUseFailure']),
+  ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'PostToolUse', 'Stop'],
+  [
+    'PreToolUse',
+    'PostToolUseFailure',
+    'PermissionRequest',
+    'SubagentStart',
+    'SubagentStop',
+    'PreCompact',
+  ]
+)
+
+const AUGMENT_PRESETS = agentPresets(
+  ['PreToolUse', 'PostToolUse', 'Stop', 'SessionStart', 'SessionEnd', 'Notification'],
+  new Set(['PreToolUse', 'PostToolUse']),
+  ['SessionStart', 'SessionEnd', 'PostToolUse', 'Stop'],
+  ['PreToolUse', 'Notification']
+)
+
+const WINDSURF_PRESETS = agentPresets(
+  [
+    'pre_read_code',
+    'post_read_code',
+    'pre_write_code',
+    'post_write_code',
+    'pre_run_command',
+    'post_run_command',
+    'pre_mcp_tool_use',
+    'post_mcp_tool_use',
+    'pre_user_prompt',
+    'post_cascade_response',
+    'post_setup_worktree',
+  ],
+  new Set(), // Windsurf has no matcher concept
+  ['pre_user_prompt', 'post_cascade_response', 'post_run_command', 'post_write_code'],
+  ['pre_run_command', 'pre_write_code', 'post_read_code', 'post_mcp_tool_use']
+)
+
+const CRUSH_PRESETS = agentPresets(['PreToolUse'], new Set(['PreToolUse']), ['PreToolUse'], [])
+
+const GOOSE_PRESETS = agentPresets(
+  [
+    'SessionStart',
+    'SessionEnd',
+    'Stop',
+    'UserPromptSubmit',
+    'PreToolUse',
+    'PostToolUse',
+    'PostToolUseFailure',
+    'BeforeReadFile',
+    'AfterFileEdit',
+    'BeforeShellExecution',
+    'AfterShellExecution',
+  ],
+  new Set([
+    'PreToolUse',
+    'PostToolUse',
+    'PostToolUseFailure',
+    'BeforeReadFile',
+    'AfterFileEdit',
+    'BeforeShellExecution',
+    'AfterShellExecution',
+  ]),
+  ['SessionStart', 'SessionEnd', 'UserPromptSubmit', 'PostToolUse', 'Stop'],
+  ['PreToolUse', 'PostToolUseFailure', 'AfterFileEdit', 'AfterShellExecution']
+)
+
 export const HOOK_PRESETS: Record<AgentKey, Record<PresetKey, HooksConfig>> = {
   claudecode: CLAUDE_PRESETS,
   codex: CODEX_PRESETS,
+  cursor: CURSOR_PRESETS,
+  antigravity: ANTIGRAVITY_PRESETS,
+  copilot: COPILOT_PRESETS,
+  qwen: QWEN_PRESETS,
+  continue: CONTINUE_PRESETS,
+  augment: AUGMENT_PRESETS,
+  windsurf: WINDSURF_PRESETS,
+  crush: CRUSH_PRESETS,
+  goose: GOOSE_PRESETS,
 }
 
 export const PRESET_LABELS: Record<PresetKey, { label: string; description: string }> = {
@@ -181,6 +417,15 @@ export function hasAnyArgusHooks(config: HooksConfig): boolean {
 const AGENT_EVENT_TOTALS: Record<AgentKey, number> = {
   claudecode: 30,
   codex: 10,
+  cursor: 16,
+  antigravity: 8,
+  copilot: 13,
+  qwen: 16,
+  continue: 17,
+  augment: 6,
+  windsurf: 11,
+  crush: 1,
+  goose: 11,
 }
 
 /**
@@ -207,5 +452,7 @@ export function detectHookConfigLabel(agent: AgentKey, config: HooksConfig): str
   if (argusEventTypes.size === 0) return 'Configured'
 
   const total = AGENT_EVENT_TOTALS[agent]
-  return `Configured (${argusEventTypes.size}/${total})`
+  return total
+    ? `Configured (${argusEventTypes.size}/${total})`
+    : `Configured (${argusEventTypes.size})`
 }

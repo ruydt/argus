@@ -266,7 +266,7 @@ export const HOOK_TEMPLATES: Record<AgentKey, Record<string, object>> = {
 
 export function getTemplate(agent: AgentKey, eventType: string): object {
   return (
-    HOOK_TEMPLATES[agent][eventType] ?? {
+    HOOK_TEMPLATES[agent]?.[eventType] ?? {
       hook_event_name: eventType,
       session_id: 'sim-abc123',
       cwd: '/Users/dev/project',

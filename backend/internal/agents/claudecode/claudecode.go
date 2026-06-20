@@ -48,44 +48,6 @@ func ModelFromTranscript(transcriptPath string) string {
 	return ""
 }
 
-func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
-	f, err := os.Open(transcriptPath)
-	if err != nil {
-		return domain.UsageBreakdown{}
-	}
-	defer f.Close()
-	byModel := map[string]*domain.ModelUsageBreakdown{}
-	scanner := bufio.NewScanner(f)
-	scanner.Buffer(make([]byte, 4*1024*1024), 4*1024*1024)
-	for scanner.Scan() {
-		var entry struct {
-			Type    string `json:"type"`
-			Message struct {
-				Model string `json:"model"`
-				Usage struct {
-					InputTokens         int `json:"input_tokens"`
-					OutputTokens        int `json:"output_tokens"`
-					CacheCreationTokens int `json:"cache_creation_input_tokens"`
-					CacheReadTokens     int `json:"cache_read_input_tokens"`
-				} `json:"usage"`
-			} `json:"message"`
-		}
-		if json.Unmarshal(scanner.Bytes(), &entry) == nil && entry.Type == "assistant" {
-			usage := byModel[entry.Message.Model]
-			if usage == nil {
-				usage = &domain.ModelUsageBreakdown{Model: entry.Message.Model}
-				byModel[entry.Message.Model] = usage
-			}
-			usage.InputTokens += entry.Message.Usage.InputTokens
-			usage.OutputTokens += entry.Message.Usage.OutputTokens
-			usage.CacheCreationTokens += entry.Message.Usage.CacheCreationTokens
-			usage.CacheReadTokens += entry.Message.Usage.CacheReadTokens
-			usage.Turns++
-		}
-	}
-	return domain.BuildUsageBreakdown(byModel)
-}
-
 const claudecodeNormalizerVersion = "claudecode/1"
 
 func AgentName() string {

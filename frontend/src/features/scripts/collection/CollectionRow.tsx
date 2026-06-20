@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CollectionEntry } from '@/types'
 
+import { AgentLogos } from '../AgentLogos'
 import { OsIcons } from '../OsIcons'
 import { ScriptViewerModal } from '../ScriptViewerModal'
 
@@ -94,14 +95,21 @@ export function CollectionRow({
             <span className="truncate text-[0.8rem] text-muted-foreground">{entry.author}</span>
           ) : null}
         </div>
-        <div className="hidden w-40 shrink-0 items-center md:flex">
-          {entry.event ? <Badge variant="outline">{entry.event}</Badge> : null}
+        <div className="hidden w-36 shrink-0 flex-wrap items-center gap-1 md:flex">
+          {(entry.events ?? []).map((ev) => (
+            <Badge key={ev} variant="outline">
+              {ev}
+            </Badge>
+          ))}
         </div>
-        <div className="hidden w-32 shrink-0 md:flex">
+        <div className="hidden w-28 shrink-0 md:flex">
+          <AgentLogos agents={entry.agents} />
+        </div>
+        <div className="hidden w-24 shrink-0 md:flex">
           <OsIcons os={entry.os} />
         </div>
         <TooltipProvider delayDuration={100}>
-          <div className="hidden w-32 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
+          <div className="hidden w-28 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
             {entry.local ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -183,6 +191,7 @@ export function CollectionRow({
                     Save to gist
                   </Button>
                 ) : null}
+                <div className="mx-auto my-1 h-px w-[85%] bg-border" />
                 {entry.local ? (
                   <Button
                     variant="ghost"

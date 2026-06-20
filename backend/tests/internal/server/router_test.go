@@ -24,16 +24,6 @@ func (noopRepo) ListBySession(string, int) ([]domain.NormalizedEvent, error) { r
 
 func (noopRepo) SessionModel(string) (string, error) { return "", nil }
 
-func (noopRepo) ListProjectsPage(string, int, int) ([]domain.Project, int, error) {
-	return nil, 0, nil
-}
-
-func (noopRepo) ListSessions() ([]domain.Session, error) { return nil, nil }
-
-func (noopRepo) ListSessionsByCWD(string, string) ([]domain.Session, error) { return nil, nil }
-
-func (noopRepo) GetDashboardStats(string, string) (*domain.DashboardStats, error) { return nil, nil }
-
 func (noopRepo) DiagnosticsStorageStats() (domain.DiagnosticsStorageStats, error) {
 	return domain.DiagnosticsStorageStats{}, nil
 }
@@ -42,28 +32,8 @@ func (noopRepo) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) 
 	return nil, nil
 }
 
-func (noopRepo) GetSessionTree(string) ([]domain.SessionTreeNode, error) { return nil, nil }
-
-func (noopRepo) ListSessionsByCWDPage(string, string, int, int) ([]domain.Session, int, error) {
-	return nil, 0, nil
-}
-
-func (noopRepo) GetFileChanges(string) ([]domain.FileChangeGroup, error) { return nil, nil }
-
-func (noopRepo) GetSessionFileChangeCounts([]string) (map[string]int, error) {
-	return map[string]int{}, nil
-}
-
-func (noopRepo) UpsertSession(string, string, string, string, string, string, string, string, domain.SessionUsage) error {
+func (noopRepo) UpsertSession(string, string, string, string, string, string, string, string) error {
 	return nil
-}
-func (noopRepo) ReplaceSessionModelUsage(string, []domain.ModelUsageBreakdown) error { return nil }
-func (noopRepo) GetSessionModelUsage() (map[string][]domain.ModelUsageBreakdown, error) {
-	return map[string][]domain.ModelUsageBreakdown{}, nil
-}
-
-func (noopRepo) DeleteProjectByCWD(string) (int64, int64, error) {
-	return 0, 0, nil
 }
 
 func (noopRepo) ExportEvents(_ context.Context, _ io.Writer) error { return nil }
@@ -85,6 +55,7 @@ func (noopRepo) Compact(_ context.Context) (domain.CompactResult, error) {
 	return domain.CompactResult{}, nil
 }
 func (noopRepo) PruneEvents(_ context.Context, _ string, _ int) (int64, error) { return 0, nil }
+func (noopRepo) DeleteSessions(_ context.Context, _ []string) (int64, error)   { return 0, nil }
 
 func (noopRepo) Ready() bool { return true }
 

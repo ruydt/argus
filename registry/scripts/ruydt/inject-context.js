@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Inject context
-// event: UserPromptSubmit
+// events: UserPromptSubmit
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/inject-context.js
 // purpose: Inject just-in-time context per prompt: git branch + working-tree state, plus .argus-context.md or ~/.argus/context.md if present.
-// os: both
+// os: linux, macos, windows
 // @end
 
 // UserPromptSubmit hook: injects just-in-time context with every prompt — current git

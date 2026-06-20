@@ -92,17 +92,21 @@ type gistOut struct {
 	Files       map[string]gistFileOut `json:"files"`
 }
 
-// manifestEntry is one script's metadata stored in manifest.json.
+// manifestEntry is one script's metadata stored in manifest.json. Events/Agents
+// are lists; the legacy singular `event` is still read from older manifests.
 type manifestEntry struct {
-	ID       string `json:"id"`
-	Filename string `json:"filename"`
-	Title    string `json:"title"`
-	Author   string `json:"author,omitempty"`
-	Purpose  string `json:"purpose,omitempty"`
-	Event    string `json:"event,omitempty"`
-	Matcher  string `json:"matcher,omitempty"`
-	Runtime  string `json:"runtime,omitempty"`
-	Origin   string `json:"origin"`
+	ID       string   `json:"id"`
+	Filename string   `json:"filename"`
+	Title    string   `json:"title"`
+	Author   string   `json:"author,omitempty"`
+	Purpose  string   `json:"purpose,omitempty"`
+	Events   []string `json:"events,omitempty"`
+	Agents   []string `json:"agents,omitempty"`
+	Event    string   `json:"event,omitempty"` // legacy: folded into Events on read
+	Matcher  string   `json:"matcher,omitempty"`
+	Runtime  string   `json:"runtime,omitempty"`
+	OS       string   `json:"os,omitempty"`
+	Origin   string   `json:"origin"`
 }
 type manifest struct {
 	Version int             `json:"version"`
@@ -220,10 +224,14 @@ func (g *GistClient) ReadCollection(ctx context.Context, gistID string) (domain.
 		if !ok {
 			continue // manifest references a file the user deleted; skip
 		}
+		events := e.Events
+		if len(events) == 0 && e.Event != "" {
+			events = domain.SplitMetaCSV(e.Event) // fold legacy singular event
+		}
 		scripts = append(scripts, domain.CollectionScript{
 			ID: e.ID, Filename: e.Filename, Title: e.Title, Author: e.Author, Purpose: e.Purpose,
-			Event: e.Event, Matcher: e.Matcher, Runtime: e.Runtime, Origin: e.Origin,
-			Body: f.Content,
+			Events: events, Agents: e.Agents, Matcher: e.Matcher, Runtime: e.Runtime, OS: e.OS,
+			Origin: e.Origin, Body: f.Content,
 		})
 	}
 	return domain.Collection{Scripts: scripts, GistURL: out.HTMLURL}, nil
@@ -243,7 +251,8 @@ func (g *GistClient) AddScript(ctx context.Context, gistID string, s domain.Coll
 	}
 	m.Scripts = append(m.Scripts, manifestEntry{
 		ID: s.ID, Filename: s.Filename, Title: s.Title, Author: s.Author, Purpose: s.Purpose,
-		Event: s.Event, Matcher: s.Matcher, Runtime: s.Runtime, Origin: s.Origin,
+		Events: s.Events, Agents: s.Agents, Matcher: s.Matcher, Runtime: s.Runtime, OS: s.OS,
+		Origin: s.Origin,
 	})
 	mb, err := json.Marshal(m)
 	if err != nil {

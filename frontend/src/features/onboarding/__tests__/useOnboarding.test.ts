@@ -24,12 +24,6 @@ vi.mock('../tourSteps', () => ({
     getDriver: unknown
   }) => [{ popover: { title: 'Step 1', onNextClick: onComplete } }],
 }))
-vi.mock('../pageTours', () => ({
-  PAGE_TOURS: {
-    '/': [{ popover: { title: 'Events step' } }],
-    '/dashboard': [{ popover: { title: 'Dashboard step' } }],
-  },
-}))
 
 const localStorageMock = {
   getItem: vi.fn(),
@@ -93,34 +87,5 @@ describe('useOnboarding', () => {
 
     expect(localStorageMock.setItem).toHaveBeenCalledWith('argus_onboarding_done', '1')
     expect(result.current.isFirstVisitTourActive).toBe(false)
-  })
-
-  it('startPageTour drives for a known route', async () => {
-    localStorageMock.getItem.mockReturnValue('1')
-
-    const { result } = renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
-    )
-
-    act(() => vi.advanceTimersByTime(900))
-
-    act(() => result.current.startPageTour('/'))
-
-    expect(mockDriver).toHaveBeenCalledTimes(1)
-    expect(mockDrive).toHaveBeenCalledTimes(1)
-  })
-
-  it('startPageTour does nothing for an unknown route', async () => {
-    localStorageMock.getItem.mockReturnValue('1')
-
-    const { result } = renderHook(() =>
-      useOnboarding({ navigate: navigateMock, forceSidebarOpen: forceSidebarOpenMock })
-    )
-
-    act(() => vi.advanceTimersByTime(900))
-
-    act(() => result.current.startPageTour('/unknown'))
-
-    expect(mockDriver).not.toHaveBeenCalled()
   })
 })

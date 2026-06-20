@@ -52,3 +52,6 @@ backend/internal/ui/dist/*
 # AI agents
 
 .cache
+
+# Local planning docs
+/plans/

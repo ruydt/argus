@@ -1,6 +1,6 @@
 // Package scriptmeta parses the `// @argus-meta` … `// @end` header that argus
-// scripts carry, so saved copies keep their title/event/runtime. The format
-// mirrors the frontend's argusMeta.ts exactly.
+// scripts carry, so saved copies keep their title/events/agents/runtime. The
+// format mirrors the frontend's argusMeta.ts exactly.
 package scriptmeta
 
 import (
@@ -14,15 +14,36 @@ const (
 )
 
 // Meta holds the recognised header fields. Absent fields stay empty.
+//
+// Events and Agents are lists: a script may hook several events and target
+// several agents. The legacy singular `event:` header still parses (folded into
+// Events) so older scripts and gist copies keep working.
 type Meta struct {
 	Title   string
 	Author  string
-	Event   string
-	Runtime string // kept for backward compat with old scripts that declare // runtime:
+	Events  []string // one or more hook events
+	Agents  []string // agent ids the script supports (claudecode, codex, …)
+	Runtime string   // kept for backward compat with old scripts that declare // runtime:
 	Matcher string
 	Purpose string
 	Command string // full invocation e.g. "node hook.js --flag"
-	OS      string // both | posix | macos | windows — platform support
+	OS      string // comma list of linux | macos | windows (legacy both/posix still parsed)
+}
+
+// SplitCSV parses a comma-separated header value into trimmed, de-duplicated,
+// order-preserving tokens. Empty input yields nil.
+func SplitCSV(s string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, part := range strings.Split(s, ",") {
+		v := strings.TrimSpace(part)
+		if v == "" || seen[v] {
+			continue
+		}
+		seen[v] = true
+		out = append(out, v)
+	}
+	return out
 }
 
 var fieldLine = regexp.MustCompile(`^//\s*(\w+):\s*(.*)$`)
@@ -67,8 +88,10 @@ func Parse(body string) Meta {
 			m.Title = value
 		case "author":
 			m.Author = value
-		case "event":
-			m.Event = value
+		case "events", "event": // `event` is the legacy singular form
+			m.Events = append(m.Events, SplitCSV(value)...)
+		case "agents":
+			m.Agents = append(m.Agents, SplitCSV(value)...)
 		case "runtime":
 			m.Runtime = value
 		case "matcher":
@@ -81,5 +104,7 @@ func Parse(body string) Meta {
 			m.OS = value
 		}
 	}
+	m.Events = SplitCSV(strings.Join(m.Events, ","))
+	m.Agents = SplitCSV(strings.Join(m.Agents, ","))
 	return m
 }

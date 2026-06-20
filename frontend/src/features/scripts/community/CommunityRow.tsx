@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CommunityScript } from '@/types'
 
+import { AgentLogos } from '../AgentLogos'
 import { OsIcons } from '../OsIcons'
 import { ScriptViewerModal } from '../ScriptViewerModal'
 
@@ -69,15 +70,22 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
           </span>
           <span className="truncate text-[0.8rem] text-muted-foreground">{script.author}</span>
         </div>
-        <div className="hidden w-44 shrink-0 items-center gap-1 md:flex">
-          {script.event ? <Badge variant="outline">{script.event}</Badge> : null}
+        <div className="hidden w-40 shrink-0 flex-wrap items-center gap-1 md:flex">
+          {(script.events ?? []).map((ev) => (
+            <Badge key={ev} variant="outline">
+              {ev}
+            </Badge>
+          ))}
           {!script.runtime_available ? (
             <Badge variant="outline" className="border-amber-600/40 text-amber-500">
               needs {script.runtime}
             </Badge>
           ) : null}
         </div>
-        <div className="hidden w-32 shrink-0 md:flex">
+        <div className="hidden w-28 shrink-0 md:flex">
+          <AgentLogos agents={script.agents} />
+        </div>
+        <div className="hidden w-24 shrink-0 md:flex">
           <OsIcons os={script.os} />
         </div>
         <div className="flex w-40 shrink-0 items-center justify-end gap-2">

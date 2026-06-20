@@ -281,7 +281,7 @@ body {
   --sidebar-label-gap: 0.6rem;
   --sidebar-label-max-width: 10rem;
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
 }
 
 .sidebar-label-open {
@@ -321,7 +321,16 @@ body {
     var(--sidebar-border) 70%,
     transparent
   );
-  margin: 0 4px;
+  width: 85%;
+  margin: 0 auto;
+}
+
+/* Full-bleed variant: spans the entire sidebar width, canceling the
+   aside's px-2 padding so the line reaches both edges. */
+.sidebar-bottom-divider--full {
+  width: auto;
+  margin: 0 -0.5rem;
+  background: var(--sidebar-border);
 }
 
 @media (prefers-reduced-motion: reduce) {

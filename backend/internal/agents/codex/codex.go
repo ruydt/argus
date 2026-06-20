@@ -1,10 +1,8 @@
 package codex
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 
@@ -127,82 +125,6 @@ func PatchSnippetStrings(hunks []ParseHunk) (oldStr, newStr string) {
 		newLines = append(newLines, h.NewLines...)
 	}
 	return strings.Join(oldLines, "\n"), strings.Join(newLines, "\n")
-}
-
-func ComputeUsageBreakdown(transcriptPath string) domain.UsageBreakdown {
-	f, err := os.Open(transcriptPath)
-	if err != nil {
-		return domain.UsageBreakdown{}
-	}
-	defer f.Close()
-
-	var (
-		currentModel string
-		prevTotal    usageSnapshot
-	)
-	byModel := map[string]*domain.ModelUsageBreakdown{}
-	scanner := bufio.NewScanner(f)
-	scanner.Buffer(make([]byte, 4*1024*1024), 4*1024*1024)
-	for scanner.Scan() {
-		var entry struct {
-			Type    string `json:"type"`
-			Payload struct {
-				Model string `json:"model"`
-				Type  string `json:"type"`
-				Info  struct {
-					Total usageSnapshot `json:"total_token_usage"`
-					Last  usageSnapshot `json:"last_token_usage"`
-				} `json:"info"`
-			} `json:"payload"`
-		}
-		if json.Unmarshal(scanner.Bytes(), &entry) != nil {
-			continue
-		}
-		if entry.Type == "turn_context" && entry.Payload.Model != "" {
-			currentModel = entry.Payload.Model
-			continue
-		}
-		if entry.Type != "event_msg" || entry.Payload.Type != "token_count" {
-			continue
-		}
-		delta := entry.Payload.Info.Last
-		if !delta.hasUsage() && entry.Payload.Info.Total.hasUsage() {
-			delta = entry.Payload.Info.Total.minus(prevTotal)
-		}
-		if !delta.hasUsage() {
-			continue
-		}
-
-		usage := byModel[currentModel]
-		if usage == nil {
-			usage = &domain.ModelUsageBreakdown{Model: currentModel}
-			byModel[currentModel] = usage
-		}
-		usage.InputTokens += delta.InputTokens
-		usage.CacheReadTokens += delta.CachedInputTokens
-		usage.OutputTokens += delta.OutputTokens
-		usage.Turns++
-		prevTotal = entry.Payload.Info.Total
-	}
-	return domain.BuildUsageBreakdown(byModel)
-}
-
-type usageSnapshot struct {
-	InputTokens       int `json:"input_tokens"`
-	CachedInputTokens int `json:"cached_input_tokens"`
-	OutputTokens      int `json:"output_tokens"`
-}
-
-func (u usageSnapshot) hasUsage() bool {
-	return u.InputTokens > 0 || u.CachedInputTokens > 0 || u.OutputTokens > 0
-}
-
-func (u usageSnapshot) minus(prev usageSnapshot) usageSnapshot {
-	return usageSnapshot{
-		InputTokens:       max(u.InputTokens-prev.InputTokens, 0),
-		CachedInputTokens: max(u.CachedInputTokens-prev.CachedInputTokens, 0),
-		OutputTokens:      max(u.OutputTokens-prev.OutputTokens, 0),
-	}
 }
 
 const codexNormalizerVersion = "codex/1"

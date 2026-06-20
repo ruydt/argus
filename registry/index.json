@@ -6,13 +6,19 @@
       "author": "ruydt",
       "title": "Block dangerous commands",
       "purpose": "Deny dangerous shell commands (rm -rf ~, curl | sh, force-push to main, mkfs) with a reason the agent can act on.",
-      "event": "PreToolUse",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "Bash",
       "command": "node ~/.argus/hooks/block-dangerous.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "162891d3bd0441fe5a1031764b5825cde46d2baa458f5c23d556b83534770276",
+      "sha256": "495f8a36aef31453f948d034644e5a00288cf2229f60631dfb691f83b3ef7cd4",
       "source": "scripts/ruydt/block-dangerous.js",
       "published_at": ""
     },
@@ -21,13 +27,19 @@
       "author": "ruydt",
       "title": "Cost warning",
       "purpose": "Warn when token usage in the rolling 5h window crosses a threshold. Silent otherwise.",
-      "event": "SessionStart",
+      "events": [
+        "SessionStart"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "",
       "command": "node ~/.argus/hooks/cost-warn.js",
       "runtime": "node",
-      "os": "posix",
+      "os": "linux, macos",
       "tier": "community",
-      "sha256": "9da978bdcb6c73937cc794461ad9c0f6f22e1242166e22e11364f9291c20793c",
+      "sha256": "5109a59762eb2ebb804c110515b273dbc5cd999170502190060622bf122b39b1",
       "source": "scripts/ruydt/cost-warn.js",
       "published_at": ""
     },
@@ -36,13 +48,19 @@
       "author": "ruydt",
       "title": "Format & lint on edit",
       "purpose": "Auto-format the edited file (prettier/ruff/gofmt, single-file) and feed lint errors back so the agent fixes them.",
-      "event": "PostToolUse",
+      "events": [
+        "PostToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "Edit|Write|MultiEdit",
       "command": "node ~/.argus/hooks/format-lint.js",
       "runtime": "node",
-      "os": "posix",
+      "os": "linux, macos",
       "tier": "community",
-      "sha256": "2355cd73df9008f81a26f30afd2d677a95b837048644fd82f29a9d8a741aeb57",
+      "sha256": "697dd3fb32d177da9d4d124e74dda75dd5755d26dff4224226a3c558c717951f",
       "source": "scripts/ruydt/format-lint.js",
       "published_at": ""
     },
@@ -51,13 +69,19 @@
       "author": "ruydt",
       "title": "Git autostage",
       "purpose": "Opt-in checkpoint per agent turn: git add -u (tracked files only), optional local commit, never pushes.",
-      "event": "Stop",
+      "events": [
+        "Stop"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "",
       "command": "node ~/.argus/hooks/git-autostage.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "ac47e30f1b926a7008deb401898a4f034f4eaa56769ef3fe9e86613c7ab1d2eb",
+      "sha256": "cfe0b095a032a4d221c080e580647f201e112db66329c96b74577846d08aff6e",
       "source": "scripts/ruydt/git-autostage.js",
       "published_at": ""
     },
@@ -66,13 +90,19 @@
       "author": "ruydt",
       "title": "Inject context",
       "purpose": "Inject just-in-time context per prompt: git branch + working-tree state, plus .argus-context.md or ~/.argus/context.md if present.",
-      "event": "UserPromptSubmit",
+      "events": [
+        "UserPromptSubmit"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "",
       "command": "node ~/.argus/hooks/inject-context.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "73c0c8e7cf84bf92f92fd6e99c72f3b4bba3f11fbceb411decb43031ac301d10",
+      "sha256": "88079d2042fb14974b91191d7d75f1ffd16d190d272f4d9b89efbcebce240008",
       "source": "scripts/ruydt/inject-context.js",
       "published_at": ""
     },
@@ -81,13 +111,19 @@
       "author": "ruydt",
       "title": "Notify webhook",
       "purpose": "Slack / Discord / ntfy / Telegram / custom webhook when the agent finishes or needs attention. Rate-limited; silent without config.",
-      "event": "Stop",
+      "events": [
+        "Stop"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "",
       "command": "node ~/.argus/hooks/notify-webhook.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "1d2620cae4a70cc32e945d4802df041dd1408eeb7761113db3b2321d97fe0e92",
+      "sha256": "f7fbe2b0a6a0708de3db9b3d3439275de9b6a54251bb4aeed4e6da04a21e0947",
       "source": "scripts/ruydt/notify-webhook.js",
       "published_at": ""
     },
@@ -96,13 +132,19 @@
       "author": "ruydt",
       "title": "Permission request dialog",
       "purpose": "Native macOS approval dialog with an Always list.",
-      "event": "PermissionRequest",
+      "events": [
+        "PermissionRequest"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "",
       "command": "node ~/.argus/hooks/permission-request.js",
       "runtime": "node",
       "os": "macos",
       "tier": "community",
-      "sha256": "abdee0e38020d7c50fd3f764b72290fdd131cfdab78d97e9d1d397e4f6d44645",
+      "sha256": "0901c21e14dab926488823a1d8910b7a3e7d9584587eadea9d2105711bee0f74",
       "source": "scripts/ruydt/permission-request.js",
       "published_at": ""
     },
@@ -111,13 +153,19 @@
       "author": "ruydt",
       "title": "Protect branches",
       "purpose": "Deny git commit/push/branch-deletion on protected branches (main, master); suggests a feature branch.",
-      "event": "PreToolUse",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "Bash",
       "command": "node ~/.argus/hooks/protect-branch.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "9a1f02905bcd9621fe68a57cb0ec40ada82220307a8d1e6aa7dc5046fb93c79d",
+      "sha256": "d0e27cd4106b93d8be4564cc3972583b01e010b183bb618582c7d74eb1ab77ae",
       "source": "scripts/ruydt/protect-branch.js",
       "published_at": ""
     },
@@ -126,13 +174,19 @@
       "author": "ruydt",
       "title": "Protect secret files",
       "purpose": "Deny access to secret files (.env, *.pem, ~/.ssh/, ~/.aws/). .env.example/sample/template and secrets.test/spec.* are allowed.",
-      "event": "PreToolUse",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "Read|Edit|Write|Bash",
       "command": "node ~/.argus/hooks/protect-secrets.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "c0a6842b581b39a1f5e0250d51cdcb2c787f3d2a1f29c6075fe979cfc7342417",
+      "sha256": "07aa2116e4e994d2a60b496783566e124544ee7c135aa6575ece43ae6d0b397e",
       "source": "scripts/ruydt/protect-secrets.js",
       "published_at": ""
     },
@@ -141,13 +195,19 @@
       "author": "ruydt",
       "title": "Prompt-injection scanner",
       "purpose": "Warn-only prompt-injection scanner on tool output. Injects a caution into context instead of blocking.",
-      "event": "PostToolUse",
+      "events": [
+        "PostToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "Read|WebFetch|WebSearch|Grep|Bash|Task|mcp__.*",
       "command": "node ~/.argus/hooks/scan-injection.js",
       "runtime": "node",
-      "os": "both",
+      "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "5f4c619ecf5ddbd3bf5c0ab90592cc70e403af5069d282f01fa3f2221317ca7e",
+      "sha256": "e3e165a836b9797cc4f1367d96753cbd297b9e733635e687bf204d581fa7d06d",
       "source": "scripts/ruydt/scan-injection.js",
       "published_at": ""
     },
@@ -156,13 +216,19 @@
       "author": "ruydt",
       "title": "Stop notification",
       "purpose": "Local notification when the agent finishes.",
-      "event": "Stop",
+      "events": [
+        "Stop"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
       "matcher": "",
       "command": "node ~/.argus/hooks/stop.js",
       "runtime": "node",
       "os": "macos",
       "tier": "community",
-      "sha256": "83d7df804e28b3caa10d4a571d5789bf01774bf8c3ca2bf1d27a7c25d7fbf36a",
+      "sha256": "2930b8ddc990bcedc57580cf859e2c2f576abe453504c957ce8fb65dfbcc71cc",
       "source": "scripts/ruydt/stop.js",
       "published_at": ""
     }

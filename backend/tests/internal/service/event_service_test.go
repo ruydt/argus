@@ -5,29 +5,22 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"argus/internal/domain"
-	"argus/internal/repository/sqlite"
 	"argus/internal/service"
 )
 
 type mockRepo struct {
-	mu         sync.Mutex
-	events     []domain.NormalizedEvent
-	sessions   []domain.Session
-	models     map[string]string
-	modelUsage map[string][]domain.ModelUsageBreakdown
-	addErr     error
-	upsertErr  error
-	upserts    int
-	lastUsage  domain.SessionUsage
-	lastEnded  string
+	mu        sync.Mutex
+	events    []domain.NormalizedEvent
+	models    map[string]string
+	addErr    error
+	upsertErr error
+	upserts   int
+	lastEnded string
 
 	diagnosticsStats domain.DiagnosticsStorageStats
 	agentStats       []domain.DiagnosticsAgentStats
@@ -78,38 +71,6 @@ func (m *mockRepo) SessionModel(sessionID string) (string, error) {
 	return m.models[sessionID], nil
 }
 
-func (m *mockRepo) ListProjectsPage(string, int, int) ([]domain.Project, int, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return nil, 0, nil
-}
-
-func (m *mockRepo) ListSessions() ([]domain.Session, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return append([]domain.Session{}, m.sessions...), nil
-}
-
-func (m *mockRepo) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	var filtered []domain.Session
-	for _, session := range m.sessions {
-		if session.CWD != cwd {
-			continue
-		}
-		if since != "" && session.LastSeenAt < since {
-			continue
-		}
-		filtered = append(filtered, session)
-	}
-	return filtered, nil
-}
-
-func (m *mockRepo) GetDashboardStats(_, _ string) (*domain.DashboardStats, error) {
-	return nil, nil
-}
-
 func (m *mockRepo) DiagnosticsStorageStats() (domain.DiagnosticsStorageStats, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -121,20 +82,6 @@ func (m *mockRepo) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, erro
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return append([]domain.DiagnosticsAgentStats{}, m.agentStats...), m.diagnosticsErr
-}
-
-func (m *mockRepo) GetSessionTree(_ string) ([]domain.SessionTreeNode, error) {
-	return nil, nil
-}
-
-func (m *mockRepo) ListSessionsByCWDPage(_ string, _ string, _ int, _ int) ([]domain.Session, int, error) {
-	return nil, 0, nil
-}
-
-func (m *mockRepo) GetFileChanges(string) ([]domain.FileChangeGroup, error) { return nil, nil }
-
-func (m *mockRepo) GetSessionFileChangeCounts([]string) (map[string]int, error) {
-	return map[string]int{}, nil
 }
 
 func (m *mockRepo) ExportEvents(_ context.Context, _ io.Writer) error { return nil }
@@ -158,6 +105,7 @@ func (m *mockRepo) Compact(_ context.Context) (domain.CompactResult, error) {
 }
 
 func (m *mockRepo) PruneEvents(_ context.Context, _ string, _ int) (int64, error) { return 0, nil }
+func (m *mockRepo) DeleteSessions(_ context.Context, _ []string) (int64, error)   { return 0, nil }
 
 func (m *mockRepo) Ready() bool { return true }
 
@@ -165,7 +113,7 @@ func (m *mockRepo) DBHealth() (domain.DiagnosticsDBHealth, error) {
 	return domain.DiagnosticsDBHealth{JournalMode: "wal", PageCount: 10, PageSizeBytes: 4096, MigrationVersion: 13}, nil
 }
 
-func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string, usage domain.SessionUsage) error {
+func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string) error {
 	if m.upsertErr != nil {
 		return m.upsertErr
 	}
@@ -175,32 +123,11 @@ func (m *mockRepo) UpsertSession(sessionID, _, model, _, _, _, _, endedAt string
 		m.models = map[string]string{}
 	}
 	m.upserts++
-	m.lastUsage = usage
 	m.lastEnded = endedAt
 	if model != "" {
 		m.models[sessionID] = model
 	}
 	return nil
-}
-
-func (m *mockRepo) DeleteProjectByCWD(string) (int64, int64, error) {
-	return 0, 0, nil
-}
-
-func (m *mockRepo) ReplaceSessionModelUsage(sessionID string, models []domain.ModelUsageBreakdown) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.modelUsage == nil {
-		m.modelUsage = map[string][]domain.ModelUsageBreakdown{}
-	}
-	m.modelUsage[sessionID] = models
-	return nil
-}
-
-func (m *mockRepo) GetSessionModelUsage() (map[string][]domain.ModelUsageBreakdown, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.modelUsage, nil
 }
 
 func TestDiagnosticsReportsNotReadyAndUnavailableMemoryDB(t *testing.T) {
@@ -251,10 +178,6 @@ func TestDiagnosticsReportsNotReadyAndUnavailableMemoryDB(t *testing.T) {
 }
 
 func TestDiagnosticsReportsRealDBSizeAndStats(t *testing.T) {
-	dbPath := filepath.Join(t.TempDir(), "argus.db")
-	if err := os.WriteFile(dbPath, []byte("abcd"), 0o644); err != nil {
-		t.Fatalf("WriteFile: %v", err)
-	}
 	svc := service.New(&mockRepo{
 		diagnosticsStats: domain.DiagnosticsStorageStats{
 			TotalEvents:   2,
@@ -262,7 +185,7 @@ func TestDiagnosticsReportsRealDBSizeAndStats(t *testing.T) {
 		},
 	})
 
-	got, err := svc.Diagnostics(dbPath, true)
+	got, err := svc.Diagnostics(":memory:", true)
 	if err != nil {
 		t.Fatalf("Diagnostics: %v", err)
 	}
@@ -271,12 +194,6 @@ func TestDiagnosticsReportsRealDBSizeAndStats(t *testing.T) {
 	}
 	if got.Health.Reason != "" {
 		t.Fatalf("Health.Reason = %q, want empty", got.Health.Reason)
-	}
-	if got.Storage.DBSizeBytes == nil || *got.Storage.DBSizeBytes != 4 {
-		t.Fatalf("Storage.DBSizeBytes = %v, want 4", got.Storage.DBSizeBytes)
-	}
-	if got.Storage.DBSizeReason != "" {
-		t.Fatalf("Storage.DBSizeReason = %q, want empty", got.Storage.DBSizeReason)
 	}
 	if got.Storage.TotalEvents != 2 {
 		t.Fatalf("Storage.TotalEvents = %d, want 2", got.Storage.TotalEvents)
@@ -390,11 +307,6 @@ func TestDiagnosticsIncludesPrivacyAndSecurityPosture(t *testing.T) {
 	}
 	if got.Privacy.IgnoreFile.ActivePatternCount != 2 {
 		t.Fatalf("ignore active count = %d, want 2", got.Privacy.IgnoreFile.ActivePatternCount)
-	}
-	for _, want := range []string{"prompts", "diffs", "file paths", "tool outputs", "raw payloads", "exports"} {
-		if !strings.Contains(got.Privacy.ExportWarning, want) {
-			t.Fatalf("export warning %q missing %q", got.Privacy.ExportWarning, want)
-		}
 	}
 	if got.Security.RemoteBind.Addr != "0.0.0.0:10804" {
 		t.Fatalf("remote bind addr = %q, want 0.0.0.0:10804", got.Security.RemoteBind.Addr)
@@ -540,199 +452,6 @@ func TestAddEventStopSetsEndedAt(t *testing.T) {
 
 	if repo.lastEnded != eventTime {
 		t.Fatalf("ended_at = %q, want %q", repo.lastEnded, eventTime)
-	}
-}
-
-func TestBackfillMissingSessionUsageScansAndPersists(t *testing.T) {
-	transcript := t.TempDir() + "/session.jsonl"
-	data := `{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":120,"cached_input_tokens":40,"output_tokens":8}}}}` + "\n"
-	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
-		t.Fatalf("write transcript: %v", err)
-	}
-	repo := &mockRepo{sessions: []domain.Session{{
-		SessionID:      "s1",
-		Agent:          "codex",
-		TranscriptPath: transcript,
-	}}}
-	svc := service.New(repo)
-
-	// Backfill is now a one-time startup operation, not an implicit read-path scan.
-	svc.BackfillMissingSessionUsage()
-
-	if repo.upserts != 1 {
-		t.Fatalf("upserts = %d, want 1", repo.upserts)
-	}
-	if repo.lastUsage.InputTokens != 120 {
-		t.Fatalf("input tokens = %d, want 120", repo.lastUsage.InputTokens)
-	}
-	if repo.lastUsage.OutputTokens != 8 || repo.lastUsage.CacheReadTokens != 40 {
-		t.Fatalf("persisted usage = %+v, want output=8 cache_read=40", repo.lastUsage)
-	}
-}
-
-func TestGetDashboardStatsBackfillsZeroUsageFromTranscript(t *testing.T) {
-	transcript := t.TempDir() + "/codex-session.jsonl"
-	data := `{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":120,"cached_input_tokens":40,"output_tokens":8}}}}` + "\n"
-	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
-		t.Fatalf("write transcript: %v", err)
-	}
-
-	repo, err := sqlite.New(":memory:")
-	if err != nil {
-		t.Fatalf("sqlite.New: %v", err)
-	}
-	if err := repo.UpsertSession(
-		"s1", "codex", "gpt-5.4", "startup", "/tmp", transcript, time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession: %v", err)
-	}
-
-	svc := service.New(repo)
-	stats, err := svc.GetDashboardStats("", "")
-	if err != nil {
-		t.Fatalf("GetDashboardStats: %v", err)
-	}
-
-	if stats.TotalInputTokens != 120 {
-		t.Fatalf("total input tokens = %d, want 120", stats.TotalInputTokens)
-	}
-	if stats.TotalOutputTokens != 8 {
-		t.Fatalf("total output tokens = %d, want 8", stats.TotalOutputTokens)
-	}
-	if len(stats.AgentUsage) != 1 {
-		t.Fatalf("agent usage len = %d, want 1", len(stats.AgentUsage))
-	}
-	if stats.AgentUsage[0].Agent != "codex" ||
-		stats.AgentUsage[0].Input != 120 ||
-		stats.AgentUsage[0].Output != 8 ||
-		stats.AgentUsage[0].CacheRead != 40 ||
-		stats.AgentUsage[0].CacheCreation != 0 {
-		t.Fatalf("agent usage = %+v, want codex input=120 output=8 cache_read=40 cache_creation=0", stats.AgentUsage[0])
-	}
-}
-
-func TestGetDashboardStatsIncludesClaudeCodeCacheTokensInAgentUsage(t *testing.T) {
-	transcript := t.TempDir() + "/claude-session.jsonl"
-	data := `{"type":"assistant","message":{"model":"claude-sonnet-4-6","usage":{"input_tokens":12,"output_tokens":3,"cache_creation_input_tokens":2,"cache_read_input_tokens":20}}}` + "\n"
-	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
-		t.Fatalf("write transcript: %v", err)
-	}
-
-	repo, err := sqlite.New(":memory:")
-	if err != nil {
-		t.Fatalf("sqlite.New: %v", err)
-	}
-	if err := repo.UpsertSession(
-		"s-cc", "claudecode", "claude-sonnet-4-6", "startup", "/tmp", transcript, time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession: %v", err)
-	}
-
-	svc := service.New(repo)
-	stats, err := svc.GetDashboardStats("", "")
-	if err != nil {
-		t.Fatalf("GetDashboardStats: %v", err)
-	}
-	if len(stats.AgentUsage) != 1 {
-		t.Fatalf("agent usage len = %d, want 1", len(stats.AgentUsage))
-	}
-	got := stats.AgentUsage[0]
-	if got.Agent != "claudecode" ||
-		got.Model != "claude-sonnet-4-6" ||
-		got.Input != 12 ||
-		got.Output != 3 ||
-		got.CacheCreation != 2 ||
-		got.CacheRead != 20 {
-		t.Fatalf("agent usage = %+v, want claudecode model=claude-sonnet-4-6 input=12 output=3 cache_creation=2 cache_read=20", got)
-	}
-}
-
-func TestGetDashboardStatsReturnsSessionUsageBreakdown(t *testing.T) {
-	transcript := t.TempDir() + "/codex-switch-session.jsonl"
-	data := "" +
-		`{"type":"turn_context","payload":{"model":"gpt-5.5"}}` + "\n" +
-		`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":10,"cached_input_tokens":4,"output_tokens":2}}}}` + "\n" +
-		`{"type":"turn_context","payload":{"model":"gpt-5.4"}}` + "\n" +
-		`{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":25,"cached_input_tokens":10,"output_tokens":5}}}}` + "\n"
-	if err := os.WriteFile(transcript, []byte(data), 0o600); err != nil {
-		t.Fatalf("write transcript: %v", err)
-	}
-
-	repo, err := sqlite.New(":memory:")
-	if err != nil {
-		t.Fatalf("sqlite.New: %v", err)
-	}
-	if err := repo.UpsertSession(
-		"s1", "codex", "gpt-5.4", "startup", "/tmp", transcript, time.Now().UTC().Format(time.RFC3339), "", domain.SessionUsage{},
-	); err != nil {
-		t.Fatalf("UpsertSession: %v", err)
-	}
-
-	svc := service.New(repo)
-	stats, err := svc.GetDashboardStats("", "")
-	if err != nil {
-		t.Fatalf("GetDashboardStats: %v", err)
-	}
-
-	if len(stats.SessionUsage) != 1 {
-		t.Fatalf("session usage len = %d, want 1", len(stats.SessionUsage))
-	}
-	sessionUsage := stats.SessionUsage[0]
-	if sessionUsage.SessionID != "s1" || sessionUsage.Agent != "codex" || sessionUsage.Provider != "openai" {
-		t.Fatalf("session usage = %+v, want session_id=s1 agent=codex provider=openai", sessionUsage)
-	}
-	if sessionUsage.Input != 25 || sessionUsage.Output != 5 {
-		t.Fatalf("session usage totals = %+v, want input=25 output=5", sessionUsage)
-	}
-	if len(sessionUsage.Models) != 2 {
-		t.Fatalf("session usage models len = %d, want 2", len(sessionUsage.Models))
-	}
-
-	if len(stats.AgentUsage) != 2 {
-		t.Fatalf("agent usage len = %d, want 2", len(stats.AgentUsage))
-	}
-}
-
-func TestGetDashboardStatsIncludesOffsetSessionInsideUTCRange(t *testing.T) {
-	repo, err := sqlite.New(":memory:")
-	if err != nil {
-		t.Fatalf("sqlite.New: %v", err)
-	}
-	usage := domain.SessionUsage{
-		InputTokens:     100,
-		OutputTokens:    10,
-		CacheReadTokens: 50,
-		Turns:           1,
-	}
-	if err := repo.UpsertSession(
-		"codex-offset",
-		"codex",
-		"gpt-5.5",
-		"startup",
-		"/tmp",
-		"",
-		"2026-05-14T21:00:34+07:00", // 2026-05-14T14:00:34Z
-		"",
-		usage,
-	); err != nil {
-		t.Fatalf("UpsertSession: %v", err)
-	}
-
-	svc := service.New(repo)
-	stats, err := svc.GetDashboardStats("2026-05-14T00:00:00Z", "2026-05-14T16:59:59Z")
-	if err != nil {
-		t.Fatalf("GetDashboardStats: %v", err)
-	}
-
-	if len(stats.AgentUsage) != 1 {
-		t.Fatalf("agent usage len = %d, want 1", len(stats.AgentUsage))
-	}
-	got := stats.AgentUsage[0]
-	if got.Agent != "codex" || got.Model != "gpt-5.5" || got.Input != 100 || got.Output != 10 || got.CacheRead != 50 {
-		t.Fatalf("agent usage = %+v, want codex gpt-5.5 tokens", got)
-	}
-	if len(stats.SessionUsage) != 1 || stats.SessionUsage[0].SessionID != "codex-offset" {
-		t.Fatalf("session usage = %+v, want codex-offset", stats.SessionUsage)
 	}
 }
 

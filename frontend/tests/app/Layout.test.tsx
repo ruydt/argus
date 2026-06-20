@@ -4,21 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Layout } from '@/app/Layout'
 import type { LayoutOutletContext } from '@/types'
 
-const refreshSessionUsage = vi.fn()
 const localStorageMock = {
   getItem: vi.fn(() => null),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
 }
-
-vi.mock('@/hooks/useSessions', () => ({
-  useSessions: () => ({
-    sessions: [],
-    loading: false,
-    refresh: refreshSessionUsage,
-  }),
-}))
 
 vi.mock('@/features/version/VersionBadge', () => ({
   VersionBadge: () => null,

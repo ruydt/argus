@@ -113,7 +113,7 @@ export function AccountMenu({ collection }: AccountMenuProps) {
                 </div>
               </div>
 
-              <div className="my-1 h-px bg-foreground/[0.08]" />
+              <div className="mx-auto my-1 h-px w-[85%] bg-foreground/[0.08]" />
 
               <UploadShareDialog
                 onPublish={publishFiles}

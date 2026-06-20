@@ -16,7 +16,7 @@ type stubAddRepo struct {
 }
 
 func (stubAddRepo) Add(domain.NormalizedEvent) error { return nil }
-func (stubAddRepo) UpsertSession(string, string, string, string, string, string, string, string, domain.SessionUsage) error {
+func (stubAddRepo) UpsertSession(string, string, string, string, string, string, string, string) error {
 	return nil
 }
 

@@ -1,8 +1,8 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
-// OS support is a single registry token. Map it to the platforms it covers, in a
-// stable Linux → macOS → Windows order. 'both' (or anything unrecognised) means
-// cross-platform; 'posix' is macOS + Linux (shell/CLI tools, not Windows).
+// OS support is a comma-separated list of platforms (e.g. `linux, macos`). Each
+// token maps to the platforms it covers, in a stable Linux → macOS → Windows
+// order. The legacy aggregate tokens `both`/`posix` still expand for older data.
 const OS_PLATFORMS: Record<string, Platform[]> = {
   both: ['linux', 'macos', 'windows'],
   posix: ['linux', 'macos'],
@@ -10,6 +10,8 @@ const OS_PLATFORMS: Record<string, Platform[]> = {
   windows: ['windows'],
   linux: ['linux'],
 }
+
+const PLATFORM_ORDER: Platform[] = ['linux', 'macos', 'windows']
 
 type Platform = 'linux' | 'macos' | 'windows'
 
@@ -20,7 +22,16 @@ const PLATFORM_LABEL: Record<Platform, string> = {
 }
 
 function platformsFor(os?: string): Platform[] {
-  return OS_PLATFORMS[os ?? 'both'] ?? OS_PLATFORMS.both
+  const tokens = (os ?? 'both')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+  const set = new Set<Platform>()
+  for (const tok of tokens) {
+    for (const p of OS_PLATFORMS[tok] ?? []) set.add(p)
+  }
+  const ordered = PLATFORM_ORDER.filter((p) => set.has(p))
+  return ordered.length > 0 ? ordered : OS_PLATFORMS.both
 }
 
 function AppleMark({ className }: { className?: string }) {

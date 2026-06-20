@@ -62,14 +62,6 @@ export interface EventRecord {
   permission_suggestions_json?: string
 }
 
-export interface SessionUsage {
-  input_tokens: number
-  output_tokens: number
-  cache_creation_tokens: number
-  cache_read_tokens: number
-  turns: number
-}
-
 export interface SessionGroup {
   sessionId: string
   transcriptPath: string
@@ -77,25 +69,43 @@ export interface SessionGroup {
   events: EventRecord[]
 }
 
+// One grouped row in the Recents list — a single agent session folded down
+// from its events. Lives in Layout (shared owner) and is distributed to both
+// the Sidebar and the Recents page.
+export interface SessionSummary {
+  sessionId: string
+  cwd: string
+  transcriptPath: string
+  count: number
+  lastTimeMs: number
+  // A representative event, used for agent detection / badges.
+  sample: EventRecord
+}
+
 export interface LayoutOutletContext {
   collapsedSessions: Set<string>
   setCollapsedSessions: Dispatch<SetStateAction<Set<string>>>
-  sessionUsage: Record<string, SessionUsage>
   searchQuery: string
   setSearchQuery: Dispatch<SetStateAction<string>>
   isLive: boolean
   setIsLive: Dispatch<SetStateAction<boolean>>
-  refreshSessionUsage: () => void
+  sessions: SessionSummary[]
+  sessionsLoading: boolean
+  sessionsError: string | null
+  sessionsHasMore: boolean
+  loadMoreSessions: () => void
+  refreshSessions: () => void
+  removeSessions: (ids: string[]) => void
+  sessionTags: Record<string, string>
+  pinnedSessions: Set<string>
+  togglePinSession: (id: string) => void
+  setSessionTag: (id: string, tag: string) => void
+  removeSessionTag: (id: string) => void
+  notify: (message: string, tone?: 'success' | 'error') => void
 }
 
 export interface EventsResponse {
   events?: EventRecord[]
   has_more?: boolean
   next_cursor?: number
-}
-
-export interface TooltipState {
-  text: string
-  x: number
-  y: number
 }

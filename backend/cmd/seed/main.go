@@ -43,7 +43,7 @@ func run() error {
 	}()
 
 	// Define mock data for seeding the database with realistic agent activity
-	agents := []string{"claudecode", "codex", "cline"}
+	agents := []string{"claudecode", "codex", "cursor"}
 	models := []string{"claude-3-5-sonnet-20241022", "gpt-4o", "claude-3-opus-20240229"}
 	actions := []string{"BASH", "EDIT", "READ", "LS", "CREATE", "DELETE"}
 	sources := []string{"startup", "cli", "web"}
@@ -66,20 +66,13 @@ func run() error {
 		startedAt := now.Add(time.Duration(-rand.Intn(48)) * time.Hour)
 		lastSeenAt := startedAt.Add(time.Duration(rand.Intn(60)) * time.Minute)
 
-		// Keep token totals high enough to produce more realistic-looking usage aggregates.
-		inputTokens := rand.Intn(50000) + 1000
-		outputTokens := rand.Intn(5000) + 100
-		turns := rand.Intn(50) + 1
-
-		// Insert or update session record with random usage metrics and timestamps
+		// Insert or update session record with lifecycle fields only (usage columns dropped in migration 018).
 		_, err = db.Exec(`
 			INSERT INTO sessions (
-				session_id, agent, model, source, cwd, transcript_path, started_at, last_seen_at,
-				input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, turns
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				session_id, agent, model, source, cwd, transcript_path, started_at, last_seen_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(session_id) DO UPDATE SET last_seen_at = excluded.last_seen_at`,
 			sessionID, agent, model, source, cwd, transcriptPath, startedAt.Format(time.RFC3339), lastSeenAt.Format(time.RFC3339),
-			inputTokens, outputTokens, rand.Intn(2000), rand.Intn(10000), turns,
 		)
 		if err != nil {
 			slog.Error("failed to insert session", "session_id", sessionID, "err", err)

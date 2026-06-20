@@ -39,16 +39,13 @@ type Options struct {
 	Addr        string
 	AllowRemote bool
 
-	// ClaudeSettingsPath is the full path to the Claude Code settings file.
-	// Defaults to ~/.claude/settings.json if empty.
-	ClaudeSettingsPath string
-
-	// CodexHooksPath is the full path to the Codex hooks config file.
-	// Defaults to ~/.codex/hooks.json if empty.
-	CodexHooksPath string
+	// Home is the user's home directory. All agent hook-config paths are
+	// resolved against it via the agentspec registry. Defaults to
+	// os.UserHomeDir() at request time if empty.
+	Home string
 
 	// ArgusDir is the path to the argus home directory (typically ~/.argus).
-	// Used by diagnostics and log-tail endpoints.
+	// Used by diagnostics, log-tail, and the enabled-agents store.
 	ArgusDir string
 }
 
@@ -81,10 +78,11 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
 	mux.Handle("GET /api/events/raw", secFetchSite(handler.EventRawPayload(svc)))
+	mux.Handle("DELETE /api/sessions", secFetchSite(handler.DeleteSessions(svc)))
 	mux.Handle("GET /api/version", handler.Version())
 	hookDetector := opts.HookConfigDetector
 	if hookDetector == nil {
-		hookDetector = hookconfig.Detector{}.Detect
+		hookDetector = hookconfig.Detector{HomeDir: opts.Home, ArgusDir: opts.ArgusDir}.Detect
 	}
 	mux.Handle("GET /api/diagnostics", handler.Diagnostics(svc, ready, service.DiagnosticsOptions{
 		DBPath:             opts.DBPath,
@@ -98,18 +96,14 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/diagnostics/log-tail", handler.LogTail(handler.LogTailOptions{
 		ArgusDir: opts.ArgusDir,
 	}))
-	mux.Handle("POST /api/diagnostics/reveal", secFetchSite(handler.Reveal(opts.ArgusDir)))
 	mux.Handle("POST /api/diagnostics/compact", secFetchSite(handler.CompactDatabase(svc)))
-	mux.Handle("GET /api/projects", handler.Projects(svc))
-	mux.Handle("DELETE /api/projects", handler.Projects(svc))
-	mux.Handle("GET /api/sessions", handler.Sessions(svc))
-	mux.Handle("GET /api/sessions/tree", handler.SessionsTree(svc))
-	mux.Handle("GET /api/file-changes", handler.FileChanges(svc))
-	mux.Handle("GET /api/dashboard/stats", handler.DashboardStats(svc))
 	mux.Handle("GET /api/export/events", secFetchSite(handler.ExportEvents(repo)))
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
-	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath))
-	mux.Handle("PUT /api/hooks-config", secFetchSite(handler.HooksConfig(opts.ClaudeSettingsPath, opts.CodexHooksPath)))
+	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.Home))
+	mux.Handle("PUT /api/hooks-config", secFetchSite(handler.HooksConfig(opts.Home)))
+	mux.Handle("GET /api/agents", handler.Agents(opts.Home, opts.ArgusDir))
+	mux.Handle("POST /api/agents/enabled", secFetchSite(handler.AgentsEnabled(opts.Home, opts.ArgusDir)))
+	mux.Handle("DELETE /api/agents/enabled", secFetchSite(handler.AgentsEnabled(opts.Home, opts.ArgusDir)))
 	mux.Handle("POST /api/hooks/simulate", secFetchSite(handler.HooksSimulate()))
 	registryURL := os.Getenv("ARGUS_REGISTRY_RAW_URL")
 	if registryURL == "" {

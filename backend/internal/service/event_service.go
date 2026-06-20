@@ -14,8 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"argus/internal/agents/claudecode"
-	"argus/internal/agents/codex"
 	"argus/internal/domain"
 	"argus/internal/repository"
 	"argus/internal/version"
@@ -28,17 +26,10 @@ type EventService struct {
 	hookRequests    atomic.Int64
 	ingestionErrors atomic.Int64
 
-	// usageScannedAt tracks the last transcript usage scan per session so
-	// mid-session events don't re-scan the whole JSONL on every hook.
-	usageScannedAt sync.Map // session ID (string) → time.Time
-
 	diagMu         sync.RWMutex
 	diagCache      *domain.Diagnostics
 	diagCachedAt   time.Time
 	diagAgentStats []domain.DiagnosticsAgentStats
-
-	statsMu    sync.RWMutex
-	statsCache map[string]cachedDashboardStats
 
 	// compacting serializes database compaction so two concurrent requests can't
 	// both run VACUUM.
@@ -48,13 +39,10 @@ type EventService struct {
 // ErrCompactionInProgress is returned when a compaction is already running.
 var ErrCompactionInProgress = errors.New("compaction already in progress")
 
-// invalidateCaches clears the dashboard-stats and diagnostics TTL caches so the
-// next read recomputes. Call after any operation that mutates stored events
-// (compact, prune, delete) so cached totals don't lag behind the DB.
+// invalidateCaches clears the diagnostics TTL cache so the next read recomputes.
+// Call after any operation that mutates stored events (compact, prune, delete)
+// so cached totals don't lag behind the DB.
 func (s *EventService) invalidateCaches() {
-	s.statsMu.Lock()
-	s.statsCache = map[string]cachedDashboardStats{}
-	s.statsMu.Unlock()
 	s.diagMu.Lock()
 	s.diagCache = nil
 	s.diagMu.Unlock()
@@ -72,26 +60,10 @@ type DiagnosticsOptions struct {
 
 const exportSensitivityWarning = "Exports may include prompts, diffs, file paths, tool outputs, raw payloads, and exports; handle exported data as sensitive."
 
-// usageRescanInterval bounds transcript scans for live sessions: usage is
-// recomputed at most this often per session, plus always on terminal events.
-const usageRescanInterval = 30 * time.Second
-
-// cachedDashboardStats is a TTL-cached GetDashboardStats response. The cached
-// value is never mutated after store, so shallow copies are safe to hand out.
-type cachedDashboardStats struct {
-	stats    domain.DashboardStats
-	cachedAt time.Time
-}
-
-// dashboardStatsTTL bounds how often dashboard aggregates and transcript
-// scans run. 5s staleness is invisible for a local single-user dashboard.
-const dashboardStatsTTL = 5 * time.Second
-
 func New(repo repository.EventRepository) *EventService {
 	return &EventService{
-		repo:       repo,
-		startTime:  time.Now(),
-		statsCache: map[string]cachedDashboardStats{},
+		repo:      repo,
+		startTime: time.Now(),
 	}
 }
 
@@ -125,19 +97,7 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 		return err
 	}
 	if e.Session != "" {
-		// Compute the terminal timestamp once; it is read up to three times below.
 		endedAt := endedAtForEvent(e)
-		var usage domain.SessionUsage
-		var models []domain.ModelUsageBreakdown
-		computed := false
-		if s.shouldComputeUsage(e, endedAt) {
-			// One shared dispatch (also fixes the prior ingest/read-path mismatch).
-			breakdown := computeUsageBreakdown(e.Agent, e.TranscriptPath)
-			usage = breakdown.Total
-			models = breakdown.Models
-			computed = true
-			s.usageScannedAt.Store(e.Session, time.Now())
-		}
 		if err := s.repo.UpsertSession(
 			e.Session,
 			e.Agent,
@@ -147,44 +107,12 @@ func (s *EventService) AddEvent(e domain.NormalizedEvent) error {
 			e.TranscriptPath,
 			e.Time,
 			endedAt,
-			usage,
 		); err != nil {
 			return err
-		}
-		// Persist the per-model breakdown so the dashboard reads it from the DB
-		// instead of re-scanning every transcript on each load. Non-fatal: the
-		// dashboard falls back to a lazy transcript scan if rows are missing.
-		if computed {
-			if err := s.repo.ReplaceSessionModelUsage(e.Session, models); err != nil {
-				slog.Warn("persist model usage", "session", e.Session, "err", err)
-			}
-		}
-		// Ended sessions receive no further events; drop their scan timestamp
-		// so the map size tracks active sessions, not lifetime sessions.
-		if endedAt != "" {
-			s.usageScannedAt.Delete(e.Session)
 		}
 	}
 	s.broadcast(e)
 	return nil
-}
-
-// shouldComputeUsage reports whether this event warrants a transcript scan.
-// Terminal events always scan (final numbers must be exact); other events
-// scan at most once per usageRescanInterval per session.
-func (s *EventService) shouldComputeUsage(e domain.NormalizedEvent, endedAt string) bool {
-	if e.TranscriptPath == "" {
-		return false
-	}
-	if endedAt != "" {
-		return true
-	}
-	if v, ok := s.usageScannedAt.Load(e.Session); ok {
-		if last, isTime := v.(time.Time); isTime && time.Since(last) < usageRescanInterval {
-			return false
-		}
-	}
-	return true
 }
 
 func (s *EventService) ListEvents(limit int) ([]domain.NormalizedEvent, error) {
@@ -229,6 +157,17 @@ func (s *EventService) CompactDatabase(ctx context.Context) (domain.CompactResul
 // newest. Used by the optional retention sweep.
 func (s *EventService) PruneEvents(ctx context.Context, before string, maxEvents int) (int64, error) {
 	n, err := s.repo.PruneEvents(ctx, before, maxEvents)
+	if err == nil && n > 0 {
+		s.invalidateCaches()
+	}
+	return n, err
+}
+
+// DeleteSessions permanently removes the given sessions and their events.
+// Returns the number of events deleted. Caches are dropped when anything
+// changed so diagnostics/storage stats reflect the smaller table.
+func (s *EventService) DeleteSessions(ctx context.Context, ids []string) (int64, error) {
+	n, err := s.repo.DeleteSessions(ctx, ids)
 	if err == nil && n > 0 {
 		s.invalidateCaches()
 	}
@@ -305,11 +244,22 @@ func (s *EventService) DiagnosticsWithOptions(opts DiagnosticsOptions, ready boo
 		}
 	}
 
+	// Size of the running executable on disk. Best-effort: nil if the path
+	// can't be resolved or stat'd (e.g. binary removed while running).
+	var binarySize *int64
+	if exe, err := os.Executable(); err == nil {
+		if info, err := os.Stat(exe); err == nil {
+			size := info.Size()
+			binarySize = &size
+		}
+	}
+
 	result := domain.Diagnostics{
 		Version: domain.DiagnosticsVersion{
-			Version:   version.Version,
-			Commit:    version.Commit,
-			BuildDate: version.BuildDate,
+			Version:         version.Version,
+			Commit:          version.Commit,
+			BuildDate:       version.BuildDate,
+			BinarySizeBytes: binarySize,
 		},
 		Health:  health,
 		Storage: storage,
@@ -387,6 +337,17 @@ func detectHookConfigs(detector func() []domain.DiagnosticsHookConfig) []domain.
 	return detector()
 }
 
+// defaultAgentDefs is the baseline agent list when no hook-config detector is
+// wired (the no-config Diagnostics path and tests). In production the detector
+// supplies the live enabled set, so added agents appear automatically.
+var defaultAgentDefs = []struct {
+	id    string
+	label string
+}{
+	{id: "claudecode", label: "Claude Code"},
+	{id: "codex", label: "Codex"},
+}
+
 func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domain.DiagnosticsHookConfig) []domain.DiagnosticsAgent {
 	byAgent := map[string]domain.DiagnosticsAgentStats{}
 	for _, stat := range stats {
@@ -396,342 +357,71 @@ func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domai
 	for _, hookConfig := range hookConfigs {
 		hookByAgent[hookConfig.Agent] = hookConfig
 	}
-	defs := []struct {
-		id    string
-		label string
-	}{
-		{id: "claudecode", label: "Claude Code"},
-		{id: "codex", label: "Codex"},
+
+	// The ordered (id, label) list comes from the enabled agents the detector
+	// reported; fall back to the two defaults when none were supplied.
+	type agentDef struct{ id, label string }
+	var defs []agentDef
+	if len(hookConfigs) > 0 {
+		for _, hc := range hookConfigs {
+			label := hc.Label
+			if label == "" {
+				label = hc.Agent
+			}
+			defs = append(defs, agentDef{hc.Agent, label})
+		}
+	} else {
+		for _, d := range defaultAgentDefs {
+			defs = append(defs, agentDef{d.id, d.label})
+		}
 	}
+
+	included := map[string]bool{}
 	agents := make([]domain.DiagnosticsAgent, 0, len(defs))
 	for _, def := range defs {
-		stat := byAgent[def.id]
-		row := domain.DiagnosticsAgent{
-			ID:                def.id,
-			Label:             def.label,
-			EventCount:        stat.EventCount,
-			LastSeenAt:        stat.LastSeenAt,
-			DegradedCount:     stat.DegradedCount,
-			NormalizerVersion: stat.NormalizerVersion,
-			HookConfigStatus:  "unknown",
-			Status:            "healthy",
-			Warnings:          []string{},
-			EventsLastHour:    stat.EventsLastHour,
-			EventsLast24h:     stat.EventsLast24h,
+		included[def.id] = true
+		agents = append(agents, buildAgentRow(def.id, def.label, byAgent[def.id], hookByAgent[def.id]))
+	}
+
+	// Surface any agent that has sent events but isn't in the enabled list
+	// (e.g. an unknown/degraded sender or a since-removed agent).
+	for _, stat := range stats {
+		if included[stat.Agent] || stat.EventCount == 0 {
+			continue
 		}
-		if hookConfig, ok := hookByAgent[def.id]; ok {
-			row.HookConfigStatus = hookConfig.Status
-			row.HookConfigReason = hookConfig.Reason
-		}
-		switch {
-		case row.DegradedCount > 0:
-			row.Status = "degraded"
-			row.Warnings = append(row.Warnings, "degraded events")
-		case row.EventCount == 0:
-			row.Status = "no events"
-			row.Warnings = append(row.Warnings, "no events")
-		}
-		agents = append(agents, row)
+		included[stat.Agent] = true
+		agents = append(agents, buildAgentRow(stat.Agent, stat.Agent, stat, hookByAgent[stat.Agent]))
 	}
 	return agents
 }
 
-// ListProjectsPage returns one page of projects (size at a time) ordered by last
-// activity, with an optional substring filter on cwd. total is the full match
-// count for has_more.
-func (s *EventService) ListProjectsPage(search string, page, size int) ([]domain.Project, int, error) {
-	return s.repo.ListProjectsPage(search, page, size)
-}
-
-// DeleteProject removes all sessions and events recorded under cwd.
-func (s *EventService) DeleteProject(cwd string) (sessionsDeleted, eventsDeleted int64, err error) {
-	sessionsDeleted, eventsDeleted, err = s.repo.DeleteProjectByCWD(cwd)
-	if err == nil && (sessionsDeleted > 0 || eventsDeleted > 0) {
-		s.invalidateCaches()
+func buildAgentRow(id, label string, stat domain.DiagnosticsAgentStats, hookConfig domain.DiagnosticsHookConfig) domain.DiagnosticsAgent {
+	row := domain.DiagnosticsAgent{
+		ID:                id,
+		Label:             label,
+		EventCount:        stat.EventCount,
+		LastSeenAt:        stat.LastSeenAt,
+		DegradedCount:     stat.DegradedCount,
+		NormalizerVersion: stat.NormalizerVersion,
+		HookConfigStatus:  "unknown",
+		Status:            "healthy",
+		Warnings:          []string{},
+		EventsLastHour:    stat.EventsLastHour,
+		EventsLast24h:     stat.EventsLast24h,
 	}
-	return sessionsDeleted, eventsDeleted, err
-}
-
-func (s *EventService) ListSessions() ([]domain.Session, error) {
-	return s.repo.ListSessions()
-}
-
-func (s *EventService) ListSessionsByCWD(cwd, since string) ([]domain.Session, error) {
-	return s.repo.ListSessionsByCWD(cwd, since)
-}
-
-func (s *EventService) GetDashboardStats(since, until string) (*domain.DashboardStats, error) {
-	key := since + "|" + until
-
-	s.statsMu.RLock()
-	if c, ok := s.statsCache[key]; ok && time.Since(c.cachedAt) < dashboardStatsTTL {
-		result := c.stats // shallow copy — cached value is never mutated after store
-		s.statsMu.RUnlock()
-		return &result, nil
+	if hookConfig.Agent != "" {
+		row.HookConfigStatus = hookConfig.Status
+		row.HookConfigReason = hookConfig.Reason
 	}
-	s.statsMu.RUnlock()
-
-	sessions, err := s.repo.ListSessions()
-	if err != nil {
-		return nil, err
+	switch {
+	case row.DegradedCount > 0:
+		row.Status = "degraded"
+		row.Warnings = append(row.Warnings, "degraded events")
+	case row.EventCount == 0:
+		row.Status = "no events"
+		row.Warnings = append(row.Warnings, "no events")
 	}
-	stats, err := s.repo.GetDashboardStats(since, until)
-	if err != nil {
-		return nil, err
-	}
-	if stats == nil {
-		stats = &domain.DashboardStats{
-			TimelineGranularity: "day",
-			Timeline:            []domain.TimelineBucket{},
-			TimelineByAgent:     []domain.AgentTimelineBucket{},
-			TopActions:          []domain.ActionCount{},
-			AgentUsage:          []domain.AgentModelUsage{},
-			SessionUsage:        []domain.DashboardSessionUsage{},
-		}
-	}
-	modelUsage, err := s.repo.GetSessionModelUsage()
-	if err != nil {
-		return nil, err
-	}
-	s.enrichDashboardStats(stats, sessions, since, until, modelUsage)
-
-	s.statsMu.Lock()
-	s.statsCache[key] = cachedDashboardStats{stats: *stats, cachedAt: time.Now()}
-	s.statsMu.Unlock()
-	return stats, nil
-}
-
-// SetStatsCachedAt sets a stats cache entry's timestamp for testing TTL
-// expiry. Testing only — do not call in production code.
-func (s *EventService) SetStatsCachedAt(key string, t time.Time) {
-	s.statsMu.Lock()
-	if c, ok := s.statsCache[key]; ok {
-		c.cachedAt = t
-		s.statsCache[key] = c
-	}
-	s.statsMu.Unlock()
-}
-
-// BackfillMissingSessionUsage computes usage for sessions persisted before
-// write-time usage existed. Called once at startup in a background goroutine;
-// errors are logged per session and never fatal.
-func (s *EventService) BackfillMissingSessionUsage() {
-	sessions, err := s.repo.ListSessions()
-	if err != nil {
-		slog.Warn("usage backfill: list sessions", "err", err)
-		return
-	}
-	updated := 0
-	for i := range sessions {
-		if hasUsage(sessions[i].Usage) || sessions[i].TranscriptPath == "" {
-			continue
-		}
-		usage := computeUsage(sessions[i].Agent, sessions[i].TranscriptPath)
-		if !hasUsage(usage) {
-			continue
-		}
-		if err := s.repo.UpsertSession(
-			sessions[i].SessionID,
-			sessions[i].Agent,
-			sessions[i].Model,
-			sessions[i].Source,
-			sessions[i].CWD,
-			sessions[i].TranscriptPath,
-			sessions[i].LastSeenAt,
-			sessions[i].EndedAt,
-			usage,
-		); err != nil {
-			slog.Warn("usage backfill: upsert", "session", sessions[i].SessionID, "err", err)
-			continue
-		}
-		updated++
-	}
-	if updated > 0 {
-		slog.Info("usage backfill complete", "updated", updated)
-	}
-}
-
-func computeUsage(agent, transcriptPath string) domain.SessionUsage {
-	return computeUsageBreakdown(agent, transcriptPath).Total
-}
-
-func computeUsageBreakdown(agent, transcriptPath string) domain.UsageBreakdown {
-	if agent == "claudecode" || claudecode.MatchesTranscript(transcriptPath) {
-		return claudecode.ComputeUsageBreakdown(transcriptPath)
-	}
-	return codex.ComputeUsageBreakdown(transcriptPath)
-}
-
-func hasUsage(usage domain.SessionUsage) bool {
-	return usage.InputTokens > 0 ||
-		usage.OutputTokens > 0 ||
-		usage.CacheCreationTokens > 0 ||
-		usage.CacheReadTokens > 0 ||
-		usage.Turns > 0
-}
-
-func (s *EventService) enrichDashboardStats(stats *domain.DashboardStats, sessions []domain.Session, since, until string, modelUsage map[string][]domain.ModelUsageBreakdown) {
-	filteredSessions := make([]domain.Session, 0, len(sessions))
-	for _, session := range sessions {
-		if sessionOutsideRange(session, since, until) {
-			continue
-		}
-		filteredSessions = append(filteredSessions, session)
-	}
-
-	stats.TotalSessions = len(filteredSessions)
-	stats.TotalInputTokens = 0
-	stats.TotalOutputTokens = 0
-	stats.AgentUsage = []domain.AgentModelUsage{}
-	stats.SessionUsage = make([]domain.DashboardSessionUsage, 0, len(filteredSessions))
-
-	agentUsage := map[string]*domain.AgentModelUsage{}
-	for _, session := range filteredSessions {
-		// Prefer the persisted per-model breakdown (written on ingest). Only sessions
-		// recorded before this existed lack rows — scan their transcript once and
-		// write through, so the dashboard never re-scans the same session twice.
-		breakdown := domain.UsageBreakdown{Total: session.Usage, Models: modelUsage[session.SessionID]}
-		if len(breakdown.Models) == 0 && session.TranscriptPath != "" {
-			scanned := computeUsageBreakdown(session.Agent, session.TranscriptPath)
-			if len(scanned.Models) > 0 {
-				breakdown.Models = scanned.Models
-				if !hasUsage(breakdown.Total) {
-					breakdown.Total = scanned.Total
-				}
-				if err := s.repo.ReplaceSessionModelUsage(session.SessionID, scanned.Models); err != nil {
-					slog.Warn("dashboard model-usage backfill", "session", session.SessionID, "err", err)
-				}
-			}
-		}
-		sessionModels := dashboardModels(session, breakdown)
-		if len(sessionModels) == 0 && hasUsage(session.Usage) {
-			sessionModels = []domain.DashboardModelUsage{fallbackDashboardModel(session)}
-		}
-
-		stats.TotalInputTokens += breakdown.Total.InputTokens
-		stats.TotalOutputTokens += breakdown.Total.OutputTokens
-
-		stats.SessionUsage = append(stats.SessionUsage, domain.DashboardSessionUsage{
-			SessionID:  session.SessionID,
-			Agent:      session.Agent,
-			Provider:   providerForAgent(session.Agent),
-			Model:      session.Model,
-			StartedAt:  session.StartedAt,
-			LastSeenAt: session.LastSeenAt,
-			Input:      breakdown.Total.InputTokens,
-			Output:     breakdown.Total.OutputTokens,
-			Models:     sessionModels,
-		})
-
-		for _, model := range sessionModels {
-			key := strings.Join([]string{model.Provider, model.Agent, model.Model}, "|")
-			if agentUsage[key] == nil {
-				agentUsage[key] = &domain.AgentModelUsage{
-					Provider: model.Provider,
-					Agent:    model.Agent,
-					Model:    model.Model,
-				}
-			}
-			agentUsage[key].Input += model.Input
-			agentUsage[key].Output += model.Output
-			agentUsage[key].CacheCreation += model.CacheCreation
-			agentUsage[key].CacheRead += model.CacheRead
-		}
-	}
-
-	for _, usage := range agentUsage {
-		stats.AgentUsage = append(stats.AgentUsage, *usage)
-	}
-	slices.SortFunc(stats.AgentUsage, func(a, b domain.AgentModelUsage) int {
-		at := a.Input + a.Output
-		bt := b.Input + b.Output
-		if at != bt {
-			return bt - at
-		}
-		if a.Provider != b.Provider {
-			return strings.Compare(a.Provider, b.Provider)
-		}
-		return strings.Compare(a.Model, b.Model)
-	})
-	slices.SortFunc(stats.SessionUsage, func(a, b domain.DashboardSessionUsage) int {
-		return strings.Compare(b.LastSeenAt, a.LastSeenAt)
-	})
-}
-
-func sessionOutsideRange(session domain.Session, since, until string) bool {
-	if session.StartedAt == "" {
-		return false
-	}
-	startedAt, err := time.Parse(time.RFC3339, session.StartedAt)
-	if err != nil {
-		if since == "" {
-			return until != "" && session.StartedAt > until
-		}
-		if session.StartedAt < since {
-			return true
-		}
-		return until != "" && session.StartedAt > until
-	}
-
-	if since != "" {
-		sinceAt, err := time.Parse(time.RFC3339, since)
-		if err != nil {
-			if session.StartedAt < since {
-				return true
-			}
-		} else if startedAt.Before(sinceAt) {
-			return true
-		}
-	}
-	if until != "" {
-		untilAt, err := time.Parse(time.RFC3339, until)
-		if err != nil {
-			return session.StartedAt > until
-		}
-		return startedAt.After(untilAt)
-	}
-	return false
-}
-
-func dashboardModels(session domain.Session, breakdown domain.UsageBreakdown) []domain.DashboardModelUsage {
-	models := make([]domain.DashboardModelUsage, 0, len(breakdown.Models))
-	for _, usage := range breakdown.Models {
-		models = append(models, domain.DashboardModelUsage{
-			Provider:      providerForAgent(session.Agent),
-			Agent:         session.Agent,
-			Model:         usage.Model,
-			Input:         usage.InputTokens,
-			Output:        usage.OutputTokens,
-			CacheCreation: usage.CacheCreationTokens,
-			CacheRead:     usage.CacheReadTokens,
-			Turns:         usage.Turns,
-		})
-	}
-	return models
-}
-
-func fallbackDashboardModel(session domain.Session) domain.DashboardModelUsage {
-	return domain.DashboardModelUsage{
-		Provider:      providerForAgent(session.Agent),
-		Agent:         session.Agent,
-		Model:         session.Model,
-		Input:         session.Usage.InputTokens,
-		Output:        session.Usage.OutputTokens,
-		CacheCreation: session.Usage.CacheCreationTokens,
-		CacheRead:     session.Usage.CacheReadTokens,
-		Turns:         session.Usage.Turns,
-	}
-}
-
-func providerForAgent(agent string) string {
-	switch agent {
-	case "codex":
-		return "openai"
-	case "claudecode":
-		return "anthropic"
-	default:
-		return agent
-	}
+	return row
 }
 
 func endedAtForEvent(e domain.NormalizedEvent) string {
@@ -798,36 +488,6 @@ func (s *EventService) broadcast(e domain.NormalizedEvent) {
 		}
 		return true
 	})
-}
-
-func (s *EventService) GetSessionTree(since string) ([]domain.SessionTreeNode, error) {
-	return s.repo.GetSessionTree(since)
-}
-
-func (s *EventService) ListSessionsByCWDPage(cwd, since string, page, size int) ([]domain.Session, int, error) {
-	sessions, total, err := s.repo.ListSessionsByCWDPage(cwd, since, page, size)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(sessions) > 0 {
-		ids := make([]string, len(sessions))
-		for i, sess := range sessions {
-			ids[i] = sess.SessionID
-		}
-		counts, countErr := s.repo.GetSessionFileChangeCounts(ids)
-		if countErr != nil {
-			slog.Warn("GetSessionFileChangeCounts", "err", countErr)
-		} else {
-			for i, sess := range sessions {
-				sessions[i].FileChangeCount = counts[sess.SessionID]
-			}
-		}
-	}
-	return sessions, total, nil
-}
-
-func (s *EventService) GetFileChanges(sessionID string) ([]domain.FileChangeGroup, error) {
-	return s.repo.GetFileChanges(sessionID)
 }
 
 func pathExists(p string) bool {

@@ -40,6 +40,10 @@ type SimulateResult = {
 export type SimulatorTabProps = {
   agent: AgentKey
   config: HooksConfig | null
+  // The agent's hook events, from the backend agentspec. Each agent has its own
+  // set (Cursor, Crush, etc. differ from Claude Code), so this drives the event
+  // picker. Falls back to template keys when absent.
+  events?: string[]
   initialScript?: string
   // Lifted state — persists across tab switches and page navigation (sessionStorage)
   eventType: string
@@ -61,6 +65,7 @@ function truncate(s: string, n: number): string {
 export function SimulatorTab({
   agent,
   config,
+  events,
   initialScript,
   eventType,
   onEventTypeChange,
@@ -115,19 +120,33 @@ export function SimulatorTab({
     onCustomCommandTextChange(cmd)
   }, [initialScript, hookScripts, agent, onCommandValueChange, onCustomCommandTextChange])
 
-  const eventTypes = Object.keys(HOOK_TEMPLATES[agent]).sort()
+  // Prefer the agent's own events (from agentspec). Only agents argus ships
+  // payload templates for (claudecode/codex) have HOOK_TEMPLATES entries; custom
+  // agents rely on agentspec events + getTemplate's generic payload fallback.
+  const eventTypes =
+    events && events.length > 0
+      ? [...events].sort()
+      : Object.keys(HOOK_TEMPLATES[agent] ?? HOOK_TEMPLATES.claudecode).sort()
 
   const commandOptions = (() => {
     if (!eventType) return []
     const groups = config?.hooks[eventType] ?? []
     const opts: { label: string; value: string; timeout?: number }[] = []
     const seen = new Set<string>()
+    // Map a known ~/.argus/hooks script command → its friendly file name, so a
+    // script already wired into the event still shows by name (not "group N…").
+    const scriptName = new Map<string, string>()
+    hookScripts.forEach((script) =>
+      scriptName.set(composeScriptCommand(script, agent), script.name)
+    )
     groups.forEach((g, gi) => {
       g.hooks.forEach((h, hi) => {
         if (seen.has(h.command)) return
         seen.add(h.command)
         opts.push({
-          label: `group ${gi + 1} hook ${hi + 1} → ${truncate(h.command, 60)}`,
+          label:
+            scriptName.get(h.command) ??
+            `group ${gi + 1} hook ${hi + 1} → ${truncate(h.command, 60)}`,
           value: h.command,
           timeout: h.timeout,
         })

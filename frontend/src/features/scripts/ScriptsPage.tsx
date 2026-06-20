@@ -59,7 +59,7 @@ export function ScriptsPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Scripts"
+        title="Marketplace"
         subtitle={
           <a
             href="https://github.com/ruydt/argus/tree/main/registry"
@@ -80,8 +80,8 @@ export function ScriptsPage() {
           ref={searchRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search scripts..."
-          aria-label="Search scripts"
+          placeholder="Search marketplace..."
+          aria-label="Search marketplace"
           className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
       </div>

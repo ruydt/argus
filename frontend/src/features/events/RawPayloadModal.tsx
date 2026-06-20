@@ -1,23 +1,25 @@
-import { useEffect, useReducer } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { argusEditorTheme, argusHighlighting, readOnlyExtensions } from '@/lib/editorTheme'
+import { PayloadFields } from './PayloadFields'
 
 type PayloadState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'ready'; rawJson: string }
+  | { status: 'ready'; value: unknown }
   | { status: 'error' }
 
-async function fetchPayload(dedupKey: string, signal: AbortSignal): Promise<string> {
+async function fetchPayload(dedupKey: string, signal: AbortSignal): Promise<unknown> {
   const res = await fetch(`/api/events/raw?key=${encodeURIComponent(dedupKey)}`, { signal })
   if (!res.ok) throw new Error(`${res.status}`)
   const data = (await res.json()) as { raw_payload: unknown }
-  return JSON.stringify(data.raw_payload, null, 2)
+  return data.raw_payload
 }
 
 type RawPayloadModalProps = {
@@ -40,7 +42,7 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
     if (payload.status !== 'loading') return
     const controller = new AbortController()
     fetchPayload(dedupKey, controller.signal)
-      .then((rawJson) => setPayload({ status: 'ready', rawJson }))
+      .then((value) => setPayload({ status: 'ready', value }))
       .catch((err: unknown) => {
         if ((err as Error).name === 'AbortError') return
         console.error('[RawPayloadModal] fetch failed:', err)
@@ -48,6 +50,11 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
       })
     return () => controller.abort()
   }, [payload.status, dedupKey])
+
+  const rawJson = useMemo(
+    () => (payload.status === 'ready' ? JSON.stringify(payload.value, null, 2) : ''),
+    [payload]
+  )
 
   return (
     <Dialog
@@ -67,30 +74,48 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
           </Alert>
         )}
         {payload.status === 'ready' && (
-          <section
-            className="relative rounded-md border flex-1 min-h-0 flex flex-col"
-            aria-label="Raw payload JSON"
-          >
-            <CopyIconButton
-              text={payload.rawJson}
-              label="JSON"
-              className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-foreground/10"
-            />
-            <div className="overflow-y-auto flex-1 min-h-0">
-              <CodeMirror
-                value={payload.rawJson}
-                theme="none"
-                extensions={[json(), argusEditorTheme, argusHighlighting, ...readOnlyExtensions]}
-                basicSetup={{
-                  lineNumbers: false,
-                  highlightActiveLine: true,
-                  bracketMatching: true,
-                  autocompletion: false,
-                  foldGutter: false,
-                }}
-              />
-            </div>
-          </section>
+          <Tabs defaultValue="fields" className="min-h-0 flex-1">
+            <TabsList variant="line">
+              <TabsTrigger value="fields">Fields</TabsTrigger>
+              <TabsTrigger value="json">JSON</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="fields" className="min-h-0 flex-1 overflow-y-auto">
+              <PayloadFields value={payload.value} />
+            </TabsContent>
+
+            <TabsContent value="json" className="flex min-h-0 flex-1 flex-col">
+              <section
+                className="relative flex min-h-0 flex-1 flex-col rounded-md border"
+                aria-label="Raw payload JSON"
+              >
+                <CopyIconButton
+                  text={rawJson}
+                  label="JSON"
+                  className="absolute top-2 right-2 z-10 size-7 text-muted-foreground hover:text-foreground hover:bg-foreground/10"
+                />
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <CodeMirror
+                    value={rawJson}
+                    theme="none"
+                    extensions={[
+                      json(),
+                      argusEditorTheme,
+                      argusHighlighting,
+                      ...readOnlyExtensions,
+                    ]}
+                    basicSetup={{
+                      lineNumbers: false,
+                      highlightActiveLine: true,
+                      bracketMatching: true,
+                      autocompletion: false,
+                      foldGutter: false,
+                    }}
+                  />
+                </div>
+              </section>
+            </TabsContent>
+          </Tabs>
         )}
       </DialogContent>
     </Dialog>

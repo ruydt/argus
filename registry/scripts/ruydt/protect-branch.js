@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Protect branches
-// event: PreToolUse
+// events: PreToolUse
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/protect-branch.js
 // matcher: Bash
 // purpose: Deny git commit/push/branch-deletion on protected branches (main, master); suggests a feature branch.
-// os: both
+// os: linux, macos, windows
 // @end
 
 // PreToolUse hook (matcher: Bash): blocks git commit/push/destructive ops on protected

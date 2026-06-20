@@ -1,25 +1,12 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Layout } from './app/Layout'
 
-const DashboardPage = lazy(() =>
-  import('./features/dashboard/DashboardPage').then((module) => ({
-    default: module.DashboardPage,
-  }))
+const Sessions = lazy(() =>
+  import('./features/sessions/SessionsPage').then((m) => ({ default: m.SessionsPage }))
 )
-const Events = lazy(() =>
-  import('./features/events/EventsPage').then((module) => ({ default: module.EventsPage }))
-)
-const ProjectsPage = lazy(() =>
-  import('./features/projects/ProjectsPage').then((m) => ({ default: m.ProjectsPage }))
-)
-const SessionList = lazy(() =>
-  import('./features/sessions/SessionListPage').then((m) => ({ default: m.SessionListPage }))
-)
-const SessionFileChanges = lazy(() =>
-  import('./features/sessions/SessionFileChangesPage').then((m) => ({
-    default: m.SessionFileChangesPage,
-  }))
+const SessionDetail = lazy(() =>
+  import('./features/sessions/SessionDetailPage').then((m) => ({ default: m.SessionDetailPage }))
 )
 const Diagnostics = lazy(() =>
   import('./features/diagnostics/DiagnosticsPage').then((m) => ({ default: m.DiagnosticsPage }))
@@ -40,40 +27,15 @@ export default function App() {
             index
             element={
               <Suspense fallback={null}>
-                <Events />
+                <Sessions />
               </Suspense>
             }
           />
           <Route
-            path="dashboard"
+            path="sessions/:sessionId"
             element={
               <Suspense fallback={null}>
-                <DashboardPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="projects"
-            element={
-              <Suspense fallback={null}>
-                <ProjectsPage />
-              </Suspense>
-            }
-          />
-          <Route path="sessions" element={<Navigate to="/projects" replace />} />
-          <Route
-            path="sessions/:encodedCwd"
-            element={
-              <Suspense fallback={null}>
-                <SessionList />
-              </Suspense>
-            }
-          />
-          <Route
-            path="sessions/:encodedCwd/:sessionId"
-            element={
-              <Suspense fallback={null}>
-                <SessionFileChanges />
+                <SessionDetail />
               </Suspense>
             }
           />
@@ -86,7 +48,7 @@ export default function App() {
             }
           />
           <Route
-            path="hooks-config"
+            path="hooks"
             element={
               <Suspense fallback={null}>
                 <HooksConfig />
@@ -94,7 +56,7 @@ export default function App() {
             }
           />
           <Route
-            path="scripts"
+            path="marketplace"
             element={
               <Suspense fallback={null}>
                 <ScriptsPage />

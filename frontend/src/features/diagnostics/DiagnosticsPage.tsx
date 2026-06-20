@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { Activity, AlertTriangle, Clock, RefreshCw, Zap } from 'lucide-react'
+import { AlertTriangle, Database, HardDrive, RefreshCw, Zap } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Badge } from '@/components/ui/badge'
@@ -21,7 +21,6 @@ import { detectHookConfigLabel } from '@/features/hooks-config/presets'
 import type { HooksConfig } from '@/features/hooks-config/types'
 import type { AgentKey } from '@/features/hooks-config/types'
 import { useDiagnostics } from './hooks/useDiagnostics'
-import { FileSystemCard } from './FileSystemCard'
 import type { Diagnostics, DiagnosticsAgent } from './types'
 import { formatBytes } from './utils'
 
@@ -197,60 +196,47 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
       (a.hookConfigStatus === 'unknown' && a.eventCount === 0)
   ).length
 
+  // First run = no events anywhere AND no agent has its hooks wired up yet.
+  // Once any agent shows "configured", the setup hint is wrong (they're already
+  // set up — just waiting for the first event), so suppress it.
   const isFirstRun =
-    data.storage.totalEvents === 0 && data.agents.every((a) => a.status === 'no events')
+    data.storage.totalEvents === 0 &&
+    data.agents.every((a) => a.status === 'no events') &&
+    !data.agents.some((a) => a.hookConfigStatus === 'configured')
 
   return (
     <>
       {/* Summary tile row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-tour="diagnostics-tiles">
-        {/* Tile 1 — Readiness */}
+        {/* Tile 1 — Binary size */}
         <Card data-tour="diagnostics-health">
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
-              <Activity className="inline size-4 mr-1 text-muted-foreground" />
-              Readiness
+              <HardDrive className="inline size-4 mr-1 text-muted-foreground" />
+              Binary size
             </div>
-            <div className="flex items-center gap-1 text-[14px] font-semibold">
-              {data.health.ready ? (
-                <>
-                  <span className="inline-block size-2 rounded-full bg-[var(--worktree)]" />
-                  Ready
-                </>
-              ) : (
-                <>
-                  <span className="inline-block size-2 rounded-full bg-[var(--destructive)]" />
-                  Not ready
-                </>
-              )}
+            <div className="text-[20px] font-semibold">
+              {data.version.binarySizeBytes !== null
+                ? formatBytes(data.version.binarySizeBytes)
+                : 'Unknown'}
             </div>
-            {!data.health.ready && data.health.reason && (
-              <p
-                className="text-[12px] text-muted-foreground mt-1 truncate"
-                title={data.health.reason}
-              >
-                {data.health.reason.slice(0, 60)}
-              </p>
-            )}
           </CardContent>
         </Card>
 
-        {/* Tile 2 — Uptime */}
+        {/* Tile 2 — DB size */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
-              <Clock className="inline size-4 mr-1 text-muted-foreground" />
-              Uptime
+              <Database className="inline size-4 mr-1 text-muted-foreground" />
+              DB size
             </div>
             <div className="text-[20px] font-semibold">
-              {Math.floor(data.runtime.uptimeSeconds / 3600)}h{' '}
-              {Math.floor((data.runtime.uptimeSeconds % 3600) / 60)}m
+              {data.storage.dbSizeBytes !== null
+                ? formatBytes(data.storage.dbSizeBytes)
+                : (data.storage.dbSizeReason ?? 'Unknown')}
             </div>
             <p className="text-[12px] text-muted-foreground mt-1">
-              {new Date(data.runtime.startedAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {data.storage.totalEvents.toLocaleString()} events
             </p>
           </CardContent>
         </Card>
@@ -390,7 +376,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                 <span className="text-muted-foreground">Version</span>
                 <span>{data.version.version}</span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* Commit */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Commit</span>
@@ -398,7 +384,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {data.version.commit.slice(0, 8)}
                 </code>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* Built */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Built</span>
@@ -414,12 +400,12 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     : '—'}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB Path</span>
                 <MonoPath path={data.storage.dbPath} ariaLabel="Copy DB path" />
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB Size</span>
                 <span>
@@ -428,7 +414,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     : (data.storage.dbSizeReason ?? 'Unknown')}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* Runtime */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Started</span>
@@ -436,7 +422,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {formatDistanceToNow(new Date(data.runtime.startedAt), { addSuffix: true })}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Ingestion errors</span>
                 <span
@@ -445,13 +431,13 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {data.runtime.ingestionErrors.toLocaleString()}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* DB Health */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB journal</span>
                 <code className="font-mono text-[12px]">{data.dbHealth.journalMode}</code>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB pages</span>
                 <span>
@@ -459,7 +445,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {formatBytes(data.dbHealth.pageSizeBytes)}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">WAL size</span>
                 <span>
@@ -468,20 +454,17 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     : '—'}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Migration</span>
                 <span>v{data.dbHealth.migrationVersion}</span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <CompactDatabaseButton onDone={onCompacted} />
             </CardContent>
           </Card>
         </div>
       </div>
-
-      {/* File System — full width */}
-      <FileSystemCard fileSystem={data.fileSystem} data-tour="diagnostics-filesystem" />
     </>
   )
 }

@@ -72,6 +72,34 @@ func TestDetectReportsUnknownForInvalidJSONAndReadError(t *testing.T) {
 	}
 }
 
+// An agent the user enabled (in agents.json) is detected too — proving an agent
+// added on the Hooks page shows up on the diagnostics board.
+func TestDetectIncludesEnabledAgents(t *testing.T) {
+	home := t.TempDir()
+	argusDir := t.TempDir()
+	if err := os.WriteFile(
+		filepath.Join(argusDir, "agents.json"),
+		[]byte(`{"enabled":["claudecode","codex","cursor"]}`),
+		0o600,
+	); err != nil {
+		t.Fatalf("write agents.json: %v", err)
+	}
+	writeFile(t, home, ".cursor/hooks.json",
+		`{"hooks":{"preToolUse":[{"command":"curl http://127.0.0.1:10804/api/hook?agent=cursor"}]}}`)
+
+	got := hookconfig.Detector{HomeDir: home, ArgusDir: argusDir}.Detect()
+	if len(got) != 3 {
+		t.Fatalf("len(results) = %d, want 3: %+v", len(got), got)
+	}
+	cursor := resultsByAgent(got)["cursor"]
+	if cursor.Status != "configured" {
+		t.Fatalf("cursor status = %q, want configured", cursor.Status)
+	}
+	if cursor.Label != "Cursor" {
+		t.Fatalf("cursor label = %q, want Cursor", cursor.Label)
+	}
+}
+
 func writeFile(t *testing.T, home, rel, content string) {
 	t.Helper()
 	path := filepath.Join(home, rel)

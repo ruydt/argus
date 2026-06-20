@@ -23,13 +23,14 @@ afterEach(() => vi.clearAllMocks())
 describe('HooksConfigPage', () => {
   it('renders page heading', async () => {
     renderPage()
-    await waitFor(() => expect(screen.getByText('Hooks Config')).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Hooks' })).toBeTruthy())
   })
 
   it('shows the agent switcher', async () => {
     renderPage()
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'Agent' })).toBeTruthy()
+      expect(screen.getByRole('tab', { name: /Claude Code/ })).toBeTruthy()
+      expect(screen.getByRole('tab', { name: /Codex/ })).toBeTruthy()
     })
   })
 
@@ -41,9 +42,11 @@ describe('HooksConfigPage', () => {
     expect(screen.getByRole('button', { name: /save hooks config/i })).toBeDisabled()
   })
 
-  it('shows "Saved" status when config is unchanged and loaded', async () => {
+  it('shows a disabled save icon (saved state) when config is unchanged and loaded', async () => {
     renderPage()
-    await waitFor(() => expect(screen.getByText('Saved')).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /save hooks config/i })).toBeDisabled()
+    )
   })
 
   it('shows error card when load fails for active agent', async () => {

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Cost warning
-// event: SessionStart
+// events: SessionStart
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/cost-warn.js
 // purpose: Warn when token usage in the rolling 5h window crosses a threshold. Silent otherwise.
-// os: posix
+// os: linux, macos
 // @end
 // OS: macOS / Linux (POSIX). Shells out to the `sqlite3` CLI — not Windows-compatible.
 

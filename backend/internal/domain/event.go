@@ -3,8 +3,6 @@ package domain
 import (
 	"crypto/sha256"
 	"fmt"
-	"slices"
-	"strings"
 )
 
 // NormalizedEvent is the canonical representation of a hook event from any agent.
@@ -89,153 +87,16 @@ type CtxLine struct {
 	Text string `json:"text"`
 }
 
-type SessionUsage struct {
-	InputTokens         int `json:"input_tokens"`
-	OutputTokens        int `json:"output_tokens"`
-	CacheCreationTokens int `json:"cache_creation_tokens"`
-	CacheReadTokens     int `json:"cache_read_tokens"`
-	Turns               int `json:"turns"`
-}
-
 type Session struct {
-	SessionID       string       `json:"session_id"`
-	Agent           string       `json:"agent"`
-	Model           string       `json:"model"`
-	Source          string       `json:"source"`
-	CWD             string       `json:"cwd"`
-	TranscriptPath  string       `json:"transcript_path"`
-	StartedAt       string       `json:"started_at"`
-	LastSeenAt      string       `json:"last_seen_at"`
-	EndedAt         string       `json:"ended_at,omitempty"`
-	Usage           SessionUsage `json:"usage"`
-	FileChangeCount int          `json:"file_change_count,omitempty"`
-}
-
-type FileChangeEvent struct {
-	Time      string `json:"time"`
-	Tool      string `json:"tool"`
-	Action    string `json:"action,omitempty"`
-	OldString string `json:"old_string,omitempty"`
-	NewString string `json:"new_string,omitempty"`
-	StartLine int    `json:"start_line,omitempty"`
-}
-
-type FileChangeGroup struct {
-	Path    string            `json:"path"`
-	Count   int               `json:"count"`
-	Changes []FileChangeEvent `json:"changes"`
-}
-
-type Project struct {
-	CWD          string   `json:"cwd"`
-	Name         string   `json:"name"`
-	SessionCount int      `json:"session_count"`
-	LastActivity string   `json:"last_activity"`
-	TotalTokens  int      `json:"total_tokens"`
-	Agents       []string `json:"agents"`
-	LiveCount    int      `json:"live_count"`
-}
-
-type SessionTreeNode struct {
-	Session  Session           `json:"session"`
-	AgentID  string            `json:"agent_id,omitempty"`
-	Children []SessionTreeNode `json:"children"`
-}
-
-type DashboardStats struct {
-	TotalSessions        int                        `json:"total_sessions"`
-	TotalEvents          int                        `json:"total_events"`
-	TotalInputTokens     int                        `json:"total_input_tokens"`
-	TotalOutputTokens    int                        `json:"total_output_tokens"`
-	TimelineGranularity  string                     `json:"timeline_granularity"`
-	Timeline             []TimelineBucket           `json:"timeline"`
-	TimelineByAgent      []AgentTimelineBucket      `json:"timeline_by_agent"`
-	TokenTimeline        []TokenTimelineBucket      `json:"token_timeline"`
-	TokenTimelineByAgent []TokenTimelineAgentBucket `json:"token_timeline_by_agent"`
-	TopActions           []ActionCount              `json:"top_actions"`
-	AgentUsage           []AgentModelUsage          `json:"agent_usage"`
-	SessionUsage         []DashboardSessionUsage    `json:"session_usage"`
-}
-
-type TokenTimelineBucket struct {
-	Date          string `json:"date"`
-	Input         int    `json:"input"`
-	Output        int    `json:"output"`
-	CacheCreation int    `json:"cache_creation"`
-	CacheRead     int    `json:"cache_read"`
-}
-
-type TokenTimelineAgentBucket struct {
-	Date  string `json:"date"`
-	Agent string `json:"agent"`
-	Total int    `json:"total"`
-}
-
-type TimelineBucket struct {
-	Date  string `json:"date"`
-	Count int    `json:"count"`
-}
-
-type ActionCount struct {
-	Name  string `json:"name"`
-	Value int    `json:"value"`
-}
-
-type AgentTimelineBucket struct {
-	Date  string `json:"date"`
-	Agent string `json:"agent"`
-	Count int    `json:"count"`
-}
-
-type AgentModelUsage struct {
-	Provider      string `json:"provider"`
-	Agent         string `json:"agent"`
-	Model         string `json:"model"`
-	Input         int    `json:"input"`
-	Output        int    `json:"output"`
-	CacheCreation int    `json:"cache_creation"`
-	CacheRead     int    `json:"cache_read"`
-}
-
-type ModelUsageBreakdown struct {
-	Model               string `json:"model"`
-	InputTokens         int    `json:"input_tokens"`
-	OutputTokens        int    `json:"output_tokens"`
-	CacheCreationTokens int    `json:"cache_creation_tokens"`
-	CacheReadTokens     int    `json:"cache_read_tokens"`
-	Turns               int    `json:"turns"`
-}
-
-type UsageBreakdown struct {
-	Total  SessionUsage          `json:"total"`
-	Models []ModelUsageBreakdown `json:"models"`
-}
-
-// BuildUsageBreakdown finalizes a per-model accumulation map into a
-// UsageBreakdown: it sums every model into Total and returns Models sorted by
-// (input+output) tokens descending, then model name. Shared by every agent's
-// ComputeUsageBreakdown so the finalization logic lives in one place.
-func BuildUsageBreakdown(byModel map[string]*ModelUsageBreakdown) UsageBreakdown {
-	breakdown := UsageBreakdown{
-		Models: make([]ModelUsageBreakdown, 0, len(byModel)),
-	}
-	for _, usage := range byModel {
-		breakdown.Total.InputTokens += usage.InputTokens
-		breakdown.Total.OutputTokens += usage.OutputTokens
-		breakdown.Total.CacheCreationTokens += usage.CacheCreationTokens
-		breakdown.Total.CacheReadTokens += usage.CacheReadTokens
-		breakdown.Total.Turns += usage.Turns
-		breakdown.Models = append(breakdown.Models, *usage)
-	}
-	slices.SortFunc(breakdown.Models, func(a, b ModelUsageBreakdown) int {
-		at := a.InputTokens + a.OutputTokens
-		bt := b.InputTokens + b.OutputTokens
-		if at != bt {
-			return bt - at
-		}
-		return strings.Compare(a.Model, b.Model)
-	})
-	return breakdown
+	SessionID      string `json:"session_id"`
+	Agent          string `json:"agent"`
+	Model          string `json:"model"`
+	Source         string `json:"source"`
+	CWD            string `json:"cwd"`
+	TranscriptPath string `json:"transcript_path"`
+	StartedAt      string `json:"started_at"`
+	LastSeenAt     string `json:"last_seen_at"`
+	EndedAt        string `json:"ended_at,omitempty"`
 }
 
 // CompactResult reports the outcome of a database compaction (gzip-backfill of
@@ -244,27 +105,4 @@ type CompactResult struct {
 	RowsCompressed int   `json:"rows_compressed"`
 	BeforeBytes    int64 `json:"before_bytes"`
 	AfterBytes     int64 `json:"after_bytes"`
-}
-
-type DashboardSessionUsage struct {
-	SessionID  string                `json:"session_id"`
-	Agent      string                `json:"agent"`
-	Provider   string                `json:"provider"`
-	Model      string                `json:"model"`
-	StartedAt  string                `json:"started_at"`
-	LastSeenAt string                `json:"last_seen_at"`
-	Input      int                   `json:"input"`
-	Output     int                   `json:"output"`
-	Models     []DashboardModelUsage `json:"models"`
-}
-
-type DashboardModelUsage struct {
-	Provider      string `json:"provider"`
-	Agent         string `json:"agent"`
-	Model         string `json:"model"`
-	Input         int    `json:"input"`
-	Output        int    `json:"output"`
-	CacheCreation int    `json:"cache_creation"`
-	CacheRead     int    `json:"cache_read"`
-	Turns         int    `json:"turns"`
 }

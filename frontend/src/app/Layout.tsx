@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import type { SetStateAction } from 'react'
-import { PanelLeft } from 'lucide-react'
+import { CheckCircle2, PanelLeft, XCircle } from 'lucide-react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useSessions } from '@/hooks/useSessions'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
 import type { LayoutOutletContext } from '@/types'
 import { useOnboarding } from '@/features/onboarding/useOnboarding'
-import { PAGE_TOURS } from '@/features/onboarding/pageTours'
+import { useSessions } from '@/features/sessions/useSessions'
+import { useSessionMeta } from '@/features/sessions/useSessionMeta'
 import { Sidebar } from './Sidebar'
 
 const COLLAPSED_SESSIONS_STORAGE_KEY = 'events_collapsed_sessions'
@@ -94,28 +95,64 @@ export function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { isFirstVisitTourActive, startPageTour } = useOnboarding({
+  // First-visit onboarding tour (driver.js). The hook self-starts on first
+  // load; no per-page tour entry point remains, so its return value is unused.
+  useOnboarding({
     navigate,
     forceSidebarOpen: () => dispatch({ type: 'SET_SIDEBAR_COLLAPSED', collapsed: false }),
   })
-
-  const hasTourForRoute = Boolean(PAGE_TOURS[location.pathname])
 
   const mobileToggleRef = useRef<HTMLButtonElement | null>(null)
   const mobileSidebarRef = useRef<HTMLElement | null>(null)
   const shellContentRef = useRef<HTMLDivElement | null>(null)
   const lastFocusedElementRef = useRef<HTMLElement | null>(null)
   const [isLive, setIsLive] = useState(false)
-  const { sessions, refresh: refreshSessionUsage } = useSessions({ enabled: isLive })
   const mobileOpen = !isDesktopViewport && mobileDrawerLocationKey === location.key
-  const sessionUsage = useMemo(
-    () =>
-      sessions.reduce<Record<string, (typeof sessions)[number]['usage']>>((acc, session) => {
-        acc[session.session_id] = session.usage
-        return acc
-      }, {}),
-    [sessions]
-  )
+
+  // Recents data is owned here so the desktop sidebar, the mobile sidebar, and
+  // the Recents page all share one fetch + one SSE connection.
+  const sessionsState = useSessions()
+  const sessionMeta = useSessionMeta()
+
+  const [toast, setToast] = useState<{
+    id: number
+    message: string
+    tone: 'success' | 'error'
+  } | null>(null)
+  const toastTimer = useRef<number | undefined>(undefined)
+  const toastIdRef = useRef(0)
+
+  const notify = (message: string, tone: 'success' | 'error' = 'success') => {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current)
+    toastIdRef.current += 1
+    setToast({ id: toastIdRef.current, message, tone })
+    toastTimer.current = window.setTimeout(() => setToast(null), 2600)
+  }
+
+  const deleteSession = async (id: string) => {
+    try {
+      const res = await fetch('/api/sessions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessions: [id] }),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      sessionsState.removeSessions([id])
+      notify('Session deleted')
+
+      // If the user is currently viewing the session they just deleted, move
+      // them to the most recently updated remaining session (or the Recents
+      // landing if none are left).
+      const match = location.pathname.match(/^\/sessions\/(.+)$/)
+      const viewing = match ? decodeURIComponent(match[1]) : null
+      if (viewing === id) {
+        const next = sessionsState.sessions.find((s) => s.sessionId !== id)
+        navigate(next ? `/sessions/${encodeURIComponent(next.sessionId)}` : '/')
+      }
+    } catch {
+      notify('Delete failed', 'error')
+    }
+  }
 
   const setCollapsedSessions = (update: SetStateAction<Set<string>>) =>
     dispatch({
@@ -131,12 +168,23 @@ export function Layout() {
   const outletContext: LayoutOutletContext = {
     collapsedSessions,
     setCollapsedSessions,
-    sessionUsage,
     searchQuery,
     setSearchQuery,
     isLive,
     setIsLive,
-    refreshSessionUsage,
+    sessions: sessionsState.sessions,
+    sessionsLoading: sessionsState.loading,
+    sessionsError: sessionsState.error,
+    sessionsHasMore: sessionsState.hasMore,
+    loadMoreSessions: sessionsState.loadMore,
+    refreshSessions: sessionsState.refresh,
+    removeSessions: sessionsState.removeSessions,
+    sessionTags: sessionMeta.tags,
+    pinnedSessions: sessionMeta.pinned,
+    togglePinSession: sessionMeta.togglePin,
+    setSessionTag: sessionMeta.setTag,
+    removeSessionTag: sessionMeta.removeTag,
+    notify,
   }
 
   useEffect(() => {
@@ -259,9 +307,13 @@ export function Layout() {
         onToggleCollapse={() => dispatch({ type: 'TOGGLE_SIDEBAR_COLLAPSED' })}
         mode="desktop"
         className="hidden md:flex"
-        onStartTour={() => startPageTour(location.pathname)}
-        hasTourForRoute={hasTourForRoute}
-        isFirstVisitTourActive={isFirstVisitTourActive}
+        sessions={sessionsState.sessions}
+        onDeleteSession={deleteSession}
+        pinnedIds={sessionMeta.pinned}
+        tags={sessionMeta.tags}
+        onTogglePin={sessionMeta.togglePin}
+        onSetTag={sessionMeta.setTag}
+        onRemoveTag={sessionMeta.removeTag}
       />
 
       <button
@@ -284,9 +336,13 @@ export function Layout() {
         onClose={() => dispatch({ type: 'SET_MOBILE_DRAWER', key: null })}
         containerRef={mobileSidebarRef}
         className="fixed inset-y-0 left-0 z-50 flex w-[240px] max-w-[calc(100vw-2rem)] md:hidden"
-        onStartTour={() => startPageTour(location.pathname)}
-        hasTourForRoute={hasTourForRoute}
-        isFirstVisitTourActive={isFirstVisitTourActive}
+        sessions={sessionsState.sessions}
+        onDeleteSession={deleteSession}
+        pinnedIds={sessionMeta.pinned}
+        tags={sessionMeta.tags}
+        onTogglePin={sessionMeta.togglePin}
+        onSetTag={sessionMeta.setTag}
+        onRemoveTag={sessionMeta.removeTag}
       />
 
       <div
@@ -306,8 +362,28 @@ export function Layout() {
         >
           <PanelLeft className="size-4" />
         </Button>
-        <Outlet context={outletContext} />
+        <RouteErrorBoundary>
+          <Outlet context={outletContext} />
+        </RouteErrorBoundary>
       </div>
+
+      {toast && (
+        <div
+          key={toast.id}
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed right-4 top-4 z-[100] flex animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          <div className="pointer-events-auto flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground shadow-lg">
+            {toast.tone === 'error' ? (
+              <XCircle className="size-4 shrink-0 text-destructive" />
+            ) : (
+              <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+            )}
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

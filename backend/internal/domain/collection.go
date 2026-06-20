@@ -3,18 +3,19 @@ package domain
 // CollectionScript is one script in the user's GitHub-backed collection,
 // plus its local install state.
 type CollectionScript struct {
-	ID        string `json:"id"` // stable key (filename without extension)
-	Filename  string `json:"filename"`
-	Title     string `json:"title"`
-	Author    string `json:"author,omitempty"`
-	Purpose   string `json:"purpose,omitempty"`
-	Event     string `json:"event,omitempty"`
-	Matcher   string `json:"matcher,omitempty"`
-	Runtime   string `json:"runtime,omitempty"`
-	OS        string `json:"os,omitempty"` // both | posix | macos | windows
-	Origin    string `json:"origin"`       // "bundled" | "local"
-	Body      string `json:"body"`
-	Installed bool   `json:"installed"`
+	ID        string   `json:"id"` // stable key (filename without extension)
+	Filename  string   `json:"filename"`
+	Title     string   `json:"title"`
+	Author    string   `json:"author,omitempty"`
+	Purpose   string   `json:"purpose,omitempty"`
+	Events    []string `json:"events,omitempty"` // one or more hook events
+	Agents    []string `json:"agents,omitempty"` // agent ids the script supports
+	Matcher   string   `json:"matcher,omitempty"`
+	Runtime   string   `json:"runtime,omitempty"`
+	OS        string   `json:"os,omitempty"` // comma list of linux | macos | windows (legacy both/posix still read)
+	Origin    string   `json:"origin"`       // "bundled" | "local"
+	Body      string   `json:"body"`
+	Installed bool     `json:"installed"`
 }
 
 // Collection is the user's full collection.
@@ -40,15 +41,16 @@ type DeviceCodeResponse struct {
 // CollectionEntry is one row in the unified collection view: a script that is
 // installed locally and/or saved in the gist.
 type CollectionEntry struct {
-	ID       string `json:"id"`
-	Filename string `json:"filename"`
-	Title    string `json:"title"`
-	Author   string `json:"author,omitempty"`
-	Event    string `json:"event,omitempty"`
-	Runtime  string `json:"runtime,omitempty"`
-	OS       string `json:"os,omitempty"` // both | posix | macos | windows
-	Local    bool   `json:"local"`
-	Gist     bool   `json:"gist"`
+	ID       string   `json:"id"`
+	Filename string   `json:"filename"`
+	Title    string   `json:"title"`
+	Author   string   `json:"author,omitempty"`
+	Events   []string `json:"events,omitempty"` // one or more hook events
+	Agents   []string `json:"agents,omitempty"` // agent ids the script supports
+	Runtime  string   `json:"runtime,omitempty"`
+	OS       string   `json:"os,omitempty"` // comma list of linux | macos | windows (legacy both/posix still read)
+	Local    bool     `json:"local"`
+	Gist     bool     `json:"gist"`
 }
 
 // CollectionView is the unified collection response: local ∪ gist.

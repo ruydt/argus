@@ -46,8 +46,6 @@ function renderSession(props: Partial<Parameters<typeof AgentSession>[0]> = {}) 
     isCollapsed: false,
     toggleSession: vi.fn(),
     searchQuery: '',
-    sessionUsage: {},
-    setTooltip: vi.fn(),
     targetSessionId: null,
     targetEventKey: null,
     highlightedEventKey: null,

@@ -4,10 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DiagnosticsPage } from '@/features/diagnostics/DiagnosticsPage'
 import { HOOK_PRESETS, applyPreset } from '@/features/hooks-config/presets'
 import type { Diagnostics } from '@/features/diagnostics/types'
+import { formatBytes } from '@/features/diagnostics/utils'
 import { _resetDiagnosticsCache } from '@/features/diagnostics/hooks/useDiagnostics'
 
 const healthyDiagnostics: Diagnostics = {
-  version: { version: '1.1.0', commit: 'abc12345', buildDate: '2026-05-28' },
+  version: {
+    version: '1.1.0',
+    commit: 'abc12345',
+    buildDate: '2026-05-28',
+    binarySizeBytes: 12_582_912,
+  },
   health: { live: true, ready: true },
   storage: {
     dbPath: '/home/user/.argus/argus.db',
@@ -138,12 +144,21 @@ const emptyDiagnostics: Diagnostics = {
     totalEvents: 0,
     latestEventAt: null,
   },
+  // True first run: no events AND hooks not wired up yet.
   agents: healthyDiagnostics.agents.map((a) => ({
     ...a,
     eventCount: 0,
     status: 'no events',
     lastSeenAt: null,
+    hookConfigStatus: 'unknown',
   })),
+}
+
+// Hooks already configured but no events have fired yet — the setup hint must
+// NOT show (agents are set up; they're just waiting for the first event).
+const configuredNoEvents: Diagnostics = {
+  ...emptyDiagnostics,
+  agents: emptyDiagnostics.agents.map((a) => ({ ...a, hookConfigStatus: 'configured' })),
 }
 
 function renderPage() {
@@ -211,24 +226,11 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText('System Facts')).toBeInTheDocument()
     expect(screen.getByText('Claude Code')).toBeInTheDocument()
     expect(screen.getByText('Codex')).toBeInTheDocument()
-    // Readiness tile shows Ready
-    expect(screen.getByText('Ready')).toBeInTheDocument()
+    // Binary size tile renders the formatted executable size
+    expect(screen.getByText('Binary size')).toBeInTheDocument()
+    expect(screen.getByText(formatBytes(12_582_912))).toBeInTheDocument()
     expect(screen.getByText('Hook requests')).toBeInTheDocument()
     expect(screen.getByText('Migration')).toBeInTheDocument()
-  })
-
-  it('shows Uninstalled badge when codexDBsDirExists is false', async () => {
-    renderPage()
-    await screen.findByText('Agent Connectivity')
-    expect(screen.getAllByText('Uninstalled').length).toBeGreaterThan(0)
-  })
-
-  it('renders history.jsonl line count', async () => {
-    renderPage()
-    await screen.findByText('Agent Connectivity')
-    // File System mounts start collapsed; expand ~/.claude to reveal history.jsonl.
-    fireEvent.click(screen.getByRole('button', { name: 'Toggle ~/.claude' }))
-    expect(screen.getByText(/48,231 lines/)).toBeInTheDocument()
   })
 
   it('shows Configured (X/Y) label in hook config column when config has argus hooks', async () => {
@@ -285,17 +287,13 @@ describe('DiagnosticsPage', () => {
     expect(screen.getByText(/argus setup/)).toBeInTheDocument()
   })
 
-  it('renders Not ready tile and reason when health.ready is false', async () => {
-    const notReadyDiagnostics: Diagnostics = {
-      ...healthyDiagnostics,
-      health: { live: true, ready: false, reason: 'Database migration pending' },
-    }
-    vi.stubGlobal('fetch', makeFetchMock(notReadyDiagnostics))
+  it('hides the setup hint once hooks are configured, even with no events', async () => {
+    vi.stubGlobal('fetch', makeFetchMock(configuredNoEvents))
     renderPage()
-    expect(await screen.findByText('Not ready')).toBeInTheDocument()
-    expect(screen.getByText(/Database migration pending/)).toBeInTheDocument()
-    // Other sections still render
-    expect(screen.getByText('Agent Connectivity')).toBeInTheDocument()
+    // Agent rows render, but the "configure hook integrations" hint must not.
+    expect(await screen.findByText('Agent Connectivity')).toBeInTheDocument()
+    expect(screen.queryByText('No activity observed yet')).not.toBeInTheDocument()
+    expect(screen.queryByText(/argus setup/)).not.toBeInTheDocument()
   })
 
   it('shows spin animation on refresh button click and keeps data visible', async () => {

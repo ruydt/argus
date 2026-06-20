@@ -1,15 +1,9 @@
 import type { ComponentType } from 'react'
-import type { EventRecord, SessionUsage } from '@/types'
+import type { EventRecord } from '@/types'
 
-export type { EventRecord, SessionUsage } from '@/types'
+export type { EventRecord } from '@/types'
 
 export type AgentId = 'claudecode' | 'codex'
-
-export type UsageTooltipItem = {
-  cls: string
-  label: string
-  tip: string
-}
 
 export type AgentConfig = {
   id: AgentId
@@ -17,5 +11,4 @@ export type AgentConfig = {
   badgeClass: string
   Logo: ComponentType<{ size?: number }>
   matchesEvent: (event: EventRecord) => boolean
-  buildUsageItems?: (usage: SessionUsage, formatTokens: (n: number) => string) => UsageTooltipItem[]
 }

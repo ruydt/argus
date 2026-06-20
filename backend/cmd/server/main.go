@@ -68,10 +68,6 @@ func run() int {
 
 	svc := service.New(repo)
 
-	// One-time backfill for sessions persisted before write-time usage
-	// computation existed. Background, best-effort, runs once.
-	go svc.BackfillMissingSessionUsage()
-
 	home, _ := os.UserHomeDir()
 
 	// Load ignore matcher. A missing default file returns an empty matcher (safe).
@@ -89,8 +85,7 @@ func run() int {
 		IgnoreFile:         domainIgnoreFile(ignoreStatus),
 		Addr:               cfg.Addr,
 		AllowRemote:        cfg.AllowRemote,
-		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
-		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
+		Home:               home,
 		ArgusDir:           filepath.Join(home, ".argus"),
 	})
 

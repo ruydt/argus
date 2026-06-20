@@ -4,7 +4,9 @@ import {
   ChevronRight,
   Pencil,
   Plus,
+  RefreshCw,
   RotateCcw,
+  Save,
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react'
@@ -223,17 +225,29 @@ function emptyGroup(): HookGroup {
 type StructuredEditorProps = {
   config: HooksConfig
   agent: AgentKey
+  events?: string[]
+  supportsMatcher?: boolean
+  timeoutUnit?: string
   isDirty: boolean
   onDiscardChanges: () => void
   onChange: (config: HooksConfig) => void
+  onSave: () => void
+  saving: boolean
+  canSave: boolean
 }
 
 export function StructuredEditor({
   config,
   agent,
+  events,
+  supportsMatcher = true,
+  timeoutUnit = 'seconds',
   isDirty,
   onDiscardChanges,
   onChange,
+  onSave,
+  saving,
+  canSave,
 }: StructuredEditorProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [selectedPreset, setSelectedPreset] = useState<string>('')
@@ -257,7 +271,15 @@ export function StructuredEditor({
     }
   }, [])
 
-  const knownEvents = agent === 'claudecode' ? CLAUDE_EVENT_TYPES : CODEX_EVENT_TYPES
+  // Claude Code and Codex keep their rich curated event lists; every other
+  // agent drives its event picker from the backend-reported event set.
+  const knownEvents =
+    agent === 'claudecode'
+      ? CLAUDE_EVENT_TYPES
+      : agent === 'codex'
+        ? CODEX_EVENT_TYPES
+        : (events ?? [])
+  const hasPresets = agent in HOOK_PRESETS
   const usedEvents = Object.keys(config.hooks)
   const availableToAdd = knownEvents.filter((e) => !usedEvents.includes(e))
 
@@ -351,25 +373,29 @@ export function StructuredEditor({
           />
         )}
 
-        <Select value={selectedPreset} onValueChange={handleApplyPreset}>
-          <SelectTrigger className="h-8 text-[13px] w-[160px]" data-tour="preset-selector">
-            <span className={selectedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}>
-              {selectedPreset
-                ? PRESET_LABELS[selectedPreset as keyof typeof PRESET_LABELS]?.label
-                : 'Apply preset…'}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            {PRESET_KEYS.map((key) => (
-              <SelectItem key={key} value={key} className="text-[13px]">
-                <span className="font-medium">{PRESET_LABELS[key].label}</span>
-                <span className="ml-1.5 text-muted-foreground text-[12px]">
-                  — overwrites current config with {PRESET_LABELS[key].description}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {hasPresets && (
+          <Select value={selectedPreset} onValueChange={handleApplyPreset}>
+            <SelectTrigger className="h-8 text-[13px] w-[160px]" data-tour="preset-selector">
+              <span
+                className={selectedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}
+              >
+                {selectedPreset
+                  ? PRESET_LABELS[selectedPreset as keyof typeof PRESET_LABELS]?.label
+                  : 'Apply preset…'}
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              {PRESET_KEYS.map((key) => (
+                <SelectItem key={key} value={key} className="text-[13px]">
+                  <span className="font-medium">{PRESET_LABELS[key].label}</span>
+                  <span className="ml-1.5 text-muted-foreground text-[12px]">
+                    — overwrites current config with {PRESET_LABELS[key].description}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         <TooltipProvider delayDuration={100}>
           <div className="flex items-center gap-1 ml-auto">
@@ -388,6 +414,27 @@ export function StructuredEditor({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Discard changes</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground"
+                  disabled={!canSave}
+                  onClick={onSave}
+                  aria-label="Save hooks config"
+                >
+                  {saving ? (
+                    <RefreshCw className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isDirty ? 'Save changes' : 'Saved'}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
@@ -467,18 +514,26 @@ export function StructuredEditor({
                   >
                     {/* Group header: matcher (compact) + delete */}
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-muted-foreground shrink-0">Matcher</span>
-                      <SearchableSelect
-                        value={group.matcher ?? ''}
-                        onValueChange={(v) =>
-                          patchGroup(eventType, groupIdx, { matcher: v || undefined })
-                        }
-                        options={getMatcherOptions(eventType)}
-                        placeholder="match all"
-                        ariaLabel="Matcher"
-                        creatable
-                        className="h-6 text-[12px] font-mono flex-1"
-                      />
+                      {supportsMatcher && (
+                        <>
+                          <span className="text-[11px] text-muted-foreground shrink-0">
+                            Matcher
+                          </span>
+                          <SearchableSelect
+                            value={group.matcher ?? ''}
+                            onValueChange={(v) =>
+                              patchGroup(eventType, groupIdx, { matcher: v || undefined })
+                            }
+                            options={getMatcherOptions(eventType)}
+                            placeholder="match all"
+                            ariaLabel="Matcher"
+                            creatable
+                            multiple
+                            className="h-6 min-w-0 flex-1 text-[12px] font-mono"
+                          />
+                        </>
+                      )}
+                      {!supportsMatcher && <div className="flex-1" />}
                       <Button
                         type="button"
                         variant="ghost"
@@ -513,7 +568,7 @@ export function StructuredEditor({
                             placeholder="curl -s -X POST http://127.0.0.1:10804/api/hook ..."
                             ariaLabel="Command"
                             creatable
-                            className="h-7 text-[13px] font-mono flex-1"
+                            className="h-7 min-w-0 flex-1 text-[13px] font-mono"
                           />
                           <Popover
                             open={isEditing}
@@ -603,25 +658,27 @@ export function StructuredEditor({
                             </PopoverTrigger>
                             <PopoverContent className="w-72 p-3" align="end">
                               <div className="flex flex-col gap-3">
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-[11px] text-muted-foreground">
-                                    Timeout (s)
-                                  </span>
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    value={entry.timeout ?? ''}
-                                    onChange={(e) =>
-                                      patchEntry(eventType, groupIdx, entryIdx, {
-                                        timeout: e.target.value
-                                          ? Number(e.target.value)
-                                          : undefined,
-                                      })
-                                    }
-                                    placeholder="5"
-                                    className="h-7 text-[13px]"
-                                  />
-                                </div>
+                                {timeoutUnit !== '' && (
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[11px] text-muted-foreground">
+                                      Timeout ({timeoutUnit === 'milliseconds' ? 'ms' : 's'})
+                                    </span>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      value={entry.timeout ?? ''}
+                                      onChange={(e) =>
+                                        patchEntry(eventType, groupIdx, entryIdx, {
+                                          timeout: e.target.value
+                                            ? Number(e.target.value)
+                                            : undefined,
+                                        })
+                                      }
+                                      placeholder={timeoutUnit === 'milliseconds' ? '5000' : '5'}
+                                      className="h-7 text-[13px]"
+                                    />
+                                  </div>
+                                )}
                                 <div className="flex flex-col gap-1">
                                   <span className="text-[11px] text-muted-foreground">
                                     Status message

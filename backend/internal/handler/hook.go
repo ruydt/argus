@@ -13,6 +13,8 @@ import (
 
 	"argus/internal/agents/claudecode"
 	"argus/internal/agents/codex"
+	"argus/internal/agents/generic"
+	"argus/internal/agentspec"
 	"argus/internal/domain"
 	"argus/internal/fileutil"
 	"argus/internal/service"
@@ -50,15 +52,26 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 			return
 		}
 
+		// An explicit ?agent=<id> param (wired into the hook command for non-
+		// Claude/Codex agents) takes precedence over the transcript heuristic.
+		agentParam := r.URL.Query().Get("agent")
+
 		var e domain.NormalizedEvent
 		var normalizeErr error
 		switch {
+		case agentParam == "claudecode":
+			e, normalizeErr = claudecode.Normalize(raw)
+		case agentParam == "codex":
+			e, normalizeErr = codex.Normalize(raw)
+		case agentParam != "" && agentspec.IsKnown(agentParam):
+			// Any other registered agent → generic alias-mapping normalizer.
+			e, normalizeErr = generic.Normalize(raw, agentParam)
 		case claudecode.MatchesTranscript(meta.TranscriptPath):
 			e, normalizeErr = claudecode.Normalize(raw)
 		default:
-			// No ".claude" marker → treated as Codex. Log (path-presence only, no
-			// path value per D-04) so a CLAUDE_CONFIG_DIR misclassification is
-			// diagnosable rather than silent.
+			// No agent param and no ".claude" marker → treated as Codex. Log
+			// (path-presence only, no path value per D-04) so a
+			// CLAUDE_CONFIG_DIR misclassification is diagnosable rather than silent.
 			if meta.TranscriptPath != "" {
 				slog.Debug("agent detection: no .claude marker in transcript path, defaulting to codex")
 			}
