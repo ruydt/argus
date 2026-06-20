@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useEffect, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
 import { Braces } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -6,7 +6,12 @@ import { formatEventTime, highlight, shortId } from '@/lib/format'
 import type { EventRecord } from '@/types/events'
 import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { buildEventKey } from './eventKey'
-import { RawPayloadModal } from './RawPayloadModal'
+
+// Lazy so CodeMirror (the raw-payload viewer's editor, ~159 kB gzip) only
+// downloads when a user first opens a payload — not on session-page load.
+const RawPayloadModal = lazy(() =>
+  import('./RawPayloadModal').then((m) => ({ default: m.RawPayloadModal }))
+)
 
 type EventRowProps = {
   event: EventRecord
@@ -33,6 +38,9 @@ export const EventRow = memo(function EventRow({
   const targetHandledRef = useRef(false)
   const suppressDragRef = useRef(false)
   const [rawModalOpen, setRawModalOpen] = useState(false)
+  // Latch: once opened, keep the modal mounted so close/re-open keep their
+  // animations and the editor chunk isn't re-fetched.
+  const [modalMounted, setModalMounted] = useState(false)
 
   const agentId = e.agent || 'unknown'
   const eventName = e.hook_event_name || e.action || '—'
@@ -116,25 +124,32 @@ export const EventRow = memo(function EventRow({
           <button
             type="button"
             data-event-drag-ignore
-            onClick={() => setRawModalOpen(true)}
+            onClick={() => {
+              setModalMounted(true)
+              setRawModalOpen(true)
+            }}
             className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-foreground/[0.08] hover:text-foreground"
             aria-label="View raw payload"
             title="Raw payload"
           >
             <Braces className="size-3.5" />
           </button>
-          <RawPayloadModal
-            dedupKey={e.dedup_key}
-            label={[
-              e.hook_event_name,
-              e.action,
-              new Date(e.time).toLocaleTimeString([], { hour12: false }),
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            open={rawModalOpen}
-            onClose={() => setRawModalOpen(false)}
-          />
+          {modalMounted && (
+            <Suspense fallback={null}>
+              <RawPayloadModal
+                dedupKey={e.dedup_key}
+                label={[
+                  e.hook_event_name,
+                  e.action,
+                  new Date(e.time).toLocaleTimeString([], { hour12: false }),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                open={rawModalOpen}
+                onClose={() => setRawModalOpen(false)}
+              />
+            </Suspense>
+          )}
         </>
       )}
     </div>
