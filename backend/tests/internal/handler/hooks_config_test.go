@@ -38,15 +38,17 @@ func TestHooksConfigPutUnknownAgent(t *testing.T) {
 	}
 }
 
-// A known agent whose config format argus cannot edit in-app (e.g. Cursor)
-// returns 409 so the frontend falls back to guided setup.
-func TestHooksConfigNonEditableAgent(t *testing.T) {
+// The guided-only (plugin/script) agents were removed from the registry for now,
+// so they are no longer recognized and the endpoint reports them as unknown (400).
+func TestHooksConfigRemovedGuidedAgents(t *testing.T) {
 	h := handler.HooksConfig(t.TempDir())
-	req := httptest.NewRequest(http.MethodGet, "/api/hooks-config?agent=cursor", nil)
-	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, req)
-	if rec.Code != http.StatusConflict {
-		t.Fatalf("status = %d, want 409", rec.Code)
+	for _, agent := range []string{"opencode", "cline", "kilocode", "amp"} {
+		req := httptest.NewRequest(http.MethodGet, "/api/hooks-config?agent="+agent, nil)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("agent=%s: status = %d, want 400", agent, rec.Code)
+		}
 	}
 }
 

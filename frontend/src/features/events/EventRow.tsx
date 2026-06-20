@@ -1,8 +1,7 @@
 import { lazy, memo, Suspense, useEffect, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
-import { Braces } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatEventTime, highlight, shortId } from '@/lib/format'
+import { formatEventTime, highlight } from '@/lib/format'
 import type { EventRecord } from '@/types/events'
 import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { buildEventKey } from './eventKey'
@@ -44,7 +43,6 @@ export const EventRow = memo(function EventRow({
 
   const agentId = e.agent || 'unknown'
   const eventName = e.hook_event_name || e.action || '—'
-  const sessionShort = e.session ? shortId(e.session) : ''
 
   const handleDragStart = (ev: DragEvent<HTMLDivElement>) => {
     if (suppressDragRef.current) {
@@ -86,10 +84,19 @@ export const EventRow = memo(function EventRow({
       onDragEnd={() => {
         suppressDragRef.current = false
       }}
+      onClick={
+        e.dedup_key
+          ? () => {
+              setModalMounted(true)
+              setRawModalOpen(true)
+            }
+          : undefined
+      }
       data-testid="event-row"
       className={cn(
         'flex items-center gap-3 border-b border-foreground/[0.04] py-2 text-[0.82rem] leading-[1.4] hover:bg-foreground/[0.02]',
         highlighted ? 'rounded-md bg-sky-500/8 ring-1 ring-sky-400/35' : '',
+        e.dedup_key && 'cursor-pointer',
         isDraggable && 'cursor-grab active:cursor-grabbing'
       )}
     >
@@ -113,44 +120,26 @@ export const EventRow = memo(function EventRow({
 
       <span className="flex-1" />
 
-      {sessionShort && (
-        <span className="shrink-0 font-mono text-[0.72rem] text-muted-foreground/80">
-          {highlight(sessionShort, searchQuery)}
+      {e.dedup_key && modalMounted && (
+        // Radix portals the dialog, but React events still bubble through the
+        // portal to this row's onClick. Stop them here so closing the modal
+        // (overlay click / X) doesn't immediately re-open it.
+        <span onClick={(ev) => ev.stopPropagation()}>
+          <Suspense fallback={null}>
+            <RawPayloadModal
+              dedupKey={e.dedup_key}
+              label={[
+                e.hook_event_name,
+                e.action,
+                new Date(e.time).toLocaleTimeString([], { hour12: false }),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              open={rawModalOpen}
+              onClose={() => setRawModalOpen(false)}
+            />
+          </Suspense>
         </span>
-      )}
-
-      {e.dedup_key && (
-        <>
-          <button
-            type="button"
-            data-event-drag-ignore
-            onClick={() => {
-              setModalMounted(true)
-              setRawModalOpen(true)
-            }}
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-foreground/[0.08] hover:text-foreground"
-            aria-label="View raw payload"
-            title="Raw payload"
-          >
-            <Braces className="size-3.5" />
-          </button>
-          {modalMounted && (
-            <Suspense fallback={null}>
-              <RawPayloadModal
-                dedupKey={e.dedup_key}
-                label={[
-                  e.hook_event_name,
-                  e.action,
-                  new Date(e.time).toLocaleTimeString([], { hour12: false }),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-                open={rawModalOpen}
-                onClose={() => setRawModalOpen(false)}
-              />
-            </Suspense>
-          )}
-        </>
       )}
     </div>
   )

@@ -55,11 +55,11 @@ func TestCollectionViewPrefersLocalMetaOverRegistry(t *testing.T) {
 
 	var view struct {
 		Entries []struct {
-			Filename string `json:"filename"`
-			Title    string `json:"title"`
-			Author   string `json:"author"`
-			Event    string `json:"event"`
-			Runtime  string `json:"runtime"`
+			Filename string   `json:"filename"`
+			Title    string   `json:"title"`
+			Author   string   `json:"author"`
+			Events   []string `json:"events"`
+			Runtime  string   `json:"runtime"`
 		} `json:"entries"`
 	}
 	if err := json.Unmarshal(rr.Body.Bytes(), &view); err != nil {
@@ -69,7 +69,11 @@ func TestCollectionViewPrefersLocalMetaOverRegistry(t *testing.T) {
 		t.Fatalf("entries len = %d, want 1", len(view.Entries))
 	}
 	e := view.Entries[0]
-	if e.Filename != "guard.js" || e.Title != "Local title" || e.Author != "local-author" || e.Event != "Stop" || e.Runtime != "node" {
+	gotEvent := ""
+	if len(e.Events) == 1 {
+		gotEvent = e.Events[0]
+	}
+	if e.Filename != "guard.js" || e.Title != "Local title" || e.Author != "local-author" || gotEvent != "Stop" || e.Runtime != "node" {
 		t.Fatalf("entry = %+v, want local meta to override registry fields", e)
 	}
 }

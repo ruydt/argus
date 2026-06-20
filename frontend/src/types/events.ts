@@ -69,6 +69,19 @@ export interface SessionGroup {
   events: EventRecord[]
 }
 
+// One grouped row in the Recents list — a single agent session folded down
+// from its events. Lives in Layout (shared owner) and is distributed to both
+// the Sidebar and the Recents page.
+export interface SessionSummary {
+  sessionId: string
+  cwd: string
+  transcriptPath: string
+  count: number
+  lastTimeMs: number
+  // A representative event, used for agent detection / badges.
+  sample: EventRecord
+}
+
 export interface LayoutOutletContext {
   collapsedSessions: Set<string>
   setCollapsedSessions: Dispatch<SetStateAction<Set<string>>>
@@ -76,6 +89,19 @@ export interface LayoutOutletContext {
   setSearchQuery: Dispatch<SetStateAction<string>>
   isLive: boolean
   setIsLive: Dispatch<SetStateAction<boolean>>
+  sessions: SessionSummary[]
+  sessionsLoading: boolean
+  sessionsError: string | null
+  sessionsHasMore: boolean
+  loadMoreSessions: () => void
+  refreshSessions: () => void
+  removeSessions: (ids: string[]) => void
+  sessionTags: Record<string, string>
+  pinnedSessions: Set<string>
+  togglePinSession: (id: string) => void
+  setSessionTag: (id: string, tag: string) => void
+  removeSessionTag: (id: string) => void
+  notify: (message: string, tone?: 'success' | 'error') => void
 }
 
 export interface EventsResponse {

@@ -19,21 +19,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  optimizeDeps: {
-    include: ['@lobehub/icons'],
-  },
-
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
     include: ['tests/**/*.{test,spec}.{ts,tsx}', 'src/**/__tests__/*.{test,spec}.{ts,tsx}'],
     unstubGlobals: true,
-    server: {
-      deps: {
-        inline: ['@lobehub/icons', '@lobehub/ui', '@lobehub/fluent-emoji'],
-      },
-    },
   },
   server: {
     allowedHosts: [

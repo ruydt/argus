@@ -10,7 +10,8 @@ export type CollectionEntry = {
   filename: string
   title: string
   author?: string
-  event?: string
+  events?: string[]
+  agents?: string[]
   runtime?: string
   os?: string
   local: boolean

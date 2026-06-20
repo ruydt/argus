@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RawPayloadModal } from '@/features/events/RawPayloadModal'
 
@@ -23,7 +24,22 @@ describe('RawPayloadModal', () => {
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull()
   })
 
-  it('renders CodeMirror editor after fetch succeeds', async () => {
+  it('renders the field view after fetch succeeds', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ raw_payload: { tool_name: 'Bash', duration_ms: 1505 } }),
+      })
+    )
+    renderModal()
+    await waitFor(() => expect(screen.getByText('Tool Name')).toBeTruthy())
+    expect(screen.getByText('Bash')).toBeTruthy()
+    expect(screen.getByText('Duration Ms')).toBeTruthy()
+    expect(screen.getByText('1505')).toBeTruthy()
+  })
+
+  it('renders CodeMirror editor when the JSON tab is selected', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -31,7 +47,9 @@ describe('RawPayloadModal', () => {
         json: async () => ({ raw_payload: { tool: 'Bash', input: 'echo hi' } }),
       })
     )
+    const user = userEvent.setup()
     renderModal()
+    await user.click(await screen.findByRole('tab', { name: 'JSON' }))
     await waitFor(() => expect(document.querySelector('.cm-editor')).not.toBeNull())
   })
 

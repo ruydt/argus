@@ -196,8 +196,13 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
       (a.hookConfigStatus === 'unknown' && a.eventCount === 0)
   ).length
 
+  // First run = no events anywhere AND no agent has its hooks wired up yet.
+  // Once any agent shows "configured", the setup hint is wrong (they're already
+  // set up — just waiting for the first event), so suppress it.
   const isFirstRun =
-    data.storage.totalEvents === 0 && data.agents.every((a) => a.status === 'no events')
+    data.storage.totalEvents === 0 &&
+    data.agents.every((a) => a.status === 'no events') &&
+    !data.agents.some((a) => a.hookConfigStatus === 'configured')
 
   return (
     <>
@@ -210,7 +215,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
               <HardDrive className="inline size-4 mr-1 text-muted-foreground" />
               Binary size
             </div>
-            <div className="flex items-center gap-1 text-[14px] font-semibold">
+            <div className="text-[20px] font-semibold">
               {data.version.binarySizeBytes !== null
                 ? formatBytes(data.version.binarySizeBytes)
                 : 'Unknown'}
@@ -371,7 +376,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                 <span className="text-muted-foreground">Version</span>
                 <span>{data.version.version}</span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* Commit */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Commit</span>
@@ -379,7 +384,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {data.version.commit.slice(0, 8)}
                 </code>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* Built */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Built</span>
@@ -395,12 +400,12 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     : '—'}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB Path</span>
                 <MonoPath path={data.storage.dbPath} ariaLabel="Copy DB path" />
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB Size</span>
                 <span>
@@ -409,7 +414,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     : (data.storage.dbSizeReason ?? 'Unknown')}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* Runtime */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Started</span>
@@ -417,7 +422,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {formatDistanceToNow(new Date(data.runtime.startedAt), { addSuffix: true })}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Ingestion errors</span>
                 <span
@@ -426,13 +431,13 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {data.runtime.ingestionErrors.toLocaleString()}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               {/* DB Health */}
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB journal</span>
                 <code className="font-mono text-[12px]">{data.dbHealth.journalMode}</code>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">DB pages</span>
                 <span>
@@ -440,7 +445,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                   {formatBytes(data.dbHealth.pageSizeBytes)}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">WAL size</span>
                 <span>
@@ -449,12 +454,12 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
                     : '—'}
                 </span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Migration</span>
                 <span>v{data.dbHealth.migrationVersion}</span>
               </div>
-              <Separator />
+              <Separator className="mx-auto w-[85%]!" />
               <CompactDatabaseButton onDone={onCompacted} />
             </CardContent>
           </Card>

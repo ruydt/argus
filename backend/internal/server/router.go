@@ -78,6 +78,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/events", handler.Events(svc))
 	mux.Handle("GET /api/events/stream", handler.EventsStream(svc))
 	mux.Handle("GET /api/events/raw", secFetchSite(handler.EventRawPayload(svc)))
+	mux.Handle("DELETE /api/sessions", secFetchSite(handler.DeleteSessions(svc)))
 	mux.Handle("GET /api/version", handler.Version())
 	hookDetector := opts.HookConfigDetector
 	if hookDetector == nil {

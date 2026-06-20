@@ -8,6 +8,8 @@ export type AgentStatus = {
   config_kind: string
   hooks_config_path: string
   editing_supported: boolean
+  timeout_unit?: string
+  supports_matcher?: boolean
   installed: boolean
   hooks_configured: boolean
   events?: string[]
@@ -45,9 +47,9 @@ export function useAgents(): UseAgents {
       .then((data) => {
         if (!mounted.current) return
         setAgents(Array.isArray(data.agents) ? data.agents : [])
-        setEnabled(
-          Array.isArray(data.enabled) && data.enabled.length > 0 ? data.enabled : DEFAULT_ENABLED
-        )
+        // Respect an explicitly empty enabled set (the user removed every
+        // agent); only fall back to defaults when the field is missing.
+        setEnabled(Array.isArray(data.enabled) ? data.enabled : DEFAULT_ENABLED)
         setError(null)
       })
       .catch((err: unknown) => {

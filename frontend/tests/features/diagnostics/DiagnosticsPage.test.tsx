@@ -144,12 +144,21 @@ const emptyDiagnostics: Diagnostics = {
     totalEvents: 0,
     latestEventAt: null,
   },
+  // True first run: no events AND hooks not wired up yet.
   agents: healthyDiagnostics.agents.map((a) => ({
     ...a,
     eventCount: 0,
     status: 'no events',
     lastSeenAt: null,
+    hookConfigStatus: 'unknown',
   })),
+}
+
+// Hooks already configured but no events have fired yet — the setup hint must
+// NOT show (agents are set up; they're just waiting for the first event).
+const configuredNoEvents: Diagnostics = {
+  ...emptyDiagnostics,
+  agents: emptyDiagnostics.agents.map((a) => ({ ...a, hookConfigStatus: 'configured' })),
 }
 
 function renderPage() {
@@ -276,6 +285,15 @@ describe('DiagnosticsPage', () => {
     renderPage()
     expect(await screen.findByText('No activity observed yet')).toBeInTheDocument()
     expect(screen.getByText(/argus setup/)).toBeInTheDocument()
+  })
+
+  it('hides the setup hint once hooks are configured, even with no events', async () => {
+    vi.stubGlobal('fetch', makeFetchMock(configuredNoEvents))
+    renderPage()
+    // Agent rows render, but the "configure hook integrations" hint must not.
+    expect(await screen.findByText('Agent Connectivity')).toBeInTheDocument()
+    expect(screen.queryByText('No activity observed yet')).not.toBeInTheDocument()
+    expect(screen.queryByText(/argus setup/)).not.toBeInTheDocument()
   })
 
   it('shows spin animation on refresh button click and keeps data visible', async () => {

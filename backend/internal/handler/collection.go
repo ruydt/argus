@@ -109,6 +109,16 @@ func Collection(svc *github.Service, registrySrc *community.Source, argusDir str
 			return ""
 		}
 
+		// firstNonEmptySlice is the list-field analogue: first non-empty wins.
+		firstNonEmptySlice := func(vals ...[]string) []string {
+			for _, v := range vals {
+				if len(v) > 0 {
+					return v
+				}
+			}
+			return nil
+		}
+
 		for _, f := range sorted {
 			lm := localMeta[f]
 			gs, inGist := gistByFile[f]
@@ -121,7 +131,9 @@ func Collection(svc *github.Service, registrySrc *community.Source, argusDir str
 			// gist copy), never the registry folder — installs now stamp it in, so
 			// attribution survives offline.
 			e.Author = firstNonEmpty(lm.Author, gs.Author)
-			e.Event = firstNonEmpty(lm.Event, gs.Event, reg.Event)
+			e.Events = firstNonEmptySlice(lm.Events, gs.Events, reg.Events)
+			// Agents come only from the script's own @argus-meta — never auto-assigned.
+			e.Agents = firstNonEmptySlice(lm.Agents, gs.Agents, reg.Agents)
 			e.Runtime = firstNonEmpty(lm.Runtime, gs.Runtime, reg.Runtime, runtimeFromExt(f))
 			e.OS = firstNonEmpty(lm.OS, gs.OS, reg.OS)
 			if e.ID == "" {
@@ -167,7 +179,8 @@ func CollectionAdd(svc *github.Service, argusDir string) http.Handler {
 		}
 		script := domain.CollectionScript{
 			ID: idFromFilename(req.Filename), Filename: req.Filename,
-			Title: req.Filename, Author: meta.Author, Purpose: meta.Purpose, Event: meta.Event,
+			Title: req.Filename, Author: meta.Author, Purpose: meta.Purpose,
+			Events: meta.Events, Agents: meta.Agents,
 			Matcher: meta.Matcher, Runtime: runtime, OS: meta.OS, Origin: "local", Body: stamped,
 		}
 		switch err := svc.AddScript(r.Context(), script); {

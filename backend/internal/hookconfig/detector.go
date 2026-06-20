@@ -71,16 +71,26 @@ func detectAgent(spec agentspec.Spec, endpoint string, readFile func(string) ([]
 	}
 
 	switch spec.ConfigKind {
-	case agentspec.KindCopilotDir, agentspec.KindClineScripts, agentspec.KindPlugin:
+	case agentspec.KindClineScripts, agentspec.KindPlugin:
 		detectDir(&result, spec.HooksConfigPath, endpoint, readFile)
 	default:
-		detectFile(&result, spec.HooksConfigPath, endpoint, isJSONKind(spec.ConfigKind), readFile)
+		detectFile(&result, spec.HooksConfigPath, endpoint, strictJSONKind(spec.ConfigKind), readFile)
 	}
 	return result
 }
 
-func isJSONKind(kind agentspec.ConfigKind) bool {
-	return kind == agentspec.KindJSONHooksBlock || kind == agentspec.KindJSONHooksFile
+// strictJSONKind reports whether the file is strict JSON we can validate. JSONC
+// kinds (comment-bearing settings files) are read as plain text for the endpoint
+// substring check so a comment doesn't get flagged as invalid_json.
+func strictJSONKind(kind agentspec.ConfigKind) bool {
+	switch kind {
+	case agentspec.KindJSONHooksBlock, agentspec.KindJSONHooksFile,
+		agentspec.KindCursorHooks, agentspec.KindCopilotHooks,
+		agentspec.KindWindsurfHooks, agentspec.KindCrushHooks:
+		return true
+	default:
+		return false
+	}
 }
 
 // detectFile reads a single config file. JSON kinds that fail to parse are

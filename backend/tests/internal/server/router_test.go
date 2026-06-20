@@ -55,6 +55,7 @@ func (noopRepo) Compact(_ context.Context) (domain.CompactResult, error) {
 	return domain.CompactResult{}, nil
 }
 func (noopRepo) PruneEvents(_ context.Context, _ string, _ int) (int64, error) { return 0, nil }
+func (noopRepo) DeleteSessions(_ context.Context, _ []string) (int64, error)   { return 0, nil }
 
 func (noopRepo) Ready() bool { return true }
 

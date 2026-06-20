@@ -3,7 +3,8 @@ export type CommunityScript = {
   author: string
   title: string
   purpose?: string
-  event?: string
+  events?: string[]
+  agents?: string[]
   matcher?: string
   runtime?: string
   command?: string

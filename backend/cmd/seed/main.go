@@ -43,7 +43,7 @@ func run() error {
 	}()
 
 	// Define mock data for seeding the database with realistic agent activity
-	agents := []string{"claudecode", "codex", "cline"}
+	agents := []string{"claudecode", "codex", "cursor"}
 	models := []string{"claude-3-5-sonnet-20241022", "gpt-4o", "claude-3-opus-20240229"}
 	actions := []string{"BASH", "EDIT", "READ", "LS", "CREATE", "DELETE"}
 	sources := []string{"startup", "cli", "web"}

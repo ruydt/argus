@@ -33,8 +33,8 @@ func TestAgentsGetDefaults(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if len(got.Agents) < 15 {
-		t.Fatalf("agents = %d, want >= 15", len(got.Agents))
+	if len(got.Agents) < 11 {
+		t.Fatalf("agents = %d, want >= 11", len(got.Agents))
 	}
 	if len(got.Enabled) != 2 || got.Enabled[0] != "claudecode" || got.Enabled[1] != "codex" {
 		t.Fatalf("enabled = %v, want [claudecode codex]", got.Enabled)

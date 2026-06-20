@@ -8,9 +8,23 @@ type GuidedSetupPanelProps = {
   agent: AgentStatus
 }
 
-// GuidedSetupPanel is shown for agents whose hook-config format argus cannot
-// edit in-app yet. It points the user at the ingest endpoint and the agent's
-// own docs so they can wire hooks toward argus manually.
+// guidedReason explains, per config kind, WHY argus can't structured-edit this
+// agent — plugin-code and script-directory agents have no JSON hook config to
+// edit, so guided manual setup is the correct path (not a missing feature).
+function guidedReason(agent: AgentStatus): string {
+  switch (agent.config_kind) {
+    case 'plugin':
+      return `${agent.display_name} configures hooks with TypeScript/JavaScript plugin code, so there's no JSON config for argus to edit. Scaffold a plugin that posts each event to the argus ingest endpoint:`
+    case 'cline-scripts':
+      return `${agent.display_name} configures hooks as executable scripts named after each event, so there's no JSON config for argus to edit. Add a script that posts the event to the argus ingest endpoint:`
+    default:
+      return `${agent.display_name} uses a hook format argus can't safely rewrite. Wire its hooks to argus by hand — point any hook command at the argus ingest endpoint:`
+  }
+}
+
+// GuidedSetupPanel is shown for agents whose hooks are plugin code or executable
+// scripts — there is no JSON for the structured editor to edit. It points the
+// user at the ingest endpoint and the agent's own docs to wire hooks manually.
 export function GuidedSetupPanel({ agent }: GuidedSetupPanelProps) {
   const [copied, setCopied] = useState(false)
   const endpoint = `http://localhost:10804/api/hook?agent=${agent.id}`
@@ -32,16 +46,9 @@ export function GuidedSetupPanel({ agent }: GuidedSetupPanelProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground">
-              In-app editing isn’t available for {agent.display_name} yet
+              In-app editing isn’t available for {agent.display_name}
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              {agent.display_name} uses a{' '}
-              <code className="rounded bg-foreground/[0.06] px-1 py-0.5 text-[12px]">
-                {agent.config_kind}
-              </code>{' '}
-              hook format argus can’t safely rewrite. Wire its hooks to argus by hand — point any
-              hook command at the argus ingest endpoint:
-            </p>
+            <p className="mt-1 text-[13px] text-muted-foreground">{guidedReason(agent)}</p>
           </div>
           {agent.installed ? (
             <Badge className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-emerald-600">

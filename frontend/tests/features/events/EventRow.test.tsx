@@ -49,11 +49,6 @@ describe('EventRow thin layout', () => {
     expect(screen.getByText('Bash')).toBeTruthy()
   })
 
-  it('shows a shortened session id', () => {
-    render(<EventRow event={buildEvent({ session: 'abcdef1234567890' })} searchQuery="" />)
-    expect(screen.getByText('abcdef12')).toBeTruthy()
-  })
-
   it('labels the agent from the stored agent id', () => {
     render(<EventRow event={buildEvent({ agent: 'claudecode' })} searchQuery="" />)
     expect(screen.getByLabelText('Claude Code')).toBeTruthy()
@@ -71,15 +66,17 @@ describe('EventRow thin layout', () => {
   })
 })
 
-describe('EventRow raw payload button', () => {
-  it('shows raw payload button when dedup_key is present', () => {
-    render(<EventRow event={buildEvent({ dedup_key: 'abc123' })} searchQuery="" />)
-    expect(screen.getByRole('button', { name: /raw payload/i })).toBeTruthy()
+describe('EventRow raw payload', () => {
+  it('marks the row clickable when dedup_key is present', () => {
+    const { container } = render(
+      <EventRow event={buildEvent({ dedup_key: 'abc123' })} searchQuery="" />
+    )
+    expect(container.firstElementChild?.className).toContain('cursor-pointer')
   })
 
-  it('does not show raw payload button when dedup_key is absent', () => {
-    render(<EventRow event={buildEvent()} searchQuery="" />)
-    expect(screen.queryByRole('button', { name: /raw payload/i })).toBeNull()
+  it('is not clickable when dedup_key is absent', () => {
+    const { container } = render(<EventRow event={buildEvent()} searchQuery="" />)
+    expect(container.firstElementChild?.className).not.toContain('cursor-pointer')
   })
 })
 
@@ -98,12 +95,15 @@ describe('EventRow dragging', () => {
     )
   })
 
-  it('does not start dragging from the raw payload button', () => {
-    render(<EventRow event={buildEvent({ dedup_key: 'abc123' })} searchQuery="" isDraggable />)
+  it('does not start dragging from a code block', () => {
+    const { container } = render(
+      <EventRow event={buildEvent({ dedup_key: 'abc123' })} searchQuery="" isDraggable />
+    )
 
-    const button = screen.getByRole('button', { name: /raw payload/i })
-    const dragStart = createDragStartEvent(button)
-    button.dispatchEvent(dragStart)
+    const code = document.createElement('code')
+    container.firstElementChild?.appendChild(code)
+    const dragStart = createDragStartEvent(code)
+    code.dispatchEvent(dragStart)
 
     expect(dragStart.dataTransfer.setData).not.toHaveBeenCalled()
   })

@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Protect secret files
-// event: PreToolUse
+// events: PreToolUse
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/protect-secrets.js
 // matcher: Read|Edit|Write|Bash
 // purpose: Deny access to secret files (.env, *.pem, ~/.ssh/, ~/.aws/). .env.example/sample/template and secrets.test/spec.* are allowed.
-// os: both
+// os: linux, macos, windows
 // @end
 
 // PreToolUse hook (matcher: Read|Edit|Write|Bash): blocks access to secret files

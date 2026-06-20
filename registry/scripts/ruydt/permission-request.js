@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Permission request dialog
-// event: PermissionRequest
+// events: PermissionRequest
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/permission-request.js
 // purpose: Native macOS approval dialog with an Always list.
 // os: macos

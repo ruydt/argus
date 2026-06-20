@@ -18,11 +18,12 @@ by hand after adding or changing a script.
    ```js
    // @argus-meta
    // title: Short human title
-   // author: your-github-login  # optional; argus stamps the publisher login when omitted
-   // event: PreToolUse
+   // author: your-github-login    # optional; argus stamps the publisher login when omitted
+   // events: PreToolUse, PostToolUse  # one or more, comma-separated (legacy `event:` still works)
+   // agents: claudecode, codex    # one or more agent ids the script supports
    // runtime: node          # node | python3 | sh
    // matcher: Bash          # optional
-   // os: both               # optional; both | macos | windows (defaults to both)
+   // os: linux, macos, windows  # optional; any of linux, macos, windows (defaults to all three)
    // command: node "$SCRIPT" # optional; explicit command override
    // published: 2026-06-01  # optional
    // purpose: One line describing what it does.

@@ -16,6 +16,20 @@ function parseHeader(text) {
   return meta
 }
 
+// splitCSV → trimmed, de-duplicated, order-preserving tokens (events/agents).
+function splitCSV(value) {
+  const out = []
+  const seen = new Set()
+  for (const part of (value ?? '').split(',')) {
+    const v = part.trim()
+    if (v && !seen.has(v)) {
+      seen.add(v)
+      out.push(v)
+    }
+  }
+  return out
+}
+
 async function walk(dir) {
   const out = []
   let entries
@@ -46,16 +60,20 @@ export async function buildIndex(root = '.') {
     const sha256 = createHash('sha256').update(text).digest('hex')
     const command = meta.command ?? ''
     const runtime = command ? command.split(/\s+/)[0] : (meta.runtime ?? 'node')
+    // events: prefer the plural header; fall back to the legacy singular `event`.
+    const events = meta.events ? splitCSV(meta.events) : splitCSV(meta.event)
+    const agents = splitCSV(meta.agents)
     scripts.push({
       id,
       author,
       title: meta.title,
       purpose: meta.purpose ?? '',
-      event: meta.event ?? '',
+      events,
+      agents,
       matcher: meta.matcher ?? '',
       command,
       runtime,
-      os: meta.os ?? 'both',
+      os: meta.os ?? 'linux, macos, windows',
       tier: 'community',
       sha256,
       source: rel,

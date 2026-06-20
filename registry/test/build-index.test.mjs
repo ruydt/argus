@@ -34,8 +34,31 @@ test('buildIndex parses the header and computes sha256', async () => {
   assert.equal(s.runtime, 'node')
   assert.equal(s.tier, 'community')
   assert.equal(s.source, 'scripts/alice/demo.js')
-  assert.equal(s.os, 'both') // default when meta omits os
+  assert.equal(s.os, 'linux, macos, windows') // default when meta omits os
+  assert.deepEqual(s.events, ['PreToolUse']) // legacy singular `event` folds into events
+  assert.deepEqual(s.agents, []) // none declared
   assert.equal(s.sha256, createHash('sha256').update(body).digest('hex'))
+})
+
+test('buildIndex parses plural events and agents lists', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'reg-'))
+  await mkdir(join(root, 'scripts', 'ruydt'), { recursive: true })
+  const body = [
+    '// @argus-meta',
+    '// title: Multi',
+    '// events: PreToolUse, PostToolUse',
+    '// agents: claudecode, codex',
+    '// @end',
+    '',
+    'console.log(1)',
+    '',
+  ].join('\n')
+  await writeFile(join(root, 'scripts', 'ruydt', 'multi.js'), body)
+
+  const index = await buildIndex(root)
+  const s = index.scripts[0]
+  assert.deepEqual(s.events, ['PreToolUse', 'PostToolUse'])
+  assert.deepEqual(s.agents, ['claudecode', 'codex'])
 })
 
 test('buildIndex reads an explicit os field from the header', async () => {

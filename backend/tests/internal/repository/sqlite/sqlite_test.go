@@ -1291,3 +1291,51 @@ func TestDiagnosticsAgentStatsEventRates(t *testing.T) {
 	}
 }
 
+func TestDeleteSessions(t *testing.T) {
+	db := newTestDB(t)
+	now := time.Now().UTC().Format(time.RFC3339)
+	add := func(session, hook string) {
+		if err := db.Add(domain.NormalizedEvent{
+			Time: now, Agent: "claudecode", Session: session,
+			HookEventName: hook, CWD: "/x", RawPayload: []byte(`{}`),
+		}); err != nil {
+			t.Fatalf("Add: %v", err)
+		}
+	}
+	add("keep-1", "SessionStart")
+	add("del-1", "SessionStart")
+	add("del-1", "PreToolUse") // distinct event, same session → two rows
+	add("del-2", "SessionStart")
+	if err := db.UpsertSession("del-1", "claudecode", "", "startup", "/x", "/t", now, ""); err != nil {
+		t.Fatalf("UpsertSession: %v", err)
+	}
+
+	deleted, err := db.DeleteSessions(context.Background(), []string{"del-1", "del-2"})
+	if err != nil {
+		t.Fatalf("DeleteSessions: %v", err)
+	}
+	if deleted != 3 {
+		t.Fatalf("deleted events = %d, want 3", deleted)
+	}
+
+	kept, err := db.ListBySession("keep-1", 10)
+	if err != nil {
+		t.Fatalf("ListBySession keep: %v", err)
+	}
+	if len(kept) != 1 {
+		t.Fatalf("keep-1 events = %d, want 1", len(kept))
+	}
+
+	gone, err := db.ListBySession("del-1", 10)
+	if err != nil {
+		t.Fatalf("ListBySession del: %v", err)
+	}
+	if len(gone) != 0 {
+		t.Fatalf("del-1 events = %d, want 0", len(gone))
+	}
+
+	n, err := db.DeleteSessions(context.Background(), nil)
+	if err != nil || n != 0 {
+		t.Fatalf("empty delete = (%d, %v), want (0, nil)", n, err)
+	}
+}

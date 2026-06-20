@@ -1,6 +1,7 @@
 package scriptmeta_test
 
 import (
+	"reflect"
 	"testing"
 
 	"argus/internal/scriptmeta"
@@ -10,7 +11,8 @@ func TestParseExtractsFields(t *testing.T) {
 	body := "// @argus-meta\n" +
 		"// title: Block dangerous commands\n" +
 		"// author: argus\n" +
-		"// event: PreToolUse\n" +
+		"// events: PreToolUse, PostToolUse\n" +
+		"// agents: claudecode, codex\n" +
 		"// runtime: node\n" +
 		"// matcher: Bash\n" +
 		"// purpose: deny rm -rf\n" +
@@ -23,8 +25,11 @@ func TestParseExtractsFields(t *testing.T) {
 	if m.Author != "argus" {
 		t.Errorf("Author = %q", m.Author)
 	}
-	if m.Event != "PreToolUse" {
-		t.Errorf("Event = %q", m.Event)
+	if want := []string{"PreToolUse", "PostToolUse"}; !reflect.DeepEqual(m.Events, want) {
+		t.Errorf("Events = %v, want %v", m.Events, want)
+	}
+	if want := []string{"claudecode", "codex"}; !reflect.DeepEqual(m.Agents, want) {
+		t.Errorf("Agents = %v, want %v", m.Agents, want)
 	}
 	if m.Runtime != "node" {
 		t.Errorf("Runtime = %q", m.Runtime)
@@ -34,6 +39,15 @@ func TestParseExtractsFields(t *testing.T) {
 	}
 	if m.Purpose != "deny rm -rf" {
 		t.Errorf("Purpose = %q", m.Purpose)
+	}
+}
+
+// Legacy singular `event:` still folds into Events for older scripts.
+func TestParseLegacyEventField(t *testing.T) {
+	body := "// @argus-meta\n// title: x\n// event: PreToolUse\n// @end\n\nbody\n"
+	m := scriptmeta.Parse(body)
+	if want := []string{"PreToolUse"}; !reflect.DeepEqual(m.Events, want) {
+		t.Errorf("Events = %v, want %v", m.Events, want)
 	}
 }
 
@@ -61,7 +75,7 @@ func TestEnsureAuthor(t *testing.T) {
 
 func TestParseMissingHeaderReturnsZero(t *testing.T) {
 	m := scriptmeta.Parse("#!/usr/bin/env node\nconsole.log('no meta')\n")
-	if (m != scriptmeta.Meta{}) {
+	if !reflect.DeepEqual(m, scriptmeta.Meta{}) {
 		t.Errorf("expected zero Meta, got %+v", m)
 	}
 }

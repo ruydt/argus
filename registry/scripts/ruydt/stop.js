@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Stop notification
-// event: Stop
+// events: Stop
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/stop.js
 // purpose: Local notification when the agent finishes.
 // os: macos

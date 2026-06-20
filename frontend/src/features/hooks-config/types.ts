@@ -31,6 +31,7 @@ export type HooksConfigState = {
   isDirty: boolean
   setDraftJSON: (json: string) => void
   setConfig: (config: HooksConfig) => void
+  commitSaved: (config: HooksConfig) => void
   discardChanges: () => void
   save: () => Promise<void>
   reload: () => void

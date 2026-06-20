@@ -111,4 +111,13 @@ describe('SimulatorTab script options', () => {
     })
     expect(screen.getByText('notify.sh')).toBeInTheDocument()
   })
+
+  it('renders for a custom agent with no template set without crashing', async () => {
+    stubDiagnosticsFetch()
+    // 'cursor' has no entry in HOOK_TEMPLATES — must fall back instead of throwing.
+    expect(() => renderTab('cursor')).not.toThrow()
+    expect(
+      await screen.findByRole('combobox', { name: /pick a preset script/i })
+    ).toBeInTheDocument()
+  })
 })

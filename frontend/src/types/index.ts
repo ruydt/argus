@@ -3,6 +3,7 @@ export type {
   CtxLine,
   EventRecord,
   SessionGroup,
+  SessionSummary,
   LayoutOutletContext,
   EventsResponse,
 } from './events'

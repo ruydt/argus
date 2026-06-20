@@ -752,7 +752,6 @@ func (d *DB) UpsertSession(sessionID, agent, model, source, cwd, transcriptPath,
 	return err
 }
 
-
 func (d *DB) MarkStaleSessions(cutoff time.Time) (int64, error) {
 	res, err := d.db.Exec(`
 		UPDATE sessions
@@ -900,6 +899,45 @@ func (d *DB) PruneEvents(ctx context.Context, before string, maxEvents int) (int
 		total += n
 	}
 	return total, nil
+}
+
+// DeleteSessions permanently removes the given sessions and all of their
+// events. Drops the matching hook_events rows and sessions rows in a single
+// transaction. Returns the number of hook_events rows deleted. A no-op
+// returning 0 when ids is empty.
+func (d *DB) DeleteSessions(ctx context.Context, ids []string) (int64, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]any, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	in := strings.Join(placeholders, ",")
+
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx, `DELETE FROM hook_events WHERE session_id IN (`+in+`)`, args...)
+	if err != nil {
+		return 0, err
+	}
+	deleted, _ := res.RowsAffected()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE session_id IN (`+in+`)`, args...); err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return deleted, nil
 }
 
 // gzipPayload compresses a raw hook payload for storage. raw_payload is a

@@ -18,7 +18,7 @@ export function PageShell({ children, className }: PageShellProps) {
     <div className="flex-1 overflow-y-auto bg-background text-foreground">
       <div
         className={cn(
-          'mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6',
+          'mx-auto flex max-w-[1200px] flex-col gap-6 px-4 pb-8 pt-10 sm:px-5 sm:pt-12 lg:px-6',
           className
         )}
       >
@@ -47,7 +47,7 @@ export function PageHeader({ title, subtitle, actions, className }: PageHeaderPr
       )}
     >
       <div className="flex flex-col gap-0.5">
-        <h1 className="text-[22px] font-semibold text-foreground">{title}</h1>
+        <h1 className="text-[28px] font-semibold tracking-tight text-foreground">{title}</h1>
         {subtitle ? <div>{subtitle}</div> : null}
       </div>
       {actions ? (

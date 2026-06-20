@@ -1,19 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { AgentLogo, agentMeta } from '@/agents/catalog'
+import { cn } from '@/lib/utils'
 
 import {
   type ArgusMeta,
-  HOOK_EVENTS,
   injectMeta,
   OS_OPTIONS,
   parseArgusMeta,
@@ -28,15 +22,40 @@ type UploadShareFormProps = {
   onCancel: () => void
 }
 
+// AgentOption is the subset of GET /api/agents the form needs: an id (for the
+// header + logo) and the agent's own hook-event list (drives the event picker).
+type AgentOption = { id: string; label: string; events: string[] }
+
+// Expand the legacy aggregate os tokens (both/posix) so an edited script loads
+// with concrete platform chips selected instead of an unrecognised value.
+const OS_EXPAND: Record<string, string[]> = {
+  both: ['linux', 'macos', 'windows'],
+  posix: ['linux', 'macos'],
+}
+
+function normalizeOs(os?: string): string {
+  const seen = new Set<string>()
+  for (const tok of (os ?? '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)) {
+    for (const p of OS_EXPAND[tok] ?? [tok]) seen.add(p)
+  }
+  return OS_OPTIONS.map((o) => o.value)
+    .filter((p) => seen.has(p))
+    .join(', ')
+}
+
 function initialMeta(f: UploadFile): ArgusMeta {
   const parsed = parseArgusMeta(f.body)
   return {
     title: parsed.title ?? '',
-    event: parsed.event ?? '',
+    events: parsed.events ?? [],
+    agents: parsed.agents ?? [],
     command: parsed.command ?? `${runtimeFromExt(f.name)} ${f.name}`,
     matcher: parsed.matcher ?? '',
     purpose: parsed.purpose ?? '',
-    os: parsed.os ?? 'both',
+    os: normalizeOs(parsed.os),
   }
 }
 
@@ -50,22 +69,108 @@ function extractMetaBlock(body: string): string | null {
   return body.slice(si, ei + META_END.length)
 }
 
+// useAgentOptions loads the agent registry once so the form can offer agents to
+// target and, per selected agent, the events it supports.
+function useAgentOptions(): AgentOption[] {
+  const [agents, setAgents] = useState<AgentOption[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/agents')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: { id: string; display_name?: string; events?: string[] }[]) => {
+        if (cancelled || !Array.isArray(data)) return
+        setAgents(
+          data.map((a) => ({
+            id: a.id,
+            label: a.display_name || agentMeta(a.id).label,
+            events: a.events ?? [],
+          }))
+        )
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return agents
+}
+
 export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormProps) {
   const [step, setStep] = useState(0)
   const [meta, setMeta] = useState<ArgusMeta[]>(() => files.map(initialMeta))
   const [description, setDescription] = useState('')
+  const agentOptions = useAgentOptions()
 
   const isDescriptionStep = step >= files.length
   const current = meta[step]
 
-  function setField(field: keyof ArgusMeta, value: string) {
+  function setField(field: 'title' | 'command' | 'matcher' | 'purpose', value: string) {
     setMeta((prev) => prev.map((m, i) => (i === step ? { ...m, [field]: value } : m)))
   }
 
-  const requiredFilled = !!current && !!current.title && !!current.event && !!current.command
+  // toggleList flips one value in a list field (agents/events), keeping order.
+  function toggleList(field: 'agents' | 'events', value: string) {
+    setMeta((prev) =>
+      prev.map((m, i) => {
+        if (i !== step) return m
+        const list = m[field]
+        const next = list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
+        return { ...m, [field]: next }
+      })
+    )
+  }
+
+  // os is a comma-separated platform list; toggleOS flips one platform, keeping
+  // the canonical Linux → macOS → Windows order.
+  function toggleOS(value: string) {
+    setMeta((prev) =>
+      prev.map((m, i) => {
+        if (i !== step) return m
+        const current = (m.os ?? '')
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)
+        const next = current.includes(value)
+          ? current.filter((v) => v !== value)
+          : [...current, value]
+        const ordered = OS_OPTIONS.map((o) => o.value).filter((p) => next.includes(p))
+        return { ...m, os: ordered.join(', ') }
+      })
+    )
+  }
+
+  // Events offered = union of every selected agent's events (deduped, ordered by
+  // the agent registry). Empty until at least one agent is picked.
+  const eventOptions = useMemo(() => {
+    if (!current) return []
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const a of agentOptions) {
+      if (!current.agents.includes(a.id)) continue
+      for (const ev of a.events) {
+        if (!seen.has(ev)) {
+          seen.add(ev)
+          out.push(ev)
+        }
+      }
+    }
+    return out
+  }, [agentOptions, current])
+
+  const requiredFilled =
+    !!current &&
+    !!current.title &&
+    current.agents.length > 0 &&
+    current.events.length > 0 &&
+    !!current.command
 
   function share() {
-    const out = files.map((f, i) => ({ name: f.name, body: injectMeta(f.body, meta[i]) }))
+    // Drop any events that no longer belong to the selected agents before writing.
+    const cleaned = meta.map((m) => ({
+      ...m,
+      events: m.events.filter((e) => unionEventsFor(agentOptions, m.agents).includes(e)),
+    }))
+    const out = files.map((f, i) => ({ name: f.name, body: injectMeta(f.body, cleaned[i]) }))
 
     const headerSections = out
       .map((f) => {
@@ -122,21 +227,65 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
                 aria-label="Title"
               />
             </label>
-            <label className="block space-y-1">
-              <span className="text-[0.72rem] text-muted-foreground">Event *</span>
-              <Select value={current.event} onValueChange={(v) => setField('event', v)}>
-                <SelectTrigger aria-label="Hook event">
-                  <SelectValue placeholder="Select hook event" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HOOK_EVENTS.map((ev) => (
-                    <SelectItem key={ev} value={ev}>
-                      {ev}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
+
+            <div className="block space-y-1.5">
+              <span className="text-[0.72rem] text-muted-foreground">Agents *</span>
+              <div className="flex flex-wrap gap-1.5">
+                {agentOptions.map((a) => {
+                  const active = current.agents.includes(a.id)
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleList('agents', a.id)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.74rem] transition-colors',
+                        active
+                          ? 'border-foreground/30 bg-foreground/[0.06] text-foreground'
+                          : 'border-foreground/10 text-muted-foreground hover:bg-foreground/[0.03]'
+                      )}
+                    >
+                      <AgentLogo id={a.id} size={14} />
+                      {a.label}
+                    </button>
+                  )
+                })}
+                {agentOptions.length === 0 ? (
+                  <span className="text-[0.72rem] text-muted-foreground">Loading agents…</span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="block space-y-1.5">
+              <span className="text-[0.72rem] text-muted-foreground">Events *</span>
+              {current.agents.length === 0 ? (
+                <p className="text-[0.72rem] text-muted-foreground">Select an agent first.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {eventOptions.map((ev) => {
+                    const active = current.events.includes(ev)
+                    return (
+                      <button
+                        key={ev}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggleList('events', ev)}
+                        className={cn(
+                          'rounded-full border px-2.5 py-1 text-[0.74rem] transition-colors',
+                          active
+                            ? 'border-foreground/30 bg-foreground/[0.06] text-foreground'
+                            : 'border-foreground/10 text-muted-foreground hover:bg-foreground/[0.03]'
+                        )}
+                      >
+                        {ev}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             <label className="block space-y-1">
               <span className="text-[0.72rem] text-muted-foreground">Command *</span>
               <Input
@@ -155,21 +304,30 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
                 aria-label="Matcher"
               />
             </label>
-            <label className="block space-y-1">
+            <div className="block space-y-1.5">
               <span className="text-[0.72rem] text-muted-foreground">OS</span>
-              <Select value={current.os ?? 'both'} onValueChange={(v) => setField('os', v)}>
-                <SelectTrigger aria-label="Operating system support">
-                  <SelectValue placeholder="Select OS support" />
-                </SelectTrigger>
-                <SelectContent>
-                  {OS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
+              <div className="flex flex-wrap gap-1.5">
+                {OS_OPTIONS.map((o) => {
+                  const active = (current.os ?? '').split(',').some((t) => t.trim() === o.value)
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleOS(o.value)}
+                      className={cn(
+                        'rounded-full border px-2.5 py-1 text-[0.74rem] transition-colors',
+                        active
+                          ? 'border-foreground/30 bg-foreground/[0.06] text-foreground'
+                          : 'border-foreground/10 text-muted-foreground hover:bg-foreground/[0.03]'
+                      )}
+                    >
                       {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <label className="block space-y-1">
               <span className="text-[0.72rem] text-muted-foreground">Purpose (optional)</span>
               <Input
@@ -196,4 +354,14 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
       </DialogContent>
     </Dialog>
   )
+}
+
+// unionEventsFor returns every event supported by any of the given agent ids.
+function unionEventsFor(agentOptions: AgentOption[], agentIds: string[]): string[] {
+  const seen = new Set<string>()
+  for (const a of agentOptions) {
+    if (!agentIds.includes(a.id)) continue
+    for (const ev of a.events) seen.add(ev)
+  }
+  return [...seen]
 }

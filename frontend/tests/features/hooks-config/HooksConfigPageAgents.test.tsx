@@ -151,4 +151,49 @@ describe('HooksConfigPage multi-agent', () => {
 
     await waitFor(() => expect(screen.getByRole('tab', { name: /Cursor/ })).toBeTruthy())
   })
+
+  it('allows removing a default agent (Claude Code)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetch({
+        agents: [
+          status({
+            id: 'claudecode',
+            display_name: 'Claude Code',
+            editing_supported: true,
+            installed: true,
+          }),
+          status({ id: 'codex', display_name: 'Codex', editing_supported: true, installed: true }),
+        ],
+        enabled: ['claudecode', 'codex'],
+      })
+    )
+    renderPage()
+    // The two defaults are no longer pinned — the active one shows a Remove button.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Remove Claude Code/ })).toBeTruthy()
+    )
+  })
+
+  it('shows an empty state when every agent is removed', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetch({
+        agents: [
+          status({
+            id: 'claudecode',
+            display_name: 'Claude Code',
+            editing_supported: true,
+            installed: true,
+          }),
+        ],
+        enabled: [],
+      })
+    )
+    renderPage()
+    await waitFor(() => expect(screen.getByText('No agents added')).toBeTruthy())
+    // No remove button and no agent tabs when nothing is enabled.
+    expect(screen.queryByRole('button', { name: /Remove/ })).toBeNull()
+    expect(screen.queryByRole('tab')).toBeNull()
+  })
 })

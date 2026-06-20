@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Prompt-injection scanner
-// event: PostToolUse
+// events: PostToolUse
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/scan-injection.js
 // matcher: Read|WebFetch|WebSearch|Grep|Bash|Task|mcp__.*
 // purpose: Warn-only prompt-injection scanner on tool output. Injects a caution into context instead of blocking.
-// os: both
+// os: linux, macos, windows
 // @end
 
 // PostToolUse hook (matcher: Read|WebFetch|WebSearch|Grep|Bash or mcp__.*): scans tool

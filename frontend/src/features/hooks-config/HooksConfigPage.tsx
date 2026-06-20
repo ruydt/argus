@@ -74,12 +74,13 @@ type SimulatorCacheProps = {
 
 type AgentTabContentProps = {
   agent: AgentKey
+  status?: AgentStatus
   state: HooksConfigState
   viewMode: ViewMode
   sim: SimulatorCacheProps
 }
 
-function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) {
+function AgentTabContent({ agent, status, state, viewMode, sim }: AgentTabContentProps) {
   const { config, loading, error, saveError, setConfig, reload } = state
 
   const jsonIsValid = (() => {
@@ -121,6 +122,9 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
           <StructuredEditor
             config={config}
             agent={agent}
+            events={status?.events}
+            supportsMatcher={status?.supports_matcher ?? true}
+            timeoutUnit={status?.timeout_unit ?? 'seconds'}
             isDirty={state.isDirty}
             onDiscardChanges={state.discardChanges}
             onChange={setConfig}
@@ -136,6 +140,7 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
           <SimulatorTab
             agent={agent}
             config={config}
+            events={status?.events}
             initialScript={sim.initialScript}
             eventType={sim.eventType}
             onEventTypeChange={sim.onEventTypeChange}
@@ -199,8 +204,9 @@ export function HooksConfigPage() {
   )
   const [applying, setApplying] = useState(false)
 
-  // Only the active agent's config is loaded, and only when it's editable.
-  const state = useHooksConfig(activeAgent, activeEditable)
+  // Only the active agent's config is loaded, and only when it's editable and
+  // there's actually an agent tab (none ⇒ empty state, no fetch).
+  const state = useHooksConfig(activeAgent, activeEditable && enabled.length > 0)
 
   useEffect(() => {
     // Apply deep-link params whenever they change. Re-applies (not one-shot) so
@@ -267,7 +273,11 @@ export function HooksConfigPage() {
       if (!res.ok) {
         throw new Error(await res.text().catch(() => `HTTP ${res.status}`))
       }
-      state.reload()
+      // Sync the saved baseline in place. reload() would flip loading→true and
+      // remount the simulator tab (killing the Apply success tick); commitSaved
+      // adopts the persisted config without a refetch.
+      const saved = (await res.json().catch(() => updatedConfig)) as HooksConfig
+      state.commitSaved(saved)
     } catch (err) {
       state.setConfig(currentConfig)
       throw err
@@ -330,7 +340,7 @@ export function HooksConfigPage() {
         .map((a) => ({
           value: a.id,
           label: agentMeta(a.id).label,
-          icon: <AgentLogo id={a.id} size={16} />,
+          icon: <AgentLogo id={a.id} size={20} />,
           disabled: !a.installed,
           hint: a.installed ? undefined : 'not installed',
         })),
@@ -344,8 +354,6 @@ export function HooksConfigPage() {
       : activeAgent === 'codex'
         ? 'https://developers.openai.com/codex/hooks'
         : '')
-
-  const removable = !CORE_AGENTS.includes(activeAgent)
 
   return (
     <PageShell>
@@ -364,31 +372,6 @@ export function HooksConfigPage() {
             </a>
           ) : undefined
         }
-        actions={
-          activeEditable ? (
-            viewMode === 'simulator' ? (
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('structured')}
-                className="group flex items-center gap-1.5 text-[13px] font-semibold text-foreground transition-colors"
-                aria-label="Back to Structured"
-              >
-                <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
-                Go back
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleViewModeChange('simulator')}
-                className="group flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Open Simulator"
-              >
-                Simulator
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-              </button>
-            )
-          ) : undefined
-        }
       />
 
       <Tabs
@@ -404,10 +387,23 @@ export function HooksConfigPage() {
             data-tour="hooks-config-agent-tabs"
           >
             {enabled.map((id) => (
-              <TabsTrigger key={id} value={id} className="w-full justify-start gap-2">
-                <AgentLogo id={id} size={18} />
-                {agentMeta(id).label}
-              </TabsTrigger>
+              <div key={id} className="group/agent relative w-full">
+                <TabsTrigger value={id} className="w-full justify-start gap-2 pr-7">
+                  <AgentLogo id={id} size={22} />
+                  {agentMeta(id).label}
+                </TabsTrigger>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void handleRemoveAgent(id)
+                  }}
+                  className="absolute right-1 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity pointer-events-none hover:text-destructive group-hover/agent:pointer-events-auto group-hover/agent:opacity-100"
+                  aria-label={`Remove ${agentMeta(id).label}`}
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
             ))}
           </TabsList>
 
@@ -431,34 +427,63 @@ export function HooksConfigPage() {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          {removable && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => void handleRemoveAgent(activeAgent)}
-                className="flex items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-destructive"
-                aria-label={`Remove ${agentMeta(activeAgent).label}`}
-              >
-                <X className="size-3.5" />
-                Remove agent
-              </button>
-            </div>
-          )}
+          {enabled.length === 0 ? (
+            <Card className="flex flex-col items-center gap-2 p-8 text-center">
+              <p className="text-sm font-medium text-foreground">No agents added</p>
+              <p className="max-w-sm text-[13px] text-muted-foreground">
+                Use “Add agent” to pick an installed coding agent and manage its hooks.
+              </p>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <AgentLogo id={activeAgent} size={28} />
+                  <span className="truncate text-[15px] font-semibold text-foreground">
+                    {agentMeta(activeAgent).label}
+                  </span>
+                </div>
+                {activeEditable &&
+                  (viewMode === 'simulator' ? (
+                    <button
+                      type="button"
+                      onClick={() => handleViewModeChange('structured')}
+                      className="group flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label="Back to Structured"
+                    >
+                      <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
+                      Go back
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleViewModeChange('simulator')}
+                      className="group flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label="Open Simulator"
+                    >
+                      Simulator
+                      <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </button>
+                  ))}
+              </div>
 
-          <TabsContent value={activeAgent}>
-            {activeEditable ? (
-              <AgentTabContent
-                agent={activeAgent}
-                state={state}
-                viewMode={viewMode}
-                sim={simProps}
-              />
-            ) : activeStatus ? (
-              <GuidedSetupPanel agent={activeStatus} />
-            ) : (
-              <GuidedSetupPanel agent={fallbackStatus(activeAgent)} />
-            )}
-          </TabsContent>
+              <TabsContent value={activeAgent}>
+                {activeEditable ? (
+                  <AgentTabContent
+                    agent={activeAgent}
+                    status={activeStatus}
+                    state={state}
+                    viewMode={viewMode}
+                    sim={simProps}
+                  />
+                ) : activeStatus ? (
+                  <GuidedSetupPanel agent={activeStatus} />
+                ) : (
+                  <GuidedSetupPanel agent={fallbackStatus(activeAgent)} />
+                )}
+              </TabsContent>
+            </>
+          )}
         </div>
       </Tabs>
     </PageShell>

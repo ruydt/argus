@@ -163,6 +163,17 @@ func (s *EventService) PruneEvents(ctx context.Context, before string, maxEvents
 	return n, err
 }
 
+// DeleteSessions permanently removes the given sessions and their events.
+// Returns the number of events deleted. Caches are dropped when anything
+// changed so diagnostics/storage stats reflect the smaller table.
+func (s *EventService) DeleteSessions(ctx context.Context, ids []string) (int64, error) {
+	n, err := s.repo.DeleteSessions(ctx, ids)
+	if err == nil && n > 0 {
+		s.invalidateCaches()
+	}
+	return n, err
+}
+
 func (s *EventService) SessionModel(sessionID string) (string, error) {
 	return s.repo.SessionModel(sessionID)
 }

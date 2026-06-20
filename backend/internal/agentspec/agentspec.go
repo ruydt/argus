@@ -23,12 +23,26 @@ type ConfigKind string
 const (
 	// KindJSONHooksBlock: hooks live under a top-level "hooks" key inside a
 	// larger JSON settings file; argus merge-preserves all other keys on write.
+	// Canonical matcher-group shape (Claude Code, Continue, Augment).
 	KindJSONHooksBlock ConfigKind = "json-hooks-block"
-	// KindJSONHooksFile: the whole file is the {"hooks": {...}} payload.
+	// KindJSONCHooksBlock: same as the block kind but the settings file may carry
+	// // and /* */ comments (Qwen Code). Read tolerates comments;
+	// writes re-emit strict JSON.
+	KindJSONCHooksBlock ConfigKind = "jsonc-hooks-block"
+	// KindJSONHooksFile: the whole file is the {"hooks": {...}} payload (Codex,
+	// Goose per-plugin hooks.json).
 	KindJSONHooksFile ConfigKind = "json-hooks-file"
-	// The kinds below are not editable in-app yet — argus shows guided setup.
-	KindTOMLHooks    ConfigKind = "toml-hooks"
-	KindCopilotDir   ConfigKind = "copilot-dir"
+	// KindCursorHooks: {"version":1,"hooks":{event:[ {command,matcher?,...} ]}}.
+	KindCursorHooks ConfigKind = "cursor-hooks"
+	// KindCopilotHooks: {"version":1,"hooks":{event:[ {type,command,timeoutSec?} ]}}.
+	KindCopilotHooks ConfigKind = "copilot-hooks"
+	// KindWindsurfHooks: {"hooks":{event:[ {command,powershell?,...} ]}} — no
+	// matcher, no per-hook timeout.
+	KindWindsurfHooks ConfigKind = "windsurf-hooks"
+	// KindCrushHooks: flat hooks block inside crush.json {matcher?,command,...}.
+	KindCrushHooks ConfigKind = "crush-hooks"
+	// The kinds below are not editable in-app — argus shows guided setup.
+	// Hooks are executable scripts or plugin code, with no JSON to edit.
 	KindClineScripts ConfigKind = "cline-scripts"
 	KindPlugin       ConfigKind = "plugin"
 )
@@ -41,7 +55,9 @@ type Spec struct {
 	InstallPaths     []string // any existing path ⇒ the agent is installed
 	HooksConfigPath  string   // file (block/file kinds) or directory argus reads/writes
 	ConfigKind       ConfigKind
-	EditingSupported bool // true ⇒ in-app editor; false ⇒ guided setup only
+	EditingSupported bool   // true ⇒ in-app editor; false ⇒ guided setup only
+	TimeoutUnit      string // "seconds" | "milliseconds" | "" (agent has no per-hook timeout)
+	SupportsMatcher  bool   // false ⇒ agent has no matcher concept (e.g. Windsurf)
 	Events           []string
 }
 
@@ -52,6 +68,8 @@ type entry struct {
 	hooksPath      []string
 	kind           ConfigKind
 	editable       bool
+	timeoutUnit    string
+	matcherless    bool // true ⇒ agent has no matcher field
 	events         []string
 }
 
@@ -68,6 +86,8 @@ func (e entry) resolve(home string) Spec {
 		HooksConfigPath:  filepath.Join(append([]string{home}, e.hooksPath...)...),
 		ConfigKind:       e.kind,
 		EditingSupported: e.editable,
+		TimeoutUnit:      e.timeoutUnit,
+		SupportsMatcher:  e.editable && !e.matcherless,
 		Events:           e.events,
 	}
 }
@@ -104,17 +124,22 @@ func IsKnown(id string) bool {
 
 // registry is the canonical list. IDs for the two original agents are kept as
 // "claudecode" and "codex" to stay compatible with the existing hooks-config
-// API and frontend agent registry. Only matcher-group-JSON agents are marked
-// editable in v1 (Claude Code, Codex) — corrupting a user's real config is
-// unacceptable, so other formats are verified before their editors light up.
-// Continue and Qwen Code use a Claude-compatible schema and are the next
-// candidates to flip editable once their exact shape is verified.
+// API and frontend agent registry. Every JSON-config agent is editable: its
+// ConfigKind selects an adapter in handler/hooks_config_adapters.go that maps
+// the agent's real on-disk shape to/from argus's canonical matcher-group model
+// while preserving everything argus does not model. Every agent currently in
+// the registry is editable in-app; plugin-code and script-directory agents
+// (which only support guided setup) are omitted for now.
+//
+// timeoutUnit records whether the agent's per-hook timeout field is seconds or
+// milliseconds (argus stores the raw number; the UI labels the unit). matcherless
+// marks agents (Windsurf) with no matcher concept at all.
 var registry = []entry{
 	{
 		id: "claudecode", name: "Claude Code", docs: "https://code.claude.com/docs/en/hooks",
 		install:   [][]string{{".claude", "settings.json"}, {".claude"}, {".claude.json"}},
 		hooksPath: []string{".claude", "settings.json"},
-		kind:      KindJSONHooksBlock, editable: true,
+		kind:      KindJSONHooksBlock, editable: true, timeoutUnit: "seconds",
 		events: []string{
 			"PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification",
 			"Stop", "SubagentStop", "SubagentStart", "SessionStart", "SessionEnd",
@@ -125,7 +150,7 @@ var registry = []entry{
 		id: "codex", name: "Codex", docs: "https://developers.openai.com/codex/hooks",
 		install:   [][]string{{".codex", "config.toml"}, {".codex"}, {".codex", "hooks.json"}},
 		hooksPath: []string{".codex", "hooks.json"},
-		kind:      KindJSONHooksFile, editable: true,
+		kind:      KindJSONHooksFile, editable: true, timeoutUnit: "seconds",
 		events: []string{
 			"SessionStart", "SubagentStart", "PreToolUse", "PermissionRequest",
 			"PostToolUse", "PreCompact", "PostCompact", "UserPromptSubmit",
@@ -136,69 +161,75 @@ var registry = []entry{
 		id: "cursor", name: "Cursor", docs: "https://cursor.com/docs/hooks",
 		install:   [][]string{{".cursor", "hooks.json"}, {".cursor"}},
 		hooksPath: []string{".cursor", "hooks.json"},
-		kind:      KindJSONHooksFile, editable: false,
+		kind:      KindCursorHooks, editable: true, timeoutUnit: "seconds",
 		events: []string{
-			"sessionStart", "sessionEnd", "beforeSubmitPrompt", "beforeShellExecution",
-			"afterShellExecution", "beforeMCPExecution", "afterMCPExecution",
-			"beforeReadFile", "afterFileEdit", "preToolUse", "postToolUse",
+			"beforeSubmitPrompt", "beforeShellExecution", "afterShellExecution",
+			"beforeMCPExecution", "afterMCPExecution", "beforeReadFile", "afterFileEdit",
+			"stop", "sessionStart", "sessionEnd", "preToolUse", "postToolUse",
+			"postToolUseFailure", "subagentStart", "subagentStop", "preCompact",
 		},
 	},
 	{
-		id: "gemini", name: "Gemini CLI", docs: "https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/reference.md",
-		install:   [][]string{{".gemini", "settings.json"}, {".gemini"}},
-		hooksPath: []string{".gemini", "settings.json"},
-		kind:      KindJSONHooksBlock, editable: false,
+		// Antigravity CLI is Google's official successor to Gemini CLI. Hooks live
+		// in a dedicated JSON file (global ~/.gemini/config/hooks.json; workspace
+		// .agents/hooks.json takes precedence) in canonical matcher-group shape
+		// with per-hook timeouts in seconds. argus edits the global file.
+		id: "antigravity", name: "Antigravity CLI", docs: "https://antigravity.google/docs/cli-features",
+		install:   [][]string{{".gemini", "config", "hooks.json"}, {".gemini", "config"}, {".gemini"}},
+		hooksPath: []string{".gemini", "config", "hooks.json"},
+		kind:      KindJSONHooksFile, editable: true, timeoutUnit: "seconds",
 		events: []string{
-			"BeforeTool", "AfterTool", "BeforeModel", "AfterModel", "BeforeAgent",
-			"AfterAgent", "BeforeToolSelection", "SessionStart", "SessionEnd",
-			"Notification", "PreCompress",
+			"PreToolUse", "PostToolUse", "PreInvocation", "PostInvocation",
+			"SessionStart", "SessionEnd", "Stop", "Notification",
 		},
 	},
 	{
 		id: "copilot", name: "GitHub Copilot CLI", docs: "https://docs.github.com/en/copilot/reference/hooks-reference",
 		install:   [][]string{{".copilot", "settings.json"}, {".copilot"}, {".copilot", "hooks"}},
-		hooksPath: []string{".copilot", "hooks"},
-		kind:      KindCopilotDir, editable: false,
+		hooksPath: []string{".copilot", "hooks", "argus.json"},
+		kind:      KindCopilotHooks, editable: true, timeoutUnit: "seconds",
 		events: []string{
 			"sessionStart", "sessionEnd", "userPromptSubmitted", "preToolUse",
-			"postToolUse", "postToolUseFailure", "errorOccurred", "agentStop",
-			"subagentStart", "subagentStop", "preCompact", "permissionRequest", "notification",
+			"postToolUse", "postToolUseFailure", "permissionRequest", "preCompact",
+			"agentStop", "subagentStart", "subagentStop", "errorOccurred", "notification",
 		},
 	},
 	{
 		id: "qwen", name: "Qwen Code", docs: "https://github.com/QwenLM/qwen-code/blob/main/docs/users/features/hooks.md",
 		install:   [][]string{{".qwen", "settings.json"}, {".qwen"}},
 		hooksPath: []string{".qwen", "settings.json"},
-		kind:      KindJSONHooksBlock, editable: false,
+		kind:      KindJSONCHooksBlock, editable: true, timeoutUnit: "milliseconds",
 		events: []string{
-			"PreToolUse", "PostToolUse", "UserPromptSubmit", "SessionStart",
-			"SessionEnd", "Stop", "SubagentStart", "SubagentStop", "PreCompact",
-			"PostCompact", "Notification", "PermissionRequest",
+			"PreToolUse", "PostToolUse", "PostToolUseFailure", "UserPromptSubmit",
+			"SessionStart", "SessionEnd", "Stop", "StopFailure", "SubagentStart",
+			"SubagentStop", "PreCompact", "PostCompact", "Notification",
+			"PermissionRequest", "TodoCreated", "TodoCompleted",
 		},
 	},
 	{
 		id: "continue", name: "Continue", docs: "https://github.com/continuedev/continue/blob/main/extensions/cli/src/hooks/types.ts",
 		install:   [][]string{{".continue", "settings.json"}, {".continue"}},
 		hooksPath: []string{".continue", "settings.json"},
-		kind:      KindJSONHooksBlock, editable: false,
+		kind:      KindJSONHooksBlock, editable: true, timeoutUnit: "seconds",
 		events: []string{
-			"PreToolUse", "PostToolUse", "UserPromptSubmit", "SessionStart",
-			"SessionEnd", "Stop", "SubagentStart", "SubagentStop", "PreCompact",
-			"Notification", "PermissionRequest",
+			"PreToolUse", "PostToolUse", "PostToolUseFailure", "PermissionRequest",
+			"UserPromptSubmit", "SessionStart", "SessionEnd", "Stop", "Notification",
+			"SubagentStart", "SubagentStop", "PreCompact", "ConfigChange",
+			"TeammateIdle", "TaskCompleted", "WorktreeCreate", "WorktreeRemove",
 		},
 	},
 	{
 		id: "augment", name: "Augment / Auggie", docs: "https://docs.augmentcode.com/cli/hooks",
 		install:   [][]string{{".augment", "settings.json"}, {".augment"}},
 		hooksPath: []string{".augment", "settings.json"},
-		kind:      KindJSONHooksBlock, editable: false,
+		kind:      KindJSONHooksBlock, editable: true, timeoutUnit: "milliseconds",
 		events:    []string{"PreToolUse", "PostToolUse", "Stop", "SessionStart", "SessionEnd", "Notification"},
 	},
 	{
 		id: "windsurf", name: "Windsurf (Cascade)", docs: "https://docs.devin.ai/desktop/cascade/hooks",
 		install:   [][]string{{".codeium", "windsurf", "hooks.json"}, {".codeium", "windsurf"}, {".codeium", "hooks.json"}},
 		hooksPath: []string{".codeium", "windsurf", "hooks.json"},
-		kind:      KindJSONHooksFile, editable: false,
+		kind:      KindWindsurfHooks, editable: true, matcherless: true,
 		events: []string{
 			"pre_read_code", "post_read_code", "pre_write_code", "post_write_code",
 			"pre_run_command", "post_run_command", "pre_mcp_tool_use", "post_mcp_tool_use",
@@ -209,56 +240,21 @@ var registry = []entry{
 		id: "crush", name: "Crush", docs: "https://github.com/charmbracelet/crush",
 		install:   [][]string{{".config", "crush", "crush.json"}, {".config", "crush"}},
 		hooksPath: []string{".config", "crush", "crush.json"},
-		kind:      KindJSONHooksFile, editable: false,
+		kind:      KindCrushHooks, editable: true, timeoutUnit: "seconds",
 		events:    []string{"PreToolUse"},
 	},
 	{
-		id: "cline", name: "Cline", docs: "https://github.com/cline/cline",
-		install:   [][]string{{"Documents", "Cline", "Hooks"}, {"Documents", "Cline"}},
-		hooksPath: []string{"Documents", "Cline", "Hooks"},
-		kind:      KindClineScripts, editable: false,
-		events: []string{
-			"PreToolUse", "PostToolUse", "UserPromptSubmit", "TaskStart",
-			"TaskResume", "TaskCancel", "TaskComplete", "PreCompact", "Notification",
-		},
-	},
-	{
-		id: "opencode", name: "OpenCode", docs: "https://opencode.ai/docs/plugins/",
-		install:   [][]string{{".config", "opencode", "opencode.json"}, {".config", "opencode"}, {".config", "opencode", "plugins"}},
-		hooksPath: []string{".config", "opencode", "plugins"},
-		kind:      KindPlugin, editable: false,
-		events: []string{
-			"tool.execute.before", "tool.execute.after", "chat.message",
-			"permission.ask", "session.created", "session.updated", "event",
-		},
-	},
-	{
-		id: "kilocode", name: "Kilo Code", docs: "https://kilo.ai/docs/automate/extending/plugins",
-		install:   [][]string{{".kilocode", "cli"}, {".config", "kilo", "kilo.jsonc"}, {".config", "kilo"}},
-		hooksPath: []string{".config", "kilo", "plugin"},
-		kind:      KindPlugin, editable: false,
-		events: []string{
-			"tool.execute.before", "tool.execute.after", "chat.message",
-			"permission.ask", "session.created", "session.updated", "event",
-		},
-	},
-	{
+		// Goose hooks live in a per-plugin directory; argus owns an "argus"
+		// plugin folder and edits ~/.agents/plugins/argus/hooks/hooks.json.
 		id: "goose", name: "Goose", docs: "https://goose-docs.ai/blog/2026/05/14/goose-hooks/",
 		install:   [][]string{{".config", "goose", "config.yaml"}, {".config", "goose"}, {".agents", "plugins"}},
-		hooksPath: []string{".agents", "plugins"},
-		kind:      KindPlugin, editable: false,
+		hooksPath: []string{".agents", "plugins", "argus", "hooks", "hooks.json"},
+		kind:      KindJSONHooksFile, editable: true, timeoutUnit: "seconds",
 		events: []string{
 			"SessionStart", "SessionEnd", "Stop", "UserPromptSubmit", "PreToolUse",
-			"PostToolUse", "BeforeReadFile", "AfterFileEdit", "BeforeShellExecution",
-			"AfterShellExecution",
+			"PostToolUse", "PostToolUseFailure", "BeforeReadFile", "AfterFileEdit",
+			"BeforeShellExecution", "AfterShellExecution",
 		},
-	},
-	{
-		id: "amp", name: "Amp", docs: "https://ampcode.com/manual/plugin-api",
-		install:   [][]string{{".config", "amp", "settings.json"}, {".config", "amp"}, {".config", "amp", "plugins"}},
-		hooksPath: []string{".config", "amp", "settings.json"},
-		kind:      KindPlugin, editable: false,
-		events:    []string{"session.start", "agent.start", "tool.call", "tool.result", "agent.end"},
 	},
 }
 
@@ -270,6 +266,8 @@ type Status struct {
 	ConfigKind       string   `json:"config_kind"`
 	HooksConfigPath  string   `json:"hooks_config_path"`
 	EditingSupported bool     `json:"editing_supported"`
+	TimeoutUnit      string   `json:"timeout_unit,omitempty"`
+	SupportsMatcher  bool     `json:"supports_matcher"`
 	Installed        bool     `json:"installed"`
 	HooksConfigured  bool     `json:"hooks_configured"`
 	Events           []string `json:"events,omitempty"`
@@ -292,6 +290,8 @@ func Detect(home string, stat func(string) (os.FileInfo, error)) []Status {
 			ConfigKind:       string(s.ConfigKind),
 			HooksConfigPath:  s.HooksConfigPath,
 			EditingSupported: s.EditingSupported,
+			TimeoutUnit:      s.TimeoutUnit,
+			SupportsMatcher:  s.SupportsMatcher,
 			Events:           s.Events,
 		}
 		for _, p := range s.InstallPaths {

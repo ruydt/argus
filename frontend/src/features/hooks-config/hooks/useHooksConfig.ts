@@ -88,6 +88,22 @@ export function useHooksConfig(agent: AgentKey, shouldLoad = true): HooksConfigS
     [normalizeConfig]
   )
 
+  // Commit a config as the new saved baseline WITHOUT a network refetch or the
+  // loading flip. Used after the simulator's Apply persists directly via PUT —
+  // reload() would flash the skeleton and remount the tab (losing the success
+  // tick), so we sync the baseline in place instead.
+  const commitSaved = useCallback(
+    (c: HooksConfig) => {
+      const normalized = normalizeConfig(c)
+      const json = configToJSON(normalized)
+      setConfigState(normalized)
+      setSavedConfig(normalized)
+      setDraftJSONState(json)
+      setSavedJSON(json)
+    },
+    [normalizeConfig]
+  )
+
   const setDraftJSON = useCallback(
     (json: string) => {
       setDraftJSONState(json)
@@ -145,6 +161,7 @@ export function useHooksConfig(agent: AgentKey, shouldLoad = true): HooksConfigS
     isDirty: draftJSON !== savedJSON,
     setDraftJSON,
     setConfig,
+    commitSaved,
     discardChanges,
     save,
     reload,

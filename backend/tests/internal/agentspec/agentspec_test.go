@@ -10,8 +10,8 @@ import (
 
 func TestAllResolvesAbsolutePaths(t *testing.T) {
 	specs := agentspec.All("/home/x")
-	if len(specs) < 15 {
-		t.Fatalf("len = %d, want >= 15", len(specs))
+	if len(specs) < 11 {
+		t.Fatalf("len = %d, want >= 11", len(specs))
 	}
 	for _, s := range specs {
 		if !filepath.IsAbs(s.HooksConfigPath) {
@@ -40,18 +40,41 @@ func TestByID(t *testing.T) {
 	}
 }
 
-func TestEditableSetIsConservative(t *testing.T) {
-	// Only matcher-group-JSON agents are editable in v1; everything else is
-	// guided-setup so argus never reshapes a config schema it has not verified.
+func TestEditableSet(t *testing.T) {
+	// Every agent in the registry is editable via its adapter. Plugin-code and
+	// script-directory (guided-only) agents are omitted for now.
 	editable := map[string]bool{}
 	for _, s := range agentspec.All("/home/x") {
 		editable[s.ID] = s.EditingSupported
 	}
-	if !editable["claudecode"] || !editable["codex"] {
-		t.Error("claudecode and codex must be editable")
+	for _, id := range []string{
+		"claudecode", "codex", "cursor", "antigravity", "copilot", "qwen",
+		"continue", "augment", "windsurf", "crush", "goose",
+	} {
+		if !editable[id] {
+			t.Errorf("agent %s must be editable", id)
+		}
 	}
-	if editable["cursor"] || editable["opencode"] || editable["cline"] {
-		t.Error("divergent/plugin agents must not be editable in v1")
+	for _, id := range []string{"cline", "opencode", "kilocode", "amp"} {
+		if _, present := editable[id]; present {
+			t.Errorf("guided-only agent %s must not be in the registry", id)
+		}
+	}
+}
+
+func TestEditableAgentsCarryTimeoutUnit(t *testing.T) {
+	// Editable agents with a per-hook timeout must declare its unit so the UI
+	// labels seconds vs milliseconds correctly. Windsurf has no timeout field.
+	for _, s := range agentspec.All("/home/x") {
+		if !s.EditingSupported || s.ID == "windsurf" {
+			continue
+		}
+		if s.TimeoutUnit != "seconds" && s.TimeoutUnit != "milliseconds" {
+			t.Errorf("agent %s: TimeoutUnit = %q, want seconds or milliseconds", s.ID, s.TimeoutUnit)
+		}
+	}
+	if w, _ := agentspec.ByID("/home/x", "windsurf"); w.SupportsMatcher {
+		t.Error("windsurf must report SupportsMatcher=false")
 	}
 }
 

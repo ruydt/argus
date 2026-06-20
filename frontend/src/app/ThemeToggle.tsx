@@ -23,8 +23,8 @@ export function ThemeToggle({
   const Icon = isDark ? Sun : Moon
 
   const buttonClassName = cn(
-    'h-9 gap-0 border border-transparent text-[0.8rem] font-normal text-muted-foreground transition-colors duration-200 hover:border-foreground/[0.08] hover:bg-foreground/[0.05] hover:text-foreground',
-    collapsed ? 'w-9 justify-center rounded-lg px-0' : 'w-full justify-start rounded-lg px-0'
+    'h-7 gap-0 border border-transparent text-[0.72rem] font-normal text-muted-foreground transition-colors duration-200 hover:border-foreground/[0.08] hover:bg-foreground/[0.05] hover:text-foreground',
+    collapsed ? 'w-full justify-center rounded-lg px-0' : 'w-full justify-start rounded-lg px-0'
   )
 
   if (showCollapsedTooltips) {
@@ -56,7 +56,7 @@ export function ThemeToggle({
       className={buttonClassName}
       aria-label={label}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center">
+      <span className="flex size-7 shrink-0 items-center justify-center">
         <Icon className="size-[15px] shrink-0" />
       </span>
       <span aria-hidden="true" className={desktopNavLabelClassName}>

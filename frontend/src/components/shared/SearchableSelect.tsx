@@ -25,6 +25,12 @@ type SearchableSelectProps = {
   className?: string
   /** Allow typing a custom value not in the options list */
   creatable?: boolean
+  /**
+   * Multi-select mode: `value` is a `|`-joined string (e.g. a regex matcher
+   * like `Bash|Read`). The empty-string option acts as "clear all"; every other
+   * option toggles membership and the popover stays open between picks.
+   */
+  multiple?: boolean
 }
 
 export function SearchableSelect({
@@ -37,17 +43,46 @@ export function SearchableSelect({
   emptyText = 'No results',
   className,
   creatable = false,
+  multiple = false,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
 
-  const selected = options.find((opt) => opt.value === value)
-  // Show the raw value when it's not in the options list (custom value)
-  const triggerLabel = selected ? selected.label : value || undefined
+  const tokens = multiple && value ? value.split('|').filter(Boolean) : []
 
-  const showCreate = creatable && query.trim() && !options.some((o) => o.value === query.trim())
+  const selected = options.find((opt) => opt.value === value)
+  // Trigger label: multi shows the joined tokens (the raw regex) or the
+  // match-all option label; single shows the matched option or the raw value.
+  const triggerLabel = multiple
+    ? tokens.length > 0
+      ? tokens.join(' | ')
+      : (options.find((o) => o.value === '')?.label ?? undefined)
+    : selected
+      ? selected.label
+      : value || undefined
+
+  const showCreate =
+    creatable &&
+    query.trim() &&
+    !options.some((o) => o.value === query.trim()) &&
+    !tokens.includes(query.trim())
+
+  function isChecked(optValue: string): boolean {
+    if (!multiple) return optValue === value
+    return optValue === '' ? tokens.length === 0 : tokens.includes(optValue)
+  }
 
   function handleSelect(v: string) {
+    if (multiple) {
+      if (v === '') {
+        onValueChange('') // "match all" clears every token
+      } else {
+        const next = tokens.includes(v) ? tokens.filter((t) => t !== v) : [...tokens, v]
+        onValueChange(next.join('|'))
+      }
+      setQuery('')
+      return // keep the popover open for more picks
+    }
     onValueChange(v)
     setOpen(false)
     setQuery('')
@@ -68,7 +103,7 @@ export function SearchableSelect({
             className
           )}
         >
-          <span className={cn('truncate', !triggerLabel && 'text-muted-foreground')}>
+          <span className={cn('min-w-0 truncate', !triggerLabel && 'text-muted-foreground')}>
             {triggerLabel ?? placeholder}
           </span>
           <ChevronDown className="size-4 shrink-0 opacity-50" />
@@ -90,7 +125,7 @@ export function SearchableSelect({
                   onSelect={() => handleSelect(opt.value)}
                 >
                   <Check
-                    className={cn('size-4', opt.value === value ? 'opacity-100' : 'opacity-0')}
+                    className={cn('size-4', isChecked(opt.value) ? 'opacity-100' : 'opacity-0')}
                   />
                   <span className="truncate">{opt.label}</span>
                 </CommandItem>

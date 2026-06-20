@@ -14,13 +14,13 @@ import (
 )
 
 type mockRepo struct {
-	mu         sync.Mutex
-	events     []domain.NormalizedEvent
-	models     map[string]string
-	addErr     error
-	upsertErr  error
-	upserts    int
-	lastEnded  string
+	mu        sync.Mutex
+	events    []domain.NormalizedEvent
+	models    map[string]string
+	addErr    error
+	upsertErr error
+	upserts   int
+	lastEnded string
 
 	diagnosticsStats domain.DiagnosticsStorageStats
 	agentStats       []domain.DiagnosticsAgentStats
@@ -105,6 +105,7 @@ func (m *mockRepo) Compact(_ context.Context) (domain.CompactResult, error) {
 }
 
 func (m *mockRepo) PruneEvents(_ context.Context, _ string, _ int) (int64, error) { return 0, nil }
+func (m *mockRepo) DeleteSessions(_ context.Context, _ []string) (int64, error)   { return 0, nil }
 
 func (m *mockRepo) Ready() bool { return true }
 

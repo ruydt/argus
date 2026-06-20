@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Format & lint on edit
-// event: PostToolUse
+// events: PostToolUse
+// agents: claudecode, codex
 // command: node ~/.argus/hooks/format-lint.js
 // matcher: Edit|Write|MultiEdit
 // purpose: Auto-format the edited file (prettier/ruff/gofmt, single-file) and feed lint errors back so the agent fixes them.
-// os: posix
+// os: linux, macos
 // @end
 // OS: macOS / Linux (POSIX). Uses `command -v` to detect tools — not Windows-compatible.
 
