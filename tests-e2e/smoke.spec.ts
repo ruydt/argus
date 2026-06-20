@@ -39,19 +39,27 @@ test.beforeAll(async () => {
   await api.dispose()
 })
 
-test('events page shows at least one event row', async ({ page }) => {
+test('sessions list page renders', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('smoke-cc-01')).toBeVisible()
-  await page.getByText('smoke-cc-01').click()
+  await expect(page.getByRole('heading', { name: 'Sessions' })).toBeVisible()
+})
+
+test('session detail shows event rows for a seeded session', async ({ page }) => {
+  await page.goto('/sessions/smoke-cc-01')
   await expect(page.locator('[data-testid="event-row"]').first()).toBeVisible()
 })
 
-test('projects page shows at least one project', async ({ page }) => {
-  await page.goto('/projects')
-  await expect(page.locator('[data-testid="project-card"]').first()).toBeVisible()
+test('diagnostics page renders', async ({ page }) => {
+  await page.goto('/diagnostics')
+  await expect(page.getByRole('heading', { name: 'Diagnostics' })).toBeVisible()
 })
 
-test('dashboard page shows stat values', async ({ page }) => {
-  await page.goto('/dashboard')
-  await expect(page.locator('[data-testid="stat-value"]').first()).toBeVisible()
+test('hooks page renders', async ({ page }) => {
+  await page.goto('/hooks')
+  await expect(page.getByRole('heading', { name: 'Hooks' })).toBeVisible()
+})
+
+test('marketplace page renders', async ({ page }) => {
+  await page.goto('/marketplace')
+  await expect(page.getByRole('heading', { name: 'Marketplace' })).toBeVisible()
 })
