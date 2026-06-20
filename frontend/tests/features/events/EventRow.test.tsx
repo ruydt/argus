@@ -6,9 +6,9 @@ import type { EventRecord } from '@/types/events'
 function buildEvent(overrides: Partial<EventRecord> = {}): EventRecord {
   return {
     time: '2026-05-21T10:00:00.000Z',
-    action: 'BASH',
+    action: '',
     path: '',
-    command: 'echo hello',
+    hook_event_name: 'PreToolUse',
     ...overrides,
   }
 }
@@ -31,30 +31,43 @@ function createDragStartEvent(target: HTMLElement) {
   }
 }
 
-describe('EventRow dragging', () => {
-  it('does not start dragging from selectable command content', () => {
-    render(<EventRow event={buildEvent()} searchQuery="" isDraggable />)
-
-    const commandText = screen.getByText('echo hello')
-    const dragStart = createDragStartEvent(commandText)
-    commandText.dispatchEvent(dragStart)
-
-    expect(dragStart.dataTransfer.setData).not.toHaveBeenCalled()
+describe('EventRow thin layout', () => {
+  it('shows the event name', () => {
+    render(<EventRow event={buildEvent({ hook_event_name: 'PostToolUse' })} searchQuery="" />)
+    expect(screen.getByText('PostToolUse')).toBeTruthy()
   })
 
-  it('starts dragging from the row outside selectable blocks', () => {
-    const { container } = render(<EventRow event={buildEvent()} searchQuery="" isDraggable />)
-
-    expect(container.firstElementChild).toHaveAttribute('draggable', 'true')
-
-    const timeLabel = screen.getByText(/\d{2}:\d{2}:\d{2}/)
-    const dragStart = createDragStartEvent(timeLabel)
-    timeLabel.dispatchEvent(dragStart)
-
-    expect(dragStart.dataTransfer.setData).toHaveBeenCalledWith(
-      'text/plain',
-      expect.stringContaining('2026-05-21T10:00:00.000Z')
+  it('falls back to action when hook_event_name is absent', () => {
+    render(
+      <EventRow event={buildEvent({ hook_event_name: undefined, action: 'BASH' })} searchQuery="" />
     )
+    expect(screen.getByText('BASH')).toBeTruthy()
+  })
+
+  it('shows the tool name when present', () => {
+    render(<EventRow event={buildEvent({ tool: 'Bash' })} searchQuery="" />)
+    expect(screen.getByText('Bash')).toBeTruthy()
+  })
+
+  it('shows a shortened session id', () => {
+    render(<EventRow event={buildEvent({ session: 'abcdef1234567890' })} searchQuery="" />)
+    expect(screen.getByText('abcdef12')).toBeTruthy()
+  })
+
+  it('labels the agent from the stored agent id', () => {
+    render(<EventRow event={buildEvent({ agent: 'claudecode' })} searchQuery="" />)
+    expect(screen.getByLabelText('Claude Code')).toBeTruthy()
+  })
+
+  it('does not render diff/command blocks inline', () => {
+    render(
+      <EventRow
+        event={buildEvent({ action: 'BASH', command: 'echo hello', description: 'List files' })}
+        searchQuery=""
+      />
+    )
+    expect(screen.queryByText('echo hello')).toBeNull()
+    expect(screen.queryByText('Intent:')).toBeNull()
   })
 })
 
@@ -70,132 +83,28 @@ describe('EventRow raw payload button', () => {
   })
 })
 
-describe('EventRow description display', () => {
-  it('shows Intent label when description is set', () => {
-    render(
-      <EventRow
-        event={buildEvent({ action: 'BASH', command: 'ls -la', description: 'List project files' })}
-        searchQuery=""
-      />
+describe('EventRow dragging', () => {
+  it('marks the row draggable and drags from the time label', () => {
+    const { container } = render(<EventRow event={buildEvent()} searchQuery="" isDraggable />)
+    expect(container.firstElementChild).toHaveAttribute('draggable', 'true')
+
+    const timeLabel = screen.getByText(/\d{2}:\d{2}:\d{2}/)
+    const dragStart = createDragStartEvent(timeLabel)
+    timeLabel.dispatchEvent(dragStart)
+
+    expect(dragStart.dataTransfer.setData).toHaveBeenCalledWith(
+      'text/plain',
+      expect.stringContaining('2026-05-21T10:00:00.000Z')
     )
-    expect(screen.getByText('Intent:')).toBeTruthy()
-    expect(screen.getByText('List project files')).toBeTruthy()
   })
 
-  it('does not show Intent label when description is absent', () => {
-    render(<EventRow event={buildEvent({ action: 'BASH', command: 'ls -la' })} searchQuery="" />)
-    expect(screen.queryByText('Intent:')).toBeNull()
-  })
-})
+  it('does not start dragging from the raw payload button', () => {
+    render(<EventRow event={buildEvent({ dedup_key: 'abc123' })} searchQuery="" isDraggable />)
 
-describe('EventRow PermissionBlock', () => {
-  it('renders AskUserQuestion card with question text and options', () => {
-    const questionsJson = JSON.stringify([
-      {
-        question: 'What do you mean?',
-        header: 'Clarify issue',
-        multiSelect: false,
-        options: [
-          { label: 'Old session', description: 'Session is from hours ago' },
-          { label: 'Session ended', description: 'Session finished recently' },
-        ],
-      },
-    ])
-    render(
-      <EventRow
-        event={buildEvent({
-          action: 'PERMISSION',
-          tool: 'AskUserQuestion',
-          tool_input_questions_json: questionsJson,
-        })}
-        searchQuery=""
-      />
-    )
-    expect(screen.getByText('Clarify issue')).toBeTruthy()
-    expect(screen.getByText('What do you mean?')).toBeTruthy()
-    expect(screen.getByText('Old session')).toBeTruthy()
-    expect(screen.getByText('Session ended')).toBeTruthy()
-  })
+    const button = screen.getByRole('button', { name: /raw payload/i })
+    const dragStart = createDragStartEvent(button)
+    button.dispatchEvent(dragStart)
 
-  it('renders permission suggestion chip with allow behavior', () => {
-    const suggestionsJson = JSON.stringify([
-      {
-        type: 'addRules',
-        rules: [{ toolName: 'Bash', ruleContent: 'xargs cat' }],
-        behavior: 'allow',
-        destination: 'localSettings',
-      },
-    ])
-    render(
-      <EventRow
-        event={buildEvent({
-          action: 'PERMISSION',
-          tool: 'Bash',
-          permission_suggestions_json: suggestionsJson,
-        })}
-        searchQuery=""
-      />
-    )
-    expect(screen.getByText('allow')).toBeTruthy()
-    expect(screen.getByText(/"xargs cat" → localSettings/)).toBeTruthy()
-  })
-
-  it('renders no question card or suggestion chip for PERMISSION event with empty data', () => {
-    render(
-      <EventRow
-        event={buildEvent({
-          action: 'PERMISSION',
-          tool: 'Bash',
-        })}
-        searchQuery=""
-      />
-    )
-    expect(screen.queryByText('allow')).toBeNull()
-    expect(screen.queryByText('deny')).toBeNull()
-    expect(screen.queryByText('○')).toBeNull()
-    expect(screen.queryByText('□')).toBeNull()
-  })
-
-  it('renders AskUserQuestion card when options are missing', () => {
-    const questionsJson = JSON.stringify([
-      {
-        question: 'What do you mean?',
-        header: 'Clarify issue',
-      },
-    ])
-    render(
-      <EventRow
-        event={buildEvent({
-          action: 'PERMISSION',
-          tool: 'AskUserQuestion',
-          tool_input_questions_json: questionsJson,
-        })}
-        searchQuery=""
-      />
-    )
-    expect(screen.getByText('Clarify issue')).toBeTruthy()
-    expect(screen.getByText('What do you mean?')).toBeTruthy()
-    expect(screen.queryByText('○')).toBeNull()
-  })
-
-  it('ignores malformed permission suggestions', () => {
-    const suggestionsJson = JSON.stringify([
-      {
-        type: 'addRules',
-        behavior: 'allow',
-        destination: 'localSettings',
-      },
-    ])
-    render(
-      <EventRow
-        event={buildEvent({
-          action: 'PERMISSION',
-          tool: 'Bash',
-          permission_suggestions_json: suggestionsJson,
-        })}
-        searchQuery=""
-      />
-    )
-    expect(screen.queryByText('allow')).toBeNull()
+    expect(dragStart.dataTransfer.setData).not.toHaveBeenCalled()
   })
 })

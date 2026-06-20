@@ -6,12 +6,15 @@ function configToJSON(c: HooksConfig): string {
   return JSON.stringify(c, (key, value: unknown) => (key === 'id' ? undefined : value), 2)
 }
 
-export function useHooksConfig(agent: AgentKey): HooksConfigState {
+// shouldLoad gates the network fetch: pass false for agents whose config argus
+// cannot edit in-app (guided-setup agents), so the hook never calls the
+// hooks-config endpoint (which would 409) for them.
+export function useHooksConfig(agent: AgentKey, shouldLoad = true): HooksConfigState {
   const [config, setConfigState] = useState<HooksConfig | null>(null)
   const [savedConfig, setSavedConfig] = useState<HooksConfig | null>(null)
   const [draftJSON, setDraftJSONState] = useState<string>('')
   const [savedJSON, setSavedJSON] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(shouldLoad)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -42,6 +45,12 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
   useEffect(() => {
     mountedRef.current = true
 
+    if (!shouldLoad) {
+      return () => {
+        mountedRef.current = false
+      }
+    }
+
     fetch(`/api/hooks-config?agent=${agent}`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -68,7 +77,7 @@ export function useHooksConfig(agent: AgentKey): HooksConfigState {
     return () => {
       mountedRef.current = false
     }
-  }, [agent, reloadKey, normalizeConfig])
+  }, [agent, reloadKey, shouldLoad, normalizeConfig])
 
   const setConfig = useCallback(
     (c: HooksConfig) => {

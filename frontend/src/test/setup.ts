@@ -24,6 +24,44 @@ Object.defineProperty(window, 'matchMedia', {
   value: matchMediaMock,
 })
 
+// jsdom has no EventSource. The Recents data layer (useSessions → useLiveEvents)
+// opens an SSE stream from Layout on every route, so provide an inert stub that
+// never emits — tests that care about live events mock the hook directly.
+class EventSourceStub {
+  onmessage: ((ev: MessageEvent) => void) | null = null
+  onopen: (() => void) | null = null
+  onerror: (() => void) | null = null
+  close() {}
+}
+
+if (!('EventSource' in globalThis)) {
+  Object.defineProperty(globalThis, 'EventSource', {
+    writable: true,
+    configurable: true,
+    value: EventSourceStub,
+  })
+}
+
+// jsdom lacks ResizeObserver (used by cmdk's Command in the SearchSelect picker)
+// and Element.prototype.scrollIntoView (used by Radix/cmdk on active items).
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+if (!('ResizeObserver' in globalThis)) {
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    writable: true,
+    configurable: true,
+    value: ResizeObserverStub,
+  })
+}
+
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {}
+}
+
 beforeEach(() => {
   setMatchMediaMatches(false)
   matchMediaMock.mockClear()

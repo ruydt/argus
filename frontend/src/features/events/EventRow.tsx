@@ -1,26 +1,11 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import type { DragEvent, ReactNode } from 'react'
-import { cn, displayModel } from '@/lib/utils'
-import { formatEventTime, highlight } from '@/lib/format'
-import type { EventRecord } from '@/types/events'
-import { buildEventKey } from './eventKey'
-import { DiffBlock } from './renderers/DiffBlock'
-import { PatchBlock } from './renderers/PatchBlock'
-import { CommandBlock } from './renderers/CommandBlock'
-import { StopBlock } from './renderers/StopBlock'
-import { ErrorBlock } from './renderers/ErrorBlock'
-import { TaskBlock } from './renderers/TaskBlock'
-import { NotifyBlock } from './renderers/NotifyBlock'
-import { CwdBlock } from './renderers/CwdBlock'
-import { ToolResultBlock } from './renderers/ToolResultBlock'
-import { BatchBlock } from './renderers/BatchBlock'
-import { ElicitBlock } from './renderers/ElicitBlock'
-import { DisplayBlock } from './renderers/DisplayBlock'
-import { WorktreeBlock } from './renderers/WorktreeBlock'
-import { InstructBlock } from './renderers/InstructBlock'
-import { PermissionBlock } from './renderers/PermissionBlock'
-import { EventBadges } from './EventBadges'
+import type { DragEvent } from 'react'
 import { Braces } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { formatEventTime, highlight, shortId } from '@/lib/format'
+import type { EventRecord } from '@/types/events'
+import { AgentLogo, agentMeta } from '@/agents/catalog'
+import { buildEventKey } from './eventKey'
 import { RawPayloadModal } from './RawPayloadModal'
 
 type EventRowProps = {
@@ -32,6 +17,10 @@ type EventRowProps = {
   isDraggable?: boolean
 }
 
+// EventRow renders one hook event as a single agent-agnostic line. Because every
+// agent's payload differs, the row shows only the fields common to all agents —
+// time · agent · event · tool · session. Everything else (diffs, commands, tool
+// output, per-agent fields) lives in the raw payload, opened via the icon.
 export const EventRow = memo(function EventRow({
   event: e,
   searchQuery,
@@ -40,37 +29,31 @@ export const EventRow = memo(function EventRow({
   onTargetVisible,
   isDraggable = false,
 }: EventRowProps) {
-  const isPatchCommand =
-    (e.action === 'EDIT' && String(e.prompt).includes('*** Begin Patch')) ||
-    String(e.command).includes('*** Begin Patch')
   const rowRef = useRef<HTMLDivElement>(null)
   const targetHandledRef = useRef(false)
   const suppressDragRef = useRef(false)
   const [rawModalOpen, setRawModalOpen] = useState(false)
+
+  const agentId = e.agent || 'unknown'
+  const eventName = e.hook_event_name || e.action || '—'
+  const sessionShort = e.session ? shortId(e.session) : ''
 
   const handleDragStart = (ev: DragEvent<HTMLDivElement>) => {
     if (suppressDragRef.current) {
       ev.preventDefault()
       return
     }
-
     const target = ev.target as HTMLElement | null
-    if (
-      target?.closest(
-        '[data-event-drag-ignore], pre, code, button, a, [role="button"], [contenteditable="true"]'
-      )
-    ) {
+    if (target?.closest('[data-event-drag-ignore], pre, code, button, a, [role="button"]')) {
       ev.preventDefault()
       return
     }
-
     ev.dataTransfer.setData('text/plain', buildEventKey(e))
     ev.dataTransfer.effectAllowed = 'move'
   }
 
   useEffect(() => {
     if (!isPendingTarget || !rowRef.current || targetHandledRef.current) return
-
     rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     targetHandledRef.current = true
     onTargetVisible?.()
@@ -85,7 +68,7 @@ export const EventRow = memo(function EventRow({
         if (!isDraggable) return
         suppressDragRef.current = Boolean(
           (ev.target as HTMLElement | null)?.closest(
-            '[data-event-drag-ignore], pre, code, button, a, [role="button"], [contenteditable="true"]'
+            '[data-event-drag-ignore], pre, code, button, a, [role="button"]'
           )
         )
       }}
@@ -97,173 +80,62 @@ export const EventRow = memo(function EventRow({
       }}
       data-testid="event-row"
       className={cn(
-        'border-b border-foreground/[0.04] py-2 text-[0.82rem] leading-[1.4] hover:bg-foreground/[0.02]',
+        'flex items-center gap-3 border-b border-foreground/[0.04] py-2 text-[0.82rem] leading-[1.4] hover:bg-foreground/[0.02]',
         highlighted ? 'rounded-md bg-sky-500/8 ring-1 ring-sky-400/35' : '',
         isDraggable && 'cursor-grab active:cursor-grabbing'
       )}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-        <div className="flex items-center gap-3 pt-[2px] text-muted-foreground sm:block sm:w-[75px] sm:shrink-0">
-          <span>{formatEventTime(e.time)}</span>
-          <span className={cn('font-bold sm:hidden', e.action)}>
-            {e.hook_event_name ?? e.action}
-          </span>
-        </div>
-        <div
-          className={cn(
-            'hidden pt-[2px] font-bold sm:block sm:w-[140px] sm:shrink-0 truncate',
-            e.action
-          )}
-        >
-          {e.hook_event_name ?? e.action}
-        </div>
-        <div className="min-w-0 flex-1 break-words text-[0.85rem] text-foreground sm:break-all">
-          {/* Header line: model, path */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              {(e.hook_event_name === 'PreToolUse' ||
-                e.hook_event_name === 'PostToolUse' ||
-                e.hook_event_name === 'PreCompact' ||
-                e.hook_event_name === 'PostCompact') &&
-                e.model && <span className="event-model">{displayModel(e.model)}</span>}
-              {e.action !== 'BASH' && (highlight(e.path || '', searchQuery) as ReactNode)}
-            </div>
-            {e.dedup_key && (
-              <button
-                type="button"
-                data-event-drag-ignore
-                onClick={() => setRawModalOpen(true)}
-                className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-foreground/[0.08] hover:text-foreground"
-                aria-label="View raw payload"
-                title="Raw payload"
-              >
-                <Braces className="size-3.5" />
-              </button>
-            )}
-          </div>
+      <span className="w-[64px] shrink-0 text-muted-foreground">{formatEventTime(e.time)}</span>
 
-          {/* Prompts and commands */}
-          {(e.prompt || e.command) &&
-            !isPatchCommand &&
-            e.action !== 'ELICIT' &&
-            e.action !== 'DISPLAY' &&
-            e.action !== 'INSTRUCT' &&
-            e.action !== 'WORKTREE' && (
-              <CommandBlock
-                prompt={e.prompt}
-                command={e.command}
-                path={e.path}
-                description={e.description}
-                searchQuery={searchQuery}
-              />
-            )}
+      <span
+        className="flex shrink-0 items-center text-muted-foreground"
+        title={agentMeta(agentId).label}
+        aria-label={agentMeta(agentId).label}
+      >
+        <AgentLogo id={agentId} size={15} />
+      </span>
 
-          {/* Standard string replacement diff */}
-          {e.action === 'EDIT' && (e.old_string || e.new_string) && (
-            <div className="eblock eblock-diff mt-2 select-text" data-event-drag-ignore>
-              <strong>{e.path || 'Changes'}</strong>
-              <DiffBlock
-                oldStr={e.old_string || ''}
-                newStr={e.new_string || ''}
-                startLine={e.start_line ?? 0}
-                ctxBefore={e.ctx_before}
-                ctxAfter={e.ctx_after}
-                patchText={e.command || e.prompt}
-              />
-            </div>
-          )}
+      <span className={cn('shrink-0 font-semibold text-foreground', e.action)}>{eventName}</span>
 
-          {/* Patch application diff */}
-          {isPatchCommand && !e.old_string && !e.new_string && (
-            <div className="eblock eblock-diff mt-2 select-text" data-event-drag-ignore>
-              <strong>{e.path || 'Changes'}</strong>
-              <PatchBlock text={e.prompt || e.command || ''} startLine={e.start_line} />
-            </div>
-          )}
+      {e.tool && (
+        <span className="min-w-0 truncate text-muted-foreground">
+          {highlight(e.tool, searchQuery)}
+        </span>
+      )}
 
-          {/* Action-specific renderers */}
-          {e.action === 'STOP' && (
-            <StopBlock response={e.response || ''} searchQuery={searchQuery} />
-          )}
-          {(e.error_message || e.error_type) && (
-            <ErrorBlock
-              errorMessage={e.error_message}
-              errorType={e.error_type}
-              searchQuery={searchQuery}
-            />
-          )}
-          {e.action === 'TASK' && (
-            <TaskBlock
-              title={e.task_title}
-              description={e.task_description}
-              searchQuery={searchQuery}
-            />
-          )}
-          {e.action === 'NOTIFY' && (
-            <NotifyBlock
-              title={e.notification_title}
-              message={e.notification_message}
-              searchQuery={searchQuery}
-            />
-          )}
-          {e.action === 'CWD' && <CwdBlock oldCwd={e.old_cwd} newCwd={e.new_cwd} />}
+      <span className="flex-1" />
 
-          {/* Tool hooks */}
-          {e.hook_event_name === 'PostToolUse' && (
-            <ToolResultBlock
-              stdout={e.tool_result_stdout}
-              stderr={e.tool_result_stderr}
-              durationMs={e.duration_ms}
-              searchQuery={searchQuery}
-            />
-          )}
-          {e.action === 'BATCH' && <BatchBlock json={e.tool_calls_json} />}
-          {e.action === 'DISPLAY' && (
-            <DisplayBlock message={e.notification_message || e.prompt} searchQuery={searchQuery} />
-          )}
-          {e.action === 'ELICIT' && (
-            <ElicitBlock
-              serverName={e.server_name}
-              prompt={e.prompt || e.notification_message}
-              response={e.response}
-              searchQuery={searchQuery}
-            />
-          )}
-          {e.action === 'WORKTREE' && (
-            <WorktreeBlock branch={e.branch} hookEventName={e.hook_event_name} />
-          )}
-          {e.action === 'INSTRUCT' && (
-            <InstructBlock
-              memoryType={e.memory_type}
-              loadReason={e.load_reason}
-              searchQuery={searchQuery}
-            />
-          )}
-          {e.action === 'PERMISSION' && (
-            <PermissionBlock
-              toolName={e.tool}
-              toolInputQuestionsJson={e.tool_input_questions_json}
-              permissionSuggestionsJson={e.permission_suggestions_json}
-            />
-          )}
+      {sessionShort && (
+        <span className="shrink-0 font-mono text-[0.72rem] text-muted-foreground/80">
+          {highlight(sessionShort, searchQuery)}
+        </span>
+      )}
 
-          {/* Metadata Badges */}
-          <EventBadges event={e} />
-        </div>
-      </div>
       {e.dedup_key && (
-        <RawPayloadModal
-          dedupKey={e.dedup_key}
-          label={[
-            e.hook_event_name,
-            e.action,
-            new Date(e.time).toLocaleTimeString([], { hour12: false }),
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-          open={rawModalOpen}
-          onClose={() => setRawModalOpen(false)}
-        />
+        <>
+          <button
+            type="button"
+            data-event-drag-ignore
+            onClick={() => setRawModalOpen(true)}
+            className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition hover:bg-foreground/[0.08] hover:text-foreground"
+            aria-label="View raw payload"
+            title="Raw payload"
+          >
+            <Braces className="size-3.5" />
+          </button>
+          <RawPayloadModal
+            dedupKey={e.dedup_key}
+            label={[
+              e.hook_event_name,
+              e.action,
+              new Date(e.time).toLocaleTimeString([], { hour12: false }),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            open={rawModalOpen}
+            onClose={() => setRawModalOpen(false)}
+          />
+        </>
       )}
     </div>
   )

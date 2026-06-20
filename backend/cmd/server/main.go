@@ -85,8 +85,7 @@ func run() int {
 		IgnoreFile:         domainIgnoreFile(ignoreStatus),
 		Addr:               cfg.Addr,
 		AllowRemote:        cfg.AllowRemote,
-		ClaudeSettingsPath: filepath.Join(home, ".claude", "settings.json"),
-		CodexHooksPath:     filepath.Join(home, ".codex", "hooks.json"),
+		Home:               home,
 		ArgusDir:           filepath.Join(home, ".argus"),
 	})
 

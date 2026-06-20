@@ -4,7 +4,9 @@ import {
   ChevronRight,
   Pencil,
   Plus,
+  RefreshCw,
   RotateCcw,
+  Save,
   SlidersHorizontal,
   Trash2,
 } from 'lucide-react'
@@ -226,6 +228,9 @@ type StructuredEditorProps = {
   isDirty: boolean
   onDiscardChanges: () => void
   onChange: (config: HooksConfig) => void
+  onSave: () => void
+  saving: boolean
+  canSave: boolean
 }
 
 export function StructuredEditor({
@@ -234,6 +239,9 @@ export function StructuredEditor({
   isDirty,
   onDiscardChanges,
   onChange,
+  onSave,
+  saving,
+  canSave,
 }: StructuredEditorProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [selectedPreset, setSelectedPreset] = useState<string>('')
@@ -388,6 +396,27 @@ export function StructuredEditor({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Discard changes</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground"
+                  disabled={!canSave}
+                  onClick={onSave}
+                  aria-label="Save hooks config"
+                >
+                  {saving ? (
+                    <RefreshCw className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isDirty ? 'Save changes' : 'Saved'}</TooltipContent>
             </Tooltip>
 
             <Tooltip>

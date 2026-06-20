@@ -12,8 +12,13 @@ import (
 	"argus/internal/handler"
 )
 
+// claudeSettings returns the path the registry resolves for Claude Code under home.
+func claudeSettings(home string) string {
+	return filepath.Join(home, ".claude", "settings.json")
+}
+
 func TestHooksConfigGetUnknownAgent(t *testing.T) {
-	h := handler.HooksConfig("/tmp/noop-settings.json", "/tmp/noop-hooks.json")
+	h := handler.HooksConfig(t.TempDir())
 	req := httptest.NewRequest(http.MethodGet, "/api/hooks-config?agent=unknown", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -23,7 +28,7 @@ func TestHooksConfigGetUnknownAgent(t *testing.T) {
 }
 
 func TestHooksConfigPutUnknownAgent(t *testing.T) {
-	h := handler.HooksConfig("/tmp/noop-settings.json", "/tmp/noop-hooks.json")
+	h := handler.HooksConfig(t.TempDir())
 	req := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=unknown",
 		bytes.NewBufferString(`{"hooks":{}}`))
 	rec := httptest.NewRecorder()
@@ -33,8 +38,20 @@ func TestHooksConfigPutUnknownAgent(t *testing.T) {
 	}
 }
 
+// A known agent whose config format argus cannot edit in-app (e.g. Cursor)
+// returns 409 so the frontend falls back to guided setup.
+func TestHooksConfigNonEditableAgent(t *testing.T) {
+	h := handler.HooksConfig(t.TempDir())
+	req := httptest.NewRequest(http.MethodGet, "/api/hooks-config?agent=cursor", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", rec.Code)
+	}
+}
+
 func TestHooksConfigUnsupportedMethod(t *testing.T) {
-	h := handler.HooksConfig("/tmp/noop-settings.json", "/tmp/noop-hooks.json")
+	h := handler.HooksConfig(t.TempDir())
 	req := httptest.NewRequest(http.MethodPost, "/api/hooks-config?agent=claudecode", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -44,11 +61,7 @@ func TestHooksConfigUnsupportedMethod(t *testing.T) {
 }
 
 func TestHooksConfigGetMissingFile(t *testing.T) {
-	dir := t.TempDir()
-	h := handler.HooksConfig(
-		filepath.Join(dir, "settings.json"),
-		filepath.Join(dir, "hooks.json"),
-	)
+	h := handler.HooksConfig(t.TempDir())
 	for _, agent := range []string{"claudecode", "codex"} {
 		req := httptest.NewRequest(http.MethodGet, "/api/hooks-config?agent="+agent, nil)
 		rec := httptest.NewRecorder()
@@ -71,11 +84,7 @@ func TestHooksConfigGetMissingFile(t *testing.T) {
 }
 
 func TestHooksConfigPutInvalidJSON(t *testing.T) {
-	dir := t.TempDir()
-	h := handler.HooksConfig(
-		filepath.Join(dir, "settings.json"),
-		filepath.Join(dir, "hooks.json"),
-	)
+	h := handler.HooksConfig(t.TempDir())
 	req := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=claudecode",
 		bytes.NewBufferString("not json"))
 	rec := httptest.NewRecorder()
@@ -86,9 +95,7 @@ func TestHooksConfigPutInvalidJSON(t *testing.T) {
 }
 
 func TestHooksConfigClaudeCodeRoundtrip(t *testing.T) {
-	dir := t.TempDir()
-	settingsPath := filepath.Join(dir, "settings.json")
-	h := handler.HooksConfig(settingsPath, filepath.Join(dir, "hooks.json"))
+	h := handler.HooksConfig(t.TempDir())
 
 	putBody := `{"hooks":{"SessionStart":[{"hooks":[{"type":"command","command":"curl http://localhost:10804/api/hook","timeout":5}]}]}}`
 	putReq := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=claudecode",
@@ -116,13 +123,16 @@ func TestHooksConfigClaudeCodeRoundtrip(t *testing.T) {
 }
 
 func TestHooksConfigClaudeCodePreservesOtherKeys(t *testing.T) {
-	dir := t.TempDir()
-	settingsPath := filepath.Join(dir, "settings.json")
+	home := t.TempDir()
+	settingsPath := claudeSettings(home)
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0o700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
 	initial := `{"theme":"dark","hooks":{},"model":"claude-3"}`
 	if err := os.WriteFile(settingsPath, []byte(initial), 0o600); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	h := handler.HooksConfig(settingsPath, filepath.Join(dir, "hooks.json"))
+	h := handler.HooksConfig(home)
 
 	putBody := `{"hooks":{"PreToolUse":[{"matcher":".*","hooks":[{"type":"command","command":"echo hi"}]}]}}`
 	req := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=claudecode",
@@ -150,9 +160,7 @@ func TestHooksConfigClaudeCodePreservesOtherKeys(t *testing.T) {
 }
 
 func TestHooksConfigCodexRoundtrip(t *testing.T) {
-	dir := t.TempDir()
-	hooksPath := filepath.Join(dir, "hooks.json")
-	h := handler.HooksConfig(filepath.Join(dir, "settings.json"), hooksPath)
+	h := handler.HooksConfig(t.TempDir())
 
 	putBody := `{"hooks":{"PreToolUse":[{"matcher":".*","hooks":[{"type":"command","command":"curl http://localhost:10804/api/hook"}]}]}}`
 	putReq := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=codex",
@@ -179,9 +187,8 @@ func TestHooksConfigCodexRoundtrip(t *testing.T) {
 }
 
 func TestHooksConfigPutCreatesParentDirs(t *testing.T) {
-	dir := t.TempDir()
-	settingsPath := filepath.Join(dir, "nested", "dir", "settings.json")
-	h := handler.HooksConfig(settingsPath, filepath.Join(dir, "hooks.json"))
+	home := t.TempDir()
+	h := handler.HooksConfig(home)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/hooks-config?agent=claudecode",
 		bytes.NewBufferString(`{"hooks":{}}`))
@@ -190,7 +197,7 @@ func TestHooksConfigPutCreatesParentDirs(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
-	if _, err := os.Stat(settingsPath); err != nil {
+	if _, err := os.Stat(claudeSettings(home)); err != nil {
 		t.Fatalf("file not created: %v", err)
 	}
 }

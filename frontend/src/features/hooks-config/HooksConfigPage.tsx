@@ -1,18 +1,20 @@
-import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, ExternalLink, RefreshCw, Save } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, ArrowRight, ExternalLink, Plus, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { AnthropicLogo, OpenAILogo } from '@/agents/logos'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { SearchSelect, type SearchSelectOption } from '@/components/shared/SearchSelect'
+import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { StructuredEditor } from './StructuredEditor'
 import { SimulatorTab } from './SimulatorTab'
+import { GuidedSetupPanel } from './GuidedSetupPanel'
 import { getTemplate } from './hookTemplates'
 import { useHooksConfig } from './hooks/useHooksConfig'
+import { useAgents, type AgentStatus } from './hooks/useAgents'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig, HooksConfigState } from './types'
 
 type ViewMode = 'structured' | 'simulator'
@@ -20,6 +22,9 @@ type ViewMode = 'structured' | 'simulator'
 const SIM_STORAGE_KEY = 'argus:sim'
 const AGENT_TAB_KEY = 'argus:hooks-agent'
 const VIEW_MODE_KEY = 'argus:hooks-view'
+
+// The two original agents always show a tab and are never removable in the UI.
+const CORE_AGENTS = ['claudecode', 'codex']
 
 function readStorageString(key: string): string | null {
   try {
@@ -77,9 +82,19 @@ type AgentTabContentProps = {
 function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) {
   const { config, loading, error, saveError, setConfig, reload } = state
 
+  const jsonIsValid = (() => {
+    try {
+      JSON.parse(state.draftJSON)
+      return true
+    } catch {
+      return false
+    }
+  })()
+  const canSave = state.isDirty && jsonIsValid && !state.saving && !loading
+
   if (loading) {
     return (
-      <div className="flex flex-col gap-3 mt-4" aria-busy="true">
+      <div className="flex flex-col gap-3" aria-busy="true">
         <Skeleton className="h-12 rounded-lg" />
         <Skeleton className="h-12 rounded-lg" />
         <Skeleton className="h-12 rounded-lg" />
@@ -89,7 +104,7 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
 
   if (error !== null) {
     return (
-      <Card className="p-6 flex flex-col items-center gap-3 text-center mt-4">
+      <Card className="p-6 flex flex-col items-center gap-3 text-center">
         <p className="text-sm text-foreground">Failed to load hooks config</p>
         <p className="text-xs text-muted-foreground">{error}</p>
         <Button variant="outline" size="sm" onClick={reload}>
@@ -100,7 +115,7 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
   }
 
   return (
-    <div className="flex flex-col gap-4 mt-4">
+    <div className="flex flex-col gap-4">
       {viewMode === 'structured' && config !== null && (
         <div className="animate-in fade-in duration-200">
           <StructuredEditor
@@ -109,6 +124,9 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
             isDirty={state.isDirty}
             onDiscardChanges={state.discardChanges}
             onChange={setConfig}
+            onSave={() => void state.save()}
+            saving={state.saving}
+            canSave={canSave}
           />
         </div>
       )}
@@ -143,16 +161,28 @@ function AgentTabContent({ agent, state, viewMode, sim }: AgentTabContentProps) 
 }
 
 export function HooksConfigPage() {
-  const [activeAgent, setActiveAgent] = useState<AgentKey>(() => {
-    const stored = readStorageString(AGENT_TAB_KEY)
-    return stored === 'codex' ? 'codex' : 'claudecode'
-  })
+  const { agents, enabled, enableAgent, disableAgent } = useAgents()
+
+  const [storedAgent, setStoredAgent] = useState<string>(
+    () => readStorageString(AGENT_TAB_KEY) ?? 'claudecode'
+  )
+  // The effective agent is always one of the enabled tabs: fall back to the
+  // first enabled agent when the stored one was removed or isn't enabled.
+  const activeAgent = enabled.includes(storedAgent) ? storedAgent : (enabled[0] ?? 'claudecode')
+
+  const activeStatus = agents.find((a) => a.id === activeAgent)
+  // Treat the two core agents as editable even before /api/agents resolves so
+  // the page works identically to before during the initial fetch.
+  const activeEditable = activeStatus
+    ? activeStatus.editing_supported
+    : CORE_AGENTS.includes(activeAgent)
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = readStorageString(VIEW_MODE_KEY)
     return stored === 'simulator' ? 'simulator' : 'structured'
   })
 
-  // Simulator cached state — lifted + sessionStorage so it survives page navigation
+  // Simulator cached state — lifted + sessionStorage so it survives navigation.
   const [simEventType, setSimEventType] = useState<string>(() => readSimCache()?.eventType ?? '')
 
   const [searchParams] = useSearchParams()
@@ -169,11 +199,12 @@ export function HooksConfigPage() {
   )
   const [applying, setApplying] = useState(false)
 
+  // Only the active agent's config is loaded, and only when it's editable.
+  const state = useHooksConfig(activeAgent, activeEditable)
+
   useEffect(() => {
-    // Apply deep-link params whenever they change. Re-applies (not one-shot) so the
-    // page tour can drive the view by navigating to ?view=simulator&event=… while
-    // the page is already mounted. searchParams only changes on navigation, so the
-    // setStates here can't cascade.
+    // Apply deep-link params whenever they change. Re-applies (not one-shot) so
+    // the page tour can drive the view by navigating to ?view=simulator&event=…
     /* eslint-disable react-hooks/set-state-in-effect */
     if (searchParams.get('view') === 'simulator') setViewMode('simulator')
     const ev = searchParams.get('event')
@@ -206,13 +237,7 @@ export function HooksConfigPage() {
     }
   }, [simEventType, simCommandValue, simPayloadJSON, simCustomCommandText])
 
-  const claudeState = useHooksConfig('claudecode')
-  const codexState = useHooksConfig('codex')
-
-  const activeState = activeAgent === 'claudecode' ? claudeState : codexState
-
   async function handleSimulatorApply(eventType: string, command: string) {
-    const state = activeAgent === 'claudecode' ? claudeState : codexState
     const currentConfig = state.config ?? { hooks: {} }
     // Idempotent: command already wired for this event → nothing to add
     const exists = (currentConfig.hooks[eventType] ?? []).some((g) =>
@@ -230,11 +255,9 @@ export function HooksConfigPage() {
         [eventType]: [...(currentConfig.hooks[eventType] ?? []), newGroup],
       },
     }
-    // Update in-memory state immediately so Structured/JSON views reflect the change
     state.setConfig(updatedConfig)
     setApplying(true)
     try {
-      // Save directly — can't use state.save() here due to stale draftJSON closure
       const body = JSON.stringify(updatedConfig, (k, v: unknown) => (k === 'id' ? undefined : v))
       const res = await fetch(`/api/hooks-config?agent=${activeAgent}`, {
         method: 'PUT',
@@ -246,8 +269,6 @@ export function HooksConfigPage() {
       }
       state.reload()
     } catch (err) {
-      // Roll back the optimistic update so a rejected save never looks persisted,
-      // and rethrow so the simulator surfaces the failure instead of flashing success.
       state.setConfig(currentConfig)
       throw err
     } finally {
@@ -269,16 +290,10 @@ export function HooksConfigPage() {
     initialScript,
   }
 
-  const jsonIsValid = (() => {
-    try {
-      JSON.parse(activeState.draftJSON)
-      return true
-    } catch {
-      return false
-    }
-  })()
-
-  const canSave = activeState.isDirty && jsonIsValid && !activeState.saving && !activeState.loading
+  function selectAgent(id: string) {
+    setStoredAgent(id)
+    writeStorageString(AGENT_TAB_KEY, id)
+  }
 
   function handleViewModeChange(nextMode: string) {
     const mode = nextMode as ViewMode
@@ -287,130 +302,180 @@ export function HooksConfigPage() {
     writeStorageString(VIEW_MODE_KEY, mode)
   }
 
+  async function handleAddAgent(id: string) {
+    try {
+      await enableAgent(id)
+      selectAgent(id)
+    } catch {
+      /* enabling failed (e.g. race) — agent simply isn't added */
+    }
+  }
+
+  async function handleRemoveAgent(id: string) {
+    try {
+      await disableAgent(id)
+      if (storedAgent === id) selectAgent(enabled.find((e) => e !== id) ?? 'claudecode')
+    } catch {
+      /* removal failed — tab stays */
+    }
+  }
+
+  // Agents available to add: every known agent not already a tab. Installed
+  // ones are selectable; not-installed ones stay visible but disabled.
+  const addableOptions: SearchSelectOption[] = useMemo(
+    () =>
+      agents
+        .filter((a) => !enabled.includes(a.id))
+        .sort((a, b) => Number(b.installed) - Number(a.installed))
+        .map((a) => ({
+          value: a.id,
+          label: agentMeta(a.id).label,
+          icon: <AgentLogo id={a.id} size={16} />,
+          disabled: !a.installed,
+          hint: a.installed ? undefined : 'not installed',
+        })),
+    [agents, enabled]
+  )
+
+  const docsUrl =
+    activeStatus?.docs_url ??
+    (activeAgent === 'claudecode'
+      ? 'https://code.claude.com/docs/en/hooks'
+      : activeAgent === 'codex'
+        ? 'https://developers.openai.com/codex/hooks'
+        : '')
+
+  const removable = !CORE_AGENTS.includes(activeAgent)
+
   return (
     <PageShell>
       <PageHeader
-        title="Hooks Config"
+        title="Hooks"
         subtitle={
-          <a
-            href={
-              activeAgent === 'claudecode'
-                ? 'https://code.claude.com/docs/en/hooks'
-                : 'https://developers.openai.com/codex/hooks'
-            }
-            target="_blank"
-            rel="noreferrer"
-            className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ExternalLink className="size-3" />
-            Hooks documentation
-          </a>
+          docsUrl ? (
+            <a
+              href={docsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-fit items-center gap-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ExternalLink className="size-3" />
+              Hooks documentation
+            </a>
+          ) : undefined
         }
         actions={
-          <>
-            {viewMode !== 'simulator' && activeState.isDirty && !activeState.loading && (
-              <span className="text-[12px] text-[var(--cwd)]">Unsaved changes</span>
-            )}
-            {viewMode !== 'simulator' &&
-              !activeState.isDirty &&
-              !activeState.loading &&
-              activeState.error === null && (
-                <span className="text-[12px] text-muted-foreground">Saved</span>
-              )}
-            {viewMode !== 'simulator' && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => void activeState.save()}
-                disabled={!canSave}
-                aria-label="Save hooks config"
+          activeEditable ? (
+            viewMode === 'simulator' ? (
+              <button
+                type="button"
+                onClick={() => handleViewModeChange('structured')}
+                className="group flex items-center gap-1.5 text-[13px] font-semibold text-foreground transition-colors"
+                aria-label="Back to Structured"
               >
-                {activeState.saving ? (
-                  <RefreshCw className="size-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Save className="size-3.5 mr-1.5" />
-                )}
-                Save
-              </Button>
-            )}
-          </>
+                <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+                Go back
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleViewModeChange('simulator')}
+                className="group flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Open Simulator"
+              >
+                Simulator
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+            )
+          ) : undefined
         }
       />
 
       <Tabs
+        orientation="vertical"
         value={activeAgent}
-        onValueChange={(v) => {
-          const agent = v as AgentKey
-          setActiveAgent(agent)
-          writeStorageString(AGENT_TAB_KEY, agent)
-        }}
-        className="w-full"
+        onValueChange={selectAgent}
+        className="w-full gap-6"
       >
-        <div className="flex items-center justify-between">
-          {viewMode === 'structured' ? (
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('simulator')}
-              className="group order-last flex items-center gap-1.5 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Open Simulator"
-            >
-              Simulator
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => handleViewModeChange('structured')}
-              className="group order-last flex items-center gap-1.5 text-[13px] font-semibold text-foreground transition-colors"
-              aria-label="Back to Structured"
-            >
-              <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
-              Go back
-            </button>
-          )}
-          <Select
-            value={activeAgent}
-            onValueChange={(v) => {
-              const agent = v as AgentKey
-              setActiveAgent(agent)
-              writeStorageString(AGENT_TAB_KEY, agent)
-            }}
+        <div className="flex w-40 shrink-0 flex-col gap-2">
+          <TabsList
+            variant="line"
+            className="w-full border-r border-border/60 p-0 pr-1"
+            data-tour="hooks-config-agent-tabs"
           >
-            <SelectTrigger
-              className="w-auto"
-              aria-label="Agent"
-              data-tour="hooks-config-agent-tabs"
-            >
-              {activeAgent === 'claudecode' ? (
-                <AnthropicLogo size={18} />
-              ) : (
-                <OpenAILogo size={18} />
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="claudecode">
-                <AnthropicLogo size={18} />
-                Claude Code
-              </SelectItem>
-              <SelectItem value="codex">
-                <OpenAILogo size={18} />
-                Codex
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <TabsContent value="claudecode">
-          <AgentTabContent
-            agent="claudecode"
-            state={claudeState}
-            viewMode={viewMode}
-            sim={simProps}
+            {enabled.map((id) => (
+              <TabsTrigger key={id} value={id} className="w-full justify-start gap-2">
+                <AgentLogo id={id} size={18} />
+                {agentMeta(id).label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <SearchSelect
+            options={addableOptions}
+            onSelect={handleAddAgent}
+            placeholder="Search agents…"
+            emptyText="No agents to add."
+            trigger={
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                aria-label="Add agent"
+                data-tour="hooks-config-add-agent"
+              >
+                <Plus className="size-4" />
+                Add agent
+              </button>
+            }
           />
-        </TabsContent>
-        <TabsContent value="codex">
-          <AgentTabContent agent="codex" state={codexState} viewMode={viewMode} sim={simProps} />
-        </TabsContent>
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {removable && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => void handleRemoveAgent(activeAgent)}
+                className="flex items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-destructive"
+                aria-label={`Remove ${agentMeta(activeAgent).label}`}
+              >
+                <X className="size-3.5" />
+                Remove agent
+              </button>
+            </div>
+          )}
+
+          <TabsContent value={activeAgent}>
+            {activeEditable ? (
+              <AgentTabContent
+                agent={activeAgent}
+                state={state}
+                viewMode={viewMode}
+                sim={simProps}
+              />
+            ) : activeStatus ? (
+              <GuidedSetupPanel agent={activeStatus} />
+            ) : (
+              <GuidedSetupPanel agent={fallbackStatus(activeAgent)} />
+            )}
+          </TabsContent>
+        </div>
       </Tabs>
     </PageShell>
   )
+}
+
+// fallbackStatus builds a minimal AgentStatus when /api/agents hasn't resolved
+// but a non-core agent is somehow active — keeps the guided panel renderable.
+function fallbackStatus(id: string): AgentStatus {
+  return {
+    id,
+    display_name: agentMeta(id).label,
+    docs_url: '',
+    config_kind: 'unknown',
+    hooks_config_path: '',
+    editing_supported: false,
+    installed: false,
+    hooks_configured: false,
+  }
 }
