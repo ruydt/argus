@@ -326,6 +326,17 @@ func detectHookConfigs(detector func() []domain.DiagnosticsHookConfig) []domain.
 	return detector()
 }
 
+// defaultAgentDefs is the baseline agent list when no hook-config detector is
+// wired (the no-config Diagnostics path and tests). In production the detector
+// supplies the live enabled set, so added agents appear automatically.
+var defaultAgentDefs = []struct {
+	id    string
+	label string
+}{
+	{id: "claudecode", label: "Claude Code"},
+	{id: "codex", label: "Codex"},
+}
+
 func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domain.DiagnosticsHookConfig) []domain.DiagnosticsAgent {
 	byAgent := map[string]domain.DiagnosticsAgentStats{}
 	for _, stat := range stats {
@@ -335,46 +346,72 @@ func diagnosticsAgents(stats []domain.DiagnosticsAgentStats, hookConfigs []domai
 	for _, hookConfig := range hookConfigs {
 		hookByAgent[hookConfig.Agent] = hookConfig
 	}
-	defs := []struct {
-		id    string
-		label string
-	}{
-		{id: "claudecode", label: "Claude Code"},
-		{id: "codex", label: "Codex"},
+
+	// The ordered (id, label) list comes from the enabled agents the detector
+	// reported; fall back to the two defaults when none were supplied.
+	type agentDef struct{ id, label string }
+	var defs []agentDef
+	if len(hookConfigs) > 0 {
+		for _, hc := range hookConfigs {
+			label := hc.Label
+			if label == "" {
+				label = hc.Agent
+			}
+			defs = append(defs, agentDef{hc.Agent, label})
+		}
+	} else {
+		for _, d := range defaultAgentDefs {
+			defs = append(defs, agentDef{d.id, d.label})
+		}
 	}
+
+	included := map[string]bool{}
 	agents := make([]domain.DiagnosticsAgent, 0, len(defs))
 	for _, def := range defs {
-		stat := byAgent[def.id]
-		row := domain.DiagnosticsAgent{
-			ID:                def.id,
-			Label:             def.label,
-			EventCount:        stat.EventCount,
-			LastSeenAt:        stat.LastSeenAt,
-			DegradedCount:     stat.DegradedCount,
-			NormalizerVersion: stat.NormalizerVersion,
-			HookConfigStatus:  "unknown",
-			Status:            "healthy",
-			Warnings:          []string{},
-			EventsLastHour:    stat.EventsLastHour,
-			EventsLast24h:     stat.EventsLast24h,
+		included[def.id] = true
+		agents = append(agents, buildAgentRow(def.id, def.label, byAgent[def.id], hookByAgent[def.id]))
+	}
+
+	// Surface any agent that has sent events but isn't in the enabled list
+	// (e.g. an unknown/degraded sender or a since-removed agent).
+	for _, stat := range stats {
+		if included[stat.Agent] || stat.EventCount == 0 {
+			continue
 		}
-		if hookConfig, ok := hookByAgent[def.id]; ok {
-			row.HookConfigStatus = hookConfig.Status
-			row.HookConfigReason = hookConfig.Reason
-		}
-		switch {
-		case row.DegradedCount > 0:
-			row.Status = "degraded"
-			row.Warnings = append(row.Warnings, "degraded events")
-		case row.EventCount == 0:
-			row.Status = "no events"
-			row.Warnings = append(row.Warnings, "no events")
-		}
-		agents = append(agents, row)
+		included[stat.Agent] = true
+		agents = append(agents, buildAgentRow(stat.Agent, stat.Agent, stat, hookByAgent[stat.Agent]))
 	}
 	return agents
 }
 
+func buildAgentRow(id, label string, stat domain.DiagnosticsAgentStats, hookConfig domain.DiagnosticsHookConfig) domain.DiagnosticsAgent {
+	row := domain.DiagnosticsAgent{
+		ID:                id,
+		Label:             label,
+		EventCount:        stat.EventCount,
+		LastSeenAt:        stat.LastSeenAt,
+		DegradedCount:     stat.DegradedCount,
+		NormalizerVersion: stat.NormalizerVersion,
+		HookConfigStatus:  "unknown",
+		Status:            "healthy",
+		Warnings:          []string{},
+		EventsLastHour:    stat.EventsLastHour,
+		EventsLast24h:     stat.EventsLast24h,
+	}
+	if hookConfig.Agent != "" {
+		row.HookConfigStatus = hookConfig.Status
+		row.HookConfigReason = hookConfig.Reason
+	}
+	switch {
+	case row.DegradedCount > 0:
+		row.Status = "degraded"
+		row.Warnings = append(row.Warnings, "degraded events")
+	case row.EventCount == 0:
+		row.Status = "no events"
+		row.Warnings = append(row.Warnings, "no events")
+	}
+	return row
+}
 
 func endedAtForEvent(e domain.NormalizedEvent) string {
 	if e.Time == "" {

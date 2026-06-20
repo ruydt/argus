@@ -70,6 +70,7 @@ type DiagnosticsAgentStats struct {
 
 type DiagnosticsHookConfig struct {
 	Agent  string
+	Label  string
 	Path   string
 	Status string
 	Reason string

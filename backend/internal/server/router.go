@@ -81,7 +81,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 	mux.Handle("GET /api/version", handler.Version())
 	hookDetector := opts.HookConfigDetector
 	if hookDetector == nil {
-		hookDetector = hookconfig.Detector{}.Detect
+		hookDetector = hookconfig.Detector{HomeDir: opts.Home, ArgusDir: opts.ArgusDir}.Detect
 	}
 	mux.Handle("GET /api/diagnostics", handler.Diagnostics(svc, ready, service.DiagnosticsOptions{
 		DBPath:             opts.DBPath,
