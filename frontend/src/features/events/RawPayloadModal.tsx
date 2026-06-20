@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useReducer } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { json } from '@codemirror/lang-json'
 import CodeMirror from '@uiw/react-codemirror'
+import { Terminal } from 'lucide-react'
 import { CopyIconButton } from '@/components/shared/CopyIconButton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { argusEditorTheme, argusHighlighting, readOnlyExtensions } from '@/lib/editorTheme'
+import { SIM_PAYLOAD_HANDOFF_KEY } from '@/features/hooks-config/simHandoff'
 import { PayloadFields } from './PayloadFields'
 
 type PayloadState =
@@ -30,6 +34,7 @@ type RawPayloadModalProps = {
 }
 
 export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadModalProps) {
+  const navigate = useNavigate()
   const [payload, setPayload] = useReducer((_: PayloadState, next: PayloadState) => next, {
     status: 'idle',
   } as PayloadState)
@@ -56,6 +61,29 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
     [payload]
   )
 
+  // The event name drives the simulator's event picker; it lives in the payload.
+  const eventName = useMemo(() => {
+    if (payload.status !== 'ready' || typeof payload.value !== 'object' || payload.value === null) {
+      return ''
+    }
+    const ev = (payload.value as Record<string, unknown>).hook_event_name
+    return typeof ev === 'string' ? ev : ''
+  }, [payload])
+
+  // Hand this exact payload + event to the simulator: stash the JSON, then deep
+  // link to the Hooks page in simulator mode. The Hooks page reads + clears it.
+  function simulate() {
+    try {
+      sessionStorage.setItem(SIM_PAYLOAD_HANDOFF_KEY, rawJson)
+    } catch {
+      /* sessionStorage unavailable — fall back to event-only deep link */
+    }
+    const params = new URLSearchParams({ view: 'simulator', payload: '1' })
+    if (eventName) params.set('event', eventName)
+    onClose()
+    navigate(`/hooks?${params.toString()}`)
+  }
+
   return (
     <Dialog
       open={open}
@@ -65,7 +93,20 @@ export function RawPayloadModal({ dedupKey, label, open, onClose }: RawPayloadMo
     >
       <DialogContent className="flex max-h-[80vh] w-[90vw] sm:max-w-4xl flex-col gap-3">
         <DialogHeader>
-          <DialogTitle className="text-xs text-muted-foreground">{label}</DialogTitle>
+          <div className="flex items-center justify-between gap-3 pr-6">
+            <DialogTitle className="text-xs text-muted-foreground">{label}</DialogTitle>
+            {payload.status === 'ready' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={simulate}
+                className="h-7 shrink-0 gap-1.5 text-[12px]"
+              >
+                <Terminal className="size-3.5" />
+                Simulate this event
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         {payload.status === 'loading' && <Skeleton className="h-64 w-full" aria-busy="true" />}
         {payload.status === 'error' && (

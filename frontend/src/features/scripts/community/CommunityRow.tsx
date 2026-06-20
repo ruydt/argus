@@ -82,13 +82,13 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
             </Badge>
           ) : null}
         </div>
-        <div className="hidden w-28 shrink-0 md:flex">
+        <div className="hidden w-24 shrink-0 md:flex">
           <AgentLogos agents={script.agents} />
         </div>
         <div className="hidden w-24 shrink-0 md:flex">
           <OsIcons os={script.os} />
         </div>
-        <div className="flex w-40 shrink-0 items-center justify-end gap-2">
+        <div className="flex w-20 shrink-0 items-center justify-end gap-0.5">
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>

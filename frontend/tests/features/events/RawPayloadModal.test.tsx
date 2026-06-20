@@ -1,17 +1,21 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RawPayloadModal } from '@/features/events/RawPayloadModal'
 
 function renderModal(props: Partial<Parameters<typeof RawPayloadModal>[0]> = {}) {
+  // RawPayloadModal uses useNavigate (for "Simulate this event"), so it needs a router.
   return render(
-    <RawPayloadModal
-      dedupKey="abc123"
-      label="PreToolUse · Bash · 10:23:01"
-      open={true}
-      onClose={vi.fn()}
-      {...props}
-    />
+    <MemoryRouter>
+      <RawPayloadModal
+        dedupKey="abc123"
+        label="PreToolUse · Bash · 10:23:01"
+        open={true}
+        onClose={vi.fn()}
+        {...props}
+      />
+    </MemoryRouter>
   )
 }
 
@@ -70,5 +74,21 @@ describe('RawPayloadModal', () => {
     vi.stubGlobal('fetch', fetchMock)
     renderModal({ open: false })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('"Simulate this event" stashes the payload and deep-links to the simulator', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ raw_payload: { hook_event_name: 'Stop', session_id: 'abc' } }),
+      })
+    )
+    const user = userEvent.setup()
+    renderModal()
+    await user.click(await screen.findByRole('button', { name: /simulate this event/i }))
+
+    const stashed = sessionStorage.getItem('argus:sim-payload')
+    expect(stashed).toContain('"hook_event_name": "Stop"')
   })
 })

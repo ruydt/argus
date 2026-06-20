@@ -40,6 +40,30 @@ test('buildIndex parses the header and computes sha256', async () => {
   assert.equal(s.sha256, createHash('sha256').update(body).digest('hex'))
 })
 
+test('buildIndex parses a #-comment header (py/sh scripts)', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'reg-'))
+  await mkdir(join(root, 'scripts', 'ruydt'), { recursive: true })
+  const body = [
+    '# @argus-meta',
+    '# title: Shell hook',
+    '# events: Stop',
+    '# agents: codex',
+    '# runtime: sh',
+    '# @end',
+    '',
+    'echo hi',
+    '',
+  ].join('\n')
+  await writeFile(join(root, 'scripts', 'ruydt', 'shell-hook.sh'), body)
+
+  const index = await buildIndex(root)
+  const s = index.scripts[0]
+  assert.equal(s.title, 'Shell hook')
+  assert.deepEqual(s.events, ['Stop'])
+  assert.deepEqual(s.agents, ['codex'])
+  assert.equal(s.runtime, 'sh')
+})
+
 test('buildIndex parses plural events and agents lists', async () => {
   const root = await mkdtemp(join(tmpdir(), 'reg-'))
   await mkdir(join(root, 'scripts', 'ruydt'), { recursive: true })

@@ -229,8 +229,11 @@ describe('DiagnosticsPage', () => {
     // Binary size tile renders the formatted executable size
     expect(screen.getByText('Binary size')).toBeInTheDocument()
     expect(screen.getByText(formatBytes(12_582_912))).toBeInTheDocument()
-    expect(screen.getByText('Hook requests')).toBeInTheDocument()
-    expect(screen.getByText('Migration')).toBeInTheDocument()
+    // Ingestion-errors tile (replaced Hook requests) + Agents tile + Logs card
+    expect(screen.getByText('Ingestion errors')).toBeInTheDocument()
+    expect(screen.getByText('Agents')).toBeInTheDocument()
+    expect(screen.getByText('Live Logs')).toBeInTheDocument()
+    expect(screen.getByText('argus.log')).toBeInTheDocument()
   })
 
   it('shows Configured (X/Y) label in hook config column when config has argus hooks', async () => {
@@ -273,18 +276,18 @@ describe('DiagnosticsPage', () => {
     expect(await screen.findAllByText('Configured')).not.toHaveLength(0)
   })
 
-  it('renders degraded and extra CORS badges in warning state', async () => {
+  it('lists configured agents in connectivity even when one is degraded', async () => {
     vi.stubGlobal('fetch', makeFetchMock(warningDiagnostics))
     renderPage()
-    // Degraded badge for agent 0
-    expect(await screen.findByText('Degraded')).toBeInTheDocument()
+    // Connectivity now shows only Agent + Hook Config (no status badge column);
+    // a configured-but-degraded agent still appears.
+    expect(await screen.findByText('Claude Code')).toBeInTheDocument()
   })
 
-  it('renders first-run hint when no events have been observed', async () => {
+  it('shows the empty hint when no agents are configured', async () => {
     vi.stubGlobal('fetch', makeFetchMock(emptyDiagnostics))
     renderPage()
-    expect(await screen.findByText('No activity observed yet')).toBeInTheDocument()
-    expect(screen.getByText(/argus setup/)).toBeInTheDocument()
+    expect(await screen.findByText('No agents configured yet')).toBeInTheDocument()
   })
 
   it('hides the setup hint once hooks are configured, even with no events', async () => {
@@ -347,7 +350,10 @@ describe('useDiagnostics module cache', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const diagnosticsCalls = () =>
-      fetchMock.mock.calls.filter((c: unknown[]) => !String(c[0]).includes('hooks-config'))
+      fetchMock.mock.calls.filter(
+        (c: unknown[]) =>
+          !String(c[0]).includes('hooks-config') && !String(c[0]).includes('log-tail')
+      )
 
     const { unmount } = render(
       <MemoryRouter>

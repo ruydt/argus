@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { format, formatDistanceToNow } from 'date-fns'
-import { AlertTriangle, Database, HardDrive, RefreshCw, Zap } from 'lucide-react'
-import { CopyIconButton } from '@/components/shared/CopyIconButton'
+import { formatDistanceToNow } from 'date-fns'
+import { AlertTriangle, Bot, Database, HardDrive, RefreshCw } from 'lucide-react'
 import { PageHeader, PageShell } from '@/components/shared/PageShell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -21,6 +20,7 @@ import { detectHookConfigLabel } from '@/features/hooks-config/presets'
 import type { HooksConfig } from '@/features/hooks-config/types'
 import type { AgentKey } from '@/features/hooks-config/types'
 import { useDiagnostics } from './hooks/useDiagnostics'
+import { LiveLogPanel } from './LiveLogPanel'
 import type { Diagnostics, DiagnosticsAgent } from './types'
 import { formatBytes } from './utils'
 
@@ -64,51 +64,6 @@ function useHookConfigLabels(agents: DiagnosticsAgent[] | undefined): Record<str
 const BADGE_RED = 'border-[var(--destructive)] text-[var(--destructive)] bg-[rgba(255,95,86,0.1)]'
 const BADGE_AMBER = 'border-[var(--cwd)] text-[var(--cwd)] bg-transparent'
 const BADGE_GREEN = 'border-[var(--worktree)] text-[var(--worktree)] bg-transparent'
-
-function MonoPath({ path, ariaLabel }: { path: string; ariaLabel: string }) {
-  return (
-    <span className="inline-flex items-center gap-0">
-      <span
-        className="text-[12px] text-foreground truncate max-w-[220px] inline-block align-bottom"
-        title={path}
-      >
-        {path}
-      </span>
-      <CopyIconButton
-        text={path}
-        label={ariaLabel}
-        className="ml-1 size-4 opacity-40 hover:opacity-100 hover:bg-transparent"
-      />
-    </span>
-  )
-}
-
-function AgentStatusCell({ status }: { status: string }) {
-  switch (status) {
-    case 'healthy':
-      return (
-        <Badge variant="outline" className={BADGE_GREEN}>
-          Healthy
-        </Badge>
-      )
-    case 'degraded':
-      return (
-        <Badge variant="outline" className={BADGE_RED}>
-          Degraded
-        </Badge>
-      )
-    case 'stale':
-      return (
-        <Badge variant="outline" className={BADGE_AMBER}>
-          Stale
-        </Badge>
-      )
-    case 'no events':
-      return <span className="text-[12px] text-muted-foreground">No events yet</span>
-    default:
-      return <span className="text-[12px] text-muted-foreground">{status}</span>
-  }
-}
 
 function HookConfigCell({ hookConfigStatus, label }: { hookConfigStatus: string; label?: string }) {
   if (hookConfigStatus === 'missing') {
@@ -188,21 +143,9 @@ function CompactDatabaseButton({ onDone }: { onDone: () => void }) {
 
 function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: () => void }) {
   const hookConfigLabels = useHookConfigLabels(data.agents)
-  const agentWarningCount = data.agents.filter(
-    (a) =>
-      a.status === 'degraded' ||
-      a.status === 'stale' ||
-      a.hookConfigStatus === 'missing' ||
-      (a.hookConfigStatus === 'unknown' && a.eventCount === 0)
-  ).length
-
-  // First run = no events anywhere AND no agent has its hooks wired up yet.
-  // Once any agent shows "configured", the setup hint is wrong (they're already
-  // set up — just waiting for the first event), so suppress it.
-  const isFirstRun =
-    data.storage.totalEvents === 0 &&
-    data.agents.every((a) => a.status === 'no events') &&
-    !data.agents.some((a) => a.hookConfigStatus === 'configured')
+  // Connectivity + the Agents tile count only agents argus has hooks configured
+  // for — not every agent that happened to send an event.
+  const configuredAgents = data.agents.filter((a) => a.hookConfigStatus === 'configured')
 
   return (
     <>
@@ -241,44 +184,34 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
           </CardContent>
         </Card>
 
-        {/* Tile 3 — Hook requests */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
-              <Zap className="inline size-4 mr-1 text-muted-foreground" />
-              Hook requests
-            </div>
-            <div className="text-[20px] font-semibold">
-              {data.runtime.hookRequests.toLocaleString()}
-            </div>
-            <p className="text-[12px] text-muted-foreground mt-1">
-              {data.runtime.ingestionErrors > 0 ? (
-                <span className="text-[var(--destructive)]">
-                  {data.runtime.ingestionErrors} errors
-                </span>
-              ) : (
-                'No errors'
-              )}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Tile 4 — Agent Warnings */}
+        {/* Tile 3 — Ingestion errors */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
               <AlertTriangle className="inline size-4 mr-1 text-muted-foreground" />
-              Agent Warnings
+              Ingestion errors
             </div>
             <div
               className={cn(
                 'text-[20px] font-semibold',
-                agentWarningCount > 0 ? 'text-foreground' : 'text-muted-foreground'
+                data.runtime.ingestionErrors > 0 ? 'text-[var(--destructive)]' : ''
               )}
             >
-              {agentWarningCount} {agentWarningCount === 1 ? 'warning' : 'warnings'}
+              {data.runtime.ingestionErrors.toLocaleString()}
             </div>
-            <p className="text-[12px] text-muted-foreground mt-1">{data.agents.length} agents</p>
+            <p className="text-[12px] text-muted-foreground mt-1">since start</p>
+          </CardContent>
+        </Card>
+
+        {/* Tile 4 — Agents */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
+              <Bot className="inline size-4 mr-1 text-muted-foreground" />
+              Agents
+            </div>
+            <div className="text-[20px] font-semibold">{configuredAgents.length}</div>
+            <p className="text-[12px] text-muted-foreground mt-1">configured</p>
           </CardContent>
         </Card>
       </div>
@@ -295,68 +228,31 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
               <TableHeader>
                 <TableRow>
                   <TableHead scope="col">Agent</TableHead>
-                  <TableHead scope="col" className="w-[100px]">
-                    Status
-                  </TableHead>
-                  <TableHead scope="col" className="w-[120px]">
-                    Last Seen
-                  </TableHead>
-                  <TableHead scope="col" className="w-[120px]">
+                  <TableHead scope="col" className="w-[140px]">
                     Hook Config
                   </TableHead>
-                  <TableHead scope="col">Warnings</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.agents.map((agent) => (
+                {configuredAgents.map((agent) => (
                   <TableRow key={agent.id}>
                     <TableCell>{agent.label}</TableCell>
-                    <TableCell>
-                      <AgentStatusCell status={agent.status} />
-                    </TableCell>
-                    <TableCell>
-                      {agent.lastSeenAt
-                        ? formatDistanceToNow(new Date(agent.lastSeenAt), { addSuffix: true })
-                        : '—'}
-                    </TableCell>
                     <TableCell>
                       <HookConfigCell
                         hookConfigStatus={agent.hookConfigStatus}
                         label={hookConfigLabels[agent.id]}
                       />
                     </TableCell>
-                    <TableCell>
-                      {agent.hookConfigStatus === 'missing' ? (
-                        <span className="text-[12px] text-amber-400">missing hook config</span>
-                      ) : (
-                        (() => {
-                          const realWarnings = (agent.warnings ?? []).filter(
-                            (w) => w !== 'no events'
-                          )
-                          if (realWarnings.length === 0) return '—'
-                          return (
-                            <span>
-                              {realWarnings.slice(0, 2).join(', ')}
-                              {realWarnings.length > 2 && (
-                                <span className="text-muted-foreground ml-1">
-                                  +{realWarnings.length - 2} more
-                                </span>
-                              )}
-                            </span>
-                          )
-                        })()
-                      )}
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            {isFirstRun && (
+            {configuredAgents.length === 0 && (
               <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <p className="text-sm text-foreground">No activity observed yet</p>
+                <p className="text-sm text-foreground">No agents configured yet</p>
                 <p className="text-xs text-muted-foreground">
-                  Run <code className="font-mono">argus setup</code> or{' '}
-                  <code className="font-mono">argus doctor</code> to configure hook integrations.
+                  Add an agent on the <code className="font-mono">Hooks</code> page to manage and
+                  see its hook config here.
                 </p>
               </div>
             )}
@@ -375,61 +271,6 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
               <div className="flex items-center justify-between py-2 text-[13px]">
                 <span className="text-muted-foreground">Version</span>
                 <span>{data.version.version}</span>
-              </div>
-              <Separator className="mx-auto w-[85%]!" />
-              {/* Commit */}
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Commit</span>
-                <code className="font-mono text-[12px] text-[var(--edit)]">
-                  {data.version.commit.slice(0, 8)}
-                </code>
-              </div>
-              <Separator className="mx-auto w-[85%]!" />
-              {/* Built */}
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Built</span>
-                <span>
-                  {data.version.buildDate
-                    ? (() => {
-                        try {
-                          return format(new Date(data.version.buildDate), 'MMM d, yyyy')
-                        } catch {
-                          return data.version.buildDate
-                        }
-                      })()
-                    : '—'}
-                </span>
-              </div>
-              <Separator className="mx-auto w-[85%]!" />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">DB Path</span>
-                <MonoPath path={data.storage.dbPath} ariaLabel="Copy DB path" />
-              </div>
-              <Separator className="mx-auto w-[85%]!" />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">DB Size</span>
-                <span>
-                  {data.storage.dbSizeBytes !== null
-                    ? formatBytes(data.storage.dbSizeBytes)
-                    : (data.storage.dbSizeReason ?? 'Unknown')}
-                </span>
-              </div>
-              <Separator className="mx-auto w-[85%]!" />
-              {/* Runtime */}
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Started</span>
-                <span>
-                  {formatDistanceToNow(new Date(data.runtime.startedAt), { addSuffix: true })}
-                </span>
-              </div>
-              <Separator className="mx-auto w-[85%]!" />
-              <div className="flex items-center justify-between py-2 text-[13px]">
-                <span className="text-muted-foreground">Ingestion errors</span>
-                <span
-                  className={data.runtime.ingestionErrors > 0 ? 'text-[var(--destructive)]' : ''}
-                >
-                  {data.runtime.ingestionErrors.toLocaleString()}
-                </span>
               </div>
               <Separator className="mx-auto w-[85%]!" />
               {/* DB Health */}
@@ -465,6 +306,9 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
           </Card>
         </div>
       </div>
+
+      {/* Live tail of the ~/.argus log files */}
+      <LiveLogPanel logs={data.fileSystem.logs} />
     </>
   )
 }

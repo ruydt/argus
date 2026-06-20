@@ -2,6 +2,7 @@ package scriptmeta_test
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"argus/internal/scriptmeta"
@@ -48,6 +49,33 @@ func TestParseLegacyEventField(t *testing.T) {
 	m := scriptmeta.Parse(body)
 	if want := []string{"PreToolUse"}; !reflect.DeepEqual(m.Events, want) {
 		t.Errorf("Events = %v, want %v", m.Events, want)
+	}
+}
+
+// py/sh scripts use `#` comments for the meta block.
+func TestParseHashCommentHeader(t *testing.T) {
+	body := "# @argus-meta\n# title: Shell hook\n# events: Stop\n# agents: codex\n# @end\n\necho hi\n"
+	m := scriptmeta.Parse(body)
+	if m.Title != "Shell hook" {
+		t.Errorf("Title = %q", m.Title)
+	}
+	if want := []string{"Stop"}; !reflect.DeepEqual(m.Events, want) {
+		t.Errorf("Events = %v, want %v", m.Events, want)
+	}
+	if want := []string{"codex"}; !reflect.DeepEqual(m.Agents, want) {
+		t.Errorf("Agents = %v, want %v", m.Agents, want)
+	}
+}
+
+// EnsureAuthor stamps the author using the block's own comment style.
+func TestEnsureAuthorHashComment(t *testing.T) {
+	body := "# @argus-meta\n# title: x\n# events: Stop\n# @end\n\necho hi\n"
+	got := scriptmeta.EnsureAuthor(body, "octocat")
+	if !strings.Contains(got, "# author: octocat") {
+		t.Errorf("expected `# author: octocat`, got:\n%s", got)
+	}
+	if strings.Contains(got, "// author:") {
+		t.Errorf("used // prefix on a # header:\n%s", got)
 	}
 }
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildArgusMeta,
   injectMeta,
+  injectRunLogger,
   parseArgusMeta,
   runtimeFromExt,
   splitCSV,
@@ -60,6 +61,12 @@ describe('parseArgusMeta', () => {
     expect(m.events).toBeUndefined()
     expect(m.agents).toBeUndefined()
   })
+  it('parses a #-comment header (py/sh scripts)', () => {
+    const m = parseArgusMeta(
+      '# @argus-meta\n# title: Shell\n# events: Stop\n# agents: codex\n# @end\n\necho hi\n'
+    )
+    expect(m).toMatchObject({ title: 'Shell', events: ['Stop'], agents: ['codex'] })
+  })
   it('returns empty when no header', () => {
     expect(parseArgusMeta('console.log(1)\n')).toEqual({})
   })
@@ -92,6 +99,56 @@ describe('injectMeta', () => {
     expect(out).toContain('// events: Stop')
     expect(out).not.toContain('// events: PreToolUse, PostToolUse')
     expect(out).toContain('console.log(1)')
+  })
+
+  it('uses #-comment headers for py/sh by filename', () => {
+    const out = injectMeta('echo hi\n', meta, 'hook.sh')
+    expect(out.startsWith('# @argus-meta')).toBe(true)
+    expect(out).toContain('# title: T')
+    expect(out).toContain('# events: Stop')
+    expect(out).not.toContain('// @argus-meta')
+  })
+})
+
+describe('injectRunLogger', () => {
+  const headed =
+    '// @argus-meta\n// title: T\n// events: Stop\n// agents: claudecode\n// @end\n\nconsole.log(1)\n'
+
+  it('inserts the run-log prelude after the meta block for .js', () => {
+    const out = injectRunLogger(headed, 'demo.js')
+    expect(out).toContain('// @argus-run-log')
+    expect(out).toContain('- demo.js INFO ran')
+    expect(out.indexOf('// @end')).toBeLessThan(out.indexOf('// @argus-run-log'))
+    expect(out.indexOf('// @argus-run-log')).toBeLessThan(out.indexOf('console.log(1)'))
+    // the meta header block stays clean (mark lives below @end)
+    const metaBlock = out.slice(out.indexOf('// @argus-meta'), out.indexOf('// @end'))
+    expect(metaBlock).not.toContain('@argus-run-log')
+  })
+
+  it('inserts a #-comment python prelude for .py', () => {
+    const headedPy = '# @argus-meta\n# title: T\n# events: Stop\n# @end\n\nprint(1)\n'
+    const out = injectRunLogger(headedPy, 'hook.py')
+    expect(out).toContain('# @argus-run-log')
+    expect(out).toContain('import os as _os, datetime as _dt')
+    expect(out).toContain('- hook.py INFO ran')
+    expect(out).not.toContain('// @argus-run-log')
+  })
+
+  it('inserts a #-comment shell prelude for .sh', () => {
+    const headedSh = '# @argus-meta\n# title: T\n# events: Stop\n# @end\n\necho hi\n'
+    const out = injectRunLogger(headedSh, 'hook.sh')
+    expect(out).toContain('# @argus-run-log')
+    expect(out).toContain('date -u +%Y-%m-%dT%H:%M:%SZ')
+    expect(out).toContain('- hook.sh INFO ran')
+  })
+
+  it('is idempotent', () => {
+    const once = injectRunLogger(headed, 'demo.js')
+    expect(injectRunLogger(once, 'demo.js')).toBe(once)
+  })
+
+  it('skips unrecognised runtimes', () => {
+    expect(injectRunLogger(headed, 'notes.txt')).toBe(headed)
   })
 })
 

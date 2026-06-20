@@ -26,10 +26,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
+const logAgent = process.env.CLAUDECODE === '1' ? 'claudecode' : 'codex';
+let logSession = '-';
 
 function logScript(level, msg) {
   try {
-    fs.appendFileSync(scriptLog, `${new Date().toISOString()} stop.js ${level} ${msg}\n`);
+    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} stop.js ${level} ${msg}\n`);
   } catch (_) {}
 }
 
@@ -48,7 +50,9 @@ function readStdin() {
 function parsePayload(raw) {
   try {
     const parsed = JSON.parse(raw || '{}');
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    const obj = parsed && typeof parsed === 'object' ? parsed : {};
+    logSession = typeof obj.session_id === 'string' && obj.session_id ? obj.session_id.slice(0, 8) : '-';
+    return obj;
   } catch (_) {
     return {};
   }

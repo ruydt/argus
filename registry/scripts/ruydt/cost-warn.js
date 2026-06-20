@@ -23,13 +23,15 @@ const { execSync } = require('child_process');
 const DB_FILE = path.join(os.homedir(), '.argus', 'argus.db');
 const CONFIG_FILE = path.join(os.homedir(), '.argus', 'cost-warn.json');
 const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
+const logAgent = process.env.CLAUDECODE === '1' ? 'claudecode' : 'codex';
+let logSession = '-';
 const isClaudeCode = process.env.CLAUDECODE === '1';
 
 const DEFAULTS = { threshold_tokens: 5000000, warn_pct: 80 };
 
 function logScript(level, msg) {
   try {
-    fs.appendFileSync(scriptLog, `${new Date().toISOString()} cost-warn.js ${level} ${msg}\n`);
+    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} cost-warn.js ${level} ${msg}\n`);
   } catch (_) {}
 }
 
