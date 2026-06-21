@@ -55,3 +55,6 @@ backend/internal/ui/dist/*
 
 # Local planning docs
 /plans/
+
+# Superpowers planning docs (local only)
+docs/superpowers/
