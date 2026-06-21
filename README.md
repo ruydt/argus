@@ -85,11 +85,21 @@ tour at **[getargus.org](https://getargus.org)**.
 
 ## Uninstall
 
+**macOS / Linux:**
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ruydt/argus/main/uninstall.sh | bash
 ```
 
-Stops the server, removes binaries and scripts, removes any argus hook entries it finds in `~/.claude/settings.json`, and optionally deletes your data.
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/ruydt/argus/main/uninstall.ps1 | iex
+```
+
+Stops the server, removes any argus hook entries it finds in `~/.claude/settings.json`, strips `~/.argus/bin` from your PATH, and deletes `~/.argus`.
+
+> **Heads up:** removing `~/.argus` also deletes `argus.db` (all captured events and sessions) and your saved GitHub token. This is irreversible — back up `~/.argus/argus.db` first if you want to keep your history.
 
 ## Documentation
 
