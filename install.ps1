@@ -153,7 +153,7 @@ async function main() {
   } catch (_) {
     msg = `ARGUS live @ ${url}`;
   }
-  emit(isClaudeCode ? '\x1b[1m\x1b[32m' + msg + '\x1b[0m' : msg);
+  emit(isClaudeCode ? '\x1b[35m' + msg + '\x1b[0m' : msg);
 }
 
 main().catch(err => {
