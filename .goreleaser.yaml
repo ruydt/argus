@@ -54,12 +54,14 @@ release:
     Argus is a local-first hook control center for AI coding agents: manage hook
     configs with one-click presets, test any hook in the built-in simulator before
     a live agent fires it, share and install community hook scripts, and observe
-    every Claude Code / Codex session in real time. Runs as a single local binary —
+    every agent session in real time. Runs as a single local binary —
     no cloud, no external infra.
 
     ### Highlights
 
-    - **Hook management** — structured + JSON editors for Claude Code and Codex with one-click presets.
+    - **11 supported agents** — Claude Code, Codex, Cursor, Antigravity CLI, GitHub Copilot CLI, Qwen Code, Continue, Augment, Windsurf, Crush, and Goose.
+    - **Side-effect-free install** — the installer touches no agent config. Run `argus start` to launch the dashboard (and open it in your browser), wire hooks per agent via **Apply preset**, and `argus stop` to shut down.
+    - **Hook management** — structured + JSON editors with one-click presets for every supported agent.
     - **Hook simulator** — run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code before a real agent fires it.
     - **Community script sharing** — browse, install, and (via optional GitHub login) publish hook scripts to the public registry; back up your collection to a private gist.
     - **Observability** — live event feed (SSE), dashboard stats, usage breakdown, projects/sessions explorer, diagnostics.
