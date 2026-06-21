@@ -179,7 +179,7 @@ function AgentTabContent({ agent, status, state, viewMode, sim }: AgentTabConten
 }
 
 export function HooksConfigPage() {
-  const { agents, enabled, enableAgent, disableAgent } = useAgents()
+  const { agents, enabled, enableAgent, disableAgent, loading: agentsLoading } = useAgents()
 
   const [storedAgent, setStoredAgent] = useState<string>(
     () => readStorageString(AGENT_TAB_KEY) ?? 'claudecode'
@@ -245,6 +245,20 @@ export function HooksConfigPage() {
     if (sc) setInitialScript(sc)
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [searchParams])
+
+  // The onboarding tour adds an agent for the user: enable + select it so the
+  // hooks tab (and its preset selector) appear without manual interaction.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<{ id?: string }>).detail?.id
+      if (!id) return
+      if (!enabled.includes(id)) void enableAgent(id)
+      setStoredAgent(id)
+      writeStorageString(AGENT_TAB_KEY, id)
+    }
+    window.addEventListener('argus:tour-add-agent', handler)
+    return () => window.removeEventListener('argus:tour-add-agent', handler)
+  }, [enabled, enableAgent])
 
   useEffect(() => {
     try {
@@ -393,118 +407,131 @@ export function HooksConfigPage() {
         }
       />
 
-      <Tabs
-        orientation="vertical"
-        value={activeAgent}
-        onValueChange={selectAgent}
-        className="w-full gap-6"
-      >
-        <div className="flex w-40 shrink-0 flex-col gap-2">
-          <TabsList
-            variant="line"
-            className="w-full border-r border-border/60 p-0 pr-1"
-            data-tour="hooks-config-agent-tabs"
-          >
-            {enabled.map((id) => (
-              <div key={id} className="group/agent relative w-full">
-                <TabsTrigger value={id} className="w-full justify-start gap-2 pr-7">
-                  <AgentLogo id={id} size={22} />
-                  {agentMeta(id).label}
-                </TabsTrigger>
+      {agentsLoading ? (
+        // Wait for /api/agents before rendering tabs so we never flash the
+        // claudecode/codex defaults that then vanish once the real enabled set
+        // resolves.
+        <div className="flex w-full gap-6" aria-busy="true">
+          <div className="flex w-40 shrink-0 flex-col gap-2">
+            <Skeleton className="h-9 rounded-md" />
+            <Skeleton className="h-9 rounded-md" />
+          </div>
+          <Skeleton className="h-40 flex-1 rounded-lg" />
+        </div>
+      ) : (
+        <Tabs
+          orientation="vertical"
+          value={activeAgent}
+          onValueChange={selectAgent}
+          className="w-full gap-6"
+        >
+          <div className="flex w-40 shrink-0 flex-col gap-2">
+            <TabsList
+              variant="line"
+              className="w-full border-r border-border/60 p-0 pr-1"
+              data-tour="hooks-config-agent-tabs"
+            >
+              {enabled.map((id) => (
+                <div key={id} className="group/agent relative w-full">
+                  <TabsTrigger value={id} className="w-full justify-start gap-2 pr-7">
+                    <AgentLogo id={id} size={22} />
+                    {agentMeta(id).label}
+                  </TabsTrigger>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void handleRemoveAgent(id)
+                    }}
+                    className="absolute right-1 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded danger-action opacity-0 transition-opacity pointer-events-none group-hover/agent:pointer-events-auto group-hover/agent:opacity-100"
+                    aria-label={`Remove ${agentMeta(id).label}`}
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </TabsList>
+
+            <SearchSelect
+              options={addableOptions}
+              onSelect={handleAddAgent}
+              placeholder="Search agents…"
+              emptyText="No agents to add."
+              trigger={
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    void handleRemoveAgent(id)
-                  }}
-                  className="absolute right-1 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded danger-action opacity-0 transition-opacity pointer-events-none group-hover/agent:pointer-events-auto group-hover/agent:opacity-100"
-                  aria-label={`Remove ${agentMeta(id).label}`}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                  aria-label="Add agent"
+                  data-tour="hooks-config-add-agent"
                 >
-                  <X className="size-3.5" />
+                  <Plus className="size-4" />
+                  Add agent
                 </button>
-              </div>
-            ))}
-          </TabsList>
+              }
+            />
+          </div>
 
-          <SearchSelect
-            options={addableOptions}
-            onSelect={handleAddAgent}
-            placeholder="Search agents…"
-            emptyText="No agents to add."
-            trigger={
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
-                aria-label="Add agent"
-                data-tour="hooks-config-add-agent"
-              >
-                <Plus className="size-4" />
-                Add agent
-              </button>
-            }
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          {enabled.length === 0 ? (
-            <Card className="flex flex-col items-center gap-2 p-8 text-center">
-              <p className="text-sm font-medium text-foreground">No agents added</p>
-              <p className="max-w-sm text-[13px] text-muted-foreground">
-                Use “Add agent” to pick an installed coding agent and manage its hooks.
-              </p>
-            </Card>
-          ) : (
-            <>
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  <AgentLogo id={activeAgent} size={28} />
-                  <span className="truncate text-[15px] font-semibold text-foreground">
-                    {agentMeta(activeAgent).label}
-                  </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            {enabled.length === 0 ? (
+              <Card className="flex flex-col items-center gap-2 p-8 text-center">
+                <p className="text-sm font-medium text-foreground">No agents added</p>
+                <p className="max-w-sm text-[13px] text-muted-foreground">
+                  Use “Add agent” to pick an installed coding agent and manage its hooks.
+                </p>
+              </Card>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <AgentLogo id={activeAgent} size={28} />
+                    <span className="truncate text-[15px] font-semibold text-foreground">
+                      {agentMeta(activeAgent).label}
+                    </span>
+                  </div>
+                  {activeEditable &&
+                    (viewMode === 'simulator' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleViewModeChange('structured')}
+                        className="group flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+                        aria-label="Back to Structured"
+                      >
+                        <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
+                        Go back
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleViewModeChange('simulator')}
+                        className="group flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+                        aria-label="Open Simulator"
+                      >
+                        Simulator
+                        <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    ))}
                 </div>
-                {activeEditable &&
-                  (viewMode === 'simulator' ? (
-                    <button
-                      type="button"
-                      onClick={() => handleViewModeChange('structured')}
-                      className="group flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label="Back to Structured"
-                    >
-                      <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
-                      Go back
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleViewModeChange('simulator')}
-                      className="group flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
-                      aria-label="Open Simulator"
-                    >
-                      Simulator
-                      <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </button>
-                  ))}
-              </div>
 
-              <TabsContent value={activeAgent}>
-                {activeEditable ? (
-                  <AgentTabContent
-                    agent={activeAgent}
-                    status={activeStatus}
-                    state={state}
-                    viewMode={viewMode}
-                    sim={simProps}
-                  />
-                ) : activeStatus ? (
-                  <GuidedSetupPanel agent={activeStatus} />
-                ) : (
-                  <GuidedSetupPanel agent={fallbackStatus(activeAgent)} />
-                )}
-              </TabsContent>
-            </>
-          )}
-        </div>
-      </Tabs>
+                <TabsContent value={activeAgent}>
+                  {activeEditable ? (
+                    <AgentTabContent
+                      agent={activeAgent}
+                      status={activeStatus}
+                      state={state}
+                      viewMode={viewMode}
+                      sim={simProps}
+                    />
+                  ) : activeStatus ? (
+                    <GuidedSetupPanel agent={activeStatus} />
+                  ) : (
+                    <GuidedSetupPanel agent={fallbackStatus(activeAgent)} />
+                  )}
+                </TabsContent>
+              </>
+            )}
+          </div>
+        </Tabs>
+      )}
     </PageShell>
   )
 }

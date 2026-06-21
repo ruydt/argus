@@ -22,9 +22,9 @@ export function useOnboarding({
   const [isFirstVisitTourActive, setIsFirstVisitTourActive] = useState(false)
   const driverRef = useRef<ReturnType<typeof driver> | null>(null)
   const scrollCleanupRef = useRef<(() => void) | null>(null)
-  // Best-effort install state for the tour's no-agent branch. Fetched on mount
-  // so it's ready by the time the user clicks into the Hooks step.
-  const installedAgentsRef = useRef<string[]>([])
+  // Best-effort installed-agent list for the tour's add-agent branch. Fetched on
+  // mount so it's ready by the time the user reaches the Hooks step.
+  const installedAgentsRef = useRef<{ id: string; label: string }[]>([])
   const agentsLoadedRef = useRef(false)
 
   const stopScrollForwarding = () => {
@@ -45,6 +45,8 @@ export function useOnboarding({
   const startFirstVisitTour = () => {
     forceSidebarOpen()
     setIsFirstVisitTourActive(true)
+    // Start the tour from the home/events page so the sidebar intro reads in order.
+    navigate('/')
 
     const config = createDriverConfig()
     const steps = buildFirstVisitSteps({
@@ -58,8 +60,11 @@ export function useOnboarding({
     const d = driver({
       ...config,
       steps,
+      // Overriding onDestroyStarted replaces driver.js's default destroy, so we
+      // must destroy ourselves — otherwise the X / overlay click does nothing.
       onDestroyStarted: () => {
         markDone()
+        driverRef.current?.destroy()
       },
       onDestroyed: () => {
         stopScrollForwarding()
@@ -74,18 +79,24 @@ export function useOnboarding({
     const done = localStorage.getItem('argus_onboarding_done')
     if (done) return
 
-    // Prefetch install state for the tour's no-agent branch (best-effort).
+    // Prefetch installed agents for the tour's add-agent branch (best-effort).
     if (typeof fetch === 'function') {
       fetch('/api/agents')
         .then((res) => (res.ok ? res.json() : null))
-        .then((data: { agents?: { id: string; installed?: boolean }[] } | null) => {
-          if (data && Array.isArray(data.agents)) {
-            installedAgentsRef.current = data.agents.filter((a) => a.installed).map((a) => a.id)
+        .then(
+          (
+            data: { agents?: { id: string; display_name?: string; installed?: boolean }[] } | null
+          ) => {
+            if (data && Array.isArray(data.agents)) {
+              installedAgentsRef.current = data.agents
+                .filter((a) => a.installed)
+                .map((a) => ({ id: a.id, label: a.display_name || a.id }))
+            }
+            agentsLoadedRef.current = true
           }
-          agentsLoadedRef.current = true
-        })
+        )
         .catch(() => {
-          // Leave agentsLoaded false → tour follows the normal (has-agent) flow.
+          // Leave agentsLoaded false → tour follows the full (has-agent) flow.
         })
     }
 

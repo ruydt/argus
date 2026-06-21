@@ -31,7 +31,11 @@ export type UseAgents = {
 
 export function useAgents(): UseAgents {
   const [agents, setAgents] = useState<AgentStatus[]>([])
-  const [enabled, setEnabled] = useState<string[]>(DEFAULT_ENABLED)
+  // Start empty (not DEFAULT_ENABLED) so the Hooks page never optimistically
+  // renders claudecode/codex tabs that then vanish once /api/agents resolves —
+  // callers gate tab rendering on `loading`. DEFAULT_ENABLED is the fetch-failed
+  // fallback only.
+  const [enabled, setEnabled] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)

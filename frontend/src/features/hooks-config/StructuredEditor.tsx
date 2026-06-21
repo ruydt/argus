@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import type { SearchableSelectOption } from '@/components/shared/SearchableSelect'
@@ -308,6 +308,11 @@ export function StructuredEditor({
         : (events ?? [])
   const hasPresets = agent in HOOK_PRESETS
   const usedEvents = Object.keys(config.hooks)
+
+  // Keep the preset dropdown honest: once the config is emptied (e.g. Delete all
+  // events) it no longer reflects a preset, so show "Apply preset…" rather than a
+  // stale "Baseline/Medium/Full" label. Derived so we avoid a setState effect.
+  const displayedPreset = usedEvents.length === 0 ? '' : selectedPreset
   const availableToAdd = knownEvents.filter((e) => !usedEvents.includes(e))
 
   const setEventGroups = (eventType: string, groups: HookGroup[]) =>
@@ -331,6 +336,21 @@ export function StructuredEditor({
     const preset = HOOK_PRESETS[agent][key as keyof (typeof HOOK_PRESETS)[typeof agent]]
     onChange(applyPreset(config, preset))
   }
+
+  // The onboarding tour applies a preset for the user. Kept in a ref so the
+  // listener always sees the latest config (handleApplyPreset closes over it).
+  const applyPresetRef = useRef(handleApplyPreset)
+  useEffect(() => {
+    applyPresetRef.current = handleApplyPreset
+  })
+  useEffect(() => {
+    const onApply = (e: Event) => {
+      const key = (e as CustomEvent<{ key?: string }>).detail?.key ?? 'baseline'
+      applyPresetRef.current(key)
+    }
+    window.addEventListener('argus:tour-apply-preset', onApply)
+    return () => window.removeEventListener('argus:tour-apply-preset', onApply)
+  }, [])
 
   function deleteAllEvents() {
     const cleared = { hooks: {} }
@@ -404,13 +424,13 @@ export function StructuredEditor({
         )}
 
         {hasPresets && (
-          <Select value={selectedPreset} onValueChange={handleApplyPreset}>
+          <Select value={displayedPreset} onValueChange={handleApplyPreset}>
             <SelectTrigger className="h-8 text-[13px] w-[160px]" data-tour="preset-selector">
               <span
-                className={selectedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}
+                className={displayedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}
               >
-                {selectedPreset
-                  ? PRESET_LABELS[selectedPreset as keyof typeof PRESET_LABELS]?.label
+                {displayedPreset
+                  ? PRESET_LABELS[displayedPreset as keyof typeof PRESET_LABELS]?.label
                   : 'Apply preset…'}
               </span>
             </SelectTrigger>
@@ -438,6 +458,17 @@ export function StructuredEditor({
         >
           <Trash2 className="size-3.5" />
           Delete all events
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          className="h-8 gap-1.5 text-[13px]"
+          disabled={!canSave}
+          onClick={() => onSave()}
+          aria-label="Save hooks config"
+        >
+          {saving ? 'Saving…' : 'Save'}
         </Button>
       </div>
 

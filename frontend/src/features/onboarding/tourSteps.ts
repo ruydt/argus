@@ -2,24 +2,44 @@ import type { DriveStep } from 'driver.js'
 
 type TourDriver = {
   moveNext: () => void
-  moveTo: (index: number) => void
   destroy: () => void
 }
+
+type InstalledAgent = { id: string; label: string }
 
 type FirstVisitStepsOptions = {
   navigate: (path: string) => void
   getDriver: () => TourDriver | null
   onComplete: () => void
-  // Best-effort install state pulled from /api/agents. agentsLoaded guards
-  // against a slow/failed fetch: when not yet loaded we assume an agent is
-  // present and follow the normal flow rather than wrongly showing "no agent".
-  getInstalledAgents: () => string[]
+  // Installed coding agents (from /api/agents), ordered. Drives the add-agent
+  // branch: none installed ⇒ end the tour with "install one first"; otherwise
+  // point the user at the top agent. Loaded guards a slow/failed fetch — when
+  // not loaded we assume an agent is present and follow the full flow.
+  getInstalledAgents: () => InstalledAgent[]
   getAgentsLoaded: () => boolean
 }
 
-// Step indices the branch logic jumps between — keep in sync with the array order.
-const PRESET_STEP = 2
-const NO_AGENT_STEP = 5
+// Poll until `selector` exists, then advance. ALWAYS advances after the safety
+// timeout so a missing target can never wedge the tour (the bug where Next did
+// nothing on the add-agent step).
+function whenPresent(selector: string, advance: () => void) {
+  let fired = false
+  const run = () => {
+    if (fired) return
+    fired = true
+    advance()
+  }
+  const interval = setInterval(() => {
+    if (document.querySelector(selector)) {
+      clearInterval(interval)
+      run()
+    }
+  }, 100)
+  setTimeout(() => {
+    clearInterval(interval)
+    run()
+  }, 8000)
+}
 
 export function buildFirstVisitSteps({
   navigate,
@@ -28,15 +48,19 @@ export function buildFirstVisitSteps({
   getInstalledAgents,
   getAgentsLoaded,
 }: FirstVisitStepsOptions): DriveStep[] {
+  // End the tour where it is — do NOT navigate away.
   const finish = () => {
     onComplete()
-    navigate('/')
     getDriver()?.destroy()
   }
 
-  return [
+  const installed = getInstalledAgents()
+  const hasInstalled = getAgentsLoaded() && installed.length > 0
+  const top = installed[0]
+
+  const steps: DriveStep[] = [
     {
-      element: '[data-tour="sidebar-nav"]',
+      // No element ⇒ centered popover. The tour starts on "/" (set by the caller).
       popover: {
         title: 'Welcome to Argus',
         description:
@@ -44,36 +68,69 @@ export function buildFirstVisitSteps({
       },
     },
     {
+      element: '[data-tour="sidebar-nav"]',
+      popover: {
+        title: 'Your workspace',
+        description:
+          'Three sections live here: <strong>Diagnostics</strong> (health &amp; logs), <strong>Hooks</strong> (manage and test your agent hooks), and <strong>Marketplace</strong> (community hook scripts).',
+      },
+    },
+    {
       element: '[data-tour="hooks-config-link"]',
       popover: {
-        title: 'Configure your hooks',
-        description: 'First, wire up your agent. Click <strong>Next</strong> to open Hooks.',
+        title: 'Open Hooks',
+        description:
+          'This is where you wire up your agent. Click <strong>Next</strong> to open it.',
         onNextClick: () => {
           navigate('/hooks')
-          // Poll until the Hooks page has rendered (it's lazy-loaded), then
-          // branch: no installed agent → jump to the "install an agent" step;
-          // otherwise continue to the preset step.
-          const interval = setInterval(() => {
-            const ready =
-              document.querySelector('[data-tour="preset-selector"]') ||
-              document.querySelector('[data-tour="hooks-config-agent-tabs"]')
-            if (!ready) return
-            clearInterval(interval)
-            const noAgent = getAgentsLoaded() && getInstalledAgents().length === 0
-            if (noAgent) getDriver()?.moveTo(NO_AGENT_STEP)
-            else getDriver()?.moveTo(PRESET_STEP)
-          }, 100)
-          // Safety: stop polling after 8s
-          setTimeout(() => clearInterval(interval), 8000)
+          whenPresent('[data-tour="hooks-config-add-agent"]', () => getDriver()?.moveNext())
+        },
+      },
+    },
+  ]
+
+  if (!hasInstalled) {
+    // No coding agent detected — end here and tell them to install one.
+    steps.push({
+      element: '[data-tour="hooks-config-add-agent"]',
+      popover: {
+        title: 'Install an agent first',
+        description:
+          "We didn't detect any installed coding agent. Install Claude Code, Codex, Cursor, GitHub Copilot CLI, or another supported agent, then reopen Argus to wire it up here.",
+        doneBtnText: 'Got it',
+        onNextClick: finish,
+      },
+    })
+    return steps
+  }
+
+  // At least one agent is installed — add the top one for them, then finish.
+  steps.push(
+    {
+      element: '[data-tour="hooks-config-add-agent"]',
+      popover: {
+        title: 'Add your agent',
+        description: `This is where you add a coding agent. We'll add <strong>${top.label}</strong> for you now — click <strong>Next</strong>.`,
+        onNextClick: () => {
+          // Tell the Hooks page to enable + select the top agent, then advance
+          // once its preset selector renders.
+          window.dispatchEvent(new CustomEvent('argus:tour-add-agent', { detail: { id: top.id } }))
+          whenPresent('[data-tour="preset-selector"]', () => getDriver()?.moveNext())
         },
       },
     },
     {
       element: '[data-tour="preset-selector"]',
       popover: {
-        title: 'Choose a preset',
+        title: 'Apply a preset',
         description:
-          'Open this dropdown and select <strong>Baseline</strong> — it captures the most useful events and adds the auto-start hook on session start. Then click Next.',
+          "We'll apply the <strong>Baseline</strong> preset for you — it captures the most useful events and adds the auto-start hook on session start. Click <strong>Next</strong>.",
+        onNextClick: () => {
+          window.dispatchEvent(
+            new CustomEvent('argus:tour-apply-preset', { detail: { key: 'baseline' } })
+          )
+          whenPresent('[aria-label="Save hooks config"]', () => getDriver()?.moveNext())
+        },
       },
     },
     {
@@ -81,29 +138,20 @@ export function buildFirstVisitSteps({
       popover: {
         title: 'Save your config',
         description:
-          'Click Save to write the hooks config to disk. Your agent picks it up on the next session start.',
+          'Click <strong>Save</strong> to write the hooks config to disk. Your agent picks it up on its next session start.',
       },
     },
     {
+      // Centered finish — stays on the Hooks page.
       popover: {
         title: "You're all set!",
         description:
-          'Start a session in your agent and hook events will appear here live. Argus auto-starts from the session-start hook — or run <code>argus start</code> anytime to open the dashboard.',
-        doneBtnText: 'Go to Events',
+          'Hook events stream in here live as your agent runs — or run <code>argus start</code> anytime to open the dashboard.',
+        doneBtnText: 'Done',
         onNextClick: finish,
       },
-    },
-    {
-      // Reached only when no coding agent is installed. Keep this last so the
-      // "done" button ends the tour cleanly.
-      element: '[data-tour="hooks-config-add-agent"]',
-      popover: {
-        title: 'Install an agent first',
-        description:
-          "We didn't detect an installed coding agent. Argus works with Claude Code, Codex, Cursor, Copilot CLI, and more — install one, then come back here and apply a preset to wire it up. Argus is already running: explore the dashboard meanwhile.",
-        doneBtnText: 'Explore Argus',
-        onNextClick: finish,
-      },
-    },
-  ]
+    }
+  )
+
+  return steps
 }
