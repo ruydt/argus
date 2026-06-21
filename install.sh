@@ -199,19 +199,21 @@ echo "  → $ACTIVATE_SCRIPT"
 # ── 7. Add ~/.argus/bin to PATH in shell rc ──────────────────────────────
 
 PATH_LINE="export PATH=\"\$HOME/.argus/bin:\$PATH\""
-SHELL_RC=""
-if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
-  SHELL_RC="$HOME/.zshrc"
-elif [ -n "$BASH_VERSION" ] || [ "$(basename "$SHELL")" = "bash" ]; then
-  SHELL_RC="$HOME/.bashrc"
-fi
+# Pick the rc for the user's LOGIN shell ($SHELL), not the shell running this
+# script — `curl | bash` runs under bash even when the user lives in zsh.
+case "$(basename "${SHELL:-}")" in
+  zsh)  SHELL_RC="$HOME/.zshrc" ;;
+  bash) SHELL_RC="$HOME/.bashrc" ;;
+  *)    SHELL_RC="$HOME/.profile" ;; # sane fallback for fish/other/unset
+esac
 
-if [ -n "$SHELL_RC" ] && ! grep -qF '.argus/bin' "$SHELL_RC" 2>/dev/null; then
+PATH_UPDATED=0
+if ! grep -qF '.argus/bin' "$SHELL_RC" 2>/dev/null; then
   echo "" >> "$SHELL_RC"
   echo "# argus" >> "$SHELL_RC"
   echo "$PATH_LINE" >> "$SHELL_RC"
+  PATH_UPDATED=1
   echo "  → added ~/.argus/bin to PATH in $SHELL_RC"
-  echo "    (run: source $SHELL_RC)"
 fi
 
 echo ""
@@ -219,4 +221,12 @@ echo "argus $VERSION installed."
 echo "Activate hook: $ACTIVATE_SCRIPT"
 echo ""
 echo "Next steps:"
-echo "  1. argus start"
+# The PATH change above only applies to NEW shells, so `argus` is not yet on the
+# PATH of the terminal running this installer. Give a command that works now.
+echo "  1. Start the server right now:"
+echo "       ~/.argus/bin/argus start"
+if [ "$PATH_UPDATED" = "1" ]; then
+  echo "  2. Or open a new terminal (or run: source $SHELL_RC), then: argus start"
+else
+  echo "  2. In new terminals you can just run: argus start"
+fi

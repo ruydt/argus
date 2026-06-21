@@ -174,9 +174,11 @@ Write-Host "  -> $ActivateScript"
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
 if ($userPath -notlike "*$BinDir*") {
   [Environment]::SetEnvironmentVariable('Path', "$BinDir;$userPath", 'User')
-  $env:Path = "$BinDir;$env:Path"
   Write-Host "  -> added $BinDir to your user PATH (restart terminals to pick it up)"
 }
+# Always make the binary usable in THIS session, even on re-run when the user
+# PATH already contains it but the current shell was started before.
+if ($env:Path -notlike "*$BinDir*") { $env:Path = "$BinDir;$env:Path" }
 
 Write-Host ''
 Write-Host "argus $Version installed."
