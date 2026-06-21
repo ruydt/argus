@@ -34,15 +34,13 @@ describe('HooksConfigPage', () => {
     })
   })
 
-  it('disables Delete all events when there are no events', async () => {
+  it('disables Select events when there are no events', async () => {
     renderPage()
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /delete all events/i })).toBeTruthy()
-    )
-    expect(screen.getByRole('button', { name: /delete all events/i })).toBeDisabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: /select events/i })).toBeTruthy())
+    expect(screen.getByRole('button', { name: /select events/i })).toBeDisabled()
   })
 
-  it('opens a confirm dialog from Delete all events', async () => {
+  it('selects an event and opens the delete confirm dialog', async () => {
     const cfg = {
       hooks: { PostToolUse: [{ hooks: [{ type: 'command', command: 'echo hi' }] }] },
     }
@@ -57,10 +55,13 @@ describe('HooksConfigPage', () => {
     )
     const user = userEvent.setup()
     renderPage()
-    const btn = await screen.findByRole('button', { name: /delete all events/i })
-    await waitFor(() => expect(btn).not.toBeDisabled())
-    await user.click(btn)
-    expect(await screen.findByText(/delete all events\?/i)).toBeTruthy()
+    const selectBtn = await screen.findByRole('button', { name: /select events/i })
+    await waitFor(() => expect(selectBtn).not.toBeDisabled())
+    await user.click(selectBtn)
+    // The event row becomes a checkbox; select it, then delete.
+    await user.click(await screen.findByRole('checkbox', { name: /PostToolUse/i }))
+    await user.click(screen.getByRole('button', { name: /^delete$/i }))
+    expect(await screen.findByText(/delete event\?/i)).toBeTruthy()
   })
 
   it('shows error card when load fails for active agent', async () => {

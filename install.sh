@@ -179,7 +179,7 @@ async function main() {
     logScript('WARN', 'sqlite counts unavailable');
     msg = \`ARGUS live @ \${url}\`;
   }
-  emit(isClaudeCode ? '\x1b[1m\x1b[32m' + msg + '\x1b[0m' : msg);
+  emit(isClaudeCode ? '\x1b[35m' + msg + '\x1b[0m' : msg);
 }
 
 main().catch(err => {
@@ -216,11 +216,7 @@ fi
 
 echo ""
 echo "argus $VERSION installed."
-echo "Activate hook: $ACTIVATE_SCRIPT  (unwired — apply a preset in the dashboard to use it)"
+echo "Activate hook: $ACTIVATE_SCRIPT"
 echo ""
 echo "Next steps:"
-echo "  1. argus start                  # launches the server and opens http://127.0.0.1:$ARGUS_PORT"
-echo "  2. Open the Hooks page, pick your agent, and click 'Apply preset'."
-echo "     The preset wires argus-activate.js on session start + event capture."
-echo ""
-echo "Tip: 'argus start' opens your browser; bare 'argus' just runs the server; 'argus stop' shuts it down."
+echo "  1. argus start"

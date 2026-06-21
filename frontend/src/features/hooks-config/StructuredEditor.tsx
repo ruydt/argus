@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Check, ListChecks, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import type { SearchableSelectOption } from '@/components/shared/SearchableSelect'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +22,7 @@ import {
   applyPreset,
 } from './presets'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig } from './types'
+import { cn } from '@/lib/utils'
 
 // Tool names that support matcher filtering
 const TOOL_EVENTS = new Set([
@@ -246,8 +247,31 @@ export function StructuredEditor({
   // Config snapshot captured when the modal opens, so Cancel can revert the
   // live edits made inside it.
   const [editSnapshot, setEditSnapshot] = useState<HooksConfig | null>(null)
-  const [deleteAllOpen, setDeleteAllOpen] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set())
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  // Forced save/discard prompt shown when leaving the editor with unsaved edits.
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string>('')
+
+  // True when the in-modal edits differ from the snapshot taken on open.
+  function editorDirty() {
+    if (!editingEvent || !editSnapshot) return false
+    return (
+      JSON.stringify(config.hooks[editingEvent] ?? null) !==
+      JSON.stringify(editSnapshot.hooks[editingEvent] ?? null)
+    )
+  }
+
+  // Attempt to leave the editor. Unsaved edits => force a save/discard choice.
+  function requestCloseEdit() {
+    if (editorDirty()) {
+      setConfirmCloseOpen(true)
+      return
+    }
+    setEditingEvent(null)
+    setEditSnapshot(null)
+  }
 
   // Open the editor modal for an event, remembering the pre-edit config.
   function openEditor(eventType: string, snapshot: HooksConfig) {
@@ -309,10 +333,36 @@ export function StructuredEditor({
   const hasPresets = agent in HOOK_PRESETS
   const usedEvents = Object.keys(config.hooks)
 
-  // Keep the preset dropdown honest: once the config is emptied (e.g. Delete all
-  // events) it no longer reflects a preset, so show "Apply preset…" rather than a
+  // Keep the preset dropdown honest: once the config is emptied (e.g. all events
+  // deleted) it no longer reflects a preset, so show "Apply preset…" rather than a
   // stale "Baseline/Medium/Full" label. Derived so we avoid a setState effect.
   const displayedPreset = usedEvents.length === 0 ? '' : selectedPreset
+
+  // Multi-select delete for events — mirrors the Sessions page "Select" mechanism.
+  const exitSelect = () => {
+    setSelectMode(false)
+    setSelectedEvents(new Set())
+  }
+  const toggleEventSelected = (eventType: string) =>
+    setSelectedEvents((prev) => {
+      const next = new Set(prev)
+      if (next.has(eventType)) next.delete(eventType)
+      else next.add(eventType)
+      return next
+    })
+  const allEventsSelected = usedEvents.length > 0 && usedEvents.every((e) => selectedEvents.has(e))
+  const toggleSelectAllEvents = () =>
+    setSelectedEvents(allEventsSelected ? new Set() : new Set(usedEvents))
+  function deleteSelectedEvents() {
+    const next = { ...config.hooks }
+    for (const e of selectedEvents) delete next[e]
+    const cleared = { hooks: next }
+    onChange(cleared)
+    // Persist immediately (pass explicitly so the save doesn't race the draft).
+    onSave(cleared)
+    setConfirmDeleteOpen(false)
+    exitSelect()
+  }
   const availableToAdd = knownEvents.filter((e) => !usedEvents.includes(e))
 
   const setEventGroups = (eventType: string, groups: HookGroup[]) =>
@@ -351,15 +401,6 @@ export function StructuredEditor({
     window.addEventListener('argus:tour-apply-preset', onApply)
     return () => window.removeEventListener('argus:tour-apply-preset', onApply)
   }, [])
-
-  function deleteAllEvents() {
-    const cleared = { hooks: {} }
-    onChange(cleared)
-    // Persist the cleared config immediately (pass it explicitly so the save
-    // doesn't race the async draft-state update).
-    onSave(cleared)
-    setDeleteAllOpen(false)
-  }
 
   function addGroup(eventType: string) {
     setEventGroups(eventType, [...(config.hooks[eventType] ?? []), emptyGroup()])
@@ -411,65 +452,108 @@ export function StructuredEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 flex-wrap" data-tour="hooks-structured-toolbar">
-        {availableToAdd.length > 0 && (
-          <SearchableSelect
-            key={usedEvents.join(',')}
-            value=""
-            onValueChange={addEventType}
-            options={availableToAdd.map((e) => ({ label: e, value: e }))}
-            placeholder="Add hook event"
-            ariaLabel="Add hook event"
-            className="h-8 w-[200px] text-[13px] font-mono bg-transparent border-input text-foreground"
-          />
-        )}
+        {selectMode ? (
+          <>
+            <span className="text-[13px] tabular-nums text-muted-foreground">
+              {selectedEvents.size} selected
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 text-[13px]"
+              disabled={usedEvents.length === 0}
+              onClick={toggleSelectAllEvents}
+            >
+              {allEventsSelected ? 'Clear all' : 'Select all'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="danger-action h-8 gap-1.5 text-[13px]"
+              disabled={selectedEvents.size === 0 || saving}
+              onClick={() => setConfirmDeleteOpen(true)}
+            >
+              <Trash2 className="size-3.5" />
+              Delete
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 text-[13px]"
+              disabled={saving}
+              onClick={exitSelect}
+            >
+              Cancel
+            </Button>
+          </>
+        ) : (
+          <>
+            {availableToAdd.length > 0 && (
+              <SearchableSelect
+                key={usedEvents.join(',')}
+                value=""
+                onValueChange={addEventType}
+                options={availableToAdd.map((e) => ({ label: e, value: e }))}
+                placeholder="Add hook event"
+                ariaLabel="Add hook event"
+                className="h-8 w-[200px] text-[13px] font-mono bg-transparent border-input text-foreground"
+              />
+            )}
 
-        {hasPresets && (
-          <Select value={displayedPreset} onValueChange={handleApplyPreset}>
-            <SelectTrigger className="h-8 text-[13px] w-[160px]" data-tour="preset-selector">
-              <span
-                className={displayedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'}
-              >
-                {displayedPreset
-                  ? PRESET_LABELS[displayedPreset as keyof typeof PRESET_LABELS]?.label
-                  : 'Apply preset…'}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              {PRESET_KEYS.map((key) => (
-                <SelectItem key={key} value={key} className="text-[13px]">
-                  <span className="font-medium">{PRESET_LABELS[key].label}</span>
-                  <span className="ml-1.5 text-muted-foreground text-[12px]">
-                    — overwrites current config with {PRESET_LABELS[key].description}
+            {hasPresets && (
+              <Select value={displayedPreset} onValueChange={handleApplyPreset}>
+                <SelectTrigger className="h-8 text-[13px] w-[160px]" data-tour="preset-selector">
+                  <span
+                    className={
+                      displayedPreset ? 'text-[13px]' : 'text-[13px] text-muted-foreground'
+                    }
+                  >
+                    {displayedPreset
+                      ? PRESET_LABELS[displayedPreset as keyof typeof PRESET_LABELS]?.label
+                      : 'Apply preset…'}
                   </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                </SelectTrigger>
+                <SelectContent>
+                  {PRESET_KEYS.map((key) => (
+                    <SelectItem key={key} value={key} className="text-[13px]">
+                      <span className="font-medium">{PRESET_LABELS[key].label}</span>
+                      <span className="ml-1.5 text-muted-foreground text-[12px]">
+                        — overwrites current config with {PRESET_LABELS[key].description}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 gap-1.5 text-[13px]"
+              disabled={usedEvents.length === 0 || saving}
+              onClick={() => setSelectMode(true)}
+              aria-label="Select events"
+            >
+              <ListChecks className="size-3.5" />
+              Select events
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 gap-1.5 text-[13px]"
+              disabled={!canSave}
+              onClick={() => onSave()}
+              aria-label="Save hooks config"
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </>
         )}
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="danger-action ml-auto h-8 gap-1.5 text-[13px]"
-          disabled={usedEvents.length === 0 || saving}
-          onClick={() => setDeleteAllOpen(true)}
-          aria-label="Delete all events"
-        >
-          <Trash2 className="size-3.5" />
-          Delete all events
-        </Button>
-
-        <Button
-          type="button"
-          size="sm"
-          className="h-8 gap-1.5 text-[13px]"
-          disabled={!canSave}
-          onClick={() => onSave()}
-          aria-label="Save hooks config"
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
       </div>
 
       {usedEvents.length === 0 && (
@@ -484,14 +568,35 @@ export function StructuredEditor({
         return (
           <div
             key={eventType}
-            className="group/event flex items-center justify-between border border-border rounded-lg bg-background hover:bg-foreground/[0.06] transition-colors"
+            className={cn(
+              'group/event flex items-center justify-between border border-border rounded-lg bg-background transition-colors',
+              selectMode && selectedEvents.has(eventType)
+                ? 'border-[#863bff]/50 bg-[#863bff]/[0.06]'
+                : 'hover:bg-foreground/[0.06]'
+            )}
             data-tour={eventIdx === 0 ? 'hooks-event-group' : undefined}
           >
             <button
               type="button"
+              role={selectMode ? 'checkbox' : undefined}
+              aria-checked={selectMode ? selectedEvents.has(eventType) : undefined}
               className="flex flex-1 items-center gap-2 px-4 py-3 text-left"
-              onClick={() => openEditor(eventType, config)}
+              onClick={() =>
+                selectMode ? toggleEventSelected(eventType) : openEditor(eventType, config)
+              }
             >
+              {selectMode && (
+                <span
+                  className={cn(
+                    'flex size-[18px] shrink-0 items-center justify-center rounded border transition-colors',
+                    selectedEvents.has(eventType)
+                      ? 'border-[#863bff] bg-[#863bff] text-white'
+                      : 'border-foreground/25 bg-transparent'
+                  )}
+                >
+                  {selectedEvents.has(eventType) && <Check className="size-3" strokeWidth={3} />}
+                </span>
+              )}
               <span className="text-[13px] font-medium">{eventType}</span>
               <Badge variant="outline" className="text-[11px]">
                 {hookCount} {hookCount !== 1 ? 'hooks' : 'hook'}
@@ -501,16 +606,15 @@ export function StructuredEditor({
             <Modal
               open={editingEvent === eventType}
               onOpenChange={(o) => {
-                // Dismiss (Esc / outside click) keeps the live edits — use the
-                // Cancel button to revert. Just clear the open + snapshot state.
+                // Dismiss (Esc / outside click): if there are unsaved edits,
+                // force a save/discard choice instead of silently leaving.
                 if (!o && editingEvent === eventType) {
-                  setEditingEvent(null)
-                  setEditSnapshot(null)
+                  requestCloseEdit()
                 }
               }}
             >
               <ModalContent className="max-w-2xl">
-                <ModalTitle className="font-mono text-[15px]">{eventType}</ModalTitle>
+                <ModalTitle className="text-[15px]">{eventType}</ModalTitle>
                 <ModalDescription>Configure the hooks that run on this event.</ModalDescription>
                 <div className="mt-4 flex max-h-[65vh] flex-col gap-3 overflow-y-auto pr-1">
                   {groups.map((group, groupIdx) => (
@@ -752,7 +856,7 @@ export function StructuredEditor({
                     Delete event
                   </Button>
                   <div className="flex gap-2">
-                    <Button variant="ghost" onClick={cancelEdit}>
+                    <Button variant="ghost" onClick={requestCloseEdit}>
                       Cancel
                     </Button>
                     <Button onClick={saveEdit} disabled={saving}>
@@ -766,18 +870,52 @@ export function StructuredEditor({
         )
       })}
 
-      <Modal open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
+      <Modal open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <ModalContent>
-          <ModalTitle>Delete all events?</ModalTitle>
+          <ModalTitle>
+            Delete {selectedEvents.size === 1 ? 'event' : `${selectedEvents.size} events`}?
+          </ModalTitle>
           <ModalDescription>
-            This removes every hook event configured for this agent. This cannot be undone.
+            This removes the selected hook event{selectedEvents.size === 1 ? '' : 's'} from this
+            agent's config. This cannot be undone.
           </ModalDescription>
           <ModalFooter>
-            <Button variant="ghost" onClick={() => setDeleteAllOpen(false)}>
+            <Button variant="ghost" onClick={() => setConfirmDeleteOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={deleteAllEvents} disabled={saving}>
-              {saving ? 'Deleting…' : 'Delete all'}
+            <Button variant="destructive" onClick={deleteSelectedEvents} disabled={saving}>
+              {saving ? 'Deleting…' : 'Delete'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
+        <ModalContent>
+          <ModalTitle>Unsaved changes</ModalTitle>
+          <ModalDescription>
+            You have unsaved changes to this event. Save them before closing?
+          </ModalDescription>
+          <ModalFooter>
+            <Button
+              variant="ghost"
+              className="danger-action"
+              onClick={() => {
+                setConfirmCloseOpen(false)
+                cancelEdit()
+              }}
+              disabled={saving}
+            >
+              Don't save
+            </Button>
+            <Button
+              onClick={() => {
+                setConfirmCloseOpen(false)
+                saveEdit()
+              }}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : 'Save'}
             </Button>
           </ModalFooter>
         </ModalContent>

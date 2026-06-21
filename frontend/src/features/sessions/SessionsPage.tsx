@@ -78,14 +78,20 @@ function SessionRowMenu({
   tag,
   pinned,
   actions,
+  onOpenChange,
 }: {
   id: string
   tag?: string
   pinned: boolean
   actions: RowMenuActions
+  onOpenChange?: (open: boolean) => void
 }) {
   const { onSelect, onTogglePin, onSetTag, onRemoveTag, onDelete, notify } = actions
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpenState] = useState(false)
+  const setMenuOpen = (open: boolean) => {
+    setMenuOpenState(open)
+    onOpenChange?.(open)
+  }
   const [tagOpen, setTagOpen] = useState(false)
   const [tagDraft, setTagDraft] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -276,6 +282,10 @@ function SessionRow({
   // Explicit tags get a leading "#" to mark them apart from the folder default.
   const displayTag = effectiveTag(tag, session.cwd)
   const tagLabel = displayTag ? (tag ? `#${displayTag}` : displayTag) : undefined
+  // Track the row menu's open state so the project/time meta hides while the
+  // menu is open (not just on hover) — otherwise the kebab overlaps the meta
+  // once the cursor leaves the row.
+  const [menuOpen, setMenuOpen] = useState(false)
   if (selectMode) {
     return (
       <button
@@ -320,13 +330,25 @@ function SessionRow({
         <span className="min-w-0 flex-1 truncate text-[0.9rem] text-foreground">
           {session.sessionId}
         </span>
-        {/* Meta (project + time) fades out on hover so the 3-dot menu can sit in its place. */}
-        <div className="transition-opacity duration-150 group-hover/row:opacity-0">
+        {/* Meta (project + time) fades out on hover, or while the menu is open, so
+            the 3-dot menu sits in its place without overlapping. */}
+        <div
+          className={cn(
+            'transition-opacity duration-150 group-hover/row:opacity-0',
+            menuOpen && 'opacity-0'
+          )}
+        >
           <SessionMeta session={session} tag={tagLabel} />
         </div>
       </Link>
       <div className="absolute inset-y-0 right-1 flex items-center">
-        <SessionRowMenu id={session.sessionId} tag={tag} pinned={pinned} actions={menuActions} />
+        <SessionRowMenu
+          id={session.sessionId}
+          tag={tag}
+          pinned={pinned}
+          actions={menuActions}
+          onOpenChange={setMenuOpen}
+        />
       </div>
     </div>
   )

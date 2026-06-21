@@ -217,7 +217,10 @@ func CollectionRemove(svc *github.Service) http.Handler {
 		case errors.Is(err, github.ErrNotAuthenticated):
 			http.Error(w, "not authenticated", http.StatusUnauthorized)
 		case errors.Is(err, github.ErrNotInCollection):
-			http.Error(w, "not in collection", http.StatusNotFound)
+			// Already absent — removal is idempotent. GitHub's gist read can lag a
+			// prior delete, so the entry may still be shown; a repeat delete must
+			// not surface as an error.
+			w.WriteHeader(http.StatusNoContent)
 		case err != nil:
 			log.Printf("[collection] remove err=%v", err)
 			http.Error(w, "github error", http.StatusBadGateway)
