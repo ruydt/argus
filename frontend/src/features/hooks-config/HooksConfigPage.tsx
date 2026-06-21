@@ -15,6 +15,7 @@ import { GuidedSetupPanel } from './GuidedSetupPanel'
 import { getTemplate } from './hookTemplates'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import { useAgents, type AgentStatus } from './hooks/useAgents'
+import { SIM_PAYLOAD_HANDOFF_KEY } from './simHandoff'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig, HooksConfigState } from './types'
 
 type ViewMode = 'structured' | 'simulator'
@@ -39,6 +40,18 @@ function writeStorageString(key: string, value: string) {
     sessionStorage.setItem(key, value)
   } catch {
     /* quota exceeded */
+  }
+}
+
+// readSimHandoff pops the one-shot "Simulate this event" payload (set by the
+// event modal) so it's applied exactly once and doesn't stick across visits.
+function readSimHandoff(): string | null {
+  try {
+    const v = sessionStorage.getItem(SIM_PAYLOAD_HANDOFF_KEY)
+    if (v) sessionStorage.removeItem(SIM_PAYLOAD_HANDOFF_KEY)
+    return v && v.trim() ? v : null
+  } catch {
+    return null
   }
 }
 
@@ -214,13 +227,19 @@ export function HooksConfigPage() {
     /* eslint-disable react-hooks/set-state-in-effect */
     if (searchParams.get('view') === 'simulator') setViewMode('simulator')
     const ev = searchParams.get('event')
+    // "Simulate this event" hands a real payload via sessionStorage; consume it
+    // (once) so the simulator opens with the exact event JSON, not a template.
+    const handoff = searchParams.get('payload') === '1' ? readSimHandoff() : null
     if (ev) {
       setSimEventType(ev)
       setSimPayloadJSON((current) => {
+        if (handoff) return handoff
         if (current && current.trim()) return current
         const ag = readStorageString(AGENT_TAB_KEY) === 'codex' ? 'codex' : 'claudecode'
         return JSON.stringify(getTemplate(ag, ev), null, 2)
       })
+    } else if (handoff) {
+      setSimPayloadJSON(handoff)
     }
     const sc = searchParams.get('script')
     if (sc) setInitialScript(sc)

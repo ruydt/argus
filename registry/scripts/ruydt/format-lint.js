@@ -34,6 +34,8 @@ const { execSync, execFileSync } = require('child_process');
 
 const CONFIG_FILE = path.join(os.homedir(), '.argus', 'format-lint.json');
 const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
+const logAgent = process.env.CLAUDECODE === '1' ? 'claudecode' : 'codex';
+let logSession = '-';
 const isClaudeCode = process.env.CLAUDECODE === '1';
 
 const PRETTIER_EXT = new Set([
@@ -43,7 +45,7 @@ const ESLINT_EXT = new Set(['.js', '.jsx', '.ts', '.tsx']);
 
 function logScript(level, msg) {
   try {
-    fs.appendFileSync(scriptLog, `${new Date().toISOString()} format-lint.js ${level} ${msg}\n`);
+    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} format-lint.js ${level} ${msg}\n`);
   } catch (_) {}
 }
 
@@ -62,7 +64,9 @@ function readStdin() {
 function parsePayload(raw) {
   try {
     const parsed = JSON.parse(raw || '{}');
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    const obj = parsed && typeof parsed === 'object' ? parsed : {};
+    logSession = typeof obj.session_id === 'string' && obj.session_id ? obj.session_id.slice(0, 8) : '-';
+    return obj;
   } catch (_) {
     return {};
   }

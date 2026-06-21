@@ -4,13 +4,23 @@ import { join, relative } from 'node:path'
 
 const SCRIPTS_DIR = 'scripts'
 
+// @argus-meta uses `//` comments in JS scripts and `#` comments in py/sh; accept
+// either marker + field style.
+function findTag(text, tag) {
+  const i1 = text.indexOf(`// ${tag}`)
+  const i2 = text.indexOf(`# ${tag}`)
+  if (i1 === -1) return i2
+  if (i2 === -1) return i1
+  return Math.min(i1, i2)
+}
+
 function parseHeader(text) {
-  const start = text.indexOf('// @argus-meta')
-  const end = text.indexOf('// @end')
+  const start = findTag(text, '@argus-meta')
+  const end = findTag(text, '@end')
   if (start === -1 || end === -1) return null
   const meta = {}
   for (const line of text.slice(start, end).split('\n')) {
-    const m = line.match(/^\/\/\s*(\w+):\s*(.*)$/)
+    const m = line.match(/^(?:\/\/|#)\s*(\w+):\s*(.*)$/)
     if (m) meta[m[1]] = m[2].trim()
   }
   return meta

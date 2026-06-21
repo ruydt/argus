@@ -70,6 +70,9 @@ describe('UploadShareForm', () => {
     expect(outFiles[0].body).toContain('// events: Stop')
     expect(outFiles[0].body).toContain('// agents: claudecode')
     expect(outFiles[0].body.match(/\/\/ @argus-meta/g).length).toBe(1)
+    // run logging is auto-added on share
+    expect(outFiles[0].body).toContain('// @argus-run-log')
+    expect(outFiles[0].body).toContain('- demo.js INFO ran')
   })
 
   it('keeps Next disabled until an agent is selected, then enables it', async () => {

@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { AgentLogo, agentMeta } from '@/agents/catalog'
+import { AgentLogo, AGENT_CATALOG } from '@/agents/catalog'
 import { cn } from '@/lib/utils'
 
 import {
   type ArgusMeta,
   injectMeta,
+  injectRunLogger,
   OS_OPTIONS,
   parseArgusMeta,
   runtimeFromExt,
@@ -21,10 +22,6 @@ type UploadShareFormProps = {
   onSubmit: (files: UploadFile[], description: string) => void
   onCancel: () => void
 }
-
-// AgentOption is the subset of GET /api/agents the form needs: an id (for the
-// header + logo) and the agent's own hook-event list (drives the event picker).
-type AgentOption = { id: string; label: string; events: string[] }
 
 // Expand the legacy aggregate os tokens (both/posix) so an edited script loads
 // with concrete platform chips selected instead of an unrecognised value.
@@ -69,37 +66,40 @@ function extractMetaBlock(body: string): string | null {
   return body.slice(si, ei + META_END.length)
 }
 
-// useAgentOptions loads the agent registry once so the form can offer agents to
-// target and, per selected agent, the events it supports.
-function useAgentOptions(): AgentOption[] {
-  const [agents, setAgents] = useState<AgentOption[]>([])
+// The agents a script can target are exactly the agents argus manages — the
+// static catalog. Listing them needs no network round-trip, so the chips render
+// instantly (no "loading" state). Only the per-agent EVENT lists come from the
+// backend (they live in agentspec), fetched once and keyed by agent id.
+const AGENT_LIST: { id: string; label: string }[] = Object.values(AGENT_CATALOG).map((a) => ({
+  id: a.id,
+  label: a.label,
+}))
+
+function useAgentEvents(): Record<string, string[]> {
+  const [events, setEvents] = useState<Record<string, string[]>>({})
   useEffect(() => {
     let cancelled = false
     fetch('/api/agents')
       .then((r) => (r.ok ? r.json() : []))
-      .then((data: { id: string; display_name?: string; events?: string[] }[]) => {
+      .then((data: { id: string; events?: string[] }[]) => {
         if (cancelled || !Array.isArray(data)) return
-        setAgents(
-          data.map((a) => ({
-            id: a.id,
-            label: a.display_name || agentMeta(a.id).label,
-            events: a.events ?? [],
-          }))
-        )
+        const map: Record<string, string[]> = {}
+        for (const a of data) map[a.id] = a.events ?? []
+        setEvents(map)
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
   }, [])
-  return agents
+  return events
 }
 
 export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormProps) {
   const [step, setStep] = useState(0)
   const [meta, setMeta] = useState<ArgusMeta[]>(() => files.map(initialMeta))
   const [description, setDescription] = useState('')
-  const agentOptions = useAgentOptions()
+  const agentEvents = useAgentEvents()
 
   const isDescriptionStep = step >= files.length
   const current = meta[step]
@@ -145,9 +145,8 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
     if (!current) return []
     const seen = new Set<string>()
     const out: string[] = []
-    for (const a of agentOptions) {
-      if (!current.agents.includes(a.id)) continue
-      for (const ev of a.events) {
+    for (const id of current.agents) {
+      for (const ev of agentEvents[id] ?? []) {
         if (!seen.has(ev)) {
           seen.add(ev)
           out.push(ev)
@@ -155,7 +154,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
       }
     }
     return out
-  }, [agentOptions, current])
+  }, [agentEvents, current])
 
   const requiredFilled =
     !!current &&
@@ -168,9 +167,14 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
     // Drop any events that no longer belong to the selected agents before writing.
     const cleaned = meta.map((m) => ({
       ...m,
-      events: m.events.filter((e) => unionEventsFor(agentOptions, m.agents).includes(e)),
+      events: m.events.filter((e) => unionEventsFor(agentEvents, m.agents).includes(e)),
     }))
-    const out = files.map((f, i) => ({ name: f.name, body: injectMeta(f.body, cleaned[i]) }))
+    // Auto-add run logging (timestamp + agent + script) so shared scripts show
+    // up in the Live Logs without the author wiring it up by hand.
+    const out = files.map((f, i) => ({
+      name: f.name,
+      body: injectRunLogger(injectMeta(f.body, cleaned[i], f.name), f.name),
+    }))
 
     const headerSections = out
       .map((f) => {
@@ -231,7 +235,7 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
             <div className="block space-y-1.5">
               <span className="text-[0.72rem] text-muted-foreground">Agents *</span>
               <div className="flex flex-wrap gap-1.5">
-                {agentOptions.map((a) => {
+                {AGENT_LIST.map((a) => {
                   const active = current.agents.includes(a.id)
                   return (
                     <button
@@ -251,9 +255,6 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
                     </button>
                   )
                 })}
-                {agentOptions.length === 0 ? (
-                  <span className="text-[0.72rem] text-muted-foreground">Loading agents…</span>
-                ) : null}
               </div>
             </div>
 
@@ -357,11 +358,10 @@ export function UploadShareForm({ files, onSubmit, onCancel }: UploadShareFormPr
 }
 
 // unionEventsFor returns every event supported by any of the given agent ids.
-function unionEventsFor(agentOptions: AgentOption[], agentIds: string[]): string[] {
+function unionEventsFor(agentEvents: Record<string, string[]>, agentIds: string[]): string[] {
   const seen = new Set<string>()
-  for (const a of agentOptions) {
-    if (!agentIds.includes(a.id)) continue
-    for (const ev of a.events) seen.add(ev)
+  for (const id of agentIds) {
+    for (const ev of agentEvents[id] ?? []) seen.add(ev)
   }
   return [...seen]
 }

@@ -24,7 +24,7 @@ export function AgentLogos({ agents, className }: AgentLogosProps) {
         {shown.map((id, i) => (
           <Tooltip key={id}>
             <TooltipTrigger asChild>
-              <span style={{ zIndex: shown.length - i }} className="-ml-1 inline-flex first:ml-0">
+              <span style={{ zIndex: shown.length - i }} className="-ml-2 inline-flex first:ml-0">
                 <AgentLogo id={id} size={18} />
               </span>
             </TooltipTrigger>
@@ -34,7 +34,7 @@ export function AgentLogos({ agents, className }: AgentLogosProps) {
         {rest.length > 0 ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="-ml-1 inline-flex size-[18px] items-center justify-center rounded-full bg-foreground/[0.08] text-[0.6rem] font-medium text-muted-foreground">
+              <span className="-ml-2 inline-flex size-[18px] items-center justify-center rounded-full bg-foreground/[0.08] text-[0.6rem] font-medium text-muted-foreground">
                 +{rest.length}
               </span>
             </TooltipTrigger>

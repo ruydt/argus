@@ -18,7 +18,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "495f8a36aef31453f948d034644e5a00288cf2229f60631dfb691f83b3ef7cd4",
+      "sha256": "93c694781b6107c61a2250815d84e87ffd5b57a4748e671eb668c0d04a21e49a",
       "source": "scripts/ruydt/block-dangerous.js",
       "published_at": ""
     },
@@ -39,7 +39,7 @@
       "runtime": "node",
       "os": "linux, macos",
       "tier": "community",
-      "sha256": "5109a59762eb2ebb804c110515b273dbc5cd999170502190060622bf122b39b1",
+      "sha256": "d299f6c5e3f96d75a7ddb3274fbecef3eb4ec8d43952aa68ee94c69fd047481c",
       "source": "scripts/ruydt/cost-warn.js",
       "published_at": ""
     },
@@ -60,7 +60,7 @@
       "runtime": "node",
       "os": "linux, macos",
       "tier": "community",
-      "sha256": "697dd3fb32d177da9d4d124e74dda75dd5755d26dff4224226a3c558c717951f",
+      "sha256": "8c87a62bba62a7cb3496fc04f84274e0382871e8631cba8a2427f6807a156de3",
       "source": "scripts/ruydt/format-lint.js",
       "published_at": ""
     },
@@ -81,7 +81,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "cfe0b095a032a4d221c080e580647f201e112db66329c96b74577846d08aff6e",
+      "sha256": "af65e78a9ffc56992649ddab1b77ad5eededb36468f068dc7420e1f5ac795187",
       "source": "scripts/ruydt/git-autostage.js",
       "published_at": ""
     },
@@ -102,7 +102,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "88079d2042fb14974b91191d7d75f1ffd16d190d272f4d9b89efbcebce240008",
+      "sha256": "48f505c51c0994946334f61a1a34b351fa5161b388ead7e0d2650537cb6dbea7",
       "source": "scripts/ruydt/inject-context.js",
       "published_at": ""
     },
@@ -123,7 +123,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "f7fbe2b0a6a0708de3db9b3d3439275de9b6a54251bb4aeed4e6da04a21e0947",
+      "sha256": "941e69093367072e0ef1e11355f9077a97922b6f7d438fa739526f56aa104c80",
       "source": "scripts/ruydt/notify-webhook.js",
       "published_at": ""
     },
@@ -144,7 +144,7 @@
       "runtime": "node",
       "os": "macos",
       "tier": "community",
-      "sha256": "0901c21e14dab926488823a1d8910b7a3e7d9584587eadea9d2105711bee0f74",
+      "sha256": "2f54885b1a0366faae99ff44fbb8e44df423011c55d5aa7d3e7197d8fddfd665",
       "source": "scripts/ruydt/permission-request.js",
       "published_at": ""
     },
@@ -165,7 +165,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "d0e27cd4106b93d8be4564cc3972583b01e010b183bb618582c7d74eb1ab77ae",
+      "sha256": "6e744954aea90056ac3bb8093f5d68955aa4fda2e24ec8c5adf1bc4e09d0d70a",
       "source": "scripts/ruydt/protect-branch.js",
       "published_at": ""
     },
@@ -186,7 +186,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "07aa2116e4e994d2a60b496783566e124544ee7c135aa6575ece43ae6d0b397e",
+      "sha256": "2c63f8d0da71b73e76072287ffaafa06c0498fed9c08438c52150b304e1e9dd6",
       "source": "scripts/ruydt/protect-secrets.js",
       "published_at": ""
     },
@@ -207,7 +207,7 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "e3e165a836b9797cc4f1367d96753cbd297b9e733635e687bf204d581fa7d06d",
+      "sha256": "00123339fd8b694cb73397067527b1da31fe684ebc46e8b84b5cb315f51f2f56",
       "source": "scripts/ruydt/scan-injection.js",
       "published_at": ""
     },
@@ -228,7 +228,7 @@
       "runtime": "node",
       "os": "macos",
       "tier": "community",
-      "sha256": "2930b8ddc990bcedc57580cf859e2c2f576abe453504c957ce8fb65dfbcc71cc",
+      "sha256": "1f1408ae42c1b2799ec3f31b3a1ff5a001f386d0a4393fa92221efb4a5af6a33",
       "source": "scripts/ruydt/stop.js",
       "published_at": ""
     }

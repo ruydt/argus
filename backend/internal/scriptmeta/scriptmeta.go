@@ -8,10 +8,26 @@ import (
 	"strings"
 )
 
+// @argus-meta uses `//` comments in JS scripts and `#` comments in py/sh. Both
+// marker styles are accepted on read.
 const (
-	metaStart = "// @argus-meta"
-	metaEnd   = "// @end"
+	metaTag = "@argus-meta"
+	endTag  = "@end"
 )
+
+// findTag returns the earliest index of `// <tag>` or `# <tag>`, or -1.
+func findTag(body, tag string) int {
+	i1 := strings.Index(body, "// "+tag)
+	i2 := strings.Index(body, "# "+tag)
+	switch {
+	case i1 == -1:
+		return i2
+	case i2 == -1:
+		return i1
+	default:
+		return min(i1, i2)
+	}
+}
 
 // Meta holds the recognised header fields. Absent fields stay empty.
 //
@@ -46,33 +62,38 @@ func SplitCSV(s string) []string {
 	return out
 }
 
-var fieldLine = regexp.MustCompile(`^//\s*(\w+):\s*(.*)$`)
+var fieldLine = regexp.MustCompile(`^(?://|#)\s*(\w+):\s*(.*)$`)
 
-// EnsureAuthor stamps `// author: <author>` into the meta block when the script
-// doesn't already declare one — used on publish so a shared script always
-// carries attribution (the publisher's GitHub login). Scripts with an author,
-// or with no meta block at all, are returned unchanged.
+// EnsureAuthor stamps `<prefix> author: <author>` into the meta block when the
+// script doesn't already declare one — used on publish so a shared script always
+// carries attribution (the publisher's GitHub login). The comment prefix matches
+// the existing meta block (// for JS, # for py/sh). Scripts with an author, or
+// with no meta block at all, are returned unchanged.
 func EnsureAuthor(body, author string) string {
 	if author == "" || Parse(body).Author != "" {
 		return body
 	}
-	start := strings.Index(body, metaStart)
+	start := findTag(body, metaTag)
 	if start == -1 {
 		return body
+	}
+	prefix := "//"
+	if strings.HasPrefix(body[start:], "# ") {
+		prefix = "#"
 	}
 	nl := strings.Index(body[start:], "\n")
 	if nl == -1 {
 		return body
 	}
 	at := start + nl + 1
-	return body[:at] + "// author: " + author + "\n" + body[at:]
+	return body[:at] + prefix + " author: " + author + "\n" + body[at:]
 }
 
 // Parse extracts the argus-meta header from a script body. Returns a zero Meta
 // when the header is missing or malformed.
 func Parse(body string) Meta {
-	start := strings.Index(body, metaStart)
-	end := strings.Index(body, metaEnd)
+	start := findTag(body, metaTag)
+	end := findTag(body, endTag)
 	if start == -1 || end == -1 || end < start {
 		return Meta{}
 	}

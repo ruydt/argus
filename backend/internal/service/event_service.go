@@ -582,7 +582,6 @@ func scanFileSystem(argusDir string) domain.DiagnosticsFileSystem {
 		Binary:   statEntry("argus", filepath.Join(argusDir, "bin", "argus")),
 		Logs: []domain.DiagnosticsFileEntry{
 			statEntry("argus.log", filepath.Join(argusDir, "argus.log")),
-			statEntry("build.log", filepath.Join(argusDir, "build.log")),
 			statEntry("hook-scripts.log", filepath.Join(argusDir, "hook-scripts.log")),
 		},
 		ClaudeHooks: []domain.DiagnosticsFileEntry{},

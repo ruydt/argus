@@ -32,6 +32,18 @@ by hand after adding or changing a script.
    // ...script body...
    ```
 
+   For `.py` and `.sh` scripts use `#` comments instead — `# @argus-meta`, `# title: …`,
+   `# @end`. Both styles parse.
+
+   **Run logging:** when a script is shared through argus's upload form, a tiny
+   dependency-free prelude is auto-added that records each run in
+   `~/.argus/hook-scripts.log` as `<ISO> <agent> - <file> INFO ran`. The agent is
+   detected from environment variables the runtime sets (`CLAUDECODE`,
+   `GOOSE_TERMINAL`/`AGENT=goose`, `CURSOR_*`, `AUGMENT_*`, `GEMINI_*`); agents with
+   no documented hook env var (codex, copilot, qwen, …) log as `unknown`. The prelude
+   never reads stdin, so it can't consume the payload. To also capture the session,
+   parse the stdin payload yourself and log `payload.session_id`.
+
 3. Regenerate the index, then open a PR:
 
    ```bash

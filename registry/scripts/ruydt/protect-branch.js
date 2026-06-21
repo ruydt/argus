@@ -31,13 +31,15 @@ const { execSync } = require('child_process');
 
 const CONFIG_FILE = path.join(os.homedir(), '.argus', 'protected-branches.json');
 const scriptLog = path.join(os.homedir(), '.argus', 'hook-scripts.log');
+const logAgent = process.env.CLAUDECODE === '1' ? 'claudecode' : 'codex';
+let logSession = '-';
 const isClaudeCode = process.env.CLAUDECODE === '1';
 
 const DEFAULTS = { branches: ['main', 'master'], allow_amend: false, allow: [] };
 
 function logScript(level, msg) {
   try {
-    fs.appendFileSync(scriptLog, `${new Date().toISOString()} protect-branch.js ${level} ${msg}\n`);
+    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} protect-branch.js ${level} ${msg}\n`);
   } catch (_) {}
 }
 
@@ -56,7 +58,9 @@ function readStdin() {
 function parsePayload(raw) {
   try {
     const parsed = JSON.parse(raw || '{}');
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    const obj = parsed && typeof parsed === 'object' ? parsed : {};
+    logSession = typeof obj.session_id === 'string' && obj.session_id ? obj.session_id.slice(0, 8) : '-';
+    return obj;
   } catch (_) {
     return {};
   }

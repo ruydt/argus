@@ -95,21 +95,21 @@ export function CollectionRow({
             <span className="truncate text-[0.8rem] text-muted-foreground">{entry.author}</span>
           ) : null}
         </div>
-        <div className="hidden w-36 shrink-0 flex-wrap items-center gap-1 md:flex">
+        <div className="hidden w-40 shrink-0 flex-wrap items-center gap-1 md:flex">
           {(entry.events ?? []).map((ev) => (
             <Badge key={ev} variant="outline">
               {ev}
             </Badge>
           ))}
         </div>
-        <div className="hidden w-28 shrink-0 md:flex">
+        <div className="hidden w-24 shrink-0 md:flex">
           <AgentLogos agents={entry.agents} />
         </div>
         <div className="hidden w-24 shrink-0 md:flex">
           <OsIcons os={entry.os} />
         </div>
         <TooltipProvider delayDuration={100}>
-          <div className="hidden w-28 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
+          <div className="hidden w-24 shrink-0 items-center gap-2.5 text-foreground/55 md:flex">
             {entry.local ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -128,7 +128,7 @@ export function CollectionRow({
             ) : null}
           </div>
         </TooltipProvider>
-        <div className="flex w-40 shrink-0 items-center justify-end gap-2">
+        <div className="flex w-20 shrink-0 items-center justify-end gap-0.5">
           <Popover open={menuOpen} onOpenChange={setMenuOpen}>
             <PopoverTrigger asChild>
               <Button
