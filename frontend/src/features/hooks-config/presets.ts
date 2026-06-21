@@ -20,6 +20,26 @@ function argusGroup(matcher?: string): HookGroup {
   }
 }
 
+// The session-start activate hook starts the Argus server (if not already up)
+// when the agent begins a session. $HOME is expanded by the agent's shell at
+// run time, so the preset is portable across machines. Tagged argus-managed so
+// it is cleaned + re-added with the rest of the preset.
+const ACTIVATE_CMD = 'node "$HOME/.argus/hooks/argus-activate.js"'
+
+function activateGroup(): HookGroup {
+  return {
+    id: crypto.randomUUID(),
+    hooks: [
+      {
+        id: crypto.randomUUID(),
+        type: 'command',
+        command: ACTIVATE_CMD,
+        statusMessage: ARGUS_STATUS_MESSAGE,
+      },
+    ],
+  }
+}
+
 type PresetKey = 'baseline' | 'medium' | 'full'
 
 const CLAUDE_PRESETS: Record<PresetKey, HooksConfig> = {
@@ -360,18 +380,50 @@ const GOOSE_PRESETS = agentPresets(
   ['PreToolUse', 'PostToolUseFailure', 'AfterFileEdit', 'AfterShellExecution']
 )
 
+// Each agent's own session-start event name (mirrors backend/internal/agentspec).
+// Agents without a session-start event (Windsurf, Crush) are omitted — they get
+// no activate hook.
+const SESSION_START_EVENT: Partial<Record<AgentKey, string>> = {
+  claudecode: 'SessionStart',
+  codex: 'SessionStart',
+  cursor: 'sessionStart',
+  antigravity: 'SessionStart',
+  copilot: 'sessionStart',
+  qwen: 'SessionStart',
+  continue: 'SessionStart',
+  augment: 'SessionStart',
+  goose: 'SessionStart',
+}
+
+// Prepend the server-activate hook to the agent's session-start event in every
+// preset tier (so applying any preset also wires auto-start). The activate hook
+// runs before the ingest POST so the server is up by the time events fire.
+function withActivate(
+  presets: Record<PresetKey, HooksConfig>,
+  event: string | undefined
+): Record<PresetKey, HooksConfig> {
+  if (!event) return presets
+  const out = {} as Record<PresetKey, HooksConfig>
+  for (const key of Object.keys(presets) as PresetKey[]) {
+    const cfg = presets[key]
+    const groups = cfg.hooks[event]
+    out[key] = groups ? { hooks: { ...cfg.hooks, [event]: [activateGroup(), ...groups] } } : cfg
+  }
+  return out
+}
+
 export const HOOK_PRESETS: Record<AgentKey, Record<PresetKey, HooksConfig>> = {
-  claudecode: CLAUDE_PRESETS,
-  codex: CODEX_PRESETS,
-  cursor: CURSOR_PRESETS,
-  antigravity: ANTIGRAVITY_PRESETS,
-  copilot: COPILOT_PRESETS,
-  qwen: QWEN_PRESETS,
-  continue: CONTINUE_PRESETS,
-  augment: AUGMENT_PRESETS,
+  claudecode: withActivate(CLAUDE_PRESETS, SESSION_START_EVENT.claudecode),
+  codex: withActivate(CODEX_PRESETS, SESSION_START_EVENT.codex),
+  cursor: withActivate(CURSOR_PRESETS, SESSION_START_EVENT.cursor),
+  antigravity: withActivate(ANTIGRAVITY_PRESETS, SESSION_START_EVENT.antigravity),
+  copilot: withActivate(COPILOT_PRESETS, SESSION_START_EVENT.copilot),
+  qwen: withActivate(QWEN_PRESETS, SESSION_START_EVENT.qwen),
+  continue: withActivate(CONTINUE_PRESETS, SESSION_START_EVENT.continue),
+  augment: withActivate(AUGMENT_PRESETS, SESSION_START_EVENT.augment),
   windsurf: WINDSURF_PRESETS,
   crush: CRUSH_PRESETS,
-  goose: GOOSE_PRESETS,
+  goose: withActivate(GOOSE_PRESETS, SESSION_START_EVENT.goose),
 }
 
 export const PRESET_LABELS: Record<PresetKey, { label: string; description: string }> = {

@@ -103,8 +103,9 @@ func Hook(svc *service.EventService, matcher IgnoreMatcher) http.Handler {
 		} else {
 			e.NormalizationStatus = "ok"
 			// NormalizerVersion already set by agent Normalize() (Task 1).
-			// AgentVersion (MODEL-03): neither Claude Code nor Codex currently expose a version
-			// field in their hook payloads, so e.AgentVersion remains "" (the zero value). The
+			// AgentVersion (MODEL-03): no currently-supported agent (Claude Code, Codex, or any
+			// generic-normalized agent) exposes a version field in its hook payload, so
+			// e.AgentVersion remains "" (the zero value). The
 			// field is stored as an empty string in the DB. When a payload version field is
 			// identified in a future adapter update, set it here via meta.AgentVersion.
 			// For now, the empty string is the correct and intentional value per RESEARCH.md Q3.

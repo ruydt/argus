@@ -82,7 +82,7 @@ pnpm run build
 - `backend/internal/repository/` defines the storage interface.
 - `backend/internal/repository/sqlite/` implements SQLite persistence and migrations.
 - `backend/internal/domain/` contains canonical Go data contracts such as `NormalizedEvent`.
-- `backend/internal/agents/` contains in-tree agent adapters for Claude Code and Codex.
+- `backend/internal/agents/` contains in-tree agent adapters — dedicated `claudecode` and `codex` normalizers plus a `generic` adapter used by every other registered agent (see `backend/internal/agentspec/`).
 - `frontend/src/features/` contains feature UI, feature hooks, and feature renderers.
 - `frontend/src/types/` contains frontend API/domain contracts.
 - `docs/` contains user-facing and architecture documentation.

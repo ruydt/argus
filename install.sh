@@ -7,7 +7,6 @@ BINARY_DIR="$ARGUS_DIR/bin"
 BINARY="$BINARY_DIR/argus"
 HOOKS_DIR="$ARGUS_DIR/hooks"
 ACTIVATE_SCRIPT="$HOOKS_DIR/argus-activate.js"
-SETTINGS="$HOME/.claude/settings.json"
 ARGUS_PORT=10804
 
 # ── 1. OS/arch detection ────────────────────────────────────────────────────
@@ -190,49 +189,12 @@ SCRIPTEOF
 chmod +x "$ACTIVATE_SCRIPT"
 echo "  → $ACTIVATE_SCRIPT"
 
-# ── 6. Wire SessionStart hooks in ~/.claude/settings.json ───────────────────
-
-if ! command -v python3 &>/dev/null; then
-  echo "warning: python3 not found — add hook manually to ~/.claude/settings.json"
-  echo "  node \"$ACTIVATE_SCRIPT\""
-else
-  python3 - "$SETTINGS" "$ACTIVATE_SCRIPT" << 'PYEOF'
-import json, sys, os
-
-settings_path, activate_script = sys.argv[1], sys.argv[2]
-
-settings = {}
-if os.path.exists(settings_path):
-    with open(settings_path) as f:
-        try:
-            settings = json.load(f)
-        except json.JSONDecodeError as e:
-            print(f"error: {settings_path} contains invalid JSON: {e}", file=sys.stderr)
-            print("Fix the JSON manually, then re-run install.sh", file=sys.stderr)
-            sys.exit(1)
-
-hooks = settings.setdefault("hooks", {})
-session_start = hooks.setdefault("SessionStart", [])
-
-activate_cmd = f'node "{activate_script}"'
-
-def already_registered(cmd):
-    for entry in session_start:
-        for h in entry.get("hooks", []):
-            if h.get("command") == cmd:
-                return True
-    return False
-
-if not already_registered(activate_cmd):
-    session_start.append({"hooks": [{"type": "command", "command": activate_cmd}]})
-    os.makedirs(os.path.dirname(settings_path), exist_ok=True)
-    with open(settings_path, "w") as f:
-        json.dump(settings, f, indent=2)
-    print(f"  → hook registered in {settings_path}")
-else:
-    print(f"  → hooks already registered in {settings_path}")
-PYEOF
-fi
+# ── 6. (No hook wiring) ─────────────────────────────────────────────────────
+# Argus no longer edits any agent's settings during install. The activate hook
+# above is written to ~/.argus/hooks but left unwired — wire it (and the ingest
+# hooks) per agent from the Hooks page in the dashboard: "Apply preset" adds the
+# argus-activate.js session-start hook plus event capture for that agent.
+# Run `argus start` to launch the server and open the dashboard.
 
 # ── 7. Add ~/.argus/bin to PATH in shell rc ──────────────────────────────
 
@@ -254,8 +216,11 @@ fi
 
 echo ""
 echo "argus $VERSION installed."
-echo "Hook:   $ACTIVATE_SCRIPT"
-echo "Start:  argus            # or just start a Claude Code / Codex session"
-echo "UI:     http://127.0.0.1:$ARGUS_PORT"
+echo "Activate hook: $ACTIVATE_SCRIPT  (unwired — apply a preset in the dashboard to use it)"
 echo ""
-echo "Restart Claude Code or Codex — argus starts automatically."
+echo "Next steps:"
+echo "  1. argus start                  # launches the server and opens http://127.0.0.1:$ARGUS_PORT"
+echo "  2. Open the Hooks page, pick your agent, and click 'Apply preset'."
+echo "     The preset wires argus-activate.js on session start + event capture."
+echo ""
+echo "Tip: 'argus start' opens your browser; bare 'argus' just runs the server; 'argus stop' shuts it down."

@@ -4,7 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { PaginationBar } from '@/components/shared/PaginationBar'
 import { cn } from '@/lib/utils'
 import { highlight, shortId } from '@/lib/format'
-import { agentForEvent } from '@/agents'
+import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { projectName } from '@/features/sessions/utils'
 import type { SessionGroup } from '@/types/events'
 import { buildEventKey } from './eventKey'
@@ -39,8 +39,8 @@ export const AgentSession = memo(function AgentSession({
 }: AgentSessionProps) {
   const { sessionId, transcriptPath, cwd, events } = session
   const firstEvent = events[0]
-  const agent = agentForEvent(firstEvent)
-  const { Logo } = agent
+  const agentId = firstEvent.agent || 'unknown'
+  const agentLabel = agentMeta(agentId).label
 
   const [manualPage, setManualPage] = useState(0)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
@@ -91,8 +91,8 @@ export const AgentSession = memo(function AgentSession({
             isCollapsed && 'border-b-0'
           )}
         >
-          <span className={cn('agent-badge shrink-0', `agent-${agent.badgeClass}`)}>
-            <Logo size={18} />
+          <span className="agent-badge shrink-0" title={agentLabel} aria-label={agentLabel}>
+            <AgentLogo id={agentId} size={18} />
           </span>
           <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div className="group inline-flex min-w-0 max-w-full items-center gap-2 text-[0.8rem] font-bold text-[#16a34a]">

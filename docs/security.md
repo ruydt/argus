@@ -37,7 +37,7 @@ Using `ARGUS_ALLOW_REMOTE=1` means you accept that argus may be reachable
 outside the loopback interface. It does not add authentication, encryption, or a
 public-sharing access-control layer.
 
-**The hook simulator (`/api/hooks/simulate`) and reveal (`/api/diagnostics/reveal`)
+**The hook simulator (`/api/hooks/simulate`) and reveal (`/api/collection/reveal`)
 run local commands by design.** Direct remote requests are still rejected by the
 Host-header guard, but exposing the backend beyond localhost is dangerous — a
 reachable simulator is arbitrary command execution. Keep argus on loopback.

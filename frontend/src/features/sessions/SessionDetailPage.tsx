@@ -12,8 +12,7 @@ import {
   ModalFooter,
   ModalTitle,
 } from '@/components/shared/Modal'
-import { cn } from '@/lib/utils'
-import { agentForEvent } from '@/agents'
+import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { useHistoricalEvents } from '@/features/events/hooks/useHistoricalEvents'
 import { useLiveEvents } from '@/features/events/hooks/useLiveEvents'
 import { mergeByKey, buildEventKey } from '@/features/events/eventKey'
@@ -228,7 +227,7 @@ export function SessionDetailPage() {
   }, [hist.events, live.events])
 
   const firstEvent = events[0]
-  const agent = firstEvent ? agentForEvent(firstEvent) : null
+  const agentId = firstEvent?.agent || ''
 
   // Viewing a session clears its sidebar "unread Stop" bold: record the newest
   // event time as seen. Re-runs as live events arrive so it stays current.
@@ -262,9 +261,13 @@ export function SessionDetailPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-background">
       <header className="flex items-center gap-3 border-b border-border px-4 py-2.5 sm:px-5">
-        {agent && (
-          <span className={cn('agent-badge shrink-0', `agent-${agent.badgeClass}`)}>
-            <agent.Logo size={17} />
+        {agentId && (
+          <span
+            className="agent-badge shrink-0"
+            title={agentMeta(agentId).label}
+            aria-label={agentMeta(agentId).label}
+          >
+            <AgentLogo id={agentId} size={17} />
           </span>
         )}
         <div className="min-w-0 flex-1">

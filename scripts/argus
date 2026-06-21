@@ -40,7 +40,7 @@ ensure_tools() {
   require_cmd pnpm 'Install pnpm, or run: corepack enable && corepack prepare pnpm@latest --activate'
 }
 
-ARGUS_HOOK_CMD="curl -s --max-time 2 -X POST http://127.0.0.1:8765/api/hook -H 'Content-Type: application/json' -d @- || true"
+ARGUS_HOOK_CMD="curl -s --max-time 2 -X POST http://127.0.0.1:10804/api/hook -H 'Content-Type: application/json' -d @- || true"
 
 patch_claudecode_hooks() {
   local settings="$HOME/.claude/settings.json"
@@ -48,7 +48,7 @@ patch_claudecode_hooks() {
     printf '[skip] Claude Code settings.json not found at %s\n' "$settings"
     return 0
   fi
-  if grep -q "8765/api/hook" "$settings"; then
+  if grep -q "10804/api/hook" "$settings"; then
     printf '[ok]   Claude Code hooks already configured — skipping\n'
     return 0
   fi
@@ -74,7 +74,7 @@ patch_codex_hooks() {
     printf '[skip] Codex hooks.json not found at %s\n' "$settings"
     return 0
   fi
-  if grep -q "8765/api/hook" "$settings"; then
+  if grep -q "10804/api/hook" "$settings"; then
     printf '[ok]   Codex hooks already configured — skipping\n'
     return 0
   fi
@@ -131,7 +131,7 @@ doctor() {
   local db_dir=""
   local claude_cfg="$HOME/.claude/settings.json"
   local codex_cfg="$HOME/.codex/hooks.json"
-  local addr="${ADDR:-127.0.0.1:8765}"
+  local addr="${ADDR:-127.0.0.1:10804}"
   local addr_host=""
 
   check_required() {
@@ -194,25 +194,25 @@ doctor() {
     check_required "DB path writable ($db_path)" "fail" "Directory $db_dir is not writable. Check permissions or set DB_PATH to a writable path."
   fi
 
-  if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 http://127.0.0.1:8765/healthz >/dev/null 2>&1; then
-    check_required "port 8765 (argus running)" "pass" ""
-  elif ! command -v lsof >/dev/null 2>&1 || ! lsof -i :8765 >/dev/null 2>&1; then
-    check_required "port 8765 available" "pass" ""
+  if command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 http://127.0.0.1:10804/healthz >/dev/null 2>&1; then
+    check_required "port 10804 (argus running)" "pass" ""
+  elif ! command -v lsof >/dev/null 2>&1 || ! lsof -i :10804 >/dev/null 2>&1; then
+    check_required "port 10804 available" "pass" ""
   else
-    check_required "port 8765 available" "fail" "Port 8765 is in use by another process. Run: lsof -i :8765"
+    check_required "port 10804 available" "fail" "Port 10804 is in use by another process. Run: lsof -i :10804"
   fi
 
   printf '\nargus doctor — optional checks\n'
   printf '────────────────────────────────\n'
   printf '%s Privacy: argus captures prompts, diffs, file paths, tool outputs, raw payloads, and exports. Treat the local DB and exported files as sensitive.\n' "$WARN"
 
-  if [ -f "$claude_cfg" ] && grep -q "8765/api/hook" "$claude_cfg"; then
+  if [ -f "$claude_cfg" ] && grep -q "10804/api/hook" "$claude_cfg"; then
     check_optional "Claude Code hooks configured" "pass" ""
   else
     check_optional "Claude Code hooks configured" "warn" "Run: ./scripts/argus setup"
   fi
 
-  if [ -f "$codex_cfg" ] && grep -q "8765/api/hook" "$codex_cfg"; then
+  if [ -f "$codex_cfg" ] && grep -q "10804/api/hook" "$codex_cfg"; then
     check_optional "Codex hooks configured" "pass" ""
   else
     check_optional "Codex hooks configured" "warn" "Run: ./scripts/argus setup"

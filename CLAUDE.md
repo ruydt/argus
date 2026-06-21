@@ -2,7 +2,7 @@
 
 ## Project overview
 
-Argus = hook control center for AI coding agents. Core value, in order: **hook management** (config editor with one-click presets for Claude Code and Codex), the **hook simulator** (run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code — test guardrails before a live agent fires them), and the **public hook script collection** (`registry/` plus the registry/community flow — zero-dependency, cross-agent guardrail/automation scripts). The observability layer supports it: hook payloads arrive via `POST /api/hook`, get normalized, persisted to SQLite, streamed to browser via SSE. Frontend is a React SPA: hooks config editor + simulator, live event feed, diagnostics.
+Argus = hook control center for AI coding agents. Core value, in order: **hook management** (config editor with one-click presets for Claude Code, Codex, and 9 more agents — see `internal/agentspec`), the **hook simulator** (run any hook command or `~/.argus/hooks` script against a synthetic payload and inspect stdout/stderr/exit code — test guardrails before a live agent fires them), and the **public hook script collection** (`registry/` plus the registry/community flow — zero-dependency, cross-agent guardrail/automation scripts). The observability layer supports it: hook payloads arrive via `POST /api/hook`, get normalized, persisted to SQLite, streamed to browser via SSE. Frontend is a React SPA: hooks config editor + simulator, live event feed, diagnostics.
 
 Go backend + React frontend. No external infra. Ships as Docker image or local binary.
 
@@ -18,7 +18,10 @@ argus/
 │   └── internal/
 │       ├── agents/
 │       │   ├── claudecode/  # Normalize Claude Code payloads
-│       │   └── codex/       # Normalize Codex payloads
+│       │   ├── codex/       # Normalize Codex payloads
+│       │   └── generic/     # Normalize any other registered agent (alias-mapping)
+│       ├── agentspec/       # Registry of all supported agents (ids, configs, events)
+│       ├── agentstore/      # Persisted set of user-enabled agents
 │       ├── config/          # Load runtime env vars (ADDR, DB_PATH)
 │       ├── domain/          # Canonical types — NormalizedEvent, Session
 │       ├── fileutil/        # File line scanner for context enrichment
@@ -114,7 +117,7 @@ Browser ← GET /api/events/stream (SSE) ← EventService.subscribers (sync.Map)
 
 **Dependency direction (backend):** handler → service → repository → domain. Never skip layers. Never import handler from service.
 
-**Agent detection:** `transcript_path` string at ingest time. Paths containing `/.claude/` → Claude Code; others → Codex. This is the only detection mechanism.
+**Agent detection:** two mechanisms, in priority order. (1) An explicit `?agent=<id>` query param on `POST /api/hook` wins — any agent registered in `internal/agentspec` (Claude Code, Codex, Cursor, Antigravity CLI, GitHub Copilot CLI, Qwen Code, Continue, Augment, Windsurf, Crush, Goose) routes through its normalizer: `claudecode`/`codex` have dedicated adapters, every other id uses `agents/generic.Normalize`. (2) With no param, the `transcript_path` heuristic applies — paths containing `/.claude/` → Claude Code, otherwise → Codex. New agents must pass `?agent=<id>` in their hook command.
 
 **Frontend state:** No global store. `Layout.tsx` owns shared state (`searchQuery`, `collapsedSessions`) and distributes via `useOutletContext<LayoutOutletContext>()`. Feature state lives in custom hooks.
 
@@ -125,7 +128,7 @@ Browser ← GET /api/events/stream (SSE) ← EventService.subscribers (sync.Map)
 **Before writing any UI element, check `src/components/ui/` first.**
 
 Available shadcn primitives:
-`Alert` · `Badge` · `Button` · `Calendar` · `Card` · `Chart` (Recharts wrapper) · `Collapsible` · `Empty` · `Input` · `Popover` · `ScrollArea` · `Select` · `Separator` · `Skeleton` · `Table` · `Tabs` · `ToggleGroup` · `Toggle` · `Tooltip`
+`Alert` · `Badge` · `Button` · `Card` · `Collapsible` · `Empty` · `Input` · `Popover` · `ScrollArea` · `Select` · `Separator` · `Skeleton` · `Table` · `Tabs` · `Toggle` · `Tooltip`
 
 Use the primitive and override with `className` / inline `style` for custom colors. Do not reach for a raw `<button>`, `<select>`, or `<span>` when a shadcn component covers the case.
 
@@ -185,7 +188,7 @@ golangci-lint run ./...                          # lint
 - No panic recovery. No sentinel errors. Plain `errors.New` / `fmt.Errorf`
 - Log with `log.Printf("[handler] key=val ...")`
 
-**Adding a new agent:** Implement `MatchesTranscript()`, `Normalize()`, `ComputeUsage()` in a new `internal/agents/<name>/` package. Wire detection in `handler/hook.go`. Add normalization tests before touching the handler.
+**Adding a new agent:** For most agents, add an entry to the `registry` in `internal/agentspec/agentspec.go` (id, display name, install paths, hooks-config kind/path, events). Ingest then routes its `?agent=<id>` payloads through `agents/generic.Normalize` automatically — no handler change needed. Only build a dedicated `internal/agents/<name>/` package (implementing `Normalize()`, plus `MatchesTranscript()`/`ComputeUsage()` if applicable) and wire it into `handler/hook.go` when an agent needs bespoke parsing beyond the generic alias mapping (as Claude Code and Codex do). Add normalization tests either way.
 
 ---
 
@@ -245,7 +248,7 @@ function renderWith(props) {
 
 **argus**
 
-argus is a local-first hook control center for AI coding agents: manage hook configs with one-click presets, test any hook in the built-in simulator before a live agent fires it, and ship/use the public hook script collection (`registry/`). The supporting observability layer receives hook payloads from Claude Code and Codex, normalizes them into a canonical event model, persists to SQLite, and streams to a React SPA in real time. Built for solo developers who want control over — and visibility into — their coding agent sessions without cloud dependencies.
+argus is a local-first hook control center for AI coding agents: manage hook configs with one-click presets, test any hook in the built-in simulator before a live agent fires it, and ship/use the public hook script collection (`registry/`). The supporting observability layer receives hook payloads from any supported agent (Claude Code, Codex, and 9 others), normalizes them into a canonical event model, persists to SQLite, and streams to a React SPA in real time. Built for solo developers who want control over — and visibility into — their coding agent sessions without cloud dependencies.
 
 **Core Value:** A developer can install argus in under 10 minutes and trust it to manage, test, and observe their agent hooks — reliable capture and storage of agent activity, no data loss, no silent failures, no upgrade surprises.
 
@@ -409,8 +412,8 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 ## Layers
 
 - Purpose: Start processes and mount client app.
-- Location: `backend/cmd/server`, `backend/cmd/watcher`, `frontend/src/main.tsx`
-- Contains: Server bootstrap, watcher loop, React root mount.
+- Location: `backend/cmd/server`, `frontend/src/main.tsx`
+- Contains: Server bootstrap, React root mount.
 - Depends on: Router/service/repository and browser runtime.
 - Used by: Operators and browser clients.
 - Purpose: Route, validate, and serialize HTTP/SSE traffic.
@@ -455,9 +458,6 @@ argus is a local-first hook control center for AI coding agents: manage hook con
 - Location: `backend/cmd/server/main.go`
 - Triggers: Process startup.
 - Responsibilities: Dependency wiring and HTTP lifecycle.
-- Location: `backend/cmd/watcher/main.go`
-- Triggers: Worker startup.
-- Responsibilities: Poll transcript JSONL files and emit tool hooks.
 - Location: `frontend/src/main.tsx`
 - Triggers: Browser load.
 - Responsibilities: Mount React tree.

@@ -102,13 +102,45 @@ export function CursorLogo({ size = 18 }: LogoProps) {
   )
 }
 
-// Antigravity CLI — upward "lift" arrow + floating orb, white on deep indigo.
+// Google Antigravity — the official "wings" mark: the real icon silhouette
+// (mask path) revealing Antigravity's diffuse multicolor field — warm red/orange
+// at the peak, green on the left shoulder, blue across the wings — on a black badge.
 export function AntigravityLogo({ size = 18 }: LogoProps) {
   return (
-    <GlyphBadge size={size} bg="#1A1B2E" glyphFill="#fff" fillRule="evenodd">
-      <circle cx="12" cy="4.4" r="2.5" />
-      <path d="M12 8.2l8 9.2h-5.2V24H9.2v-6.6H4z" />
-    </GlyphBadge>
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <mask id="antigravity-wings" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+          <path
+            d="M21.751 22.607c1.34 1.005 3.35.335 1.508-1.508C17.73 15.74 18.904 1 12.037 1 5.17 1 6.342 15.74.815 21.1c-2.01 2.009.167 2.511 1.507 1.506 5.192-3.517 4.857-9.714 9.715-9.714 4.857 0 4.522 6.197 9.714 9.715z"
+            fill="#fff"
+          />
+        </mask>
+        <filter id="antigravity-blur" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="1.7" />
+        </filter>
+      </defs>
+      <circle cx="12" cy="12" r="12" fill="#0B0B0F" />
+      <g transform={`translate(${GLYPH_OFFSET} ${GLYPH_OFFSET}) scale(${GLYPH_SCALE})`}>
+        <g mask="url(#antigravity-wings)">
+          <rect x="0" y="0" width="24" height="24" fill="#3186FF" />
+          <g filter="url(#antigravity-blur)">
+            <circle cx="12.5" cy="20.5" r="7" fill="#3186FF" />
+            <circle cx="18.5" cy="12" r="5" fill="#749BFF" />
+            <circle cx="7.5" cy="8.5" r="5.5" fill="#00B95C" />
+            <circle cx="9.5" cy="4.5" r="4" fill="#FFE432" />
+            <circle cx="12.5" cy="5" r="5" fill="#FC413D" />
+            <circle cx="15" cy="6.5" r="4" fill="#FBBC04" />
+          </g>
+        </g>
+      </g>
+    </svg>
   )
 }
 
@@ -150,10 +182,6 @@ export function GooseLogo({ size = 18 }: LogoProps) {
     </GlyphBadge>
   )
 }
-
-// Kept for the older session-agent registry.
-export const AnthropicLogo = ClaudeCodeLogo
-export const OpenAILogo = CodexLogo
 
 export const AGENT_LOGOS: Record<string, ComponentType<LogoProps>> = {
   claudecode: ClaudeCodeLogo,

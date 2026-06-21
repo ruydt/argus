@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"slices"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -538,46 +539,79 @@ func (d *DB) DiagnosticsStorageStats() (domain.DiagnosticsStorageStats, error) {
 	return stats, nil
 }
 
+// inferredAgentExpr maps a hook_events row to its agent id. It prefers the
+// stored agent column (populated for all registered agents, including the 9
+// added beyond Claude Code / Codex) and only falls back to the legacy
+// transcript/source heuristic for old rows written before the column existed.
+const inferredAgentExpr = `CASE
+		WHEN COALESCE(agent, '') != '' THEN agent
+		WHEN transcript_path LIKE '%/.claude/%' THEN 'claudecode'
+		WHEN source = 'codex' THEN 'codex'
+		ELSE ''
+	END`
+
+// DiagnosticsAgentStats returns per-agent ingest stats for every agent that has
+// produced events or sessions — not a hardcoded Claude Code / Codex pair. The
+// 'unknown' bucket (degraded ingests with no resolvable agent) is excluded.
 func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 	stats := map[string]*domain.DiagnosticsAgentStats{}
-	for _, agent := range []string{"claudecode", "codex"} {
-		stats[agent] = &domain.DiagnosticsAgentStats{Agent: agent}
-	}
-
-	sessionRows, err := d.db.Query(`
-		SELECT agent, COUNT(*) AS event_count
-		FROM hook_events
-		WHERE agent IN ('claudecode', 'codex')
-		GROUP BY agent
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("diagnostics agent sessions: %w", err)
-	}
-	defer sessionRows.Close()
-	for sessionRows.Next() {
-		var agent string
-		var count int
-		if err := sessionRows.Scan(&agent, &count); err != nil {
-			return nil, fmt.Errorf("diagnostics agent session scan: %w", err)
+	get := func(agent string) *domain.DiagnosticsAgentStats {
+		if s, ok := stats[agent]; ok {
+			return s
 		}
-		stats[agent].EventCount = count
-	}
-	if err := sessionRows.Err(); err != nil {
-		return nil, fmt.Errorf("diagnostics agent sessions rows: %w", err)
+		s := &domain.DiagnosticsAgentStats{Agent: agent}
+		stats[agent] = s
+		return s
 	}
 
+	// String comparison against precomputed RFC3339 UTC cutoffs keeps
+	// idx_hook_events_created usable, unlike a datetime(created_at) wrapper.
+	now := time.Now().UTC()
+	hourCutoff := now.Add(-time.Hour).Format(time.RFC3339)
+	dayCutoff := now.Add(-24 * time.Hour).Format(time.RFC3339)
+
+	// Event counts, degraded counts, and recent-rate windows, grouped by agent.
+	eventRows, err := d.db.Query(`
+		WITH inferred AS (
+			SELECT `+inferredAgentExpr+` AS agent, normalization_status, created_at
+			FROM hook_events
+		)
+		SELECT agent,
+			COUNT(*),
+			SUM(CASE WHEN normalization_status = 'degraded' THEN 1 ELSE 0 END),
+			SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END),
+			SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END)
+		FROM inferred
+		WHERE agent != '' AND agent != 'unknown'
+		GROUP BY agent
+	`, hourCutoff, dayCutoff)
+	if err != nil {
+		return nil, fmt.Errorf("diagnostics agent events: %w", err)
+	}
+	defer eventRows.Close()
+	for eventRows.Next() {
+		var agent string
+		var count, degraded, lastHour, last24h int
+		if err := eventRows.Scan(&agent, &count, &degraded, &lastHour, &last24h); err != nil {
+			return nil, fmt.Errorf("diagnostics agent events scan: %w", err)
+		}
+		s := get(agent)
+		s.EventCount = count
+		s.DegradedCount = degraded
+		s.EventsLastHour = lastHour
+		s.EventsLast24h = last24h
+	}
+	if err := eventRows.Err(); err != nil {
+		return nil, fmt.Errorf("diagnostics agent events rows: %w", err)
+	}
+
+	// Latest session activity per agent. MAX over RFC3339 UTC strings is the
+	// most recent timestamp.
 	lastSeenRows, err := d.db.Query(`
-		SELECT s.agent, s.last_seen_at
-		FROM sessions s
-		WHERE s.agent IN ('claudecode', 'codex')
-		  AND s.last_seen_at = (
-		    SELECT s2.last_seen_at
-		    FROM sessions s2
-		    WHERE s2.agent = s.agent
-		    ORDER BY datetime(s2.last_seen_at) DESC, s2.last_seen_at DESC
-		    LIMIT 1
-		  )
-		GROUP BY s.agent
+		SELECT agent, MAX(last_seen_at)
+		FROM sessions
+		WHERE COALESCE(agent, '') != '' AND agent != 'unknown'
+		GROUP BY agent
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("diagnostics agent last seen: %w", err)
@@ -588,66 +622,25 @@ func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 		if err := lastSeenRows.Scan(&agent, &lastSeen); err != nil {
 			return nil, fmt.Errorf("diagnostics agent last seen scan: %w", err)
 		}
-		stats[agent].LastSeenAt = &lastSeen
+		ls := lastSeen
+		get(agent).LastSeenAt = &ls
 	}
 	if err := lastSeenRows.Err(); err != nil {
 		return nil, fmt.Errorf("diagnostics agent last seen rows: %w", err)
 	}
 
-	eventRows, err := d.db.Query(`
-		WITH inferred AS (
-			SELECT
-				CASE
-					WHEN agent IN ('claudecode', 'codex') THEN agent
-					WHEN transcript_path LIKE '%/.claude/%' THEN 'claudecode'
-					WHEN source = 'codex' THEN 'codex'
-					ELSE ''
-				END AS inferred_agent,
-				normalization_status,
-				normalizer_version,
-				created_at
-			FROM hook_events
-		)
-		SELECT inferred_agent,
-		       SUM(CASE WHEN normalization_status = 'degraded' THEN 1 ELSE 0 END) AS degraded_count
-		FROM inferred
-		WHERE inferred_agent IN ('claudecode', 'codex')
-		GROUP BY inferred_agent
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("diagnostics agent events: %w", err)
-	}
-	defer eventRows.Close()
-	for eventRows.Next() {
-		var agent string
-		var degraded int
-		if err := eventRows.Scan(&agent, &degraded); err != nil {
-			return nil, fmt.Errorf("diagnostics agent events scan: %w", err)
-		}
-		stats[agent].DegradedCount = degraded
-	}
-	if err := eventRows.Err(); err != nil {
-		return nil, fmt.Errorf("diagnostics agent events rows: %w", err)
-	}
-
+	// Most recent normalizer version per agent.
 	versionRows, err := d.db.Query(`
-		SELECT * FROM (
-			SELECT 'claudecode' AS agent, normalizer_version
+		SELECT agent, normalizer_version FROM (
+			SELECT `+inferredAgentExpr+` AS agent, normalizer_version,
+				ROW_NUMBER() OVER (
+					PARTITION BY `+inferredAgentExpr+`
+					ORDER BY created_at DESC, id DESC
+				) AS rn
 			FROM hook_events
-			WHERE (agent = 'claudecode' OR (agent = '' AND transcript_path LIKE '%/.claude/%'))
-			  AND COALESCE(normalizer_version, '') != ''
-			ORDER BY created_at DESC, id DESC
-			LIMIT 1
+			WHERE COALESCE(normalizer_version, '') != ''
 		)
-		UNION ALL
-		SELECT * FROM (
-			SELECT 'codex' AS agent, normalizer_version
-			FROM hook_events
-			WHERE (agent = 'codex' OR (agent = '' AND source = 'codex'))
-			  AND COALESCE(normalizer_version, '') != ''
-			ORDER BY created_at DESC, id DESC
-			LIMIT 1
-		)
+		WHERE rn = 1 AND agent != '' AND agent != 'unknown'
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("diagnostics agent normalizer versions: %w", err)
@@ -658,41 +651,20 @@ func (d *DB) DiagnosticsAgentStats() ([]domain.DiagnosticsAgentStats, error) {
 		if err := versionRows.Scan(&agent, &normalizerVersion); err != nil {
 			return nil, fmt.Errorf("diagnostics agent normalizer version scan: %w", err)
 		}
-		stats[agent].NormalizerVersion = &normalizerVersion
+		nv := normalizerVersion
+		get(agent).NormalizerVersion = &nv
 	}
 	if err := versionRows.Err(); err != nil {
 		return nil, fmt.Errorf("diagnostics agent normalizer versions rows: %w", err)
 	}
 
-	rateRows, err := d.db.Query(`
-		SELECT agent,
-			SUM(CASE WHEN datetime(created_at) >= datetime('now', '-1 hour') THEN 1 ELSE 0 END),
-			SUM(CASE WHEN datetime(created_at) >= datetime('now', '-24 hours') THEN 1 ELSE 0 END)
-		FROM hook_events
-		WHERE agent IN ('claudecode', 'codex')
-		GROUP BY agent
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("diagnostics agent rates: %w", err)
+	agents := make([]string, 0, len(stats))
+	for agent := range stats {
+		agents = append(agents, agent)
 	}
-	defer rateRows.Close()
-	for rateRows.Next() {
-		var agent string
-		var h, d int
-		if err := rateRows.Scan(&agent, &h, &d); err != nil {
-			return nil, fmt.Errorf("diagnostics agent rates scan: %w", err)
-		}
-		if s, ok := stats[agent]; ok {
-			s.EventsLastHour = h
-			s.EventsLast24h = d
-		}
-	}
-	if err := rateRows.Err(); err != nil {
-		return nil, fmt.Errorf("diagnostics agent rates rows: %w", err)
-	}
-
-	out := make([]domain.DiagnosticsAgentStats, 0, 2)
-	for _, agent := range []string{"claudecode", "codex"} {
+	sort.Strings(agents)
+	out := make([]domain.DiagnosticsAgentStats, 0, len(agents))
+	for _, agent := range agents {
 		stat := *stats[agent]
 		if stat.EventCount == 0 && stat.LastSeenAt == nil && stat.DegradedCount == 0 && stat.NormalizerVersion == nil {
 			continue

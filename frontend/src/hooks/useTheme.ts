@@ -4,14 +4,14 @@ export type Theme = 'light' | 'dark'
 
 export const THEME_STORAGE_KEY = 'argus-theme'
 
-// Read the persisted theme; default to dark (the argus-landing neural palette).
+// Read the persisted theme; default to light (better for first-run onboarding).
 // Mirrors the inline boot script in index.html that applies the class pre-paint.
 export function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'dark'
+  if (typeof window === 'undefined') return 'light'
   try {
-    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark'
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light'
   } catch {
-    return 'dark'
+    return 'light'
   }
 }
 

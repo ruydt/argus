@@ -12,8 +12,9 @@ import (
 	"sync"
 )
 
-// DefaultEnabled are the agents shown out of the box, matching argus's original
-// two-agent behavior. Returned when no agents.json exists yet.
+// DefaultEnabled are the agents whose hooks-config tabs are shown by default
+// when no agents.json exists yet. Other registered agents (see agentspec) are
+// enabled by the user; this is just the out-of-box pair, not a support limit.
 var DefaultEnabled = []string{"claudecode", "codex"}
 
 var mu sync.Mutex

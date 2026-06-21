@@ -7,13 +7,13 @@
     <title>argus</title>
     <script>
       // Apply the persisted theme before first paint to avoid a flash.
-      // Default is dark (argus-landing neural palette). Keep in sync with useTheme.ts.
+      // Default is light (better first-run onboarding). Keep in sync with useTheme.ts.
       ;(function () {
         try {
-          var t = localStorage.getItem('argus-theme')
-          if (t !== 'light') document.documentElement.classList.add('dark')
+          if (localStorage.getItem('argus-theme') === 'dark')
+            document.documentElement.classList.add('dark')
         } catch (e) {
-          document.documentElement.classList.add('dark')
+          // default light — add nothing
         }
       })()
     </script>

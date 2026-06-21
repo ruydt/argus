@@ -16,9 +16,10 @@ irm https://raw.githubusercontent.com/ruydt/argus/main/install.ps1 | iex
 
 Requires: Node.js 18+ (plus curl/tar on macOS/Linux). No Go or pnpm needed.
 
-The installer places the binary at `~/.argus/bin/argus` (`argus.exe` on Windows) and wires
-a `SessionStart` hook in `~/.claude/settings.json` so argus starts automatically with each
-Claude Code session.
+The installer places the binary at `~/.argus/bin/argus` (`argus.exe` on Windows) and writes
+the activate hook to `~/.argus/hooks/argus-activate.js`. It does **not** edit any agent's
+config — run `argus start` to launch the dashboard, then wire hooks per agent via
+**Apply preset** on the Hooks page. `argus stop` shuts the server down.
 
 ## Support matrix
 
@@ -32,7 +33,7 @@ Claude Code session.
 | Node.js                  | 18 or newer                              |
 | Frontend package manager | pnpm 10.x                                |
 | Backend database         | SQLite at `backend/argus.db` by default |
-| Supported agents         | Codex, Claude Code                       |
+| Supported agents         | Claude Code, Codex, Cursor, Antigravity CLI, GitHub Copilot CLI, Qwen Code, Continue, Augment, Windsurf, Crush, Goose |
 
 ## Source install
 

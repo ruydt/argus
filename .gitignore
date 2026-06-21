@@ -31,6 +31,10 @@ bin/
 # Backend local binaries
 backend/agent-monitor
 backend/server
+backend/watcher
+
+# Root build artifact (compiled via `make build-local`; released via goreleaser)
+/argus
 
 # Frontend build/cache
 frontend/node_modules/

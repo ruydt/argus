@@ -37,8 +37,10 @@ describe('applyPreset', () => {
       },
     }
     const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
-    expect(result.hooks['SessionStart']).toHaveLength(1)
-    expect(result.hooks['SessionStart'][0].hooks[0].command).not.toBe('echo old argus hook')
+    // SessionStart preset = [activate hook, ingest hook]; old argus hook replaced.
+    expect(result.hooks['SessionStart']).toHaveLength(2)
+    const cmds = result.hooks['SessionStart'].flatMap((g) => g.hooks.map((h) => h.command))
+    expect(cmds).not.toContain('echo old argus hook')
   })
 
   it('preserves existing non-argus entries alongside the preset', () => {
@@ -48,8 +50,8 @@ describe('applyPreset', () => {
       },
     }
     const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
-    // user group + preset group both present
-    expect(result.hooks['SessionStart']).toHaveLength(2)
+    // user group + preset's two groups (activate + ingest) all present
+    expect(result.hooks['SessionStart']).toHaveLength(3)
     const allEntries = result.hooks['SessionStart'].flatMap((g) => g.hooks)
     expect(allEntries.some((e) => e.statusMessage === ARGUS_STATUS_MESSAGE)).toBe(true)
     expect(allEntries.some((e) => e.statusMessage === undefined)).toBe(true)
@@ -61,7 +63,8 @@ describe('applyPreset', () => {
 
     expect(afterBaseline.hooks['PreToolUse']).toBeUndefined()
     expect(afterBaseline.hooks['SubagentStart']).toBeUndefined()
-    expect(afterBaseline.hooks['SessionStart']).toHaveLength(1)
+    // baseline SessionStart = [activate hook, ingest hook]
+    expect(afterBaseline.hooks['SessionStart']).toHaveLength(2)
     expect(
       afterBaseline.hooks['SessionStart'][0].hooks.every(
         (entry) => entry.statusMessage === ARGUS_STATUS_MESSAGE
@@ -85,7 +88,8 @@ describe('applyPreset', () => {
     const result = applyPreset(current, HOOK_PRESETS.claudecode.baseline)
 
     expect(result.hooks['PreToolUse']).toBeUndefined()
-    expect(result.hooks['SessionStart']).toHaveLength(2)
+    // surviving user group + preset's two groups (activate + ingest)
+    expect(result.hooks['SessionStart']).toHaveLength(3)
     const sessionStartEntries = result.hooks['SessionStart'].flatMap((group) => group.hooks)
     expect(sessionStartEntries.some((entry) => entry.command === 'echo user')).toBe(true)
     expect(sessionStartEntries.some((entry) => entry.statusMessage === ARGUS_STATUS_MESSAGE)).toBe(
@@ -97,7 +101,8 @@ describe('applyPreset', () => {
     const afterBaseline = applyPreset({ hooks: {} }, HOOK_PRESETS.claudecode.baseline)
     const afterMedium = applyPreset(afterBaseline, HOOK_PRESETS.claudecode.medium)
 
-    expect(afterMedium.hooks['SessionStart']).toHaveLength(1)
+    // medium SessionStart = [activate hook, ingest hook]
+    expect(afterMedium.hooks['SessionStart']).toHaveLength(2)
     expect(afterMedium.hooks['PreToolUse']).toBeDefined()
     expect(afterMedium.hooks['SubagentStart']).toBeDefined()
   })

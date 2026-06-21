@@ -33,8 +33,7 @@ import {
 } from '@/components/shared/Modal'
 import { cn } from '@/lib/utils'
 import { relativeTime } from '@/lib/format'
-import { AGENTS, agentForEvent } from '@/agents'
-import { AgentLogo } from '@/agents/catalog'
+import { AgentLogo, agentMeta } from '@/agents/catalog'
 import type { LayoutOutletContext, SessionSummary } from '@/types'
 import { effectiveTag, projectName } from './utils'
 
@@ -374,10 +373,21 @@ export function SessionsPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [sessions])
 
+  // Distinct agent ids actually present in the sessions — feeds the agent filter
+  // dropdown so every supported agent (not just Claude Code / Codex) is offered.
+  const presentAgents = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of sessions) {
+      const id = s.sample?.agent
+      if (id) set.add(id)
+    }
+    return Array.from(set).sort((a, b) => agentMeta(a).label.localeCompare(agentMeta(b).label))
+  }, [sessions])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const matched = sessions.filter((s) => {
-      if (agentFilter !== 'all' && agentForEvent(s.sample).id !== agentFilter) return false
+      if (agentFilter !== 'all' && (s.sample?.agent || '') !== agentFilter) return false
       if (projectFilter !== 'all' && (!s.cwd || projectName(s.cwd) !== projectFilter)) return false
       if (!q) return true
       return (
@@ -538,9 +548,9 @@ export function SessionsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All agents</SelectItem>
-                  {AGENTS.map((agent) => (
-                    <SelectItem key={agent.id} value={agent.id}>
-                      {agent.label}
+                  {presentAgents.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {agentMeta(id).label}
                     </SelectItem>
                   ))}
                 </SelectContent>

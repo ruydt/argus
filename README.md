@@ -18,13 +18,14 @@
 ---
 
 **The hook control center for AI coding agents.** Hooks are how you govern what
-Claude Code and Codex can do — block dangerous commands, protect secrets, enforce
+your coding agents can do — block dangerous commands, protect secrets, enforce
 branch policy, get notified. But managing them means hand-editing JSON, testing
 them means waiting for a live agent to misbehave, and good scripts are scattered
 across a thousand gists. Argus fixes all three, locally:
 
-- **Hook management** — a config editor with one-click presets for Claude Code and
-  Codex. No JSON surgery; argus-managed entries are tagged and reversible.
+- **Hook management** — a config editor with one-click presets for Claude Code,
+  Codex, and 9 more agents (Cursor, Copilot CLI, Qwen, Continue, Augment, Windsurf,
+  Crush, Goose, Antigravity). No JSON surgery; argus-managed entries are tagged and reversible.
 - **Hook simulator** — run any hook command or script against a realistic synthetic
   payload for any event type, and inspect stdout/stderr/exit code/duration *before*
   an agent ever fires it. The missing debugger for the hook ecosystem.
@@ -32,7 +33,7 @@ across a thousand gists. Argus fixes all three, locally:
   ships battle-tested, zero-dependency guardrails free for everyone: dangerous-command
   blocker, secrets protection, branch guard, auto-format with lint feedback,
   prompt-injection scanner, webhook notifications, and more. Every script works
-  with Claude Code and Codex — and the in-app **Scripts library** lets you browse,
+  across supported agents — and the in-app **Scripts library** lets you browse,
   search, and one-click install any of them into `~/.argus/hooks/`.
 - **Community sharing** — browse and install the whole community registry, and (with
   an optional GitHub login) **publish your own** scripts via a pull request or back
@@ -60,12 +61,13 @@ irm https://raw.githubusercontent.com/ruydt/argus/main/install.ps1 | iex
 
 > **Requirements:** Node.js 18+ (plus curl/tar on macOS/Linux) — no Go or pnpm needed.
 >
-> The installer downloads a pre-built binary for your OS and arch, wires the Claude Code
-> `SessionStart` hook, and places `argus` in `~/.argus/bin`.
+> The installer downloads a pre-built binary for your OS and arch and places `argus` in
+> `~/.argus/bin`. It does not touch any agent's config — you wire hooks from the dashboard.
 
-Open **http://127.0.0.1:10804** after your next Claude Code or Codex session starts.
+Then run **`argus start`** — it launches the server and opens **http://127.0.0.1:10804**.
+On the Hooks page, pick your agent and click **Apply preset** to wire it up.
 
-Then follow [docs/quickstart.md](docs/quickstart.md) to verify your first event.
+Follow [docs/quickstart.md](docs/quickstart.md) to verify your first event.
 
 ## What it looks like
 
@@ -87,7 +89,7 @@ tour at **[getargus.org](https://getargus.org)**.
 curl -fsSL https://raw.githubusercontent.com/ruydt/argus/main/uninstall.sh | bash
 ```
 
-Stops the server, removes binaries and scripts, unwires hooks from `~/.claude/settings.json`, and optionally deletes your data.
+Stops the server, removes binaries and scripts, removes any argus hook entries it finds in `~/.claude/settings.json`, and optionally deletes your data.
 
 ## Documentation
 

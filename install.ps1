@@ -8,7 +8,6 @@ $BinDir      = Join-Path $ArgusDir 'bin'
 $Binary      = Join-Path $BinDir 'argus.exe'
 $HooksDir    = Join-Path $ArgusDir 'hooks'
 $ActivateScript = Join-Path $HooksDir 'argus-activate.js'
-$Settings    = Join-Path $env:USERPROFILE '.claude\settings.json'
 $ArgusPort   = 10804
 
 # Node is required: the SessionStart hook is a Node script.
@@ -68,6 +67,13 @@ $binJs = $Binary -replace '\\', '/'
 # Single-quoted here-string keeps the JS verbatim (no PowerShell $ / backtick parsing).
 $activateJs = @'
 #!/usr/bin/env node
+// @argus-meta
+// title: Argus session start
+// author: argus
+// event: SessionStart
+// runtime: node
+// purpose: Start the Argus server and show a liveness banner at session start.
+// @end
 const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const net = require('net');
@@ -158,29 +164,11 @@ $activateJs = $activateJs -replace '__ARGUS_BINARY__', $binJs
 Set-Content -Path $ActivateScript -Value $activateJs -Encoding UTF8
 Write-Host "  -> $ActivateScript"
 
-# --- 6. wire SessionStart hook in settings.json (via Node — already required) -
-$activateCmd = 'node "' + $ActivateScript + '"'
-$env:ARGUS_SETTINGS = $Settings
-$env:ARGUS_ACTIVATE_CMD = $activateCmd
-$wire = @'
-const fs = require('fs'), path = require('path');
-const settingsPath = process.env.ARGUS_SETTINGS;
-const cmd = process.env.ARGUS_ACTIVATE_CMD;
-let s = {};
-try { s = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch (_) {}
-s.hooks = s.hooks || {};
-s.hooks.SessionStart = s.hooks.SessionStart || [];
-const has = s.hooks.SessionStart.some(e => (e.hooks || []).some(h => h.command === cmd));
-if (!has) {
-  s.hooks.SessionStart.push({ hooks: [{ type: 'command', command: cmd }] });
-  fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
-  fs.writeFileSync(settingsPath, JSON.stringify(s, null, 2));
-  console.log('  -> hook registered in ' + settingsPath);
-} else {
-  console.log('  -> hook already registered in ' + settingsPath);
-}
-'@
-node -e $wire
+# --- 6. (no hook wiring) ----------------------------------------------------
+# Argus no longer edits any agent's settings during install. The activate hook
+# above is written to ~/.argus/hooks but left unwired — wire it per agent from
+# the Hooks page in the dashboard via "Apply preset". Run `argus start` to
+# launch the server and open the dashboard.
 
 # --- 7. add bin to user PATH ------------------------------------------------
 $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
@@ -192,8 +180,11 @@ if ($userPath -notlike "*$BinDir*") {
 
 Write-Host ''
 Write-Host "argus $Version installed."
-Write-Host "Hook:   $ActivateScript"
-Write-Host "Start:  argus            # or just start a Claude Code / Codex session"
-Write-Host "UI:     http://127.0.0.1:$ArgusPort"
+Write-Host "Activate hook: $ActivateScript  (unwired - apply a preset in the dashboard to use it)"
 Write-Host ''
-Write-Host 'Restart Claude Code or Codex - argus starts automatically.'
+Write-Host 'Next steps:'
+Write-Host "  1. argus start                  # launches the server and opens http://127.0.0.1:$ArgusPort"
+Write-Host "  2. Open the Hooks page, pick your agent, and click 'Apply preset'."
+Write-Host '     The preset wires argus-activate.js on session start + event capture.'
+Write-Host ''
+Write-Host "Tip: 'argus start' opens your browser; bare 'argus' just runs the server; 'argus stop' shuts it down."

@@ -8,8 +8,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -28,6 +32,23 @@ func main() {
 
 func run() int {
 	cfg := config.Load()
+
+	subcommand := ""
+	if len(os.Args) > 1 {
+		subcommand = os.Args[1]
+	}
+
+	home, _ := os.UserHomeDir()
+	pidFile := filepath.Join(home, ".argus", "argus.pid")
+
+	// `argus stop` signals a running server (from its pidfile) to shut down and exits.
+	if subcommand == "stop" {
+		return stopServer(pidFile)
+	}
+
+	// `argus start` runs the server and opens the dashboard in a browser once it
+	// is reachable. Bare `argus` (any other / no arg) just runs the server.
+	openBrowser := subcommand == "start"
 
 	// Pre-check: verify the DB path is writable before attempting open/migrate.
 	// This produces an actionable fatal message instead of an opaque sqlite error.
@@ -67,8 +88,6 @@ func run() int {
 	}()
 
 	svc := service.New(repo)
-
-	home, _ := os.UserHomeDir()
 
 	// Load ignore matcher. A missing default file returns an empty matcher (safe).
 	// An unreadable explicit ARGUS_IGNORE path exits with an actionable error (T-03-02-04).
@@ -169,18 +188,190 @@ func run() int {
 		}()
 	}
 
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	// Bind first so we only write the pidfile after a successful bind — a
+	// second instance that loses the port race must not clobber the live
+	// server's pidfile (which `argus stop` relies on).
+	ln, err := net.Listen("tcp", cfg.Addr)
+	if err != nil {
+		stop()
 		if isAddrInUse(err) {
-			stop()
 			slog.Error("port already in use", "addr", cfg.Addr, "err", err)
 			return 1
 		}
-		stop()
 		slog.Error("listen", "err", err)
+		return 1
+	}
+	if err := writePIDFile(pidFile, cfg.Addr); err != nil {
+		slog.Warn("could not write pidfile", "path", pidFile, "err", err)
+	}
+	defer removePIDFile(pidFile)
+
+	if openBrowser {
+		go openWhenReady(ctx, cfg.Addr)
+	}
+
+	if err := srv.Serve(ln); err != nil && err != http.ErrServerClosed {
+		stop()
+		slog.Error("serve", "err", err)
 		return 1
 	}
 	stop()
 	return 0
+}
+
+// writePIDFile records this process's PID and listen address so `argus stop`
+// can both find the server and verify the PID still belongs to a live argus
+// (guarding against a stale pidfile whose PID the OS recycled).
+func writePIDFile(path, addr string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(fmt.Sprintf("%d\n%s\n", os.Getpid(), addr)), 0o644)
+}
+
+// readPIDFile parses the pid and recorded listen address from the pidfile.
+func readPIDFile(path string) (pid int, addr string, err error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0, "", err
+	}
+	lines := strings.SplitN(strings.TrimSpace(string(data)), "\n", 2)
+	pid, err = strconv.Atoi(strings.TrimSpace(lines[0]))
+	if err != nil {
+		return 0, "", err
+	}
+	if len(lines) > 1 {
+		addr = strings.TrimSpace(lines[1])
+	}
+	return pid, addr, nil
+}
+
+// removePIDFile deletes the pidfile only if it still holds our PID, so a newer
+// server's pidfile is never removed by this (older) process shutting down.
+func removePIDFile(path string) {
+	if pid, _, err := readPIDFile(path); err == nil && pid == os.Getpid() {
+		_ = os.Remove(path)
+	}
+}
+
+// argusAlive reports whether a live argus server answers at addr. Used as the
+// identity check before signaling a PID and as the liveness probe while waiting
+// for graceful shutdown — portable (no /proc, no signal(0)) and it confirms the
+// process is actually argus, not an unrelated process that reused the PID.
+func argusAlive(addr string) bool {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	if host == "" || host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	client := &http.Client{Timeout: 800 * time.Millisecond}
+	resp, err := client.Get("http://" + net.JoinHostPort(host, port) + "/api/version")
+	if err != nil {
+		return false
+	}
+	_ = resp.Body.Close()
+	return resp.StatusCode == http.StatusOK
+}
+
+// stopServer reads the pidfile, confirms a live argus is actually serving at the
+// recorded address, then asks that process to shut down gracefully — escalating
+// to a hard kill if it does not exit. Returns a process exit code.
+func stopServer(pidFile string) int {
+	pid, addr, err := readPIDFile(pidFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			slog.Info("argus is not running", "pidfile", pidFile)
+			return 0
+		}
+		slog.Error("invalid pidfile", "path", pidFile, "err", err)
+		return 1
+	}
+
+	// Identity guard: only signal the PID when an argus server actually answers
+	// at the recorded address. A stale pidfile (PID recycled for an unrelated
+	// process) fails this check, so we never SIGTERM/Kill an innocent process.
+	if addr == "" || !argusAlive(addr) {
+		slog.Info("argus is not running (clearing stale pidfile)", "pid", pid, "addr", addr)
+		_ = os.Remove(pidFile)
+		return 0
+	}
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		slog.Error("find process", "pid", pid, "err", err)
+		return 1
+	}
+	if err := terminate(proc); err != nil {
+		slog.Error("stop argus", "pid", pid, "err", err)
+		return 1
+	}
+
+	// Wait up to ~5s for the server to stop serving, then hard-kill.
+	for i := 0; i < 25; i++ {
+		if !argusAlive(addr) {
+			_ = os.Remove(pidFile)
+			slog.Info("argus stopped", "pid", pid)
+			return 0
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	_ = proc.Kill()
+	_ = os.Remove(pidFile)
+	slog.Info("argus force-stopped", "pid", pid)
+	return 0
+}
+
+// terminate requests a graceful shutdown (SIGTERM on Unix; hard kill on Windows,
+// which has no portable graceful signal via os.Process).
+func terminate(p *os.Process) error {
+	if runtime.GOOS == "windows" {
+		return p.Kill()
+	}
+	return p.Signal(syscall.SIGTERM)
+}
+
+// openWhenReady polls the listen address until the server accepts connections,
+// then opens the dashboard in the default browser. Best-effort: any failure
+// (browser missing, headless host) is logged and ignored — the server runs on.
+func openWhenReady(ctx context.Context, addr string) {
+	deadline := time.Now().Add(15 * time.Second)
+	for time.Now().Before(deadline) {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		conn, err := net.DialTimeout("tcp", addr, 500*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			url := "http://" + addr
+			if err := openBrowserURL(url); err != nil {
+				slog.Warn("could not open browser", "url", url, "err", err)
+			} else {
+				slog.Info("opened dashboard", "url", url)
+			}
+			return
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	slog.Warn("server not ready in time; not opening browser", "addr", addr)
+}
+
+// openBrowserURL launches the OS default handler for url. Detached so it does
+// not block or get killed with this process.
+func openBrowserURL(url string) error {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default: // linux, *bsd
+		cmd = exec.Command("xdg-open", url)
+	}
+	return cmd.Start()
 }
 
 // validateBind rejects non-loopback ADDR unless AllowRemote is explicitly set (D-07, D-08).
@@ -212,7 +403,7 @@ func warnRemoteBind(cfg config.Config) {
 	slog.Warn("REMOTE BIND ACTIVE — argus is reachable beyond localhost",
 		"addr", cfg.Addr,
 		"captures", "prompts, diffs, file paths, tool outputs, raw payloads, exports",
-		"command_execution", "the hook simulator (/api/hooks/simulate) and reveal (/api/diagnostics/reveal) run local commands — exposing these beyond localhost is dangerous",
+		"command_execution", "the hook simulator (/api/hooks/simulate) and reveal (/api/collection/reveal) run local commands — exposing these beyond localhost is dangerous",
 		"note", "public internet exposure is unsupported",
 	)
 }

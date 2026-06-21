@@ -3,7 +3,7 @@
 Hook management is Argus's core: configure hooks with presets, test them in the
 simulator before an agent ever runs them, and grab ready-made scripts from the
 [public hook script collection](../registry/) (guardrails,
-formatters, notifications — zero dependencies, Claude Code + Codex).
+formatters, notifications — zero dependencies, works across supported agents).
 
 Argus receives agent events at:
 
@@ -17,7 +17,7 @@ Start the backend before configuring hooks. Hook delivery fails while the backen
 
 ## Quickest setup: Hooks Config UI
 
-Open the **Hooks Config** page in the Argus dashboard. Select your agent tab (Claude Code or Codex), then use the **Apply preset** dropdown to install a preset in one click — no JSON editing required.
+Open the **Hooks Config** page in the Argus dashboard. Select your agent tab (Claude Code, Codex, or any other supported agent), then use the **Apply preset** dropdown to install a preset in one click — no JSON editing required.
 
 ### Presets
 
