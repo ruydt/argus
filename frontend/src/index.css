@@ -256,6 +256,17 @@ body {
   background-color: var(--accent) !important;
 }
 
+/* Destructive actions (delete / remove / clear): red by default, then a solid
+   red fill with white text on hover. Defined after .menu-item so its !important
+   hover background wins over the neutral menu highlight. */
+.danger-action {
+  color: var(--destructive);
+}
+.danger-action:hover:not(:disabled) {
+  background-color: var(--destructive) !important;
+  color: #fff !important;
+}
+
 /* Radix sets pointer-events:none on the dialog content while a nested Select
    is open, and the restore races on close — leaving the dialog frozen (the
    trigger can't be re-clicked to reopen). Keep the dialog interactive; the

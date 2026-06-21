@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Pause, Play } from 'lucide-react'
+import { Pause, Play, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,7 @@ const TAIL_LINES = 200
 
 type LiveLogPanelProps = {
   logs: DiagnosticsFileEntry[]
+  onCleared?: () => void
 }
 
 // hook-scripts.log lines lead with a UTC ISO timestamp; swap it for the viewer's
@@ -31,11 +32,14 @@ function localizeTime(line: string): string {
 }
 
 // LiveLogPanel tails the ~/.argus log files inline, refreshing every POLL_MS.
-export function LiveLogPanel({ logs }: LiveLogPanelProps) {
+export function LiveLogPanel({ logs, onCleared }: LiveLogPanelProps) {
   const available = useMemo(() => logs.filter((l) => l.exists && FILE_PARAM[l.name]), [logs])
   const [selected, setSelected] = useState('')
   const [lines, setLines] = useState<string[]>([])
-  const [paused, setPaused] = useState(false)
+  // Default paused: tailing is opt-in, so the panel doesn't poll until the user
+  // hits Resume. We still load one snapshot below so it isn't blank on arrival.
+  const [paused, setPaused] = useState(true)
+  const [clearing, setClearing] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Derive the effective file instead of syncing state in an effect: fall back to
@@ -46,7 +50,7 @@ export function LiveLogPanel({ logs }: LiveLogPanelProps) {
 
   useEffect(() => {
     const param = FILE_PARAM[activeName]
-    if (!param || paused) return
+    if (!param) return
     let cancelled = false
     const load = async () => {
       try {
@@ -58,13 +62,36 @@ export function LiveLogPanel({ logs }: LiveLogPanelProps) {
         /* transient — keep last lines, retry next tick */
       }
     }
+    // Always pull one snapshot so the panel shows the current tail even while
+    // paused; only the live polling interval is gated by `paused`.
     void load()
+    if (paused)
+      return () => {
+        cancelled = true
+      }
     const id = setInterval(load, POLL_MS)
     return () => {
       cancelled = true
       clearInterval(id)
     }
   }, [activeName, paused])
+
+  const clearLog = async () => {
+    const param = FILE_PARAM[activeName]
+    if (!param || clearing) return
+    setClearing(true)
+    try {
+      const r = await fetch(`/api/diagnostics/log-clear?file=${param}`, { method: 'POST' })
+      if (r.ok) {
+        setLines([])
+        onCleared?.()
+      }
+    } catch {
+      /* leave the view as-is on failure */
+    } finally {
+      setClearing(false)
+    }
+  }
 
   // Keep the newest lines in view (live tail).
   useEffect(() => {
@@ -80,15 +107,28 @@ export function LiveLogPanel({ logs }: LiveLogPanelProps) {
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle>Live Logs</CardTitle>
         {available.length > 0 ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 gap-1.5 text-[12px]"
-            onClick={() => setPaused((p) => !p)}
-          >
-            {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-            {paused ? 'Resume' : 'Pause'}
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-[12px]"
+              onClick={() => setPaused((p) => !p)}
+            >
+              {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
+              {paused ? 'Resume' : 'Pause'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-[12px] danger-action"
+              onClick={clearLog}
+              disabled={clearing}
+              title="Clear this log file and reclaim its disk space"
+            >
+              <Trash2 className="size-3.5" />
+              Clear
+            </Button>
+          </div>
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

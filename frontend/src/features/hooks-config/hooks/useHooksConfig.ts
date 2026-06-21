@@ -124,32 +124,38 @@ export function useHooksConfig(agent: AgentKey, shouldLoad = true): HooksConfigS
     setDraftJSONState(savedJSON)
   }, [savedConfig, savedJSON])
 
-  const save = useCallback(async () => {
-    setSaveError(null)
-    setSaving(true)
-    try {
-      const parsed = JSON.parse(draftJSON) as HooksConfig
-      const res = await fetch(`/api/hooks-config?agent=${agent}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsed),
-      })
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text.trim() || `HTTP ${res.status}`)
+  // Persist the current draft, or an explicit override config (used by
+  // "Delete all events", where the cleared config must be saved immediately
+  // without waiting for the async draftJSON state update).
+  const save = useCallback(
+    async (override?: HooksConfig) => {
+      setSaveError(null)
+      setSaving(true)
+      try {
+        const parsed = override ?? (JSON.parse(draftJSON) as HooksConfig)
+        const res = await fetch(`/api/hooks-config?agent=${agent}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsed),
+        })
+        if (!res.ok) {
+          const text = await res.text()
+          throw new Error(text.trim() || `HTTP ${res.status}`)
+        }
+        const saved = normalizeConfig((await res.json()) as HooksConfig)
+        const json = configToJSON(saved)
+        setConfigState(saved)
+        setSavedConfig(saved)
+        setDraftJSONState(json)
+        setSavedJSON(json)
+      } catch (err: unknown) {
+        setSaveError(err instanceof Error ? err.message : 'Save failed')
+      } finally {
+        setSaving(false)
       }
-      const saved = normalizeConfig((await res.json()) as HooksConfig)
-      const json = configToJSON(saved)
-      setConfigState(saved)
-      setSavedConfig(saved)
-      setDraftJSONState(json)
-      setSavedJSON(json)
-    } catch (err: unknown) {
-      setSaveError(err instanceof Error ? err.message : 'Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }, [agent, draftJSON, normalizeConfig])
+    },
+    [agent, draftJSON, normalizeConfig]
+  )
 
   return {
     config,

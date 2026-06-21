@@ -308,7 +308,7 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
       </div>
 
       {/* Live tail of the ~/.argus log files */}
-      <LiveLogPanel logs={data.fileSystem.logs} />
+      <LiveLogPanel logs={data.fileSystem.logs} onCleared={onCompacted} />
     </>
   )
 }

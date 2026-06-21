@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import type { CommunityScript } from '@/types'
 
 import { AgentLogos } from '../AgentLogos'
+import { EventBadges } from '../EventBadges'
 import { OsIcons } from '../OsIcons'
 import { ScriptViewerModal } from '../ScriptViewerModal'
 
@@ -71,11 +72,7 @@ export function CommunityRow({ script, index, busy, onInstall, getBody }: Commun
           <span className="truncate text-[0.8rem] text-muted-foreground">{script.author}</span>
         </div>
         <div className="hidden w-40 shrink-0 flex-wrap items-center gap-1 md:flex">
-          {(script.events ?? []).map((ev) => (
-            <Badge key={ev} variant="outline">
-              {ev}
-            </Badge>
-          ))}
+          <EventBadges events={script.events} />
           {!script.runtime_available ? (
             <Badge variant="outline" className="border-amber-600/40 text-amber-500">
               needs {script.runtime}

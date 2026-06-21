@@ -34,19 +34,33 @@ describe('HooksConfigPage', () => {
     })
   })
 
-  it('Save button is disabled when config is unchanged', async () => {
+  it('disables Delete all events when there are no events', async () => {
     renderPage()
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /save hooks config/i })).toBeTruthy()
+      expect(screen.getByRole('button', { name: /delete all events/i })).toBeTruthy()
     )
-    expect(screen.getByRole('button', { name: /save hooks config/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /delete all events/i })).toBeDisabled()
   })
 
-  it('shows a disabled save icon (saved state) when config is unchanged and loaded', async () => {
-    renderPage()
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: /save hooks config/i })).toBeDisabled()
+  it('opens a confirm dialog from Delete all events', async () => {
+    const cfg = {
+      hooks: { PostToolUse: [{ hooks: [{ type: 'command', command: 'echo hi' }] }] },
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) =>
+        Promise.resolve({
+          ok: true,
+          json: async () => (String(url).includes('/api/hooks-config') ? cfg : emptyConfig),
+        })
+      )
     )
+    const user = userEvent.setup()
+    renderPage()
+    const btn = await screen.findByRole('button', { name: /delete all events/i })
+    await waitFor(() => expect(btn).not.toBeDisabled())
+    await user.click(btn)
+    expect(await screen.findByText(/delete all events\?/i)).toBeTruthy()
   })
 
   it('shows error card when load fails for active agent', async () => {
@@ -65,13 +79,6 @@ describe('HooksConfigPage', () => {
     renderPage()
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /open simulator/i })).toBeTruthy()
-    })
-  })
-
-  it('shows a discard changes action in the structured editor toolbar', async () => {
-    renderPage()
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /discard changes/i })).toBeTruthy()
     })
   })
 

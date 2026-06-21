@@ -40,6 +40,7 @@ import {
 } from '@/components/shared/Modal'
 import { VersionBadge } from '@/features/version/VersionBadge'
 import { AgentLogo } from '@/agents/catalog'
+import { effectiveTag, isUnreadStop } from '@/features/sessions/utils'
 import { cn } from '@/lib/utils'
 import type { SessionSummary } from '@/types'
 import { ThemeToggle } from './ThemeToggle'
@@ -78,6 +79,7 @@ interface SidebarProps {
   onDeleteSession?: (id: string) => void
   pinnedIds?: Set<string>
   tags?: Record<string, string>
+  seen?: Record<string, number>
   onTogglePin?: (id: string) => void
   onSetTag?: (id: string, tag: string) => void
   onRemoveTag?: (id: string) => void
@@ -98,6 +100,7 @@ function SidebarSessionItem({
   session,
   tag,
   pinned,
+  unread,
   actions,
   dragging,
   onDragStart,
@@ -106,6 +109,7 @@ function SidebarSessionItem({
   session: SessionSummary
   tag?: string
   pinned: boolean
+  unread: boolean
   actions: SessionActions
   dragging: boolean
   onDragStart: (id: string) => void
@@ -113,6 +117,10 @@ function SidebarSessionItem({
 }) {
   const { onNavigate, onDeleteSession, onTogglePin, onSetTag, onRemoveTag } = actions
   const id = session.sessionId
+  // Badge defaults to the working folder; menu actions still use the explicit tag.
+  // Explicit user tags get a leading "#" to set them apart from the folder default.
+  const displayTag = effectiveTag(tag, session.cwd)
+  const tagLabel = displayTag ? (tag ? `#${displayTag}` : displayTag) : undefined
 
   const selected = useMatch('/sessions/:sessionId')?.params.sessionId === id
 
@@ -142,8 +150,8 @@ function SidebarSessionItem({
       }}
       onDragEnd={onDragEnd}
       className={cn(
-        'group/item flex cursor-grab items-center rounded-md transition-colors duration-150 active:cursor-grabbing',
-        dragging && 'opacity-40',
+        'group/item flex cursor-pointer items-center rounded-md transition-colors duration-150',
+        dragging && 'cursor-grabbing opacity-40',
         selected
           ? 'bg-foreground/[0.07]'
           : menuOpen
@@ -170,33 +178,49 @@ function SidebarSessionItem({
           <span
             className={cn(
               'min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[0.72rem]',
+              // Bold + brighten when the session's last event is an unseen Stop.
+              unread && 'font-semibold text-foreground',
               SIDEBAR_FADE_MASK
             )}
           >
             {id}
           </span>
-          {tag && (
-            <span className="max-w-[64px] shrink-0 truncate rounded bg-[#863bff]/15 px-1.5 py-0.5 text-[0.58rem] font-medium text-[#863bff]">
-              {tag}
-            </span>
-          )}
         </span>
       </NavLink>
 
+      {/* Right slot: tag and the ⋯ button both collapse their width when not in
+          use, so the badge sits flush at rest and the id ends right at (touches,
+          never under) the dots on hover. The button stays mounted (width/opacity,
+          not display) so Radix keeps a stable anchor — a display:none trigger on
+          close makes the closing content flash at the top-left corner. */}
       <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            aria-label="Session options"
-            className={cn(
-              'mr-1 flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-opacity',
-              'hover:bg-foreground/[0.12] hover:text-foreground',
-              'opacity-0 focus-visible:opacity-100 group-hover/item:opacity-100 data-[state=open]:opacity-100'
-            )}
-          >
-            <MoreVertical className="size-3.5" />
-          </button>
-        </PopoverTrigger>
+        <div className="mr-1 flex h-6 shrink-0 items-center">
+          {tagLabel && (
+            <span
+              className={cn(
+                'pointer-events-none overflow-hidden truncate rounded bg-[#863bff]/15 py-0.5 text-[0.58rem] font-medium text-[#863bff] transition-all duration-200 ease-out',
+                menuOpen
+                  ? 'max-w-0 px-0 opacity-0'
+                  : 'max-w-[80px] px-1.5 opacity-100 group-hover/item:max-w-0 group-hover/item:px-0 group-hover/item:opacity-0'
+              )}
+            >
+              {tagLabel}
+            </span>
+          )}
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Session options"
+              className={cn(
+                'flex h-6 w-0 shrink-0 items-center justify-center overflow-hidden rounded text-muted-foreground opacity-0 transition-all duration-200 ease-out',
+                'hover:bg-foreground/[0.12] hover:text-foreground',
+                'group-hover/item:w-6 group-hover/item:opacity-100 focus-visible:w-6 focus-visible:opacity-100 data-[state=open]:w-6 data-[state=open]:opacity-100'
+              )}
+            >
+              <MoreVertical className="size-3.5 shrink-0" />
+            </button>
+          </PopoverTrigger>
+        </div>
         <PopoverContent side="right" align="start" sideOffset={6} className="w-44 p-1">
           <div className="flex flex-col">
             <Button
@@ -212,41 +236,15 @@ function SidebarSessionItem({
               {pinned ? 'Unpin' : 'Pin'}
             </Button>
 
-            {tag ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={openTagEditor}
-                >
-                  <Pencil className="size-4" />
-                  Edit tag
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={() => {
-                    onRemoveTag?.(id)
-                    setMenuOpen(false)
-                  }}
-                >
-                  <X className="size-4" />
-                  Remove tag
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="menu-item justify-start"
-                onClick={openTagEditor}
-              >
-                <Tag className="size-4" />
-                Tag
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="menu-item justify-start"
+              onClick={openTagEditor}
+            >
+              {tag ? <Pencil className="size-4" /> : <Tag className="size-4" />}
+              {tag ? 'Edit tag' : 'Tag'}
+            </Button>
 
             <Button
               variant="ghost"
@@ -263,10 +261,25 @@ function SidebarSessionItem({
 
             <div className="mx-auto my-1 h-px w-[85%] bg-border" />
 
+            {tag && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="danger-action justify-start"
+                onClick={() => {
+                  onRemoveTag?.(id)
+                  setMenuOpen(false)
+                }}
+              >
+                <X className="size-4" />
+                Remove tag
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="sm"
-              className="menu-item justify-start hover:text-destructive"
+              className="danger-action justify-start"
               onClick={() => {
                 setMenuOpen(false)
                 setConfirmOpen(true)
@@ -346,13 +359,20 @@ function loadOpenState(key: string): boolean {
 // animates only when it first appears mid-drag. The transition is disabled once
 // that open completes — so pin-via-menu (mounts open) and manual header toggles
 // are instant, never animated.
+// forceAnimate: parent-driven flag that re-enables the transition for a one-off
+// close (e.g. dragging the last pinned item out) — symmetric to the open slide.
+// onCollapsed fires when a collapse transition finishes so the parent can unmount.
 function PinnedCollapse({
   expanded,
   animateOnMount,
+  forceAnimate = false,
+  onCollapsed,
   children,
 }: {
   expanded: boolean
   animateOnMount: boolean
+  forceAnimate?: boolean
+  onCollapsed?: () => void
   children: ReactNode
 }) {
   const [ready, setReady] = useState(!animateOnMount)
@@ -368,10 +388,13 @@ function PinnedCollapse({
 
   return (
     <div
-      onTransitionEnd={() => setAnimating(false)}
+      onTransitionEnd={() => {
+        setAnimating(false)
+        if (!open) onCollapsed?.()
+      }}
       className={cn(
         'grid',
-        animating && 'transition-[grid-template-rows] duration-200 ease-out',
+        (animating || forceAnimate) && 'transition-[grid-template-rows] duration-200 ease-out',
         open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       )}
     >
@@ -384,11 +407,13 @@ function SidebarSessions({
   sessions,
   tags,
   pinnedIds,
+  seen,
   actions,
 }: {
   sessions: SessionSummary[]
   tags: Record<string, string>
   pinnedIds: Set<string>
+  seen: Record<string, number>
   actions: SessionActions
 }) {
   const [open, setOpen] = useState(() => loadOpenState(RECENTS_OPEN_STORAGE_KEY))
@@ -396,6 +421,10 @@ function SidebarSessions({
   // Drag-to-pin: the session id being dragged, plus which drop zone the cursor is over.
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<'pinned' | 'recent' | null>(null)
+  // When the last pinned item is dragged out, keep the section mounted with a
+  // snapshot of its contents so it can animate closed (mirrors the open slide)
+  // before unmounting.
+  const [closingList, setClosingList] = useState<SessionSummary[] | null>(null)
   // Only render as many recents as fit the available height — no scroll. The rest
   // live behind "View all". Measured live so it adapts to viewport / pinned count.
   const recentsRef = useRef<HTMLDivElement>(null)
@@ -436,11 +465,15 @@ function SidebarSessions({
   const visibleRecents = recentsFit > 0 ? recentList.slice(0, recentsFit) : recentList
 
   const draggingPinned = draggingId !== null && pinnedIds.has(draggingId)
-  // Show the Pinned section when something is pinned, or while dragging a recent
-  // item so an empty drop target appears for the very first pin.
-  const showPinned = pinnedList.length > 0 || (draggingId !== null && !draggingPinned)
-  // While dragging toward an empty Pinned section, force it open so the drop zone is visible.
-  const pinnedExpanded = pinnedOpen || (pinnedList.length === 0 && draggingId !== null)
+  const closing = closingList !== null
+  // Show the Pinned section when something is pinned, while dragging a recent
+  // item so an empty drop target appears for the very first pin, or while the
+  // section is animating closed after the last pin was removed.
+  const showPinned = pinnedList.length > 0 || (draggingId !== null && !draggingPinned) || closing
+  // While dragging toward an empty Pinned section, force it open so the drop zone
+  // is visible. Force it collapsed while closing so the transition plays.
+  const pinnedExpanded =
+    !closing && (pinnedOpen || (pinnedList.length === 0 && draggingId !== null))
 
   const resetDrag = () => {
     setDraggingId(null)
@@ -451,7 +484,12 @@ function SidebarSessions({
     if (draggingId !== null) {
       const isPinned = pinnedIds.has(draggingId)
       if (target === 'pinned' && !isPinned) actions.onTogglePin?.(draggingId)
-      if (target === 'recent' && isPinned) actions.onTogglePin?.(draggingId)
+      if (target === 'recent' && isPinned) {
+        // Snapshot the section before unpinning the last item so it can animate
+        // closed (same slide as dragging the first pin opens it).
+        if (pinnedList.length === 1) setClosingList(pinnedList)
+        actions.onTogglePin?.(draggingId)
+      }
     }
     resetDrag()
   }
@@ -462,6 +500,7 @@ function SidebarSessions({
       session={session}
       tag={tags[session.sessionId]}
       pinned={pinnedIds.has(session.sessionId)}
+      unread={isUnreadStop(session, seen)}
       actions={actions}
       dragging={draggingId === session.sessionId}
       onDragStart={(id) => {
@@ -496,7 +535,13 @@ function SidebarSessions({
         >
           <button
             type="button"
-            onClick={() => setPinnedOpen((v) => !v)}
+            onClick={(e) => {
+              setPinnedOpen((v) => !v)
+              // Drop focus on a real pointer click so the chevron (revealed via
+              // group-focus-within) fades out once the cursor leaves. Keyboard
+              // activation (detail === 0) keeps focus for visibility.
+              if (e.detail > 0) e.currentTarget.blur()
+            }}
             aria-expanded={pinnedExpanded}
             aria-label={pinnedExpanded ? 'Collapse pinned' : 'Expand pinned'}
             className="group/pinhead mb-1 inline-flex items-center gap-1 pl-2 text-[0.7rem] font-medium text-muted-foreground/70 transition-colors hover:text-foreground"
@@ -512,9 +557,15 @@ function SidebarSessions({
           <PinnedCollapse
             expanded={pinnedExpanded}
             animateOnMount={pinnedList.length === 0 && draggingId !== null}
+            forceAnimate={closing}
+            onCollapsed={() => setClosingList(null)}
           >
             {pinnedList.length === 0 ? (
-              <p className="px-2 py-2 text-[0.7rem] text-muted-foreground/40">Drag here to pin</p>
+              closing ? (
+                <div className="flex flex-col gap-px">{closingList.map(renderItem)}</div>
+              ) : (
+                <p className="px-2 py-2 text-[0.7rem] text-muted-foreground/40">Drag here to pin</p>
+              )
             ) : (
               <div className="flex flex-col gap-px">{pinnedList.map(renderItem)}</div>
             )}
@@ -526,7 +577,12 @@ function SidebarSessions({
         <div className="group/rechead mb-1 flex items-center justify-between gap-2 pl-2 pr-1">
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={(e) => {
+              setOpen((v) => !v)
+              // Drop focus on pointer click so the chevron + "View all" (shown
+              // via group-focus-within) fade once the cursor leaves.
+              if (e.detail > 0) e.currentTarget.blur()
+            }}
             aria-expanded={open}
             aria-label={open ? 'Collapse recents' : 'Expand recents'}
             className="inline-flex items-center gap-1 text-[0.7rem] font-medium text-muted-foreground/70 transition-colors hover:text-foreground"
@@ -542,7 +598,12 @@ function SidebarSessions({
           <NavLink
             to="/"
             end
-            onClick={() => actions.onNavigate?.()}
+            onClick={(e) => {
+              actions.onNavigate?.()
+              // Already on "/"? The link stays mounted and focused — blur on a
+              // pointer click so it fades when the cursor leaves.
+              if (e.detail > 0) e.currentTarget.blur()
+            }}
             className="inline-flex shrink-0 items-center gap-0.5 rounded text-[0.7rem] font-medium text-muted-foreground/70 opacity-0 transition-[color,opacity] hover:text-foreground group-hover/recents:opacity-100 group-focus-within/rechead:opacity-100"
           >
             View all
@@ -683,6 +744,7 @@ export function Sidebar({
   onDeleteSession,
   pinnedIds,
   tags,
+  seen,
   onTogglePin,
   onSetTag,
   onRemoveTag,
@@ -838,6 +900,7 @@ export function Sidebar({
             sessions={sessions}
             tags={tags ?? {}}
             pinnedIds={pinnedIds ?? new Set<string>()}
+            seen={seen ?? {}}
             actions={{
               onNavigate,
               onDeleteSession,

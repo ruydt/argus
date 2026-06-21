@@ -15,17 +15,23 @@ type LogTailOptions struct {
 	ArgusDir string
 }
 
+// resolveLogFile maps the whitelisted ?file= param to its on-disk filename.
+func resolveLogFile(fileParam string) (string, bool) {
+	switch fileParam {
+	case "argus":
+		return "argus.log", true
+	case "hook-scripts":
+		return "hook-scripts.log", true
+	default:
+		return "", false
+	}
+}
+
 // LogTail serves the last N lines of a whitelisted log file in ~/.argus.
 func LogTail(opts LogTailOptions) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fileParam := r.URL.Query().Get("file")
-		var filename string
-		switch fileParam {
-		case "argus":
-			filename = "argus.log"
-		case "hook-scripts":
-			filename = "hook-scripts.log"
-		default:
+		filename, ok := resolveLogFile(r.URL.Query().Get("file"))
+		if !ok {
 			http.Error(w, "invalid file param: must be 'argus' or 'hook-scripts'", http.StatusBadRequest)
 			return
 		}
@@ -55,6 +61,31 @@ func LogTail(opts LogTailOptions) http.Handler {
 			"lines": lines,
 		}); err != nil {
 			log.Printf("[handler] encode log-tail: %v", err)
+		}
+	})
+}
+
+// LogClear truncates a whitelisted log file in ~/.argus to zero bytes,
+// reclaiming the disk space its contents occupied. A missing file is a no-op
+// (nothing to clear), so the endpoint is idempotent.
+func LogClear(opts LogTailOptions) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		filename, ok := resolveLogFile(r.URL.Query().Get("file"))
+		if !ok {
+			http.Error(w, "invalid file param: must be 'argus' or 'hook-scripts'", http.StatusBadRequest)
+			return
+		}
+
+		path := filepath.Join(opts.ArgusDir, filename)
+		if err := os.Truncate(path, 0); err != nil && !os.IsNotExist(err) {
+			log.Printf("[handler] clear log %s: %v", filename, err)
+			http.Error(w, "clear log failed", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(map[string]any{"file": filename, "cleared": true}); err != nil {
+			log.Printf("[handler] encode log-clear: %v", err)
 		}
 	})
 }

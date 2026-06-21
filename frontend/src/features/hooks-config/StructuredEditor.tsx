@@ -1,15 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  ChevronDown,
-  ChevronRight,
-  Pencil,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Save,
-  SlidersHorizontal,
-  Trash2,
-} from 'lucide-react'
+import { Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { SearchableSelect } from '@/components/shared/SearchableSelect'
 import type { SearchableSelectOption } from '@/components/shared/SearchableSelect'
 import { Badge } from '@/components/ui/badge'
@@ -17,15 +7,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  Modal,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalTitle,
+} from '@/components/shared/Modal'
 import {
   HOOK_PRESETS,
   ARGUS_STATUS_MESSAGE,
   PRESET_KEYS,
   PRESET_LABELS,
   applyPreset,
-  hasAnyArgusHooks,
-  removeArgusHooks,
 } from './presets'
 import type { AgentKey, HookEntry, HookGroup, HooksConfig } from './types'
 
@@ -231,7 +225,7 @@ type StructuredEditorProps = {
   isDirty: boolean
   onDiscardChanges: () => void
   onChange: (config: HooksConfig) => void
-  onSave: () => void
+  onSave: (config?: HooksConfig) => void
   saving: boolean
   canSave: boolean
 }
@@ -242,15 +236,48 @@ export function StructuredEditor({
   events,
   supportsMatcher = true,
   timeoutUnit = 'seconds',
-  isDirty,
-  onDiscardChanges,
   onChange,
   onSave,
   saving,
   canSave,
 }: StructuredEditorProps) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  // The event whose hooks are being edited in the modal (null = closed).
+  const [editingEvent, setEditingEvent] = useState<string | null>(null)
+  // Config snapshot captured when the modal opens, so Cancel can revert the
+  // live edits made inside it.
+  const [editSnapshot, setEditSnapshot] = useState<HooksConfig | null>(null)
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string>('')
+
+  // Open the editor modal for an event, remembering the pre-edit config.
+  function openEditor(eventType: string, snapshot: HooksConfig) {
+    setEditSnapshot(snapshot)
+    setEditingEvent(eventType)
+  }
+
+  function cancelEdit() {
+    if (editSnapshot) onChange(editSnapshot)
+    setEditSnapshot(null)
+    setEditingEvent(null)
+  }
+
+  function saveEdit() {
+    if (canSave) onSave()
+    setEditSnapshot(null)
+    setEditingEvent(null)
+  }
+
+  // Delete the event being edited and persist immediately (the cleared config is
+  // passed explicitly so the save doesn't race the async draft-state update).
+  function deleteEvent(eventType: string) {
+    const next = { ...config.hooks }
+    delete next[eventType]
+    const cleared = { hooks: next }
+    onChange(cleared)
+    onSave(cleared)
+    setEditSnapshot(null)
+    setEditingEvent(null)
+  }
   const [hookScripts, setHookScripts] = useState<HookScript[]>([])
   const [editingEntry, setEditingEntry] = useState<{
     key: string
@@ -283,10 +310,6 @@ export function StructuredEditor({
   const usedEvents = Object.keys(config.hooks)
   const availableToAdd = knownEvents.filter((e) => !usedEvents.includes(e))
 
-  function toggleCollapse(eventType: string) {
-    setCollapsed((prev) => ({ ...prev, [eventType]: !(prev[eventType] ?? true) }))
-  }
-
   const setEventGroups = (eventType: string, groups: HookGroup[]) =>
     onChange({ hooks: { ...config.hooks, [eventType]: groups } })
 
@@ -294,10 +317,12 @@ export function StructuredEditor({
     const next = { ...config.hooks }
     delete next[eventType]
     onChange({ hooks: next })
+    setEditingEvent((cur) => (cur === eventType ? null : cur))
   }
 
   function addEventType(eventType: string) {
-    setCollapsed((prev) => ({ ...prev, [eventType]: false }))
+    // Snapshot before the add so Cancel removes the freshly added event.
+    openEditor(eventType, config)
     onChange({ hooks: { ...config.hooks, [eventType]: [emptyGroup()] } })
   }
 
@@ -307,8 +332,13 @@ export function StructuredEditor({
     onChange(applyPreset(config, preset))
   }
 
-  function handleRemoveArgusHooks() {
-    onChange(removeArgusHooks(config))
+  function deleteAllEvents() {
+    const cleared = { hooks: {} }
+    onChange(cleared)
+    // Persist the cleared config immediately (pass it explicitly so the save
+    // doesn't race the async draft-state update).
+    onSave(cleared)
+    setDeleteAllOpen(false)
   }
 
   function addGroup(eventType: string) {
@@ -397,64 +427,18 @@ export function StructuredEditor({
           </Select>
         )}
 
-        <TooltipProvider delayDuration={100}>
-          <div className="flex items-center gap-1 ml-auto">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-muted-foreground"
-                  disabled={!isDirty}
-                  onClick={onDiscardChanges}
-                  aria-label="Discard changes"
-                >
-                  <RotateCcw className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Discard changes</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-muted-foreground"
-                  disabled={!canSave}
-                  onClick={onSave}
-                  aria-label="Save hooks config"
-                >
-                  {saving ? (
-                    <RefreshCw className="size-3.5 animate-spin" />
-                  ) : (
-                    <Save className="size-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isDirty ? 'Save changes' : 'Saved'}</TooltipContent>
-            </Tooltip>
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                  disabled={!hasAnyArgusHooks(config)}
-                  onClick={handleRemoveArgusHooks}
-                  aria-label="Remove Argus hooks"
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Remove Argus hooks</TooltipContent>
-            </Tooltip>
-          </div>
-        </TooltipProvider>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="danger-action ml-auto h-8 gap-1.5 text-[13px]"
+          disabled={usedEvents.length === 0 || saving}
+          onClick={() => setDeleteAllOpen(true)}
+          aria-label="Delete all events"
+        >
+          <Trash2 className="size-3.5" />
+          Delete all events
+        </Button>
       </div>
 
       {usedEvents.length === 0 && (
@@ -466,279 +450,307 @@ export function StructuredEditor({
       {usedEvents.map((eventType, eventIdx) => {
         const groups = config.hooks[eventType] ?? []
         const hookCount = groups.reduce((n, g) => n + g.hooks.length, 0)
-        const isCollapsed = collapsed[eventType] ?? true
-
         return (
           <div
             key={eventType}
-            className="border border-border rounded-lg overflow-hidden"
+            className="group/event flex items-center justify-between border border-border rounded-lg bg-background hover:bg-foreground/[0.06] transition-colors"
             data-tour={eventIdx === 0 ? 'hooks-event-group' : undefined}
           >
             <button
               type="button"
-              className="w-full flex items-center justify-between px-4 py-3 bg-secondary/40 hover:bg-secondary/60 transition-colors text-left"
-              onClick={() => toggleCollapse(eventType)}
+              className="flex flex-1 items-center gap-2 px-4 py-3 text-left"
+              onClick={() => openEditor(eventType, config)}
             >
-              <div className="flex items-center gap-2">
-                {isCollapsed ? (
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="size-4 text-muted-foreground" />
-                )}
-                <span className="text-[13px] font-medium">{eventType}</span>
-                <Badge variant="outline" className="text-[11px]">
-                  {hookCount} {hookCount !== 1 ? 'hooks' : 'hook'}
-                </Badge>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="text-muted-foreground hover:text-destructive"
-                aria-label={`Remove ${eventType}`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  removeEventType(eventType)
-                }}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
+              <span className="text-[13px] font-medium">{eventType}</span>
+              <Badge variant="outline" className="text-[11px]">
+                {hookCount} {hookCount !== 1 ? 'hooks' : 'hook'}
+              </Badge>
             </button>
 
-            {!isCollapsed && (
-              <div className="flex flex-col gap-3 p-4">
-                {groups.map((group, groupIdx) => (
-                  <div
-                    key={group.id}
-                    className="border border-border/60 rounded-md p-3 flex flex-col gap-2 bg-background"
-                  >
-                    {/* Group header: matcher (compact) + delete */}
-                    <div className="flex items-center gap-2">
-                      {supportsMatcher && (
-                        <>
-                          <span className="text-[11px] text-muted-foreground shrink-0">
-                            Matcher
-                          </span>
-                          <SearchableSelect
-                            value={group.matcher ?? ''}
-                            onValueChange={(v) =>
-                              patchGroup(eventType, groupIdx, { matcher: v || undefined })
-                            }
-                            options={getMatcherOptions(eventType)}
-                            placeholder="match all"
-                            ariaLabel="Matcher"
-                            creatable
-                            multiple
-                            className="h-6 min-w-0 flex-1 text-[12px] font-mono"
-                          />
-                        </>
-                      )}
-                      {!supportsMatcher && <div className="flex-1" />}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground hover:text-destructive shrink-0"
-                        aria-label="Remove group"
-                        onClick={() => removeGroup(eventType, groupIdx)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-
-                    {/* Hook entries: command only, extras in popover */}
-                    {group.hooks.map((entry, entryIdx) => {
-                      const scriptOptions: SearchableSelectOption[] = hookScripts.map((s) => ({
-                        label: s.name,
-                        value: composeCmd(s, agent),
-                      }))
-                      const editKey = `${eventType}-${groupIdx}-${entryIdx}`
-                      const isEditing = editingEntry?.key === editKey
-                      return (
-                        <div
-                          key={entry.id}
-                          className="flex items-center gap-1.5 pl-4 border-l border-border/40"
-                        >
-                          <SearchableSelect
-                            value={entry.command}
-                            onValueChange={(v) =>
-                              patchEntry(eventType, groupIdx, entryIdx, { command: v })
-                            }
-                            options={scriptOptions}
-                            placeholder="curl -s -X POST http://127.0.0.1:10804/api/hook ..."
-                            ariaLabel="Command"
-                            creatable
-                            className="h-7 min-w-0 flex-1 text-[13px] font-mono"
-                          />
-                          <Popover
-                            open={isEditing}
-                            onOpenChange={(open) => {
-                              if (open) {
-                                setEditingEntry({ key: editKey, draft: entry.command })
-                              } else {
-                                setEditingEntry(null)
+            <Modal
+              open={editingEvent === eventType}
+              onOpenChange={(o) => {
+                // Dismiss (Esc / outside click) keeps the live edits — use the
+                // Cancel button to revert. Just clear the open + snapshot state.
+                if (!o && editingEvent === eventType) {
+                  setEditingEvent(null)
+                  setEditSnapshot(null)
+                }
+              }}
+            >
+              <ModalContent className="max-w-2xl">
+                <ModalTitle className="font-mono text-[15px]">{eventType}</ModalTitle>
+                <ModalDescription>Configure the hooks that run on this event.</ModalDescription>
+                <div className="mt-4 flex max-h-[65vh] flex-col gap-3 overflow-y-auto pr-1">
+                  {groups.map((group, groupIdx) => (
+                    <div
+                      key={group.id}
+                      className="border border-border/60 rounded-md p-3 flex flex-col gap-2 bg-background"
+                    >
+                      {/* Group header: matcher (compact) + delete */}
+                      <div className="flex items-center gap-2">
+                        {supportsMatcher && (
+                          <>
+                            <span className="text-[11px] text-muted-foreground shrink-0">
+                              Matcher
+                            </span>
+                            <SearchableSelect
+                              value={group.matcher ?? ''}
+                              onValueChange={(v) =>
+                                patchGroup(eventType, groupIdx, { matcher: v || undefined })
                               }
-                            }}
+                              options={getMatcherOptions(eventType)}
+                              placeholder="match all"
+                              ariaLabel="Matcher"
+                              creatable
+                              multiple
+                              className="h-6 min-w-0 flex-1 text-[12px] font-mono"
+                            />
+                          </>
+                        )}
+                        {!supportsMatcher && <div className="flex-1" />}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="danger-action shrink-0"
+                          aria-label="Remove group"
+                          onClick={() => removeGroup(eventType, groupIdx)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+
+                      {/* Hook entries: command only, extras in popover */}
+                      {group.hooks.map((entry, entryIdx) => {
+                        const scriptOptions: SearchableSelectOption[] = hookScripts.map((s) => ({
+                          label: s.name,
+                          value: composeCmd(s, agent),
+                        }))
+                        const editKey = `${eventType}-${groupIdx}-${entryIdx}`
+                        const isEditing = editingEntry?.key === editKey
+                        return (
+                          <div
+                            key={entry.id}
+                            className="flex items-center gap-1.5 pl-4 border-l border-border/40"
                           >
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-muted-foreground hover:text-foreground shrink-0"
-                                aria-label="Edit command"
-                              >
-                                <Pencil className="size-3.5" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[520px] p-3" align="end">
-                              <div className="flex flex-col gap-2">
-                                <span className="text-[11px] text-muted-foreground">
-                                  Edit command
-                                </span>
-                                <textarea
-                                  value={editingEntry?.draft ?? ''}
-                                  onChange={(e) =>
-                                    setEditingEntry((prev) =>
-                                      prev ? { ...prev, draft: e.target.value } : prev
-                                    )
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                                      patchEntry(eventType, groupIdx, entryIdx, {
-                                        command: editingEntry?.draft.trim() ?? '',
-                                      })
-                                      setEditingEntry(null)
-                                    }
-                                  }}
-                                  rows={4}
-                                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
-                                  autoFocus
-                                />
-                                <div className="flex items-center justify-between">
+                            <SearchableSelect
+                              value={entry.command}
+                              onValueChange={(v) =>
+                                patchEntry(eventType, groupIdx, entryIdx, { command: v })
+                              }
+                              options={scriptOptions}
+                              placeholder="curl -s -X POST http://127.0.0.1:10804/api/hook ..."
+                              ariaLabel="Command"
+                              creatable
+                              className="h-7 min-w-0 flex-1 text-[13px] font-mono"
+                            />
+                            <Popover
+                              open={isEditing}
+                              onOpenChange={(open) => {
+                                if (open) {
+                                  setEditingEntry({ key: editKey, draft: entry.command })
+                                } else {
+                                  setEditingEntry(null)
+                                }
+                              }}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-muted-foreground hover:text-foreground shrink-0"
+                                  aria-label="Edit command"
+                                >
+                                  <Pencil className="size-3.5" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[520px] p-3" align="end">
+                                <div className="flex flex-col gap-2">
                                   <span className="text-[11px] text-muted-foreground">
-                                    ⌘↵ to apply
+                                    Edit command
                                   </span>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setEditingEntry(null)}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      disabled={!editingEntry?.draft.trim()}
-                                      onClick={() => {
+                                  <textarea
+                                    value={editingEntry?.draft ?? ''}
+                                    onChange={(e) =>
+                                      setEditingEntry((prev) =>
+                                        prev ? { ...prev, draft: e.target.value } : prev
+                                      )
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                                         patchEntry(eventType, groupIdx, entryIdx, {
                                           command: editingEntry?.draft.trim() ?? '',
                                         })
                                         setEditingEntry(null)
-                                      }}
-                                    >
-                                      Apply
-                                    </Button>
+                                      }
+                                    }}
+                                    rows={4}
+                                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                                    autoFocus
+                                  />
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] text-muted-foreground">
+                                      ⌘↵ to apply
+                                    </span>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setEditingEntry(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        disabled={!editingEntry?.draft.trim()}
+                                        onClick={() => {
+                                          patchEntry(eventType, groupIdx, entryIdx, {
+                                            command: editingEntry?.draft.trim() ?? '',
+                                          })
+                                          setEditingEntry(null)
+                                        }}
+                                      >
+                                        Apply
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                className="text-muted-foreground hover:text-foreground shrink-0"
-                                aria-label="Hook options"
-                              >
-                                <SlidersHorizontal className="size-3.5" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72 p-3" align="end">
-                              <div className="flex flex-col gap-3">
-                                {timeoutUnit !== '' && (
+                              </PopoverContent>
+                            </Popover>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="text-muted-foreground hover:text-foreground shrink-0"
+                                  aria-label="Hook options"
+                                >
+                                  <SlidersHorizontal className="size-3.5" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72 p-3" align="end">
+                                <div className="flex flex-col gap-3">
+                                  {timeoutUnit !== '' && (
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-[11px] text-muted-foreground">
+                                        Timeout ({timeoutUnit === 'milliseconds' ? 'ms' : 's'})
+                                      </span>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        value={entry.timeout ?? ''}
+                                        onChange={(e) =>
+                                          patchEntry(eventType, groupIdx, entryIdx, {
+                                            timeout: e.target.value
+                                              ? Number(e.target.value)
+                                              : undefined,
+                                          })
+                                        }
+                                        placeholder={timeoutUnit === 'milliseconds' ? '5000' : '5'}
+                                        className="h-7 text-[13px]"
+                                      />
+                                    </div>
+                                  )}
                                   <div className="flex flex-col gap-1">
                                     <span className="text-[11px] text-muted-foreground">
-                                      Timeout ({timeoutUnit === 'milliseconds' ? 'ms' : 's'})
+                                      Status message
                                     </span>
                                     <Input
-                                      type="number"
-                                      min={0}
-                                      value={entry.timeout ?? ''}
+                                      value={entry.statusMessage ?? ''}
                                       onChange={(e) =>
                                         patchEntry(eventType, groupIdx, entryIdx, {
-                                          timeout: e.target.value
-                                            ? Number(e.target.value)
-                                            : undefined,
+                                          statusMessage: e.target.value || undefined,
                                         })
                                       }
-                                      placeholder={timeoutUnit === 'milliseconds' ? '5000' : '5'}
+                                      placeholder="Loading..."
                                       className="h-7 text-[13px]"
                                     />
                                   </div>
-                                )}
-                                <div className="flex flex-col gap-1">
-                                  <span className="text-[11px] text-muted-foreground">
-                                    Status message
-                                  </span>
-                                  <Input
-                                    value={entry.statusMessage ?? ''}
-                                    onChange={(e) =>
-                                      patchEntry(eventType, groupIdx, entryIdx, {
-                                        statusMessage: e.target.value || undefined,
-                                      })
-                                    }
-                                    placeholder="Loading..."
-                                    className="h-7 text-[13px]"
-                                  />
                                 </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-muted-foreground hover:text-destructive shrink-0"
-                            aria-label="Remove hook"
-                            onClick={() => removeEntry(eventType, groupIdx, entryIdx)}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      )
-                    })}
+                              </PopoverContent>
+                            </Popover>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="danger-action shrink-0"
+                              aria-label="Remove hook"
+                              onClick={() => removeEntry(eventType, groupIdx, entryIdx)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        )
+                      })}
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="self-start text-[12px] h-7 pl-4 text-muted-foreground hover:text-foreground"
-                      onClick={() => addEntry(eventType, groupIdx)}
-                    >
-                      <Plus className="size-3.5 mr-1" />
-                      Add hook
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="self-start text-[12px] h-7 pl-4 text-muted-foreground hover:text-foreground"
+                        onClick={() => addEntry(eventType, groupIdx)}
+                      >
+                        <Plus className="size-3.5 mr-1" />
+                        Add hook
+                      </Button>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="self-start text-[12px] h-7"
+                    onClick={() => addGroup(eventType)}
+                  >
+                    <Plus className="size-3.5 mr-1" />
+                    Add group
+                  </Button>
+                </div>
+                <div className="mt-5 flex items-center justify-between gap-2">
+                  <Button
+                    variant="ghost"
+                    className="danger-action gap-1.5"
+                    onClick={() => deleteEvent(eventType)}
+                    disabled={saving}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete event
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" onClick={cancelEdit}>
+                      Cancel
+                    </Button>
+                    <Button onClick={saveEdit} disabled={saving}>
+                      {saving ? 'Saving…' : 'Save'}
                     </Button>
                   </div>
-                ))}
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="self-start text-[12px] h-7"
-                  onClick={() => addGroup(eventType)}
-                >
-                  <Plus className="size-3.5 mr-1" />
-                  Add group
-                </Button>
-              </div>
-            )}
+                </div>
+              </ModalContent>
+            </Modal>
           </div>
         )
       })}
+
+      <Modal open={deleteAllOpen} onOpenChange={setDeleteAllOpen}>
+        <ModalContent>
+          <ModalTitle>Delete all events?</ModalTitle>
+          <ModalDescription>
+            This removes every hook event configured for this agent. This cannot be undone.
+          </ModalDescription>
+          <ModalFooter>
+            <Button variant="ghost" onClick={() => setDeleteAllOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={deleteAllEvents} disabled={saving}>
+              {saving ? 'Deleting…' : 'Delete all'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   )
 }

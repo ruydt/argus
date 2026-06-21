@@ -34,11 +34,15 @@ import {
 import { cn } from '@/lib/utils'
 import { relativeTime } from '@/lib/format'
 import { AGENTS, agentForEvent } from '@/agents'
+import { AgentLogo } from '@/agents/catalog'
 import type { LayoutOutletContext, SessionSummary } from '@/types'
-import { projectName } from './utils'
+import { effectiveTag, projectName } from './utils'
 
 function SessionMeta({ session, tag }: { session: SessionSummary; tag?: string }) {
   const project = session.cwd ? projectName(session.cwd) : ''
+  // The default tag IS the folder name, so suppress the duplicate project label
+  // unless the user set a distinct explicit tag.
+  const showProject = project && project !== tag
   return (
     <div className="flex shrink-0 items-center gap-4 text-[0.8rem]">
       {tag && (
@@ -46,12 +50,12 @@ function SessionMeta({ session, tag }: { session: SessionSummary; tag?: string }
           {tag}
         </span>
       )}
-      {project && (
+      {showProject && (
         <span className="hidden max-w-[220px] truncate text-muted-foreground/80 sm:inline">
           {project}
         </span>
       )}
-      <span className="w-24 text-right tabular-nums text-muted-foreground/60">
+      <span className="tabular-nums text-muted-foreground/60">
         {relativeTime(new Date(session.lastTimeMs).toISOString())}
       </span>
     </div>
@@ -144,41 +148,15 @@ function SessionRowMenu({
               {pinned ? 'Unpin' : 'Pin'}
             </Button>
 
-            {tag ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={openTagEditor}
-                >
-                  <Pencil className="size-4" />
-                  Edit tag
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="menu-item justify-start"
-                  onClick={() => {
-                    onRemoveTag(id)
-                    setMenuOpen(false)
-                  }}
-                >
-                  <X className="size-4" />
-                  Remove tag
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="menu-item justify-start"
-                onClick={openTagEditor}
-              >
-                <Tag className="size-4" />
-                Tag
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="menu-item justify-start"
+              onClick={openTagEditor}
+            >
+              {tag ? <Pencil className="size-4" /> : <Tag className="size-4" />}
+              {tag ? 'Edit tag' : 'Tag'}
+            </Button>
 
             <Button
               variant="ghost"
@@ -196,10 +174,25 @@ function SessionRowMenu({
 
             <div className="mx-auto my-1 h-px w-[85%] bg-border" />
 
+            {tag && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="danger-action justify-start"
+                onClick={() => {
+                  onRemoveTag(id)
+                  setMenuOpen(false)
+                }}
+              >
+                <X className="size-4" />
+                Remove tag
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="sm"
-              className="menu-item justify-start hover:text-destructive"
+              className="danger-action justify-start"
               onClick={() => {
                 setMenuOpen(false)
                 setConfirmOpen(true)
@@ -279,6 +272,11 @@ function SessionRow({
   onToggleSelect: (id: string) => void
   menuActions: RowMenuActions
 }) {
+  // Display falls back to the working folder; the menu keeps acting on the
+  // explicit tag so "Remove tag" reverts to the default rather than blanking it.
+  // Explicit tags get a leading "#" to mark them apart from the folder default.
+  const displayTag = effectiveTag(tag, session.cwd)
+  const tagLabel = displayTag ? (tag ? `#${displayTag}` : displayTag) : undefined
   if (selectMode) {
     return (
       <button
@@ -299,10 +297,13 @@ function SessionRow({
         >
           {selected && <Check className="size-3" strokeWidth={3} />}
         </span>
+        <span className="flex size-4 shrink-0 items-center justify-center">
+          <AgentLogo id={session.sample?.agent || 'unknown'} size={14} />
+        </span>
         <span className="min-w-0 flex-1 truncate text-[0.9rem] text-foreground">
           {session.sessionId}
         </span>
-        <SessionMeta session={session} tag={tag} />
+        <SessionMeta session={session} tag={tagLabel} />
       </button>
     )
   }
@@ -314,12 +315,15 @@ function SessionRow({
         title={session.sessionId}
         className="flex min-w-0 flex-1 items-center gap-3 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#863bff]/40"
       >
+        <span className="flex size-4 shrink-0 items-center justify-center">
+          <AgentLogo id={session.sample?.agent || 'unknown'} size={14} />
+        </span>
         <span className="min-w-0 flex-1 truncate text-[0.9rem] text-foreground">
           {session.sessionId}
         </span>
         {/* Meta (project + time) fades out on hover so the 3-dot menu can sit in its place. */}
         <div className="transition-opacity duration-150 group-hover/row:opacity-0">
-          <SessionMeta session={session} tag={tag} />
+          <SessionMeta session={session} tag={tagLabel} />
         </div>
       </Link>
       <div className="absolute inset-y-0 right-1 flex items-center">
@@ -355,19 +359,31 @@ export function SessionsPage() {
   } = useOutletContext<LayoutOutletContext>()
   const [query, setQuery] = useState('')
   const [agentFilter, setAgentFilter] = useState('all')
+  const [projectFilter, setProjectFilter] = useState('all')
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
+  // Distinct project names across all sessions — feeds the project filter dropdown.
+  const projects = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of sessions) {
+      if (s.cwd) set.add(projectName(s.cwd))
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [sessions])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const matched = sessions.filter((s) => {
       if (agentFilter !== 'all' && agentForEvent(s.sample).id !== agentFilter) return false
+      if (projectFilter !== 'all' && (!s.cwd || projectName(s.cwd) !== projectFilter)) return false
       if (!q) return true
       return (
         s.sessionId.toLowerCase().includes(q) ||
-        (s.cwd && projectName(s.cwd).toLowerCase().includes(q))
+        (s.cwd && projectName(s.cwd).toLowerCase().includes(q)) ||
+        (tags[s.sessionId] ?? '').toLowerCase().includes(q)
       )
     })
     // Pinned sessions float to the top; recency order is preserved within each group.
@@ -379,10 +395,10 @@ export function SessionsPage() {
         return pa - pb || a.i - b.i
       })
       .map((x) => x.s)
-  }, [sessions, query, agentFilter, pinned])
+  }, [sessions, query, agentFilter, projectFilter, tags, pinned])
 
   const showInitialSkeleton = loading && sessions.length === 0
-  const filtering = query.trim() !== '' || agentFilter !== 'all'
+  const filtering = query.trim() !== '' || agentFilter !== 'all' || projectFilter !== 'all'
   const allSelected = filtered.length > 0 && filtered.every((s) => selected.has(s.sessionId))
 
   const toggleSelect = (id: string) =>
@@ -495,6 +511,24 @@ export function SessionsPage() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
+              {projects.length > 0 && (
+                <Select value={projectFilter} onValueChange={setProjectFilter}>
+                  <SelectTrigger
+                    aria-label="Filter by project"
+                    className="h-9 w-[160px] rounded-lg border-foreground/[0.1] bg-foreground/[0.02] text-[0.8rem]"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All projects</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project} value={project}>
+                        {project}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Select value={agentFilter} onValueChange={setAgentFilter}>
                 <SelectTrigger
                   aria-label="Filter by agent"

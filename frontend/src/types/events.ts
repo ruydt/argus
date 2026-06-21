@@ -98,9 +98,11 @@ export interface LayoutOutletContext {
   removeSessions: (ids: string[]) => void
   sessionTags: Record<string, string>
   pinnedSessions: Set<string>
+  seenStops: Record<string, number>
   togglePinSession: (id: string) => void
   setSessionTag: (id: string, tag: string) => void
   removeSessionTag: (id: string) => void
+  markSeenSession: (id: string, timeMs: number) => void
   notify: (message: string, tone?: 'success' | 'error') => void
 }
 

@@ -45,6 +45,7 @@ export function useLiveEvents(
     const seen = new Set<string>()
     const buffer: EventRecord[] = []
     let rafId: number | undefined
+    let timeoutId: number | undefined
 
     const params = new URLSearchParams()
     if (sessionFilter) params.set('session', sessionFilter)
@@ -54,6 +55,10 @@ export function useLiveEvents(
     const es = new EventSource(`/api/events/stream${qs ? `?${qs}` : ''}`)
 
     const flush = () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId)
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
+      rafId = undefined
+      timeoutId = undefined
       const batch = buffer.splice(0)
       if (batch.length > 0) {
         mergeEvents(batch)
@@ -69,8 +74,12 @@ export function useLiveEvents(
         buffer.push(e)
         setError(null)
 
+        // rAF batches paints while the tab is visible, but it's paused in
+        // background tabs — a setTimeout fallback still fires there so new
+        // sessions reach the sidebar without a manual reload.
         if (rafId !== undefined) cancelAnimationFrame(rafId)
         rafId = requestAnimationFrame(flush)
+        if (timeoutId === undefined) timeoutId = window.setTimeout(flush, 1000)
       } catch {
         // ignore parse errors
       }
@@ -87,6 +96,7 @@ export function useLiveEvents(
     return () => {
       es.close()
       if (rafId !== undefined) cancelAnimationFrame(rafId)
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
     }
   }, [mergeEvents, sessionFilter, enabled, since, until])
 

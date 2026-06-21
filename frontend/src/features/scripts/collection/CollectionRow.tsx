@@ -11,13 +11,13 @@ import {
   Trash2,
 } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import type { CollectionEntry } from '@/types'
 
 import { AgentLogos } from '../AgentLogos'
+import { EventBadges } from '../EventBadges'
 import { OsIcons } from '../OsIcons'
 import { ScriptViewerModal } from '../ScriptViewerModal'
 
@@ -96,11 +96,7 @@ export function CollectionRow({
           ) : null}
         </div>
         <div className="hidden w-40 shrink-0 flex-wrap items-center gap-1 md:flex">
-          {(entry.events ?? []).map((ev) => (
-            <Badge key={ev} variant="outline">
-              {ev}
-            </Badge>
-          ))}
+          <EventBadges events={entry.events} />
         </div>
         <div className="hidden w-24 shrink-0 md:flex">
           <AgentLogos agents={entry.agents} />
@@ -197,7 +193,7 @@ export function CollectionRow({
                     variant="ghost"
                     size="sm"
                     disabled={busy}
-                    className="menu-item justify-start hover:text-destructive"
+                    className="danger-action justify-start"
                     onClick={() => act(() => onRemoveLocal(entry.filename))}
                   >
                     <Trash2 className="size-4" />
@@ -209,7 +205,7 @@ export function CollectionRow({
                     variant="ghost"
                     size="sm"
                     disabled={busy}
-                    className="menu-item justify-start hover:text-destructive"
+                    className="danger-action justify-start"
                     onClick={() => act(() => onRemoveGist(entry.id))}
                   >
                     <CloudOff className="size-4" />
@@ -221,7 +217,7 @@ export function CollectionRow({
                     variant="ghost"
                     size="sm"
                     disabled={busy}
-                    className="menu-item justify-start hover:text-destructive"
+                    className="danger-action justify-start"
                     onClick={() => act(() => onRemoveBoth(entry))}
                   >
                     <Trash2 className="size-4" />

@@ -141,7 +141,7 @@ function AgentTabContent({ agent, status, state, viewMode, sim }: AgentTabConten
             isDirty={state.isDirty}
             onDiscardChanges={state.discardChanges}
             onChange={setConfig}
-            onSave={() => void state.save()}
+            onSave={(cfg) => void state.save(cfg)}
             saving={state.saving}
             canSave={canSave}
           />
@@ -417,7 +417,7 @@ export function HooksConfigPage() {
                     e.stopPropagation()
                     void handleRemoveAgent(id)
                   }}
-                  className="absolute right-1 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity pointer-events-none hover:text-destructive group-hover/agent:pointer-events-auto group-hover/agent:opacity-100"
+                  className="absolute right-1 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded danger-action opacity-0 transition-opacity pointer-events-none group-hover/agent:pointer-events-auto group-hover/agent:opacity-100"
                   aria-label={`Remove ${agentMeta(id).label}`}
                 >
                   <X className="size-3.5" />

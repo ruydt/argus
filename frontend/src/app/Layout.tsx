@@ -181,9 +181,11 @@ export function Layout() {
     removeSessions: sessionsState.removeSessions,
     sessionTags: sessionMeta.tags,
     pinnedSessions: sessionMeta.pinned,
+    seenStops: sessionMeta.seen,
     togglePinSession: sessionMeta.togglePin,
     setSessionTag: sessionMeta.setTag,
     removeSessionTag: sessionMeta.removeTag,
+    markSeenSession: sessionMeta.markSeen,
     notify,
   }
 
@@ -311,6 +313,7 @@ export function Layout() {
         onDeleteSession={deleteSession}
         pinnedIds={sessionMeta.pinned}
         tags={sessionMeta.tags}
+        seen={sessionMeta.seen}
         onTogglePin={sessionMeta.togglePin}
         onSetTag={sessionMeta.setTag}
         onRemoveTag={sessionMeta.removeTag}
@@ -340,6 +343,7 @@ export function Layout() {
         onDeleteSession={deleteSession}
         pinnedIds={sessionMeta.pinned}
         tags={sessionMeta.tags}
+        seen={sessionMeta.seen}
         onTogglePin={sessionMeta.togglePin}
         onSetTag={sessionMeta.setTag}
         onRemoveTag={sessionMeta.removeTag}

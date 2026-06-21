@@ -86,6 +86,48 @@ func TestLogTailBuildFileParamRejected(t *testing.T) {
 	}
 }
 
+func TestLogClearTruncatesFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "argus.log")
+	if err := os.WriteFile(path, []byte("line1\nline2\nline3\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	h := handler.LogClear(handler.LogTailOptions{ArgusDir: dir})
+	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/log-clear?file=argus", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat: %v", err)
+	}
+	if info.Size() != 0 {
+		t.Errorf("size = %d, want 0", info.Size())
+	}
+}
+
+func TestLogClearRejectsInvalidFile(t *testing.T) {
+	h := handler.LogClear(handler.LogTailOptions{ArgusDir: t.TempDir()})
+	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/log-clear?file=../../etc/passwd", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestLogClearMissingFileIsNoOp(t *testing.T) {
+	h := handler.LogClear(handler.LogTailOptions{ArgusDir: t.TempDir()})
+	req := httptest.NewRequest(http.MethodPost, "/api/diagnostics/log-clear?file=argus", nil)
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}
+
 func TestLogTailHookScriptsFileParam(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "hook-scripts.log"), []byte("script output\n"), 0o644); err != nil {

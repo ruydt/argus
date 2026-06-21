@@ -33,6 +33,6 @@ export type HooksConfigState = {
   setConfig: (config: HooksConfig) => void
   commitSaved: (config: HooksConfig) => void
   discardChanges: () => void
-  save: () => Promise<void>
+  save: (override?: HooksConfig) => Promise<void>
   reload: () => void
 }

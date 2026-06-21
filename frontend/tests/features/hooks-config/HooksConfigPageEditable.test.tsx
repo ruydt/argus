@@ -81,8 +81,8 @@ describe('HooksConfigPage editable adapters', () => {
     )
     renderPage()
 
-    // Structured editor (not guided panel) renders: Save control is present.
-    await waitFor(() => expect(screen.getByLabelText('Save hooks config')).toBeTruthy())
+    // Structured editor (not guided panel) renders: the event picker is present.
+    await waitFor(() => expect(screen.getByLabelText('Add hook event')).toBeTruthy())
 
     // Presets are generated from the agent's own events — selector renders.
     expect(screen.getByText('Apply preset…')).toBeTruthy()

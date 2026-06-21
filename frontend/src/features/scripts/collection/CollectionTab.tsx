@@ -72,6 +72,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
       e.filename.toLowerCase().includes(q) ||
       e.id.toLowerCase().includes(q) ||
       (e.events ?? []).join(' ').toLowerCase().includes(q) ||
+      (e.agents ?? []).join(' ').toLowerCase().includes(q) ||
       (e.runtime ?? '').toLowerCase().includes(q)
     )
   })
@@ -123,7 +124,7 @@ export function CollectionTab({ query, collection }: CollectionTabProps) {
         <div className="flex items-center gap-4 border-b border-foreground/[0.12] px-2 pb-2 text-[0.68rem] tracking-[0.12em] text-muted-foreground uppercase">
           <span className="w-7 shrink-0 text-right">#</span>
           <span className="flex-1">Script</span>
-          <span className="hidden w-40 shrink-0 md:block">Event</span>
+          <span className="hidden w-40 shrink-0 md:block">Events</span>
           <span className="hidden w-24 shrink-0 md:block">Agents</span>
           <span className="hidden w-24 shrink-0 md:block">OS</span>
           <span className="hidden w-24 shrink-0 md:block">Status</span>
