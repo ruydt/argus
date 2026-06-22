@@ -23,6 +23,27 @@
       "published_at": ""
     },
     {
+      "id": "commit-msg-lint",
+      "author": "ruydt",
+      "title": "Lint commit messages",
+      "purpose": "Block git commits whose message does not follow Conventional Commits (e.g. \"fix(auth): handle expired token\").",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Bash",
+      "command": "node ~/.argus/hooks/commit-msg-lint.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "39228a7e1ec80a0265b1f3ce57f22013e2a3274e4278461627b34d110b471bf3",
+      "source": "scripts/ruydt/commit-msg-lint.js",
+      "published_at": ""
+    },
+    {
       "id": "cost-warn",
       "author": "ruydt",
       "title": "Cost warning",
