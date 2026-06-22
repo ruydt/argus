@@ -50,10 +50,17 @@ export interface DiagnosticsAgent {
   eventsLast24h: number
 }
 
+export interface DiagnosticsIgnoreRule {
+  pattern: string
+  line: number
+  negate: boolean
+}
+
 export interface DiagnosticsIgnoreFile {
   path: string
   status: string
   activePatternCount: number
+  rules: DiagnosticsIgnoreRule[]
 }
 
 export interface DiagnosticsPrivacy {

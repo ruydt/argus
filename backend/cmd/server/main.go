@@ -101,7 +101,7 @@ func run() int {
 		Matcher:            matcher,
 		CORSOrigins:        cfg.CORSOrigins,
 		DBPath:             cfg.DBPath,
-		IgnoreFile:         domainIgnoreFile(ignoreStatus),
+		IgnoreFile:         domainIgnoreFile(ignoreStatus, matcher),
 		Addr:               cfg.Addr,
 		AllowRemote:        cfg.AllowRemote,
 		Home:               home,
@@ -408,11 +408,20 @@ func warnRemoteBind(cfg config.Config) {
 	)
 }
 
-func domainIgnoreFile(status ignore.LoadStatus) domain.DiagnosticsIgnoreFile {
+func domainIgnoreFile(status ignore.LoadStatus, matcher *ignore.Matcher) domain.DiagnosticsIgnoreFile {
+	rules := make([]domain.DiagnosticsIgnoreRule, 0)
+	for _, r := range matcher.Rules() {
+		rules = append(rules, domain.DiagnosticsIgnoreRule{
+			Pattern: r.Pattern,
+			Line:    r.Line,
+			Negate:  r.Negate,
+		})
+	}
 	return domain.DiagnosticsIgnoreFile{
 		Path:               status.Path,
 		Status:             status.Status,
 		ActivePatternCount: status.ActivePatternCount,
+		Rules:              rules,
 	}
 }
 

@@ -82,9 +82,18 @@ type DiagnosticsPrivacy struct {
 }
 
 type DiagnosticsIgnoreFile struct {
-	Path               string `json:"path"`
-	Status             string `json:"status"`
-	ActivePatternCount int    `json:"activePatternCount"`
+	Path               string                  `json:"path"`
+	Status             string                  `json:"status"`
+	ActivePatternCount int                     `json:"activePatternCount"`
+	Rules              []DiagnosticsIgnoreRule `json:"rules"`
+}
+
+// DiagnosticsIgnoreRule is one active privacy ignore rule, surfaced read-only on
+// the diagnostics page. Pattern text and line only — never a matched path.
+type DiagnosticsIgnoreRule struct {
+	Pattern string `json:"pattern"`
+	Line    int    `json:"line"`
+	Negate  bool   `json:"negate"`
 }
 
 type DiagnosticsRemoteBind struct {
