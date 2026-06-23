@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/argus-logo.png" alt="Argus" width="120" />
+<img src="docs/argus-logo.svg" alt="Argus" width="120" />
 
 # Argus
 
