@@ -100,6 +100,7 @@ func NewRouter(svc *service.EventService, repo repository.EventRepository, ready
 		ArgusDir: opts.ArgusDir,
 	})))
 	mux.Handle("POST /api/diagnostics/compact", secFetchSite(handler.CompactDatabase(svc)))
+	mux.Handle("POST /api/diagnostics/ignore-test", secFetchSite(handler.IgnoreCheck(m)))
 	mux.Handle("GET /api/export/events", secFetchSite(handler.ExportEvents(repo)))
 	mux.Handle("GET /api/export/snapshot", secFetchSite(handler.ExportSnapshot(repo)))
 	mux.Handle("GET /api/hooks-config", handler.HooksConfig(opts.Home))

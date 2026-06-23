@@ -87,6 +87,29 @@ func (m *Matcher) RuleCount() int {
 	return len(m.rules)
 }
 
+// RulePattern is a single active ignore rule, exposed read-only for diagnostics
+// display. It carries only the pattern text and its source line — never a matched
+// path or any event field (D-04).
+type RulePattern struct {
+	Pattern string
+	Line    int
+	Negate  bool
+}
+
+// Rules returns the active rules in file order for read-only display. A nil or
+// empty matcher returns an empty slice. Comments and blank lines are not included
+// (they are dropped at parse time), so this mirrors the active pattern set.
+func (m *Matcher) Rules() []RulePattern {
+	if m == nil {
+		return nil
+	}
+	out := make([]RulePattern, 0, len(m.rules))
+	for _, r := range m.rules {
+		out = append(out, RulePattern{Pattern: r.pattern, Line: r.lineNum, Negate: r.negate})
+	}
+	return out
+}
+
 // parseRule converts a trimmed, non-comment pattern line into a rule.
 func parseRule(pattern string, lineNum int) rule {
 	r := rule{pattern: pattern, lineNum: lineNum}

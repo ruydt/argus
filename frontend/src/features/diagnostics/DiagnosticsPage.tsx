@@ -20,6 +20,7 @@ import { detectHookConfigLabel } from '@/features/hooks-config/presets'
 import type { HooksConfig } from '@/features/hooks-config/types'
 import type { AgentKey } from '@/features/hooks-config/types'
 import { useDiagnostics } from './hooks/useDiagnostics'
+import { IgnoreRulesPanel } from './IgnoreRulesPanel'
 import { LiveLogPanel } from './LiveLogPanel'
 import type { Diagnostics, DiagnosticsAgent } from './types'
 import { formatBytes } from './utils'
@@ -304,6 +305,9 @@ function LoadedContent({ data, onCompacted }: { data: Diagnostics; onCompacted: 
               <CompactDatabaseButton onDone={onCompacted} />
             </CardContent>
           </Card>
+
+          {/* Privacy — active ignore rules + path tester */}
+          <IgnoreRulesPanel ignoreFile={data.privacy.ignoreFile} />
         </div>
       </div>
 

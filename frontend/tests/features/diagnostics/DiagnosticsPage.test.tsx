@@ -51,7 +51,16 @@ const healthyDiagnostics: Diagnostics = {
     },
   ],
   privacy: {
-    ignoreFile: { path: '/home/user/.argus/.ignore', status: 'loaded', activePatternCount: 3 },
+    ignoreFile: {
+      path: '/home/user/.argus/.ignore',
+      status: 'loaded',
+      activePatternCount: 3,
+      rules: [
+        { pattern: 'node_modules/', line: 1, negate: false },
+        { pattern: '*.env', line: 2, negate: false },
+        { pattern: '!important.env', line: 3, negate: true },
+      ],
+    },
     exportWarning: 'Exported data may contain prompts, diffs, file paths, and tool outputs.',
   },
   security: {
