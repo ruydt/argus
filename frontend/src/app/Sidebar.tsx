@@ -45,22 +45,23 @@ import { cn } from '@/lib/utils'
 import type { SessionSummary } from '@/types'
 import { ThemeToggle } from './ThemeToggle'
 
-// Argus mark — same geometry as favicon.svg but with no background rect, so it sits
-// transparently in the sidebar. Outline inherits currentColor (adapts to theme);
-// the violet iris matches the browser tab.
+// Argus mark — flat cyclops: round violet body on two legs with a single round eye.
+// Same geometry as favicon.svg. Solid fill, no outline — reads on any background.
 function ArgusLogo({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+    <svg viewBox="0 0 512 512" className={className} aria-hidden="true">
       <path
-        d="M5 16s4-6.5 11-6.5S27 16 27 16s-4 6.5-11 6.5S5 16 5 16Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
+        d="M 205 320 L 205 385 C 205 400, 195 405, 180 405 L 225 405 C 232 405, 232 400, 232 385 L 232 320 Z"
+        fill="#8B5DF6"
       />
-      <circle cx="16" cy="16" r="4.2" fill="#863bff" />
-      <circle cx="16" cy="16" r="1.6" fill="#0d1117" />
-      <circle cx="17.4" cy="14.6" r=".7" fill="#e6edf3" />
+      <path
+        d="M 307 320 L 307 385 C 307 400, 317 405, 332 405 L 287 405 C 280 405, 280 400, 280 385 L 280 320 Z"
+        fill="#8B5DF6"
+      />
+      <circle cx="256" cy="220" r="140" fill="#8B5DF6" />
+      <circle cx="256" cy="220" r="70" fill="#FFFFFF" />
+      <circle cx="256" cy="220" r="45" fill="#181B31" />
+      <circle cx="274" cy="202" r="11" fill="#FFFFFF" />
     </svg>
   )
 }
