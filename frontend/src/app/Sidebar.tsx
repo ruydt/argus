@@ -819,8 +819,8 @@ export function Sidebar({
         <div className="flex min-h-12 items-center p-2">
           <div className="flex w-full items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-6 items-center justify-center">
-                <ArgusLogo className="size-5 text-foreground" />
+              <div className="flex size-7 items-center justify-center">
+                <ArgusLogo className="size-7 text-foreground" />
               </div>
               <span className="text-[0.78rem] font-semibold tracking-[0.04em] text-foreground">
                 argus
@@ -855,8 +855,8 @@ export function Sidebar({
               transition: 'opacity 180ms ease',
             }}
           >
-            <div className="flex size-6 shrink-0 items-center justify-center">
-              <ArgusLogo className="size-5 text-foreground" />
+            <div className="flex size-7 shrink-0 items-center justify-center">
+              <ArgusLogo className="size-7 text-foreground" />
             </div>
             <span className="sidebar-label-motion sidebar-label-open whitespace-nowrap text-[0.78rem] font-semibold tracking-[0.04em] text-foreground">
               argus
