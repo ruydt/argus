@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Lint commit messages
+// author: ruydt
 // events: PreToolUse
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/commit-msg-lint.js

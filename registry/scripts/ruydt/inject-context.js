@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Inject context
+// author: ruydt
 // events: UserPromptSubmit
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/inject-context.js

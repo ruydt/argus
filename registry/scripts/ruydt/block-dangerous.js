@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Block dangerous commands
+// author: ruydt
 // events: PreToolUse
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/block-dangerous.js

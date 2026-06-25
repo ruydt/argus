@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Cost warning
+// author: ruydt
 // events: SessionStart
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/cost-warn.js

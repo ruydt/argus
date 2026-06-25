@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Protect secret files
+// author: ruydt
 // events: PreToolUse
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/protect-secrets.js

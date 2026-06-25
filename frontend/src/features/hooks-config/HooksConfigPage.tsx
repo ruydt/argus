@@ -12,7 +12,7 @@ import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { StructuredEditor } from './StructuredEditor'
 import { SimulatorTab } from './SimulatorTab'
 import { GuidedSetupPanel } from './GuidedSetupPanel'
-import { getTemplate } from './hookTemplates'
+import { resolveSimPayload } from './simPayload'
 import { useHooksConfig } from './hooks/useHooksConfig'
 import { useAgents, type AgentStatus } from './hooks/useAgents'
 import { SIM_PAYLOAD_HANDOFF_KEY } from './simHandoff'
@@ -231,19 +231,30 @@ export function HooksConfigPage() {
     // (once) so the simulator opens with the exact event JSON, not a template.
     const handoff = searchParams.get('payload') === '1' ? readSimHandoff() : null
     if (ev) {
+      const ag = readStorageString(AGENT_TAB_KEY) === 'codex' ? 'codex' : 'claudecode'
+      // simEventType is read as a deliberate snapshot of the currently-shown
+      // event (see the exhaustive-deps note on the dep array): a deep link to a
+      // different event regenerates its template, a same-event revisit keeps edits.
+      setSimPayloadJSON((current) =>
+        resolveSimPayload({
+          agent: ag,
+          event: ev,
+          currentEventType: simEventType,
+          currentPayload: current,
+          handoff,
+        })
+      )
       setSimEventType(ev)
-      setSimPayloadJSON((current) => {
-        if (handoff) return handoff
-        if (current && current.trim()) return current
-        const ag = readStorageString(AGENT_TAB_KEY) === 'codex' ? 'codex' : 'claudecode'
-        return JSON.stringify(getTemplate(ag, ev), null, 2)
-      })
     } else if (handoff) {
       setSimPayloadJSON(handoff)
     }
     const sc = searchParams.get('script')
     if (sc) setInitialScript(sc)
     /* eslint-enable react-hooks/set-state-in-effect */
+    // Intentionally only re-apply when the URL params change. simEventType is a
+    // read-only snapshot inside; adding it would re-run on every dropdown change
+    // and (with a stale ?event= still in the URL) revert the user's selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   // The onboarding tour adds an agent for the user: enable + select it so the

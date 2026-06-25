@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Git autostage
+// author: ruydt
 // events: Stop
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/git-autostage.js

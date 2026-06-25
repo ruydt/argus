@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Protect branches
+// author: ruydt
 // events: PreToolUse
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/protect-branch.js

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Notify webhook
+// author: ruydt
 // events: Stop
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/notify-webhook.js

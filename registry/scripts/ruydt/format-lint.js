@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Format & lint on edit
+// author: ruydt
 // events: PostToolUse
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/format-lint.js

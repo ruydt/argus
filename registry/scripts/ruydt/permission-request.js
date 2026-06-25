@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Permission request dialog
+// author: ruydt
 // events: PermissionRequest
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/permission-request.js

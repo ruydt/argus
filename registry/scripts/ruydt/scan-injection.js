@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // @argus-meta
 // title: Prompt-injection scanner
+// author: ruydt
 // events: PostToolUse
 // agents: claudecode, codex
 // command: node ~/.argus/hooks/scan-injection.js
