@@ -16,6 +16,7 @@ import { AgentLogo, agentMeta } from '@/agents/catalog'
 import { useHistoricalEvents } from '@/features/events/hooks/useHistoricalEvents'
 import { useLiveEvents } from '@/features/events/hooks/useLiveEvents'
 import { mergeByKey, buildEventKey } from '@/features/events/eventKey'
+import { relativeTime } from '@/lib/format'
 import { EventRow } from '@/features/events/EventRow'
 import type { LayoutOutletContext } from '@/types'
 import { projectName } from './utils'
@@ -304,6 +305,16 @@ export function SessionDetailPage() {
               </>
             )}
             <span>{events.length} events</span>
+            {firstEvent && (
+              <>
+                <span aria-hidden className="text-foreground/25">
+                  ·
+                </span>
+                <span title={new Date(firstEvent.time).toLocaleString()}>
+                  updated {relativeTime(firstEvent.time)}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </header>
