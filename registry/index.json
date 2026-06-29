@@ -2,6 +2,27 @@
   "schema_version": 1,
   "scripts": [
     {
+      "id": "argus-activate",
+      "author": "ruydt",
+      "title": "Argus session start",
+      "purpose": "Start the Argus server and show a liveness banner at session start.",
+      "events": [
+        "SessionStart"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/argus-activate.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "6cf2610cb19352c3ea00ea7ab200aae4a3495cfe1bc51c57e94193bce5a6730a",
+      "source": "scripts/ruydt/argus-activate.js",
+      "published_at": ""
+    },
+    {
       "id": "block-dangerous",
       "author": "ruydt",
       "title": "Block dangerous commands",
@@ -20,6 +41,27 @@
       "tier": "community",
       "sha256": "e1f55d00192e9292bd9bbffbe060b2102b5cf402211be299923382fb8e75b8e6",
       "source": "scripts/ruydt/block-dangerous.js",
+      "published_at": ""
+    },
+    {
+      "id": "block-env-read",
+      "author": "ruydt",
+      "title": "Block secret-file reads",
+      "purpose": "Deny reading .env, private keys, and credential files so secrets never enter the agent transcript.",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Read",
+      "command": "node ~/.argus/hooks/block-env-read.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "b21eb9c1c8a5601708a209141d7ed30f1d1a799a8f42fc24f3368cf533918c2b",
+      "source": "scripts/ruydt/block-env-read.js",
       "published_at": ""
     },
     {
@@ -44,6 +86,27 @@
       "published_at": ""
     },
     {
+      "id": "compact-reminder",
+      "author": "ruydt",
+      "title": "Compact reminder",
+      "purpose": "Every N edit tool-calls in a session, remind to run /compact to keep context lean. Never blocks.",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Edit|Write|MultiEdit",
+      "command": "node ~/.argus/hooks/compact-reminder.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "98ad6b5dc4d0d2fbc122abc72b136680b1d50a5d2b5b8036b4f65408d74b5e56",
+      "source": "scripts/ruydt/compact-reminder.js",
+      "published_at": ""
+    },
+    {
       "id": "cost-warn",
       "author": "ruydt",
       "title": "Cost warning",
@@ -62,6 +125,48 @@
       "tier": "community",
       "sha256": "0bb5c595f3920bb957a606b74d464f0feeda1f3a3b0f7137c5a896db98bd09b7",
       "source": "scripts/ruydt/cost-warn.js",
+      "published_at": ""
+    },
+    {
+      "id": "debug-leftover-warn",
+      "author": "ruydt",
+      "title": "Debug-leftover warning",
+      "purpose": "Flag debug statements (console.log, debugger, pdb, dbg!, print) introduced by the edit so the agent removes them.",
+      "events": [
+        "PostToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Edit|Write|MultiEdit",
+      "command": "node ~/.argus/hooks/debug-leftover-warn.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "693ba6b8c814b32b0003412076a08f49181dd2dafd38abab622dcd7b1d44a821",
+      "source": "scripts/ruydt/debug-leftover-warn.js",
+      "published_at": ""
+    },
+    {
+      "id": "doc-file-guard",
+      "author": "ruydt",
+      "title": "Stray doc-file guard",
+      "purpose": "Warn (or block) when the agent creates non-standard .md/.txt files outside an allowlist, to stop scratch-doc litter.",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Write",
+      "command": "node ~/.argus/hooks/doc-file-guard.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "4eea2d65078bdc256e50f877ca4c1a132462e81aaa414a3632f35dfd8da59090",
+      "source": "scripts/ruydt/doc-file-guard.js",
       "published_at": ""
     },
     {
@@ -170,6 +275,69 @@
       "published_at": ""
     },
     {
+      "id": "pr-logger",
+      "author": "ruydt",
+      "title": "PR logger",
+      "purpose": "After `gh pr create`, capture the PR URL to ~/.argus/pr-log.txt and print a review hint.",
+      "events": [
+        "PostToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Bash",
+      "command": "node ~/.argus/hooks/pr-logger.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "abc3243b7fb0294818f28da1e32ad63b5439e119f812c8a8df574852f394c851",
+      "source": "scripts/ruydt/pr-logger.js",
+      "published_at": ""
+    },
+    {
+      "id": "pre-commit-check",
+      "author": "ruydt",
+      "title": "Pre-commit debug-leftover check",
+      "purpose": "Block git commit when STAGED changes add debug leftovers (console.log, debugger, pdb, binding.pry, dbg!).",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Bash",
+      "command": "node ~/.argus/hooks/pre-commit-check.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "fdc33462501c217bceeb272b7b432995270e73d88b1b189c089c649d1fcb2363",
+      "source": "scripts/ruydt/pre-commit-check.js",
+      "published_at": ""
+    },
+    {
+      "id": "prompt-audit",
+      "author": "ruydt",
+      "title": "Prompt audit log",
+      "purpose": "Append every user prompt (timestamp, session, cwd, first line) to ~/.argus/prompt-audit.log. Never injects context.",
+      "events": [
+        "UserPromptSubmit"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/prompt-audit.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "06a20e1efb22a48f4a33c2830d6a6ab7a6709cc5f52151339d53267c883b68d1",
+      "source": "scripts/ruydt/prompt-audit.js",
+      "published_at": ""
+    },
+    {
       "id": "protect-branch",
       "author": "ruydt",
       "title": "Protect branches",
@@ -188,6 +356,27 @@
       "tier": "community",
       "sha256": "00717d40a4fba5c68cc48bcc340ec886d31e93d1192af245fc8a63d3d0bdd63d",
       "source": "scripts/ruydt/protect-branch.js",
+      "published_at": ""
+    },
+    {
+      "id": "protect-paths",
+      "author": "ruydt",
+      "title": "Protect generated & vendored paths",
+      "purpose": "Deny edits to generated/vendored paths (node_modules, dist, build, .git, lockfiles, *.min.*) that get overwritten or shouldn't be hand-edited.",
+      "events": [
+        "PreToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Edit|Write|MultiEdit",
+      "command": "node ~/.argus/hooks/protect-paths.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "55fadf7fb16741851871e68b32bd02491e72f7bb904846687a73c1cd637238bb",
+      "source": "scripts/ruydt/protect-paths.js",
       "published_at": ""
     },
     {
@@ -233,6 +422,48 @@
       "published_at": ""
     },
     {
+      "id": "session-start-info",
+      "author": "ruydt",
+      "title": "Session start project info",
+      "purpose": "Inject detected toolchain (package manager, language) + git branch as context once at session start.",
+      "events": [
+        "SessionStart"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/session-start-info.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "08cd327f87ce842e0c5df4ba8da4ca6eaab252c4080562cd0095abd5e1c4ed9e",
+      "source": "scripts/ruydt/session-start-info.js",
+      "published_at": ""
+    },
+    {
+      "id": "session-summary",
+      "author": "ruydt",
+      "title": "Session summary log",
+      "purpose": "On Stop, append a JSONL session record (session, cwd, git dirty count, last message) to ~/.argus/session-log.jsonl.",
+      "events": [
+        "Stop"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/session-summary.js",
+      "runtime": "node",
+      "os": "linux, macos, windows",
+      "tier": "community",
+      "sha256": "849e532ff3ca3b0b14ff19a4034ebd810ba0ac76587cb28b4e4b27f00bee8d41",
+      "source": "scripts/ruydt/session-summary.js",
+      "published_at": ""
+    },
+    {
       "id": "stop",
       "author": "ruydt",
       "title": "Stop notification",
@@ -251,6 +482,48 @@
       "tier": "community",
       "sha256": "9e13fbb853a72cd86b01e15a15f2f5f8b79f5a94ae7549ff0d59a1dcc91ad3cd",
       "source": "scripts/ruydt/stop.js",
+      "published_at": ""
+    },
+    {
+      "id": "test-gate",
+      "author": "ruydt",
+      "title": "Test gate on stop",
+      "purpose": "On Stop, if git shows source changes, remind (or run) the project's test command so work doesn't end untested.",
+      "events": [
+        "Stop"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/test-gate.js",
+      "runtime": "node",
+      "os": "linux, macos",
+      "tier": "community",
+      "sha256": "10e8d83b26d0ad308cfb03e5f3f2a6c20c34becadbdc0b541ece1fa7d0ed7f7d",
+      "source": "scripts/ruydt/test-gate.js",
+      "published_at": ""
+    },
+    {
+      "id": "typecheck-edit",
+      "author": "ruydt",
+      "title": "Type-check on edit",
+      "purpose": "After editing a TS/Go file, run tsc --noEmit / go build and feed type errors back so the agent fixes them.",
+      "events": [
+        "PostToolUse"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "Edit|Write|MultiEdit",
+      "command": "node ~/.argus/hooks/typecheck-edit.js",
+      "runtime": "node",
+      "os": "linux, macos",
+      "tier": "community",
+      "sha256": "43f967ae72cdc14273bd905eac895c9c8d876ecf33fc45c1c96dae61534857f5",
+      "source": "scripts/ruydt/typecheck-edit.js",
       "published_at": ""
     }
   ]
