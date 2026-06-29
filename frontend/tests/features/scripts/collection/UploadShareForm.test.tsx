@@ -134,7 +134,9 @@ describe('UploadShareForm', () => {
     )
     await screen.findByRole('button', { name: /Claude Code/i })
     // claudecode selected → its events offered; codex-only SessionStart hidden.
-    expect(screen.getByRole('button', { name: 'PreToolUse' })).toBeInTheDocument()
+    // Event buttons render after the async /api/agents fetch resolves, a render
+    // pass behind the agent chips — await rather than query synchronously.
+    await screen.findByRole('button', { name: 'PreToolUse' })
     expect(screen.queryByRole('button', { name: 'SessionStart' })).toBeNull()
     // Add codex → SessionStart now appears in the union.
     fireEvent.click(screen.getByRole('button', { name: /Codex/i }))
