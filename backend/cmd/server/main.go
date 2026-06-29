@@ -53,6 +53,10 @@ func run() int {
 	// Pre-check: verify the DB path is writable before attempting open/migrate.
 	// This produces an actionable fatal message instead of an opaque sqlite error.
 	if cfg.DBPath != ":memory:" {
+		if err := os.MkdirAll(filepath.Dir(cfg.DBPath), 0o755); err != nil {
+			slog.Error("db dir not creatable", "path", cfg.DBPath, "err", err)
+			return 1
+		}
 		f, err := os.OpenFile(cfg.DBPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 		if err != nil {
 			slog.Error("db not writable", "path", cfg.DBPath, "err", err)

@@ -217,16 +217,10 @@ if ! grep -qF '.argus/bin' "$SHELL_RC" 2>/dev/null; then
 fi
 
 echo ""
-echo "argus $VERSION installed."
-echo "Activate hook: $ACTIVATE_SCRIPT"
-echo ""
-echo "Next steps:"
-# The PATH change above only applies to NEW shells, so `argus` is not yet on the
-# PATH of the terminal running this installer. Give a command that works now.
-echo "  1. Start the server right now:"
-echo "       ~/.argus/bin/argus start"
+echo "argus $VERSION installed. Start it:"
+echo "  ~/.argus/bin/argus start"
+# PATH change only applies to NEW shells, so `argus` isn't on this terminal's
+# PATH yet — the command above always works.
 if [ "$PATH_UPDATED" = "1" ]; then
-  echo "  2. Or open a new terminal (or run: source $SHELL_RC), then: argus start"
-else
-  echo "  2. In new terminals you can just run: argus start"
+  echo "(new terminals: just \`argus start\` — restart your shell or run: source $SHELL_RC)"
 fi

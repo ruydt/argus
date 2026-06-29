@@ -150,5 +150,17 @@ func defaultFromExecutable() string {
 			return filepath.Join(backendRoot, "argus.db")
 		}
 	}
-	return "argus.db"
+	return homeFallbackDBPath()
+}
+
+// homeFallbackDBPath returns ~/.argus/argus.db — used when neither the cwd nor
+// the executable location resolve to a backend root (e.g. the binary launched
+// from an unrelated directory). Keeps the DB out of whatever cwd happened to be
+// active instead of littering it with a bare ./argus.db.
+func homeFallbackDBPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "argus.db"
+	}
+	return filepath.Join(home, ".argus", "argus.db")
 }

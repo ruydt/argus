@@ -181,12 +181,6 @@ if ($userPath -notlike "*$BinDir*") {
 if ($env:Path -notlike "*$BinDir*") { $env:Path = "$BinDir;$env:Path" }
 
 Write-Host ''
-Write-Host "argus $Version installed."
-Write-Host "Activate hook: $ActivateScript  (unwired - apply a preset in the dashboard to use it)"
-Write-Host ''
-Write-Host 'Next steps:'
-Write-Host "  1. argus start                  # launches the server and opens http://127.0.0.1:$ArgusPort"
-Write-Host "  2. Open the Hooks page, pick your agent, and click 'Apply preset'."
-Write-Host '     The preset wires argus-activate.js on session start + event capture.'
-Write-Host ''
-Write-Host "Tip: 'argus start' opens your browser; bare 'argus' just runs the server; 'argus stop' shuts it down."
+Write-Host "argus $Version installed. Start it:"
+Write-Host '  argus start'
+Write-Host '(restart terminals if `argus` is not found)'
