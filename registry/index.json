@@ -233,6 +233,48 @@
       "published_at": ""
     },
     {
+      "id": "macos-approval-dialog",
+      "author": "ruydt",
+      "title": "Permission request dialog",
+      "purpose": "Native macOS approval dialog with an Always list.",
+      "events": [
+        "PermissionRequest"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/macos-approval-dialog.js",
+      "runtime": "node",
+      "os": "macos",
+      "tier": "community",
+      "sha256": "96b91a40bd22dd7638e9544f57f592843a2936991ad6b4b2c22398ee649473b0",
+      "source": "scripts/ruydt/macos-approval-dialog.js",
+      "published_at": ""
+    },
+    {
+      "id": "macos-notify-on-stop",
+      "author": "ruydt",
+      "title": "Stop notification",
+      "purpose": "Local notification when the agent finishes.",
+      "events": [
+        "Stop"
+      ],
+      "agents": [
+        "claudecode",
+        "codex"
+      ],
+      "matcher": "",
+      "command": "node ~/.argus/hooks/macos-notify-on-stop.js",
+      "runtime": "node",
+      "os": "macos",
+      "tier": "community",
+      "sha256": "becb46d511b7b60646760bfd203da4dc6e69af42e9e58d283b3e810e7f8e1d78",
+      "source": "scripts/ruydt/macos-notify-on-stop.js",
+      "published_at": ""
+    },
+    {
       "id": "notify-webhook",
       "author": "ruydt",
       "title": "Notify webhook",
@@ -249,29 +291,8 @@
       "runtime": "node",
       "os": "linux, macos, windows",
       "tier": "community",
-      "sha256": "f36366191bf3629e9b8239fd62c56c70f07a104410df90c60b87225b10bf72ac",
+      "sha256": "62ac71374f144a6b5d13e93f4d9a5548697ed1136b9c2a7f5423d6fce2683c54",
       "source": "scripts/ruydt/notify-webhook.js",
-      "published_at": ""
-    },
-    {
-      "id": "permission-request",
-      "author": "ruydt",
-      "title": "Permission request dialog",
-      "purpose": "Native macOS approval dialog with an Always list.",
-      "events": [
-        "PermissionRequest"
-      ],
-      "agents": [
-        "claudecode",
-        "codex"
-      ],
-      "matcher": "",
-      "command": "node ~/.argus/hooks/permission-request.js",
-      "runtime": "node",
-      "os": "macos",
-      "tier": "community",
-      "sha256": "71897ea04137f27821e2381cb4812bf9258509eddae1a61af8a5af3aff3104ee",
-      "source": "scripts/ruydt/permission-request.js",
       "published_at": ""
     },
     {
@@ -461,27 +482,6 @@
       "tier": "community",
       "sha256": "849e532ff3ca3b0b14ff19a4034ebd810ba0ac76587cb28b4e4b27f00bee8d41",
       "source": "scripts/ruydt/session-summary.js",
-      "published_at": ""
-    },
-    {
-      "id": "stop",
-      "author": "ruydt",
-      "title": "Stop notification",
-      "purpose": "Local notification when the agent finishes.",
-      "events": [
-        "Stop"
-      ],
-      "agents": [
-        "claudecode",
-        "codex"
-      ],
-      "matcher": "",
-      "command": "node ~/.argus/hooks/stop.js",
-      "runtime": "node",
-      "os": "macos",
-      "tier": "community",
-      "sha256": "9e13fbb853a72cd86b01e15a15f2f5f8b79f5a94ae7549ff0d59a1dcc91ad3cd",
-      "source": "scripts/ruydt/stop.js",
       "published_at": ""
     },
     {

@@ -4,7 +4,7 @@
 // author: ruydt
 // events: Stop
 // agents: claudecode, codex
-// command: node ~/.argus/hooks/stop.js
+// command: node ~/.argus/hooks/macos-notify-on-stop.js
 // purpose: Local notification when the agent finishes.
 // os: macos
 // @end
@@ -32,7 +32,7 @@ let logSession = '-';
 
 function logScript(level, msg) {
   try {
-    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} stop.js ${level} ${msg}\n`);
+    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} macos-notify-on-stop.js ${level} ${msg}\n`);
   } catch (_) {}
 }
 

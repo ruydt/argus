@@ -4,7 +4,7 @@
 // author: ruydt
 // events: PermissionRequest
 // agents: claudecode, codex
-// command: node ~/.argus/hooks/permission-request.js
+// command: node ~/.argus/hooks/macos-approval-dialog.js
 // purpose: Native macOS approval dialog with an Always list.
 // os: macos
 // @end
@@ -28,7 +28,7 @@ let logSession = '-';
 
 function logScript(level, msg) {
   try {
-    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} permission-request.js ${level} ${msg}\n`);
+    fs.appendFileSync(scriptLog, `${new Date().toISOString()} ${logAgent} ${logSession} macos-approval-dialog.js ${level} ${msg}\n`);
   } catch (_) {}
 }
 

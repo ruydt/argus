@@ -50,9 +50,9 @@
       "tier": "official"
     },
     {
-      "id": "permission-request",
-      "filename": "permission-request.js",
-      "command": "node ~/.argus/hooks/permission-request.js",
+      "id": "macos-approval-dialog",
+      "filename": "macos-approval-dialog.js",
+      "command": "node ~/.argus/hooks/macos-approval-dialog.js",
       "version": "1.0.0",
       "title": "Permission request dialog",
       "purpose": "Native macOS approval dialog with an Always list.",
@@ -66,9 +66,9 @@
       "tier": "official"
     },
     {
-      "id": "stop",
-      "filename": "stop.js",
-      "command": "node ~/.argus/hooks/stop.js",
+      "id": "macos-notify-on-stop",
+      "filename": "macos-notify-on-stop.js",
+      "command": "node ~/.argus/hooks/macos-notify-on-stop.js",
       "version": "1.0.0",
       "title": "Stop notification",
       "purpose": "Local notification when the agent finishes.",

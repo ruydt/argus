@@ -11,7 +11,7 @@
 
 // Stop / SubagentStop / Notification hook: posts a message to a Slack, Discord, ntfy,
 // Telegram, or custom webhook when the agent finishes or needs attention. Complements
-// stop.js (local macOS notification) for when you are away from the machine.
+// macos-notify-on-stop.js (local macOS notification) for when you are away from the machine.
 //
 // Secrets stay in ~/.argus/notify.json — never in the repo's settings.json (a webhook
 // URL in a committed hook command string is a leaked credential). Silent without config.
