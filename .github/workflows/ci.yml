@@ -122,6 +122,11 @@ jobs:
       - name: Lint install.ps1 (PSScriptAnalyzer)
         shell: pwsh
         run: |
+          # Newer runner images no longer pre-register PSGallery — register it
+          # before trusting it, otherwise Set-PSRepository errors out.
+          if (-not (Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue)) {
+            Register-PSRepository -Default
+          }
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
           $results = Invoke-ScriptAnalyzer -Path install.ps1 -Severity Error,Warning
